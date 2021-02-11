@@ -18,10 +18,10 @@ import numpy as np
 LROOT = "/usr/local/lick/"
 
 try:
-    sys.path.append('/home/holden/src/UCSCmaster/master')
+    sys.path.append('/home/holden/src/UCOmain/Main')
     import apflog
 except:
-    sys.path.append('/home/holden/src/UCSCmaster/master')
+    sys.path.append('/home/holden/src/UCOmain/Main')
     import fake_apflog
 
 def readem_or_weep(service,keyword,binary=False):
@@ -212,8 +212,8 @@ def gen_int_files(config,cpath,phases):
 
 def gen_output_files(cpath):
 
-    mstdout = open(os.path.join(cpath,"master.stdout"),"w+")
-    mstderr = open(os.path.join(cpath,"master.stderr"),"w+")
+    mstdout = open(os.path.join(cpath,"main.stdout"),"w+")
+    mstderr = open(os.path.join(cpath,"main.stderr"),"w+")
     return mstdout, mstderr
            
 if __name__ == "__main__":
@@ -224,7 +224,7 @@ if __name__ == "__main__":
                     action="store_true")
     parser.add_argument("-p","--phase", help="start at the mentioned phase",choices=["Init", "Focus", "Cal-Pre", "Watching"],
                             default='Init')
-    parser.add_argument("-c","--config_file", help="optional config file name", default = "master.config")
+    parser.add_argument("-c","--config_file", help="optional config file name", default = "main.config")
 
     args = parser.parse_args()
 
@@ -257,10 +257,10 @@ if __name__ == "__main__":
             p=subprocess.Popen(stuff_to_run,stdout=mstdout,stderr=mstderr,env=env)
             sleep(10)
             if p.poll():
-                print("Master failed for some reason or another.")
+                print("Main failed for some reason or another.")
         elif test:
             pass
         else:
-            print("Master cannot be run by this account")
+            print("Main cannot be run by this account")
 
         
