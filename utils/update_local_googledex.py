@@ -5,7 +5,7 @@ import sys
 import time
 import datetime
 
-sys.path.append("../master")
+sys.path.append("../Main")
 import ParseUCOSched
 
 if __name__ == "__main__":
