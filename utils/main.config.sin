@@ -2,18 +2,6 @@
 [programs]
 4014 : holiday
 4186 : holiday
-4873 : 2020B
-4874 : 2020B
-4875 : 2020B
-4876 : 2020B
-4877 : 2020B
-4878 : 2020B
-4879 : 2020B
-4880 : 2020B
-4907 : 2020B
-4908 : 2020B
-4909 : 2020B
-4913 : 2020B
 4945 : 2021A
 4946 : 2021A
 4947 : 2021A
@@ -46,30 +34,8 @@ obsnum :
 owner :
 starlist :
 sheets :
-rank_table : "2020A_ranks"
+rank_table :
 calib :
-user : 10009
-
-[2020B]
-observer: Brad Holden
-Phone : 9-3387 / 831-421-1210
-Email : holden@ucolick.org
-Locat : Office / Home
-path : @LROOT@/bin/master
-pathvar : /bin:/usr/local/bin:/usr/bin:/sbin:/usr/sbin:/opt/kroot/bin:@LROOT@/bin/robot:@LROOT@/bin:/opt/ds9/bin:/opt/eos/shortcuts:/opt/idl/bin:@LROOT@/bin/master
-pythonpathvar : /opt/kroot/rel/default/lib/python:/opt/kroot/rel/default/lib:@LROOT@/lib/python:@LROOT@/lib:@LROOT@/master:/sr/lib/python2.7/:/usr/lib/python2.7/site_packages:/local/u/user/.local/lib/python2.7/site-packages
-executable : @LROOT@/bin/master/Master
-argstr : -n %s -o %s -c uco --sheet %s --rank_table %s --frac_table %s --time_left %s
-args : name obsnum sheets rank_table frac_table time_left
-name : apf
-obsnum : apf
-owner : public
-starlist :
-sheets : "RECUR_A100,2020B_A000,2020B_A001,2020B_A002,2020B_A003,2020B_A004,2020B_A005,2020B_A006,2020B_A007,2020B_A008,2020B_A009,2020B_A010"
-rank_table : "2020B_ranks"
-frac_table : "2020B_frac"
-time_left : "time_left.csv"
-calib : uco
 user : 10009
 
 [2021A]
@@ -80,7 +46,7 @@ Locat : Office / Home
 path : @LROOT@/bin/master
 pathvar : /bin:/usr/local/bin:/usr/bin:/sbin:/usr/sbin:/opt/kroot/bin:@LROOT@/bin/robot:@LROOT@/bin:/opt/ds9/bin:/opt/eos/shortcuts:/opt/idl/bin:@LROOT@/bin/master
 pythonpathvar : /opt/kroot/rel/default/lib/python:/opt/kroot/rel/default/lib:@LROOT@/lib/python:@LROOT@/lib:@LROOT@/master:/sr/lib/python2.7/:/usr/lib/python2.7/site_packages:/local/u/user/.local/lib/python2.7/site-packages
-executable : @LROOT@/bin/master/Master
+executable : @LROOT@/bin/master/Main
 argstr : -n %s -o %s -c uco --sheet %s --rank_table %s --frac_table %s --time_left %s
 args : name obsnum sheets rank_table frac_table time_left
 name : apf

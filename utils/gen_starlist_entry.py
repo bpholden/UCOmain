@@ -1,7 +1,7 @@
 #!/usr/bin/env  /opt/kroot/bin/kpython
 from __future__ import print_function
 import sys
-sys.path.append("../master")
+sys.path.append("../Main")
 #from ExposureCalc import *
 from optparse import OptionParser
 from datetime import datetime

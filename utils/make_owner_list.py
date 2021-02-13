@@ -3,7 +3,7 @@ import sys
 
 from optparse import OptionParser
 
-sys.path.append("../master")
+sys.path.append("../Main")
 import ParseGoogledex
 
 if __name__ == "__main__":

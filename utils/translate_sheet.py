@@ -6,7 +6,7 @@ from astropy.io import ascii
 from astropy.table import Table
 import numpy as np
 
-sys.path.append("../master")
+sys.path.append("../Main")
 import ParseGoogledex
 import SchedulerConsts as sc
 from ExposureCalculations import getI2_M, getI2_K, getEXPMeter

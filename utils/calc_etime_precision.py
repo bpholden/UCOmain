@@ -1,7 +1,7 @@
 from __future__ import print_function
 from optparse import OptionParser
 import sys
-sys.path.append("../master")
+sys.path.append("../Main")
 #from ExposureCalc import *
 import UCSCScheduler_V2 as ds
 import ParseGoogledex

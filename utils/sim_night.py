@@ -1,6 +1,6 @@
 from __future__ import print_function
 import sys
-sys.path.append("../master")
+sys.path.append("../Main")
 #from ExposureCalc import *
 
 import numpy as np

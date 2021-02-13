@@ -6,7 +6,7 @@ import time
 import numpy as np
 
 import sys
-sys.path.append("../master")
+sys.path.append("../Main")
 #from ExposureCalc import *
 import UCSCScheduler_V2 as ds
 import ParseGoogledex

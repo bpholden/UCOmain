@@ -3,7 +3,7 @@ import sys
 import os
 import argparse
 import datetime
-sys.path.append("../master")
+sys.path.append("../Main")
 
 import ParseUCOSched
 import UCOScheduler_V1 as ds

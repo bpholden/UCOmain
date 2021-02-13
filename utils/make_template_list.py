@@ -10,7 +10,7 @@ import re
 import numpy as np
 import ephem
 
-sys.path.append("../master")
+sys.path.append("../Main")
 import UCSCScheduler_V2 as ds
 from  fake_apflog import *
 import Coords

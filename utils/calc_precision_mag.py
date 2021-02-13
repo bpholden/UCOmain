@@ -1,5 +1,5 @@
 import sys
-sys.path.append("../master")
+sys.path.append("../Main")
 from ExposureCalculations import *
 import UCSCScheduler as ds
 import numpy as np
