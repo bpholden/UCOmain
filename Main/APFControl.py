@@ -1598,3 +1598,4 @@ if __name__ == '__main__':
     while True:
         APFTask.wait(task,True,timeout=10)
         print(str(apf))
+        apf.robot['FOCUSTEL_STARTFOCUS'].write(apf.predTelFocus())
