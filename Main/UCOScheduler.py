@@ -490,12 +490,16 @@ def makeResult(stars,star_table,totexptimes,dt,idx,focval=0,bstar=False,mode='')
     res['mode']   =   ''
     res['owner'] =    star_table['sheetn'][idx]
 
-    res['obsblock'] = star_table['obsblock'][idx]
-
-    res['SCRIPTOBS'] = []
-    scriptobs_line = makeScriptobsLine(star_table[idx], dt, decker=res['DECKER'], owner=res['owner'], I2=star_table['I2'][idx], focval=focval)
-    scriptobs_line = scriptobs_line + " # end"
-    res['SCRIPTOBS'].append(scriptobs_line)
+    if np.ma.is_masked(star_table[216]['obsblock']):
+        res['obsblock'] = star_table['obsblock'][idx]
+        res['SCRIPTOBS'] = makeObsBlock(star_table, idx, dt, focval)
+    else:
+        res['obsblock'] = ''
+        
+        res['SCRIPTOBS'] = []
+        scriptobs_line = makeScriptobsLine(star_table[idx], dt, decker=res['DECKER'], owner=res['owner'], I2=star_table['I2'][idx], focval=focval)
+        scriptobs_line = scriptobs_line + " # end"
+        res['SCRIPTOBS'].append(scriptobs_line)
 
     return res
 
