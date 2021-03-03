@@ -24,7 +24,7 @@ except:
 
 import APFControl
 from apflog import *
-import UCOScheduler_V1 as ds
+import UCOScheduler as ds
 from x_gaussslit import *
 import ExposureCalculations
 import SchedulerConsts

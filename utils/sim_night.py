@@ -11,7 +11,7 @@ from datetime import datetime
 import re
 import os
 
-import UCOScheduler_V1 as ds
+import UCOScheduler as ds
 import ExposureCalculations as ec
 import Generate_Errors as ge
 import NightSim as ns

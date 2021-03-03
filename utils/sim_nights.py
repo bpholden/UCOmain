@@ -14,7 +14,7 @@ import ephem
 import numpy as np
 
 import NightSim as ns
-import UCOScheduler_V1 as ds
+import UCOScheduler as ds
 import ExposureCalculations as ec
 import Generate_Errors as ge
 import ParseUCOSched
