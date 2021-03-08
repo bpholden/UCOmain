@@ -747,7 +747,7 @@ class APF:
         rv = self.writeStages(stagelist,'MOO','Off')
         return rv
 
-    def focusinstr(self):
+    def focusinstr(self,obsnum=None):
         self.instrPermit()
         rv = self.enableCalInst()
         if rv is False:
