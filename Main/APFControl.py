@@ -320,7 +320,7 @@ class APF:
 
         stasum = ''
         for kw in self.apfstas:
-            stasum += '%s %s' % (kw['name'],kw['ascii'])
+            stasum += '%s %s ' % (kw['name'],kw['ascii'])
                                          
         s += 'APFmon is %s' % (stasum)
 
