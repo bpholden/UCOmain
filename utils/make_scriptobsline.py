@@ -8,7 +8,6 @@ import argparse
 
 import sys
 sys.path.append("../Main")
-#from ExposureCalc import *
 import UCOScheduler as ds
 import ParseUCOSched
 
@@ -33,8 +32,8 @@ if __name__ == "__main__":
     config['decoff'] = None 
 
     
-    desiredstars = ",".split(options.desired_stars)
-    sheetns = ",".split(options.sheetn)
+    desiredstars = split(options.desired_stars,",")
+    sheetns = split(options.sheetn,",")
 
     star_table, stars = ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=outfn,config=config)
     now = datetime.datetime.now()
