@@ -39,8 +39,8 @@ if __name__ == "__main__":
     now = datetime.datetime.now()
     
     for star in desiredstars:
-        idx = np.where(star_table["name"] == star)
-
+        aidx, = np.where(star_table["name"] == star)
+        idx = aidx[0]
         ret = ds.makeScriptobsLine(idx,now,decker=star_table['decker'][idx], \
                                                 owner=star_table['sheetn'][idx], \
                                                 I2=star_table['I2'][idx])
