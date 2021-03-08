@@ -32,8 +32,8 @@ if __name__ == "__main__":
     config['decoff'] = None 
 
     
-    desiredstars = split(options.desired_stars,",")
-    sheetns = split(options.sheetn,",")
+    desiredstars = options.desired_stars.split(",")
+    sheetns = options.sheetn.split(",")
 
     star_table, stars = ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=outfn,config=config)
     now = datetime.datetime.now()
