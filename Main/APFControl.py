@@ -465,6 +465,27 @@ class APF:
 
         return
 
+    def miniMonMon(self,sta):
+        if sta['populated'] == False:
+            return
+        try:
+            sta_val = sta['binary']
+        except:
+            return
+        
+        if sta_val > 3:
+            # warning or higher
+            nmsta = sta['name']
+            name = nmsta[0:7]
+            apfcmd = os.path.join(LROOT,"bin/apf")
+            restart = '%s restart %s' % (apfcmd,name)
+            cmdlist = ["ssh", "-f", "hamburg", restart]
+            try:
+                p = subprocess.check_output(cmdlst,stderr=subprocess.STDOUT)
+            except:
+                apflog("Cannot restart %s on hamburg" % (name),level='error',echo=True)
+                return
+        return
     ## end of callbacks for monitoring stuff
 
 
