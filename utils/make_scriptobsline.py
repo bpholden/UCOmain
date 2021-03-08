@@ -9,7 +9,7 @@ import argparse
 import sys
 sys.path.append("../Main")
 #from ExposureCalc import *
-import UCOcheduler as ds
+import UCOScheduler as ds
 import ParseUCO
 
 if __name__ == "__main__":
