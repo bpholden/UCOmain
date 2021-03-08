@@ -318,6 +318,12 @@ class APF:
         windshield = self.updateWindshield("auto")
         s += "Windshield state = %s\n" % windshield
 
+        stasum = ''
+        for kw in self.apfstas:
+            stasum += '%s %s' % (kw['name'],kw['ascii'])
+                                         
+        s += 'APFmon is %s' % (stasum)
+
         return s
 
     def ucamdispatchmon(self):
