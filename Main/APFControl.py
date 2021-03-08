@@ -369,7 +369,6 @@ class APF:
         except:
             return
 
-
         try:
             cnts = float(counts.read(binary=True,timeout=2))
             time = float(elapsed.read(binary=True,timeout=2))
@@ -405,7 +404,6 @@ class APF:
         self.openOK = ok
         return
 
-
     def listMon(self,keyword):
         if keyword['populated'] == False:
             return
@@ -436,7 +434,6 @@ class APF:
             self.dmtime = dmtime
         except Exception as e:
             apflog("Exception in dmtimemon: %s" % (e), level='error')
-
 
     def dewPtMon(self,dew):
         if dew['populated'] == False:
