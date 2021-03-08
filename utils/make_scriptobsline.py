@@ -41,7 +41,7 @@ if __name__ == "__main__":
     for star in desiredstars:
         aidx, = np.where(star_table["name"] == star)
         idx = aidx[0]
-        ret = ds.makeScriptobsLine(idx,now,decker=star_table['decker'][idx], \
+        ret = ds.makeScriptobsLine(star_table[idx],now,decker=star_table['decker'][idx], \
                                                 owner=star_table['sheetn'][idx], \
                                                 I2=star_table['I2'][idx])
         print(ret)
