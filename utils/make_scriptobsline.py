@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser.add_argument('desired_stars',type=str)
     parser.add_argument('-s','--sheetns',dest='sheetn',default="RECUR_A100,")
 
-    (options, args) = parser.parse_args()    
+    options = parser.parse_args()    
 
     outfn = "googledex.dat"
     config = dict()
