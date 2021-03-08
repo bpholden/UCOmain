@@ -207,6 +207,14 @@ class APF:
             self.mon_lists[kw] = []
             self.avg_lists[kw] = None
 
+        self.apfstas = []
+        for n in range(1,8):
+            kwnm = 'apfmon%dsta'  % (n)
+            kw = apfminimon[kwnm]
+            kw.monitor()
+            kw.callback(self.miniMonMon)
+            self.apfstas.append(kw)
+            
         self.rising = self.sunRising()
 
         # Set the callbacks and monitors
