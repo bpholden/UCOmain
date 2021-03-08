@@ -210,7 +210,7 @@ class APF:
         self.apfstas = []
         for n in range(1,8):
             kwnm = 'apfmon%dsta'  % (n)
-            kw = apfminimon[kwnm]
+            kw = self.apfminimon[kwnm]
             kw.monitor()
             kw.callback(self.miniMonMon)
             self.apfstas.append(kw)
