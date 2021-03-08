@@ -193,6 +193,7 @@ class APF:
     apfmon     = ktl.Service('apfmon')
     ucamd0sta  = apfmon['UCAMDSTA0STA']
 
+    apfminimon = ktl.Service('apfminimon')
 
     def __init__(self, task="example", test=False):
         """ Initilize the current state of APF. Setup the callbacks and monitors necessary for automated telescope operation."""
