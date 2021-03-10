@@ -369,7 +369,17 @@ if __name__ == '__main__':
         
         apflog("Starting focusinstr script.", level='Info', echo=True)
 
-        result = apf.ucam_status()
+        result = apf.testBias()
+        if result == None:
+            apflog("Focusinstr or calibrate or scriptobs are running?!", level='Error', echo=True)
+        if result == False:
+            # this is a UCAM problem
+            rv = apf.Restart()
+            if rv == False:
+                apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
+                shutdown()
+        
+        result = apf.ucamStatus()
         if result is False:
             apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
             shutdown()
