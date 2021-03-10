@@ -391,7 +391,7 @@ if __name__ == '__main__':
         apflog("Starting calibrate pre script.", level='Info', echo=True)
         apf.instrPermit()
 
-        result = apf.ucam_status()
+        result = apf.ucamStatus()
         if result is False:
             apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
             shutdown()
