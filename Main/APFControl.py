@@ -15,6 +15,7 @@ try:
     import ktl
     import APF as APFLib
     import APFTask
+    import Exposure
 except:
     from fake_apflog import *
 
@@ -1482,7 +1483,66 @@ class APF:
                 errstr = "Cannot abort scriptobs: %s" % (e)
                 apflog(errstr,level="Warn",echo=True)
 
-    def ucam_powercycle(self, fake=False):
+
+    def testBias(self):
+
+
+        apfschedule = ktl.Service('apfschedule')
+        
+        
+        if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0 or ktl.read('apftask','CALIBRATE_PID',binary=True) > 0 or ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0 :
+            return None
+
+        try:
+            exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent="master",dark=True)
+        except:
+            return False
+
+        if exp.comb.read(binary=True) > 0:
+            return False
+
+        try:
+            outdir = exp.apfucam['OUTDIR'].read()
+            orignam = exp.outfile.read()
+            orignum = exp.obsnum.read()
+        except:
+            return False
+
+        
+        ofn  = 'test_'
+        obsn = '0001'
+        ffn = exp.outfile.read() + exp.obsnum.read() + '.fits'
+        fpath = os.path.join(outdir.read(),ffn)
+        
+        try:
+            exp.outfile.write(ofn)
+            exp.obsnum.write(obsn)
+            apfschedule['OWNRHINT'].write('unknown')
+        except:
+            return False
+        
+        try:
+            c = exp.expose(waitlast=True)
+        except:
+            rv = False
+
+        apfschedule['OWNRHINT'].write('public')
+
+        if os.path.exists(fpath) and c == 1:
+            rv = True
+        else:
+            rv = False
+
+        try:
+            exp.outfile.write(orignam)
+            exp.obsnum.write(orignum)
+        except:
+            rv = False
+        return rv
+
+
+
+    def ucamPowercycle(self, fake=False):
 
         if fake:
             apflog("would have executed %s" % (os.path.join(SCRIPTDIR,"robot_power_cycle_ucam")))
