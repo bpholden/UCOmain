@@ -1499,7 +1499,7 @@ class APF:
 
 
 
-    def ucam_reboot(self,fake=False):
+    def ucamReboot(self,fake=False):
         if fake:
             apflog("Would have rebooted UCAM host ",echo=True)
             return True
@@ -1547,7 +1547,7 @@ class APF:
         self.event.callback(eventmon)
 
 
-    def ucam_restart(self,fake=False):
+    def ucamRestart(self,fake=False):
 
         # modify -s apftask UCAMLAUNCHER_UCAM_COMMAND=Stop
         if fake:
@@ -1569,22 +1569,22 @@ class APF:
                 apflog("UCAM status bad, cannot restart",level='alert')
                 return False
 
-            self.ucam_reboot()
+            self.ucamReboot()
 
 
         return False
 
 
 
-    def ucam_status(self,fake=False):
+    def ucamStatus(self,fake=False):
 
         if self.ctalk.read(binary=True) > 0:
-            rv = self.ucam_powercycle(fake=fake)
+            rv = self.ucamPowercycle(fake=fake)
             return rv
 
         if self.combo_ps.read(binary=True) > 0:
             # brains!
-            rv = self.ucam_restart(fake=fake)
+            rv = self.ucamRestart(fake=fake)
             return rv
 
         try:
@@ -1592,14 +1592,14 @@ class APF:
             ucamsta1 = self.ucam['DISP1STA'].read(binary=True)
         except Exception as e:
             apflog('apfucam.DISP%STA failure, apfucam likely not running: %s' % (e),echo=True,level='Alert')
-            rv = self.ucam_restart(fake=fake)
+            rv = self.ucamRestart(fake=fake)
             return rv
         else:
             if ucamsta1 > 0 and ucamsta0 > 0:
                 # Things are still starting up
                 if ucamsta0 > 2:
                     # failure to connect
-                    rv = self.ucam_restart(comb,fake=fake)
+                    rv = self.ucamRestart(comb,fake=fake)
                     return rv
                 else:
                     rv = APFTask.waitfor(self.task, True, expression="$apfucam.DISP0STA = 0 & $apfucam.DISP1STA = 0", timeout=600)
