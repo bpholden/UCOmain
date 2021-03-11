@@ -1511,8 +1511,6 @@ class APF:
         
         ofn  = 'test_'
         obsn = '0001'
-        ffn = exp.outfile.read() + exp.obsnum.read() + '.fits'
-        fpath = os.path.join(outdir,ffn)
         
         try:
             exp.outfile.write(ofn)
@@ -1520,6 +1518,9 @@ class APF:
             apfschedule['OWNRHINT'].write('unknown')
         except:
             return False
+
+        ffn = exp.outfile.read() + exp.obsnum.read() + '.fits'
+        fpath = os.path.join(outdir,ffn)
         
         try:
             c = exp.expose(waitlast=True)
