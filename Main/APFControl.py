@@ -1512,7 +1512,7 @@ class APF:
         ofn  = 'test_'
         obsn = '0001'
         ffn = exp.outfile.read() + exp.obsnum.read() + '.fits'
-        fpath = os.path.join(outdir.read(),ffn)
+        fpath = os.path.join(outdir,ffn)
         
         try:
             exp.outfile.write(ofn)
