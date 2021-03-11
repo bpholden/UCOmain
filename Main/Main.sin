@@ -374,7 +374,7 @@ if __name__ == '__main__':
             apflog("Focusinstr or calibrate or scriptobs are running?!", level='Error', echo=True)
         if result == False:
             # this is a UCAM problem
-            rv = apf.Restart()
+            rv = apf.ucamRestart()
             if rv == False:
                 apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
                 shutdown()
