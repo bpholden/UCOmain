@@ -6,7 +6,7 @@ import datetime
 sys.path.append("../Main")
 
 import ParseUCOSched
-import UCOScheduler_V1 as ds
+import UCOScheduler as ds
 
 if __name__ == "__main__":
 
