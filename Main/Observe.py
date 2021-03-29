@@ -686,10 +686,6 @@ class Observe(threading.Thread):
                         self.fixedList = None
 
 
-            # check last telescope focus
-            if running and  float(cursunel) <= sunel_lim:
-                self.APF.setAutofocVal()
-
             # If the sun is rising and we are finishing an observation
             # Send scriptobs EOF. This will shut it down after the observation
             if float(cursunel) >= sunel_lim and running == True:
