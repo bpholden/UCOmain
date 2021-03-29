@@ -585,10 +585,10 @@ class APF:
         return predfoc
 
     def checkTelFocusOffset(self,orig_predfoc):
-        """Computes offset in telescope focus based on difference in temperature over time"""
+        """Computes absolute value of the offset in telescope focus based on difference in temperature over time"""
 
         predfoc = self.predTelFocus()
-        diff = predfoc - orig_predfoc
+        diff = math.fabs(predfoc - orig_predfoc)
 
         return diff
 
