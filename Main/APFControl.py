@@ -216,8 +216,6 @@ class APF:
             kw.callback(self.miniMonMon)
             self.apfstas.append(kw)
             
-        self.rising = self.sunRising()
-
         # Set the callbacks and monitors
         self.ok2open.monitor()
         self.ok2open.callback(self.okmon)
@@ -286,7 +284,7 @@ class APF:
         self.avgTelTemps()
         s = ''
         s += "At %s state of telescope is:\n" % str(now)
-        s += "Sun elevation = %4.2f %s\n" % (self.sunel, "Rising" if self.rising else "Setting")
+        s += "Sun elevation = %4.2f %s\n" % (self.sunel, "Rising" if self.sunRising() else "Setting")
         s += "Telescope -- AZ=%4.2f  EL=%4.2f \n" % (self.aaz, self.ael)
         s += "Front/Rear Shutter=%4.2f / %4.2f\n"%(self.fspos, self.rspos)
         s += "Wind = %3.1f mph (APF) %3.1f mph (Shane) \n" % (np.average(self.mon_lists['M5WIND']),np.average(self.mon_lists['M3WIND']))
@@ -1289,9 +1287,8 @@ class APF:
         # check last telescope focus
         lastfoc = self.robot['FOCUSTEL_LAST_SUCCESS'].read(binary=True)
         current_val = self.autofoc.read()
-        rising = self.rising
         cur_sunel = self.sunel.read(binary=True)
-        too_close = rising and (cur_sunel > -20)
+        too_close = self.sunRising() and (cur_sunel > -20)
         focval = 0
         focus_diff = self.checkTelFocusOffset(self.focus['binary'])
 
