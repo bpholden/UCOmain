@@ -463,7 +463,7 @@ class Observe(threading.Thread):
             if rv:
                 return
             rv = self.APF.servoFailure()
-            if rv is False:
+            if rv :
                 apflog("Servo Failure, cannot close and power off telescope ", level="alert", echo=True)
                 rv = self.powerDownTelescope()
                 if rv:
