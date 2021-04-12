@@ -1226,8 +1226,8 @@ class APF:
                 apflog("Dome Shutters maybe running away!", level='error', echo=True)
                 return False
         except:
-            apflog("Cannot communicate with apfmon1", level='error', echo=True)
-            return False
+            apflog("Cannot communicate with apfmon1, proceeding anyway (fingers crossed)", level='error', echo=True)
+
 
         apflog("Running closeup script")
         attempts = 0
