@@ -485,8 +485,8 @@ class APF:
         
         if sta_val > 3:
             # warning or higher
-            nmsta = sta['name']
-            name = nmsta[0:7]
+            nmsta = sta['name'].lower()
+            name = nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is 
             apfcmd = os.path.join(LROOT,"bin/apf")
             restart = '%s restart %s' % (apfcmd,name)
             cmdlist = ["ssh", "-f", "hamburg", restart]
