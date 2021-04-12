@@ -620,7 +620,7 @@ class Observe(threading.Thread):
         failstart = 0
         while self.signal:
             # Check on everything
-            if datetime.now().strftime("%p") == 'AM':
+            if self.APF.sunRising():
                 rising = True
                 sunel_lim = SchedulerConsts.SUNEL_ENDLIM
             else:
