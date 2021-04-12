@@ -491,9 +491,9 @@ class APF:
             restart = '%s restart %s' % (apfcmd,name)
             cmdlist = ["ssh", "-f", "hamburg", restart]
             try:
-                p = subprocess.check_output(cmdlst,stderr=subprocess.STDOUT)
-            except:
-                apflog("Cannot restart %s on hamburg" % (name),level='error',echo=True)
+                p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
+            except Exception as e:
+                apflog("Cannot restart %s on hamburg: %s" % (name,e),level='error',echo=True)
                 return
         return
     ## end of callbacks for monitoring stuff
