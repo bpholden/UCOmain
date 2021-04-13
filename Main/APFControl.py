@@ -1351,11 +1351,12 @@ class APF:
 
         # Call prep-obs
         apflog("Calling prep-obs.",echo=True)
-        result, ret_code = apftaskDo('prep-obs')
+        prepobs = os.path.join(SCRIPTDIR,'prep-obs') + ' --evening'
+        result, ret_code = apftaskDo(prepobs)
         if result == False:
             # try again
             self.DMReset()
-            result, ret_code = apftaskDo('prep-obs')
+            result, ret_code = apftaskDo(prepobs)
             if result is False:
                 apflog("Prep-obs returned error code %d. Targeting object has failed." % (ret_code),level='error',echo=True)
                 return
