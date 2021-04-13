@@ -1289,7 +1289,7 @@ class APF:
 
         predfocus  = self.predTelFocus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
-        focus_diff = math.fabs(predfocus - orig_predfoc)
+        focus_diff = math.fabs(predfocus - self.focus['binary'])
         
         if focus_diff > 0.01/1000. and not too_close and current_val == 'robot_autofocus_disable':
             self.autofoc.write("robot_autofocus_enable")
