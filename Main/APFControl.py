@@ -518,7 +518,7 @@ class APF:
                 apflog("Cannot write eosgcam.SUMFRAME or eosgcam.GEXPTIME",level='warn',echo=True)
         else:
             try:
-                self.gexptime.write(1,wait=False)
+                self.gexptime.write(1,wait=True)
                 self.sumframe.write(1,wait=False)
             except:
                 apflog("Cannot write eosgcam.SUMFRAME or eosgcam.GEXPTIME",level='warn',echo=True)
