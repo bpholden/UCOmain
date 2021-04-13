@@ -1002,6 +1002,10 @@ class APF:
             self.line.write(sline)
         except Exception as e:
             apflog("Cannot write SCRIPTOBS_LINE: %s" % (e), level='error',echo=True)
+
+        predfocus  = self.predTelFocus()
+        self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
+        
         if self.slew(star):
             return self.runFocusTel()
         return False
