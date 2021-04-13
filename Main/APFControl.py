@@ -582,14 +582,6 @@ class APF:
         predfoc /= 1000.0 # convert to meters
         return predfoc
 
-    def checkTelFocusOffset(self,orig_predfoc):
-        """Computes absolute value of the offset in telescope focus based on difference in temperature over time"""
-
-        predfoc = self.predTelFocus()
-        diff = math.fabs(predfoc - orig_predfoc)
-
-        return diff
-
 
     # Function for checking what is currently open on the telescope
     def isOpen(self):
