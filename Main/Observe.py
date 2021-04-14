@@ -313,11 +313,6 @@ class Observe(threading.Thread):
             if self.APF.nerase != 2:
                 self.APF.nerase.write(2,binary=True)
 
-            curstr = popNext()
-            if curstr:
-                self.scriptobs.stdin.write(curstr)
-                return
-
             if self.checkObsFinished():
                 apflog("getTarget(): Scriptobs phase is input, determining next target.",echo=True)
             else:
@@ -331,8 +326,17 @@ class Observe(threading.Thread):
                 apflog("getTarget(): Cannot read apftask.MASTER_OBSBSTAR: %s" % (e),level='error',echo=True)
                 self.obsBstar = True
 
+            # setup a B star observation if needed
+            # if not B star observation, look at current stack of observations and see if anything is left
             if self.obsBstar:
                 self.APF.autofoc.write("robot_autofocus_enable")
+            else:
+                curstr = popNext()
+                if curstr:
+                    self.scriptobs.stdin.write(curstr)
+                    return
+
+
 
             if self.scriptobs is None:
                 apflog("Called getTarget, but there is not instance of scriptobs associated with %s. This is an error condition." % (self.name), level='error', echo=True)
