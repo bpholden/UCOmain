@@ -199,9 +199,11 @@ class Observe(threading.Thread):
         chk_done = "$checkapf.MOVE_PERM == true"
         result = APFTask.waitFor(self.task, True, expression=chk_done, timeout=600)
         if result:
+
             rv = self.APF.servoFailure()
             if rv:
-                rv = self.powerDownTelescope()
+
+                rv = self.APF.powerDownTelescope()
                 if rv:
                     apflog("Power cycled telescope",echo=True)
                 else:
@@ -469,7 +471,7 @@ class Observe(threading.Thread):
             rv = self.APF.servoFailure()
             if rv :
                 apflog("Servo Failure, cannot close and power off telescope ", level="alert", echo=True)
-                rv = self.powerDownTelescope()
+                rv = self.APF.powerDownTelescope()
                 if rv:
                     apflog("Power cycled telescope",echo=True)
                 else:
@@ -800,6 +802,7 @@ class Observe(threading.Thread):
 
             # Check for servo errors
             if self.APF.slew_allowed.read(binary=True) is False and self.APF.isReadyForObserving()[0]:
+                apflog("Likely amplifier failure, may power cycle telescope",echo=True,level='alert')
                 rv = self.checkServos()
 
             # If we are open and scriptobs isn't running, start it up
