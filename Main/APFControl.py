@@ -1192,6 +1192,13 @@ class APF:
                 servo_failed = True
                 apflog("Error: Servo Amplifier Fault: %s %s" % (nm,val), level="alert", echo=True)
 
+        for pr in prefixs:
+            nm = pr + "FERROR"
+            val = self.tel[nm].read(binary=True)
+            if val:
+                servo_failed = True
+                apflog("Error: Fatal Following Error: %s %s" % (nm,val), level="alert", echo=True)
+
         if servo_failed:
             return True
         else:
