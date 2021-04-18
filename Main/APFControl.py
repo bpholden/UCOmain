@@ -1244,7 +1244,7 @@ class APF:
             result, code = apftaskDo(cmd)
             if not result:
                 apflog("Closeup failed with exit code %d" % code, echo=True)
-                if self.servoFailure() or self.APF.slew_allowed.read(binary=True) is False:
+                if self.servoFailure() or self.slew_allowed.read(binary=True) is False:
                     apflog("Likely Servo amplifier failure, may power cycle telescope",echo=True,level='alert')
                     rv = self.powerDownTelescope()
                     if rv:
