@@ -495,9 +495,12 @@ class APF:
             runhost_keyword = taskname.upper() + "_RUNHOST"
             runhost = ktl.read('apftask',runhost_keyword)
 
+            master_runhost_keyword = 'MASTER_RUNHOST'
+            current_host = ktl.read('apftask',master_runhost_keyword)
+            
             apfcmd = os.path.join(LROOT,"bin/apf")
             restart = '%s restart %s' % (apfcmd,taskname)
-            if runhost.split(".")[0] == 'frankfurt':
+            if runhost == current_host:
                 cmdlist = restart.split()
             else:
                 cmdlist = ["ssh", "-f", runhost, restart]
