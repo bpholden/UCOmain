@@ -488,7 +488,8 @@ class APF:
         if status_val > 2:
             # apftask status values are $(TASKNAME)_status
             taskname_status = status['name'].lower().strip()
-            taskname, _ =  taskname_status.split("_")
+            taskname_split =  taskname_status.split("_")
+            taskname = taskname_split[0]
 
             # now we need the runhost
             runhost_keyword = taskname.upper() + "_RUNHOST"
@@ -500,6 +501,7 @@ class APF:
                 cmdlist = restart.split()
             else:
                 cmdlist = ["ssh", "-f", runhost, restart]
+                
             try:
                 p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
             except Exception as e:
