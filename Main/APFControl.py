@@ -508,7 +508,7 @@ class APF:
             try:
                 p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
             except Exception as e:
-                apflog("Cannot restart %s on hamburg: %s" % (name,e),level='error',echo=True)
+                apflog("Cannot restart %s on %s: %s" % (taskname,runhost,e),level='error',echo=True)
                 return
         return
     
