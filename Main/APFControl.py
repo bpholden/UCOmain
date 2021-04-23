@@ -475,6 +475,38 @@ class APF:
 
         return
 
+
+    def apftaskMon(self,status):
+        if status['populated'] == False:
+            return
+        try:
+            status_val = status['binary']
+        except:
+            return
+
+
+        if status_val > 2:
+            # apftask status values are $(TASKNAME)_status
+            taskname_status = status['name'].lower().strip()
+            taskname, _ =  taskname_status.split("_")
+
+            # now we need the runhost
+            runhost_keyword = taskname.upper() + "_RUNHOST"
+            runhost = ktl.read('apftask',runhost_keyword)
+
+            apfcmd = os.path.join(LROOT,"bin/apf")
+            restart = '%s restart %s' % (apfcmd,taskname)
+            if runhost.split(".")[0] == 'frankfurt':
+                cmdlist = restart.split()
+            else:
+                cmdlist = ["ssh", "-f", runhost, restart]
+            try:
+                p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
+            except Exception as e:
+                apflog("Cannot restart %s on hamburg: %s" % (name,e),level='error',echo=True)
+                return
+        return
+    
     def miniMonMon(self,sta):
         if sta['populated'] == False:
             return
