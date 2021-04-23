@@ -158,6 +158,9 @@ class APF:
     autofoc      = robot["SCRIPTOBS_AUTOFOC"]
     slew_allowed = robot['SLEW_ALLOWED']
     observed     = robot['SCRIPTOBS_OBSERVED']
+    apfteqsta    = robot['APFTEQ_STATUS']
+    metxfersta   = robot['METSXFER_STATUS']
+    
 
     ucam       = ktl.Service('apfucam')
     user       = ucam['OUTFILE']
@@ -215,7 +218,7 @@ class APF:
             kw.monitor()
             kw.callback(self.miniMonMon)
             self.apfstas.append(kw)
-            
+
         # Set the callbacks and monitors
         self.ok2open.monitor()
         self.ok2open.callback(self.okmon)
@@ -267,6 +270,12 @@ class APF:
         self.focus.monitor()
         self.aafocus.monitor()
 
+        self.apfteqsta.monitor()
+        self.apfteqsta.callback(self.apftaskMon)
+
+        self.metxfersta.monitor()
+        self.metxfersta.callback(self.apftaskMon)
+        
         # Grab some initial values for the state of the telescope
 
         self.wx.read()
