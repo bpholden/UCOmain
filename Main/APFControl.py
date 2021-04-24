@@ -499,7 +499,8 @@ class APF:
             taskname_status = status['name'].lower().strip()
             taskname_split =  taskname_status.split("_")
             taskname = taskname_split[0]
-
+            apflog("%s has status %s" % (taskname,status['ascii']),level='error',echo=True)
+            
             # now we need the runhost
             runhost_keyword = taskname.upper() + "_RUNHOST"
             runhost = ktl.read('apftask',runhost_keyword)
@@ -519,6 +520,7 @@ class APF:
             except Exception as e:
                 apflog("Cannot restart %s on %s: %s" % (taskname,runhost,e),level='error',echo=True)
                 return
+            apflog("%s should be restarted" % (taskname_val),echo=True)
         return
     
     def miniMonMon(self,sta):
