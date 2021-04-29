@@ -1351,7 +1351,7 @@ class APF:
             focval = 1
             APFTask.set(self.task, suffix="MESSAGE", value="Current telescope focus more than %6.3f microns from predicted." % (focus_diff*1000.), wait=False)
             
-        if (focus_diff < 0.01/1000. and current_val == 'robot_autofocus_enable':
+        if focus_diff < 0.01/1000. and current_val == 'robot_autofocus_enable':
             self.autofoc.write("robot_autofocus_disable")
             APFTask.set(self.task, suffix="MESSAGE", value="Disabling autofocus", wait=False)
         return focval
