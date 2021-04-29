@@ -1346,11 +1346,12 @@ class APF:
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         focus_diff = math.fabs(predfocus - self.focus['binary'])
         
-        if focus_diff > 0.01/1000. and not too_close and current_val == 'robot_autofocus_disable':
+        if focus_diff > 0.01/1000. :
             self.autofoc.write("robot_autofocus_enable")
             focval = 1
             APFTask.set(self.task, suffix="MESSAGE", value="Current telescope focus more than %6.3f microns from predicted." % (focus_diff*1000.), wait=False)
-        if (focus_diff < 0.01/1000. or too_close) and current_val == 'robot_autofocus_enable':
+            
+        if (focus_diff < 0.01/1000. and current_val == 'robot_autofocus_enable':
             self.autofoc.write("robot_autofocus_disable")
             APFTask.set(self.task, suffix="MESSAGE", value="Disabling autofocus", wait=False)
         return focval
