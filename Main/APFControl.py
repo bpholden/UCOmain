@@ -215,9 +215,12 @@ class APF:
         for n in range(1,8):
             kwnm = 'apfmon%dsta'  % (n)
             kw = self.apfminimon[kwnm]
-            kw.monitor()
-            kw.callback(self.miniMonMon)
-            self.apfstas.append(kw)
+            try:
+                kw.monitor()
+                kw.callback(self.miniMonMon)
+                self.apfstas.append(kw)
+            except Exception as e:
+                apflog("Cannot monitor keyword %s: %s" % (kwnm,e),echo=True, level='warn')
 
         # Set the callbacks and monitors
         self.ok2open.monitor()
