@@ -332,6 +332,14 @@ class Observe(threading.Thread):
                 apflog("getTarget(): Cannot read apftask.MASTER_OBSBSTAR: %s" % (e),level='error',echo=True)
                 self.obsBstar = True
 
+            if self.scriptobs is None:
+                apflog("Called getTarget, but there is not instance of scriptobs associated with %s. This is an error condition." % (self.name), level='error', echo=True)
+                ripd, running = self.findRobot()
+                if running:
+                    apflog("Attempting to kill the existing robot, %d" % (ripd), level='error', echo=True)
+                    self.APF.killRobot()
+                return
+
             # setup a B star observation if needed
             # if not B star observation, look at current stack of observations and see if anything is left
             if self.obsBstar:
@@ -341,17 +349,7 @@ class Observe(threading.Thread):
                 if curstr:
                     self.scriptobs.stdin.write(curstr)
                     return
-
-
-
-            if self.scriptobs is None:
-                apflog("Called getTarget, but there is not instance of scriptobs associated with %s. This is an error condition." % (self.name), level='error', echo=True)
-                ripd, running = self.findRobot()
-                if running:
-                    apflog("Attempting to kill the existing robot, %d" % (ripd), level='error', echo=True)
-                    self.APF.killRobot()
-                return
-
+            
             # Calculate the slowdown factor.
             slowdown = calcSlowdown()
 
