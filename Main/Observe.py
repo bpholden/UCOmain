@@ -295,17 +295,21 @@ class Observe(threading.Thread):
         def popNext():
 
             if self.target is not None and 'SCRIPTOBS' in self.target.keys():
-                if len(self.target["SCRIPTOBS"]) > 0:
-                    # just keep going with last block
-                    apflog("getTarget(): Going through remaining target queue.",echo=True)
-                    try:
-                        curstr = self.target["SCRIPTOBS"].pop() + '\n'
+                tlist = self.target["SCRIPTOBS"]
+                apflog("getTarget(): Going through remaining target queue.",echo=True)
 
-                        return curstr
-                    except Exception, e:
-                        apflog("Failure in getTarget popping item off stack and writing to stdin: %s" % (e),level='error',echo=True)
-                        self.APF.killRobot()
-
+            elif self.nexttarget is not None and 'SCRIPTOBS' in self.nexttarget.keys():
+                tlist = self.nexttarget["SCRIPTOBS"]
+                apflog("getTarget(): Going through fixed starlist.",echo=True)
+                
+            if len(tlist) > 0:
+                try:
+                    curstr = tlist.pop() + '\n'
+                    return curstr
+                except Exception, e:
+                    apflog("Failure in getTarget popping item off stack and writing to stdin: %s" % (e),level='error',echo=True)
+                    self.APF.killRobot()
+                        
             return None
 
         # This is called when an observation finishes, and selects the next target
