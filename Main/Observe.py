@@ -593,8 +593,6 @@ class Observe(threading.Thread):
                 else:
                     apflog("Found Fixed list %s" % self.fixedList, echo=True)
                     apflog("Starting fixed list on line %d" % int(self.APF.ldone), echo=True)
-#                while len(self.target["SCRIPTOBS"]) > 0:
-#                        self.scriptobs.stdin.write(self.target["SCRIPTOBS"].pop() + '\n')
                     self.fixedList = None
 
 
