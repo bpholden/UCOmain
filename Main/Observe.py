@@ -578,6 +578,7 @@ class Observe(threading.Thread):
                 if tot == 0:
                     apflog("Error: starlist %s is empty" % (self.fixedList), level="error")
                     self.fixedList=None
+                    self.fixedList = None
                     self.starttime = None
                     self.target=None
                 else:
