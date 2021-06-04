@@ -528,8 +528,8 @@ class Observe(threading.Thread):
             tot = 0
             if self.fixedList is None:
                 return 0
-            self.target = dict()
-            self.target["SCRIPTOBS"] = []
+            self.nexttarget = dict()
+            self.nexttarget["SCRIPTOBS"] = []
             with open(self.fixedList, 'r') as f:
                 for line in f:
                     sline = line.strip()
@@ -539,8 +539,8 @@ class Observe(threading.Thread):
                         continue
                     else:
                         tot += 1
-                        self.target["SCRIPTOBS"].append(sline)
-            self.target["SCRIPTOBS"].reverse()
+                        self.nexttarget["SCRIPTOBS"].append(sline)
+            self.nexttarget["SCRIPTOBS"].reverse()
             return tot
 
 
