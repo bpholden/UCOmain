@@ -99,7 +99,7 @@ class Observe(threading.Thread):
         self.totTemps = totTemps
 
         self.target = None
-        self.nexttarget = None
+        self.fixedtarget = None
 
         self.apftask = ktl.Service('apftask')
         self.lineresult = self.apftask['SCRIPTOBS_LINE_RESULT']
@@ -526,8 +526,8 @@ class Observe(threading.Thread):
             tot = 0
             if self.fixedList is None:
                 return 0
-            self.nexttarget = dict()
-            self.nexttarget["SCRIPTOBS"] = []
+            self.fixedtarget = dict()
+            self.fixedtarget["SCRIPTOBS"] = []
             with open(self.fixedList, 'r') as f:
                 for line in f:
                     sline = line.strip()
@@ -537,8 +537,8 @@ class Observe(threading.Thread):
                         continue
                     else:
                         tot += 1
-                        self.nexttarget["SCRIPTOBS"].append(sline)
-            self.nexttarget["SCRIPTOBS"].reverse()
+                        self.fixedtarget["SCRIPTOBS"].append(sline)
+            self.fixedtarget["SCRIPTOBS"].reverse()
             return tot
 
 
