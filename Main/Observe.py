@@ -294,6 +294,8 @@ class Observe(threading.Thread):
 
         def popNext():
 
+            curstr = None
+            
             if self.target is not None and 'SCRIPTOBS' in self.target.keys():
                 tlist = self.target["SCRIPTOBS"]
                 apflog("getTarget(): Going through remaining target queue.",echo=True)
