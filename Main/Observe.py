@@ -298,21 +298,21 @@ class Observe(threading.Thread):
             
             if self.target is not None and 'SCRIPTOBS' in self.target.keys():
                 tlist = self.target["SCRIPTOBS"]
-                apflog("getTarget(): Going through remaining target queue.",echo=True)
-
-            elif self.nexttarget is not None and 'SCRIPTOBS' in self.nexttarget.keys():
-                tlist = self.nexttarget["SCRIPTOBS"]
-                apflog("getTarget(): Going through fixed starlist.",echo=True)
-                
-            if len(tlist) > 0:
-                try:
+                if len(tlist) > 0:
+                    apflog("getTarget(): Going through remaining target queue.",echo=True)
                     curstr = tlist.pop() + '\n'
                     return curstr
-                except Exception, e:
-                    apflog("Failure in getTarget popping item off stack and writing to stdin: %s" % (e),level='error',echo=True)
-                    self.APF.killRobot()
+
+            if self.fixedtarget is not None and 'SCRIPTOBS' in self.fixedtarget.keys():
+                tlist = self.fixedtarget["SCRIPTOBS"]
+                if len(tlist) > 0:
+                    apflog("getTarget(): Going through fixed starlist.",echo=True)
+                    curstr = tlist.pop() + '\n'
+                else:
+                    apflog("getTarget(): Finished fixed starlist.",echo=True)
+                    self.fixedtarget = None
                         
-            return None
+            return curstr
 
         # This is called when an observation finishes, and selects the next target
         def getTarget():
