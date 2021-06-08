@@ -541,6 +541,16 @@ class Observe(threading.Thread):
                         tot += 1
                         self.fixedtarget["SCRIPTOBS"].append(sline)
             self.fixedtarget["SCRIPTOBS"].reverse()
+
+
+            if tot == 0:
+                apflog("Error: starlist %s is empty" % (self.fixedList), level="error")
+                self.fixedList = None
+                self.starttime = None
+                self.target=None
+            else:
+                apflog("%d total starlist lines and %d lines done." % (tot, self.APF.ldone))
+
             return tot
 
 
@@ -575,13 +585,6 @@ class Observe(threading.Thread):
                 # this reads in the list and appends it to self.target
 
                 tot = readStarlistFile()
-                if tot == 0:
-                    apflog("Error: starlist %s is empty" % (self.fixedList), level="error")
-                    self.fixedList = None
-                    self.starttime = None
-                    self.target=None
-                else:
-                    apflog("%d total starlist lines and %d lines done." % (tot, self.APF.ldone))
 
                 if self.APF.ldone == tot :
                     self.fixedList = None
