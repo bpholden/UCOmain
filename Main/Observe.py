@@ -598,7 +598,6 @@ class Observe(threading.Thread):
                     apflog("Starting fixed list on line %d" % int(self.APF.ldone), echo=True)
                     self.fixedList = None
 
-
             else:
                 if self.BV is None:
                     apflog("No B-V value at the moment", echo=True)
