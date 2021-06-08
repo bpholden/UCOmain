@@ -148,7 +148,7 @@ def args():
 
     if opt.start != None:
 
-        mtch = re.search("(\d+)\:(\d+)",opt.start)
+        mtch = re.search("\A(\d+)\:(\d+)",opt.start)
         if mtch:
             hr = int(mtch.group(1))
             mn = int(mtch.group(2))
