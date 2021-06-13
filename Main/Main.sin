@@ -98,8 +98,8 @@ def shutdown():
         os._exit(0)
 
 def getStartTime(hr,mn):
-    ct = datetime.now()
-    st = datetime(ct.year, ct.month, ct.day+1, hr, mn)
+    ct = datetime.utcnow()
+    st = datetime(ct.year, ct.month, ct.day, hr, mn)
     return float(st.strftime("%s"))
 
 def calcFocusStartTime():
