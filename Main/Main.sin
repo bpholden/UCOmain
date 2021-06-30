@@ -7,6 +7,7 @@ from __future__ import print_function
 import argparse
 import atexit
 from datetime import datetime, timedelta
+import math
 import os
 import os.path
 import shutil
@@ -98,9 +99,22 @@ def shutdown():
         os._exit(0)
 
 def getStartTime(hr,mn):
+    lt = datetime.now()
     ct = datetime.utcnow()
+    
+    td_utc = ct - lt
+    td_utc_off = int(10*math.floor(td_utc.seconds/10))
+
     st = datetime(ct.year, ct.month, ct.day, hr, mn)
-    return float(st.strftime("%s"))
+    if ct.hour > 18:
+        # early afternoon
+        oneday = timedelta(days=1)
+        st += oneday
+
+    ts = float(st.strftime("%s"))
+    ts -= td_utc_off
+
+    return ts
 
 def calcFocusStartTime():
     # computes time 3.25 hours before sunset
