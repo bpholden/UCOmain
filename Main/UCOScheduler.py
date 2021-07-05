@@ -139,12 +139,15 @@ def makeHourTable(sheet_table_name,dt,outfn='hour_table',outdir=None,frac_fn='fr
     hour_table['tot'] =np.abs(tot*hour_table['frac'])
     hour_table['cur'] =0.0*hour_table['frac']
 
+    hour_table['tot'][hour_table['tot'] < 1.0] = 1.0
+    
     if hour_constraints is not None:
         if 'runname' in hour_constraints.keys() and 'left' in hour_constraints.keys():
             for runname in hour_constraints['runname']:
                 if hour_constraints['left'][hour_constraints['runname']==runname] < hour_table['tot'][hour_table['sheetn']==runname]:
-                     hour_table['tot'][hour_table['sheetn']==runname] = hour_constraints['left'][hour_constraints['runname']==runname]
-
+                    hour_table['tot'][hour_table['sheetn']==runname] = hour_constraints['left'][hour_constraints['runname']==runname]
+                elif hour_constraints['left'][hour_constraints['runname']==runname] < 0:
+                    hour_table['tot'][hour_table['sheetn']==runname] = -1.0
 
     try:
         hour_table.write(outfn,format='ascii')
@@ -167,6 +170,7 @@ def timeCheck(star_table,totexptimes,dt,hour_table):
 
     hour_table['left'] = hour_table['tot'] - hour_table['cur']
     hour_table['left'] *= 3600.
+
     
     program_times = np.zeros_like(totexptimes)
     for sheetn in hour_table['sheetn']:
