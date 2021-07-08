@@ -567,9 +567,9 @@ class Observe(threading.Thread):
             if running:
                 apflog("Scriptobs is already running yet startScriptobs was called",level="warn",echo=True)
                 return
-#            rv = self.checkScriptobsMessages()
-#            if rv is False:
-#                return
+            rv = self.checkScriptobsMessages()
+            if rv is False:
+                return
 
             expr = "$checkapf.MOVE_PERM = True and $checkapf.INSTR_PERM = True"
             perms = APFTask.waitFor(self.task,True,expression=expr,timeout=1200)
