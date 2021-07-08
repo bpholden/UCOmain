@@ -139,12 +139,15 @@ def makeHourTable(sheet_table_name,dt,outfn='hour_table',outdir=None,frac_fn='fr
     hour_table['tot'] =np.abs(tot*hour_table['frac'])
     hour_table['cur'] =0.0*hour_table['frac']
 
+    hour_table['tot'][hour_table['tot'] < 1.0] = 1.0
+    
     if hour_constraints is not None:
         if 'runname' in hour_constraints.keys() and 'left' in hour_constraints.keys():
             for runname in hour_constraints['runname']:
                 if hour_constraints['left'][hour_constraints['runname']==runname] < hour_table['tot'][hour_table['sheetn']==runname]:
-                     hour_table['tot'][hour_table['sheetn']==runname] = hour_constraints['left'][hour_constraints['runname']==runname]
-
+                    hour_table['tot'][hour_table['sheetn']==runname] = hour_constraints['left'][hour_constraints['runname']==runname]
+                elif hour_constraints['left'][hour_constraints['runname']==runname] < 0:
+                    hour_table['tot'][hour_table['sheetn']==runname] = -1.0
 
     try:
         hour_table.write(outfn,format='ascii')
@@ -152,6 +155,31 @@ def makeHourTable(sheet_table_name,dt,outfn='hour_table',outdir=None,frac_fn='fr
         apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
     return hour_table
 
+
+def timeCheck(star_table,totexptimes,dt,hour_table):
+
+    maxexptime = TARGET_EXPOSURE_TIME_MAX
+    time_left_before_sunrise = computeSunrise(dt,horizon='-9')
+    if maxexptime > time_left_before_sunrise:
+        maxexptime = time_left_before_sunrise
+    if maxexptime < TARGET_EXPOSURE_TIME_MIN:
+        maxexptime = TARGET_EXPOSURE_TIME_MIN
+        # this will try a target in case we get lucky
+        
+    time_check = totexptimes <= maxexptime
+
+    hour_table['left'] = hour_table['tot'] - hour_table['cur']
+    hour_table['left'] *= 3600.
+
+    
+    program_times = np.zeros_like(totexptimes)
+    for sheetn in hour_table['sheetn']:
+        program_times[star_table['sheetn'] == sheetn] += hour_table['left'][hour_table['sheetn'] == sheetn]
+
+    time_check = time_check & (totexptimes < program_times)
+
+    return time_check
+        
 def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None):
 
     if not outdir :
@@ -667,15 +695,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
 
     # Is the exposure time too long?
     apflog("getNext(): Removing really long exposures",echo=True)
-
-    time_left_before_sunrise = computeSunrise(dt,horizon='-9')
-    maxexptime = TARGET_EXPOSURE_TIME_MAX
-    if maxexptime > time_left_before_sunrise:
-        maxexptime = time_left_before_sunrise
-    if maxexptime < TARGET_EXPOSURE_TIME_MIN:
-        maxexptime = TARGET_EXPOSURE_TIME_MIN # this will try a target in case we get lucky
-
-    time_check = totexptimes <= maxexptime
+    time_check = timeCheck(star_table,totexptimes,dt,hour_table)
 
     available = available & time_check
     if np.any(available) == False:
