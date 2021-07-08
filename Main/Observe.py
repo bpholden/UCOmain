@@ -825,8 +825,9 @@ class Observe(threading.Thread):
 
                 startScriptobs()
                 if not APFTask.waitFor(self.task,True,expression="$apftask.SCRIPTOBS_STATUS == 'Running'",timeout=10):
+                    failstart += 1
                     if failstart % 11 == 0 and failstart > 0:
-                        lvl = "error"
+                        lvl = "Alert"
                     else:
                         lvl = "warn"
                     apflog("scriptobs is not running just after being started!", level=lvl, echo=True)
