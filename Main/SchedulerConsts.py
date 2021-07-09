@@ -13,10 +13,11 @@ SUNEL_HOR = -3.2
 
 
 # A few constants to make accessing the star table more readable
-
+SEEING_TEMP = 15
 SLOWDOWN_MIN = 0.6
-SLOWDOWN_THRESH = 2.5
-SLOWDOWN_MAX = 5.0
+SLOWDOWN_TEMP = 2.5
+SLOWDOWN_THRESH = 5.0
+SLOWDOWN_MAX = 10.0
 SLOWDOWN_VMAG_LIM = 9.0
 SEEING_THRESH = 30.0
 
