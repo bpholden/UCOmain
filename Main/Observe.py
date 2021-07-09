@@ -110,7 +110,7 @@ class Observe(threading.Thread):
         self.canOpen = True
         self.badWeather = False
 
-    def checkScriptobsMessages():
+    def checkScriptobsMessages(self):
         message = self.APF.message.read()
         mtch = re.search("ERR/UCAM",message)
         if mtch:
