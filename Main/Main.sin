@@ -104,16 +104,16 @@ def getStartTime(hr,mn):
     
     td_utc = ct - lt
     td_utc_off = int(10*math.floor(td_utc.seconds/10))
+    td_utc_round = timedelta(seconds=td_utc_off)
 
     st = datetime(ct.year, ct.month, ct.day, hr, mn)
-    if ct.hour > 18:
-        # early afternoon
-        oneday = timedelta(days=1)
-        st += oneday
-
+    st += td_utc_round
+    # correct UT time
+    
     ts = float(st.strftime("%s"))
     ts -= td_utc_off
-
+    # strftime assumes that this a local time, so the time stamp is wrong by the UT offset
+    
     return ts
 
 def calcFocusStartTime():
