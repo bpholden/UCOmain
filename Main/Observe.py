@@ -338,7 +338,7 @@ class Observe(threading.Thread):
 
             if self.scriptobs is None:
                 apflog("Called getTarget, but there is not instance of scriptobs associated with %s. This is an error condition." % (self.name), level='error', echo=True)
-                ripd, running = self.findRobot()
+                ripd, running = self.APF.findRobot()
                 if running:
                     apflog("Attempting to kill the existing robot, %d" % (ripd), level='error', echo=True)
                     self.APF.killRobot()
