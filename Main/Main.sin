@@ -99,16 +99,19 @@ def shutdown():
         os._exit(0)
 
 def getStartTime(hr,mn):
+
     lt = datetime.now()
     ct = datetime.utcnow()
     
     td_utc = ct - lt
     td_utc_off = int(10*math.floor(td_utc.seconds/10))
-    td_utc_round = timedelta(seconds=td_utc_off)
 
+    # the hr and mn arguments are for the UT time
     st = datetime(ct.year, ct.month, ct.day, hr, mn)
-    st += td_utc_round
-    # correct UT time
+    if lt.hour >= 12:
+        # the usual start time is the afternoon,
+        # sunset is after the start of next day in both UT and local time
+        st += timedelta(days=1)
     
     ts = float(st.strftime("%s"))
     ts -= td_utc_off
