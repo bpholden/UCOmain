@@ -108,9 +108,12 @@ def getStartTime(hr,mn):
 
     # the hr and mn arguments are for the UT time
     st = datetime(ct.year, ct.month, ct.day, hr, mn)
-    if lt.hour >= 12:
+    if lt.hour >= 12 and ct.day == lt.day:
         # the usual start time is the afternoon,
-        # sunset is after the start of next day in both UT and local time
+        # sunset is after the start of next day in UT 
+        # if the ut day and the local day are the same
+        # it is early afternoon and we need to add a day
+        # if it is late enough, the ut day will be correct
         st += timedelta(days=1)
     
     ts = float(st.strftime("%s"))
