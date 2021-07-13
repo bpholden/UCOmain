@@ -173,6 +173,7 @@ def args():
             hr = int(mtch.group(1))
             mn = int(mtch.group(2))
             opt.start = getStartTime(hr,mn)
+            APFLib.write(apf.robot["MASTER_UTSTARTLIST"], opt.start)
         else:
             print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
             shutdown()
