@@ -166,7 +166,16 @@ def args():
     
     opt = parser.parse_args()
 
-    if opt.start != None:
+    possible_list = apf.robot['MASTER_STARLIST'].read()
+    if possible_list != '' and opt.fixed == None:
+        opt.fixed = possible_list
+
+    if opt.fixed != None:
+        possible_time = apf.robot['MASTER_UTSTARTLIST'].read()
+        if possible_time != '':
+            opt.start = possible_time
+    
+    if opt.start != None and opt.fixed != None:
 
         mtch = re.search("\A(\d+)\:(\d+)",opt.start)
         if mtch:
