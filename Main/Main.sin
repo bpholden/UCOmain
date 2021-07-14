@@ -140,7 +140,7 @@ def calcFocusStartTime():
     sun_str = "%s" % (sun_dt)    
     return start_time, start_str, sun_str
 
-def args():
+def args(apftask):
     p_c = ["Init", "Focus", "Cal-Pre", "Cal-Post", "Watching"]
     w_c = ["on", "off", "auto"]
     b_c = [1, 2, 4]
@@ -169,7 +169,7 @@ def args():
     possible_list = ''
     possible_time = ''
     try:
-        possible_list = ktl.read('apftask','MASTER_STARLIST')
+        possible_list = apftask.read('MASTER_STARLIST',timeout=5)
     except Exception as e:
         apflog("Cannot read apftask.MASTER_STARLIST: %s" % (e),level='warn',echo=True)
 
@@ -178,7 +178,7 @@ def args():
 
     if opt.fixed != None:
         try:
-            possible_time = ktl.read('apftask','MASTER_UTSTARTLIST')
+            possible_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
         except Exception as e:
             apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e),level='warn',echo=True)
 
@@ -193,7 +193,11 @@ def args():
             hr = int(mtch.group(1))
             mn = int(mtch.group(2))
             opt.start = getStartTime(hr,mn)
-            APFLib.write(apf.robot["MASTER_UTSTARTLIST"], opt.start)
+            try:
+                apftask.write("MASTER_UTSTARTLIST", opt.start,wait=False)
+            except Exception as e:
+                apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e),level='warn',echo=True)
+                
         else:
             print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
             shutdown()
@@ -266,9 +270,10 @@ def downloadFiles(opt):
 if __name__ == '__main__':
 
     apflog("Starting main...")
+    apftask = ktl.Service("apftask")        
 
     # Parse the command line arguments
-    opt = args()
+    opt = args(apftask)
 
     # Register the atexit function after parsing the command line arguments
     # This prevents printing the help followed by exited/failure message
@@ -293,7 +298,6 @@ if __name__ == '__main__':
         parent = 'master'
 
 
-    apftask = ktl.Service("apftask")        
     # Establish this as the only running main script ( Or example task in test mode )
     try:
         apflog("Attempting to establish apftask as %s" % parent)
