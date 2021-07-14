@@ -89,12 +89,13 @@ def compute_el(curtime,star,apf_obs):
 
 
 def checkdate(datestr):
-    match = re.match("(\d{4})\/(\d{1,2})\/(\d{1,2})",datestr)
+    match = re.match("(\d{4})(\/|\-)(\d{1,2})(\/|\-)(\d{1,2})",datestr)
+
     if not match:
         return False
-    if int(match.group(2)) < 1 or int(match.group(2)) > 12:
+    if int(match.group(3)) < 1 or int(match.group(3)) > 12:
         return False
-    if int(match.group(3)) < 1 or int(match.group(3)) > 31:
+    if int(match.group(5)) < 1 or int(match.group(5)) > 31:
         return False
     
     return True
