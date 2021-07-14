@@ -31,7 +31,7 @@ BLANK = 'B'
 FIRST = '1'
 LAST = 'L'
 
-def computePriorities(star_table,available,cur_dt,observed=None,hour_table=None,rank_table=None):
+def computePriorities(star_table,available,good_cadence,cur_dt,observed=None,hour_table=None,rank_table=None):
     # make this a function, have it return the current priorities, than change references to the star_table below into references to the current priority list
     new_pri = np.zeros_like(star_table['APFpri'])
     new_pri += star_table['APFpri']
@@ -42,14 +42,14 @@ def computePriorities(star_table,available,cur_dt,observed=None,hour_table=None,
     else:
         done_sheets = []
 
+    bad_cadence = good_cadence == False
     if rank_table is not None:
         for sheetn in rank_table['sheetn']:
             if sheetn not in done_sheets:
                 cur = star_table['sheetn'] == sheetn
-                new_pri[cur] += rank_table['rank'][rank_table['sheetn'] == sheetn]
-            else:
-                apflog("Sheet %s has exceeded it's allocation for the night" % (sheetn),echo=True)
-
+                new_pri[cur & good_cadence] += rank_table['rank'][rank_table['sheetn'] == sheetn]
+                new_pri[cur & bad_cadence] += 10
+                
     return new_pri
 
 def updateHourTable(hour_table,observed,dt,outfn='hour_table',outdir=None):
@@ -674,8 +674,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
             available = available & np.logical_not(attempted) # Available and not observed
 
     cadence_check = (ephem.julian_date(dt) - star_table['lastobs'])
-    good_cadence = cadence_check >  star_table['APFcad']
-    available = available & good_cadence
+    good_cadence = cadence_check > star_table['APFcad']
 
     if bstar:
         # We just need a B star
@@ -726,7 +725,9 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
         return None
 
 
-    final_priorities = computePriorities(star_table,available,dt,rank_table=makeRankTable(rank_sheetn),hour_table=hour_table,observed=observed)
+    final_priorities = computePriorities(star_table,available,good_cadence,dt,
+                                             rank_table=makeRankTable(rank_sheetn),
+                                             hour_table=hour_table,observed=observed)
 
     try:
         pri = max(final_priorities[available])
