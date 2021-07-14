@@ -166,12 +166,23 @@ def args():
     
     opt = parser.parse_args()
 
-    possible_list = apf.robot['MASTER_STARLIST'].read()
+    possible_list = ''
+    possible_time = ''
+    try:
+        possible_list = ktl.read('apftask','MASTER_STARLIST')
+    except Exception as e:
+        apflog("Cannot read apftask.MASTER_STARLIST: %s" % (e),level='warn',echo=True)
+
     if possible_list != '' and opt.fixed == None:
         opt.fixed = possible_list
 
     if opt.fixed != None:
-        possible_time = apf.robot['MASTER_UTSTARTLIST'].read()
+        try:
+            possible_time = ktl.read('apftask','MASTER_UTSTARTLIST')
+        except Exception as e:
+            apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e),level='warn',echo=True)
+
+            
         if possible_time != '':
             opt.start = possible_time
     
