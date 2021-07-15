@@ -168,16 +168,6 @@ def timeCheck(star_table,totexptimes,dt,hour_table):
         
     time_check = totexptimes <= maxexptime
 
-    hour_table['left'] = hour_table['tot'] - hour_table['cur']
-    hour_table['left'] *= 3600.
-
-    
-    program_times = np.zeros_like(totexptimes)
-    for sheetn in hour_table['sheetn']:
-        program_times[star_table['sheetn'] == sheetn] += hour_table['left'][hour_table['sheetn'] == sheetn]
-
-    time_check = time_check & (totexptimes < program_times)
-
     return time_check
         
 def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None):
