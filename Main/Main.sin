@@ -176,17 +176,14 @@ def args(apftask):
     if possible_list != '' and opt.fixed == None:
         opt.fixed = possible_list
 
+    saved_time = ''
     if opt.fixed != None:
         try:
-            possible_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
+            saved_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
         except Exception as e:
             apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e),level='warn',echo=True)
-
-            
-        if possible_time != '':
-            opt.start = possible_time
-    
-    if opt.start != None and opt.fixed != None:
+                
+    if opt.start != None and opt.fixed != None and saved_time == '':
 
         mtch = re.search("\A(\d+)\:(\d+)",opt.start)
         if mtch:
@@ -201,7 +198,9 @@ def args(apftask):
         else:
             print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
             shutdown()
-
+            
+    elif opt.fixed != None and saved_time != '':
+        opt.start = saved_time
 
     if opt.sheet != None:
         opt.sheet = opt.sheet.split(",")
@@ -634,7 +633,8 @@ if __name__ == '__main__':
     if not debug:
         APFTask.set(parent, suffix="LAST_OBS_UCSC", value=apf.ucam["OBSNUM"].read())
         APFTask.set(parent, suffix="MESSAGE",value="Updating last observation number to %s" % (apf.ucam["OBSNUM"].read()),wait=False)
-
+        apftask('MASTER_STARLIST').write('')
+        apftask('MASTER_UTSTARTLIST').write('')
 
     rv = apf.turnOffInst()
     APFTask.set(parent, suffix="MESSAGE",value="Turning off the motors",wait=False)
