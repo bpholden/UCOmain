@@ -115,11 +115,11 @@ def getStartTime(hr,mn):
         # it is early afternoon and we need to add a day
         # if it is late enough, the ut day will be correct
         st += timedelta(days=1)
-    
-    ts = float(st.strftime("%s"))
-    ts -= td_utc_off
+
     # strftime assumes that this a local time, so the time stamp is wrong by the UT offset
-    
+    st -= timedelta(seconds=td_utc_off)
+    ts = float(st.strftime("%s"))
+   
     return ts
 
 def calcFocusStartTime():
