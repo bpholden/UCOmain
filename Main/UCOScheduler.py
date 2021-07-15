@@ -486,7 +486,7 @@ def makeObsBlock(star_table, idx, dt, focval):
     rv[0] += ' # obsblock=%s end' % (cur_obsblock)
     return(rv)
 
-def makeResult(stars,star_table,totexptimes,dt,idx,focval=0,bstar=False,mode=''):
+def makeResult(stars,star_table,totexptimes,final_priorities,dt,idx,focval=0,bstar=False,mode=''):
     res = dict()
 
     res['RA']     = stars[idx].a_ra
@@ -500,7 +500,7 @@ def makeResult(stars,star_table,totexptimes,dt,idx,focval=0,bstar=False,mode='')
     res['NEXP'] = star_table['APFnshots'][idx]
     res['TOTEXP_TIME'] = totexptimes[idx]
     res['NAME']   = star_table['name'][idx]
-    res['PRI']    = star_table['APFpri'][idx]
+    res['PRI']    = final_priorities[idx]
     res['DECKER'] = star_table['decker'][idx]
     res['I2']     = star_table['I2'][idx]
     res['isTemp'] =    False
@@ -752,7 +752,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
 
     stars[idx].compute(apf_obs)
 
-    res =  makeResult(stars,star_table,totexptimes,dt,idx,focval=focval,bstar=bstar,mode=config['mode'])
+    res =  makeResult(stars,star_table,totexptimes,final_priorities,dt,idx,focval=focval,bstar=bstar,mode=config['mode'])
     if do_templates and star_table['Template'][idx] == 'N' and star_table['I2'][idx] == 'Y':
         bidx,bfinidx = findBstars(star_table,idx,bstars)
 
