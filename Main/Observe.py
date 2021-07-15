@@ -531,6 +531,7 @@ class Observe(threading.Thread):
                 return 0
             self.fixedtarget = dict()
             self.fixedtarget["SCRIPTOBS"] = []
+            apflog("Reading star list fixedlist %s" % (self.fixedList), echo=True)
             with open(self.fixedList, 'r') as f:
                 for line in f:
                     sline = line.strip()
