@@ -103,7 +103,7 @@ outfp.write(hdrstr)
 star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=options.googledex.split(","),outfn=options.infile,outdir=outdir)
 
 fwhms = ns.gen_seeing(val=1.0) # good conditions
-slowdowns = ns.gen_clouds(val=0.5) # good conditions
+slowdowns = ns.gen_clouds(val=2) # typical conditions
 
 lastslow = 5
 lastfwhm = 15
