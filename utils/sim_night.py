@@ -2,14 +2,14 @@ from __future__ import print_function
 import sys
 sys.path.append("../Main")
 #from ExposureCalc import *
-
-import numpy as np
-import pickle
-import ephem
 import optparse
 from datetime import datetime
 import re
 import os
+
+import numpy as np
+import ephem
+import astropy.io.ascii
 
 import UCOScheduler as ds
 import ExposureCalculations as ec
@@ -115,7 +115,12 @@ curtime, endtime, apf_obs = ns.sun_times(datestr)
 bstar = options.bstar
 doTemp = True
 tempcount = 0
-hour_table = ds.makeHourTable(options.frac_sheetn,curtime.datetime())
+tleftfn = 'time_left.csv'
+if os.path.exists(tleftfn):
+    hour_constraints = astropy.io.ascii.read(tleftfn)
+else:
+    hour_constraints = None
+hour_table = ds.makeHourTable(options.frac_sheetn,curtime.datetime(),hour_constraints=hour_constraints)
 
 while observing:
     curtime = ephem.Date(curtime)
