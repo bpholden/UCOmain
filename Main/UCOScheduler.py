@@ -42,7 +42,7 @@ def computePriorities(star_table,available,good_cadence,cur_dt,observed=None,hou
     else:
         done_sheets = []
 
-    bad_cadence = good_cadence == False
+    bad_cadence = np.logical_not(good_cadence)
     if rank_table is not None:
         for sheetn in rank_table['sheetn']:
             if sheetn not in done_sheets:
