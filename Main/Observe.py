@@ -80,7 +80,11 @@ class Observe(threading.Thread):
         else:
             self.frac_tablen = None
         if opt.start:
-            self.starttime = opt.start
+            try:
+                self.starttime = float(opt.start)
+            except ValueError as e:
+                apflog("ValueError: %s" % (e), echo=True, level='error')
+                self.starttime = None
         else:
             self.starttime = None
         if opt.raster:
