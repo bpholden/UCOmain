@@ -609,6 +609,41 @@ def parseUCOSched(sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4
     return (star_table, stars)
 
 
+def parseTOO(too_sheetns=None,outfn='googledex.dat',outdir=None,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',prilim=0.5):
+    
+    if not outdir :
+        outdir = os.getcwd()
+
+    if too_sheetns is None:
+        return
+
+    outfn = os.path.join(outdir,outfn)
+    if os.path.exists(outfn) is False:
+        return
+
+    try:
+        star_table = readStarTable(outfn)
+    except:
+        return
+
+
+    too_table = parseCodex(config,sheetns=too_sheetns,certificate=certificate,prilim=prilim)
+
+    for n in too_sheetns:
+        cur = (star_table['sheetn'] == n)
+        if np.any(cur):
+            # entries already exist, we will delete them
+            # this ensures that all changes are propogated
+            star_table.remove_rows(cur)
+    # now just append new values
+    star_table = astropy.table.vstack([star_table,too_table])
+
+    # write to the googledex
+    astropy.io.ascii.write(star_table,outfn, format='ecsv', overwrite=True)
+
+
+        
+        
 def updateLocalStarlist(intime, observed_file="observed_targets",outfn='parsesched.dat',toofn='too.dat',outdir=None):
     """
         Update the local copy of the googledex with the last observed star time.
