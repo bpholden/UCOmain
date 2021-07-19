@@ -95,6 +95,15 @@ class getUCOTargets(threading.Thread):
             except Exception as e:
                 apflog("Error: Cannot download frac_table?! %s" % (e),level="error")
 
-        #        while self.signal:
-        #            time.sleep(self.timeout)
-        # download TOO
+        while self.signal and opt.too is not None:
+            time.sleep(self.timeout)
+            # there is a horrible race condition here
+            # we need to download the TOO when getNext is not running
+            # download TOO
+            # 
+            try:
+                ParseUCOSched.parseTOO(too_sheetns=opt.too,outfn='googledex.dat',outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
+            except Exception as e:
+                apflog("Error: Cannot download %s: %s" % (opt.too,e),level="error")
+
+        return
