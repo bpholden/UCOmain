@@ -12,7 +12,7 @@ import ParseUCOSched
 
 class getUCOTargets(threading.Thread):
 
-    def __init__(self, opt, task='master'):
+    def __init__(self, opt, task='master',prilim=0.5,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         
@@ -43,6 +43,9 @@ class getUCOTargets(threading.Thread):
 
         self.signal = True
         self.timeout = 1200
+
+        self.prilim = prilim
+        self.certificate = certificate
         
         if opt.test:
             self.debug = opt.test
@@ -58,7 +61,8 @@ class getUCOTargets(threading.Thread):
         
         if self.signal:
             try:
-                star_table,stars = ParseUCOSched.parseUCOSched(sheetns=opt.sheet,outfn='googledex.dat',outdir=os.getcwd())
+                star_table,stars = ParseUCOSched.parseUCOSched(sheetns=opt.sheet,outfn='googledex.dat',
+                                                                   outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
             except Exception as e:
                 apflog("Error: Cannot download googledex?! %s" % (e),level="error")
                 # goto backup
@@ -66,7 +70,7 @@ class getUCOTargets(threading.Thread):
                     shutil.copyfile("googledex.dat.1","googledex.dat")
 
             try:
-                rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd())
+                rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd(),certificate=self.certificate)
             except Exception as e:
                 apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
                 # goto backup
@@ -86,7 +90,8 @@ class getUCOTargets(threading.Thread):
                     hour_constraints = None
                     
             try:
-                hour_table = ds.makeHourTable(opt.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints)
+                hour_table = ds.makeHourTable(opt.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints,
+                                                  certificate=self.certificate)
             except Exception as e:
                 apflog("Error: Cannot download frac_table?! %s" % (e),level="error")
 
