@@ -153,7 +153,7 @@ def getSpreadsheet(sheetn="The Googledex",certificate='UCSC_Dynamic_Scheduler-4f
         apflog(errlog,echo=True,level='error')
     return worksheet
 
-def retrieveCodex(req_cols,sheetns=["The Googledex"],certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
+def retrieveCodex(req_cols,sheetns=["The Googledex"],certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',sleep=True):
     """retrieveCodex(req_cols,sheetns=["The Googledex"],certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json')
 
     returns the "codex", a list of lists containing all of the columns
@@ -179,7 +179,8 @@ def retrieveCodex(req_cols,sheetns=["The Googledex"],certificate='UCSC_Dynamic_S
                 try:
                     cur_codex = worksheet.get_all_values()
                 except:
-                    time.sleep(more_sleeping)
+                    if sleep:
+                        time.sleep(more_sleeping)
                     cur_codex = None
 
             if len(cur_codex) <= 0:
@@ -201,8 +202,9 @@ def retrieveCodex(req_cols,sheetns=["The Googledex"],certificate='UCSC_Dynamic_S
 
                 full_codex.append(nrow)
                 wait_time += .3
-            apflog("Sleeping %.1f seconds to keep Google happy" % (wait_time), level="info",echo=True)
-            time.sleep(wait_time)
+            if sleep:
+                apflog("Sleeping %.1f seconds to keep Google happy" % (wait_time), level="info",echo=True)
+                time.sleep(wait_time)
 
 
     return full_codex
@@ -268,7 +270,7 @@ def parseFracTable(sheet_table_name='2020B_frac',certificate='UCSC_Dynamic_Sched
     if worksheet:
         cur_codex = worksheet.get_all_values()
         if len(cur_codex) <= 0:
-            apflog("Worksheet %s exists but is empty, skipping" % (sheetn), level='error', echo=True)
+            apflog("Worksheet %s exists but is empty, skipping" % (sheet_table_name), level='error', echo=True)
             return None, None
         for row in cur_codex:
             if row[0] == 'sheetn':
@@ -313,7 +315,7 @@ def parseRankTable(sheet_table_name='2020A_ranks',certificate='UCSC_Dynamic_Sche
     if worksheet:
         cur_codex = worksheet.get_all_values()
         if len(cur_codex) <= 0:
-            apflog("Worksheet %s exists but is empty, skipping" % (sheetn), level='error', echo=True)
+            apflog("Worksheet %s exists but is empty, skipping" % (sheet_table_name), level='error', echo=True)
             return None, None
         for row in cur_codex[1:]:
             sheetns.append(row[0])
@@ -373,7 +375,7 @@ def normalizePriorities(star_table,sheetns):
             
     return
 
-def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',prilim=1):
+def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',prilim=1,sleep=True):
     # These are the columns we need for scheduling
     req_cols = ["Star Name", "RA hr", "RA min", "RA sec", \
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
@@ -387,7 +389,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
 
     negsearch = re.compile("\-(\d+\.*\d*)")
 
-    full_codex = retrieveCodex(req_cols,sheetns=sheetns,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json')
+    full_codex = retrieveCodex(req_cols,sheetns=sheetns,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',sleep=sleep)
 
     col_names = full_codex[0]
     codex = full_codex[1:]
@@ -626,8 +628,8 @@ def parseTOO(too_sheetns=None,outfn='googledex.dat',outdir=None,certificate='UCS
     except:
         return
 
-
-    too_table = parseCodex(config,sheetns=too_sheetns,certificate=certificate,prilim=prilim)
+    config={'I2': 'Y', 'decker': 'W', 'owner' : '', 'mode' : '', 'obsblock' : '', 'Bstar' : 'N' , 'raoff' : None, 'decoff' : None }
+    too_table = parseCodex(config,sheetns=too_sheetns,certificate=certificate,prilim=prilim,sleep=False)
 
     for n in too_sheetns:
         cur = (star_table['sheetn'] == n)

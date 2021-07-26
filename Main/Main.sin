@@ -502,7 +502,7 @@ if __name__ == '__main__':
         else:
             apflog("Starting dynamic scheduler", echo=True)
         observe.task = parent
-
+        # observe object should be set up for running now
         observe.start()
     else:
         observe.signal = False

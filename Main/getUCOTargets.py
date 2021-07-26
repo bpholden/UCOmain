@@ -14,13 +14,12 @@ class getUCOTargets(threading.Thread):
 
     def __init__(self, opt, task='master',prilim=0.5,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
         threading.Thread.__init__(self)
-        self.setDaemon(True)
         
         self.task = task
         if opt.sheet:
-            self.sheet = opt.sheet
+            self.sheets = opt.sheet
         else:
-            self.sheet = 'RECUR_A100'
+            self.sheets = ['RECUR_A100']
         if opt.too:
             self.too = opt.too
         else:
@@ -43,14 +42,20 @@ class getUCOTargets(threading.Thread):
 
         self.signal = True
         self.timeout = 1200
-
+        self.proceed = False
+        self.proceed_timeout = 120
+        self.reading = False
+        
         self.prilim = prilim
         self.certificate = certificate
-        
+
+
         if opt.test:
             self.debug = opt.test
         else:
             self.debug = False
+
+        self.start()
 
     def stop(self):
         self.signal = False
@@ -61,7 +66,7 @@ class getUCOTargets(threading.Thread):
         
         if self.signal:
             try:
-                star_table,stars = ParseUCOSched.parseUCOSched(sheetns=opt.sheet,outfn='googledex.dat',
+                star_table,stars = ParseUCOSched.parseUCOSched(sheetns=self.sheets,outfn='googledex.dat',
                                                                    outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
             except Exception as e:
                 apflog("Error: Cannot download googledex?! %s" % (e),level="error")
@@ -70,7 +75,7 @@ class getUCOTargets(threading.Thread):
                     shutil.copyfile("googledex.dat.1","googledex.dat")
 
             try:
-                rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd(),certificate=self.certificate)
+                rank_table = ds.makeRankTable(sheet_table_name=self.rank_table,outdir=os.getcwd(),certificate=self.certificate)
             except Exception as e:
                 apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
                 # goto backup
@@ -82,7 +87,7 @@ class getUCOTargets(threading.Thread):
             else:
                 if os.path.exists(self.time_left):
                     try:
-                        hour_constraints = astropy.io.ascii.read(opt.time_left)
+                        hour_constraints = astropy.io.ascii.read(self.time_left)
                     except Exception as e:
                         hour_constraints = None
                         apflog("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
@@ -90,20 +95,25 @@ class getUCOTargets(threading.Thread):
                     hour_constraints = None
                     
             try:
-                hour_table = ds.makeHourTable(opt.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints,
+                hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints,
                                                   certificate=self.certificate)
             except Exception as e:
                 apflog("Error: Cannot download frac_table?! %s" % (e),level="error")
 
-        while self.signal and opt.too is not None:
+        while self.signal and self.too is not None:
             time.sleep(self.timeout)
             # there is a horrible race condition here
             # we need to download the TOO when getNext is not running
             # download TOO
-            # 
-            try:
-                ParseUCOSched.parseTOO(too_sheetns=opt.too,outfn='googledex.dat',outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
-            except Exception as e:
-                apflog("Error: Cannot download %s: %s" % (opt.too,e),level="error")
+            #
+            while self.proceed is False:
+                time.sleep(self.proceed_timeout)
 
+            self.reading = True
+            try:
+                ParseUCOSched.parseTOO(too_sheetns=self.too,outfn='googledex.dat',outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
+            except Exception as e:
+                apflog("Error: Cannot download %s: %s" % (self.too,e),level="error")
+            self.reading = False
+            
         return
