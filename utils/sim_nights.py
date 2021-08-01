@@ -80,6 +80,11 @@ def gen_datelist(startstr,endstr):
     start = datetime.strptime(startstr,"%Y/%m/%d")
     end  = datetime.strptime(endstr,"%Y/%m/%d")
 
+    if end < start:
+        print("Start date %s is after end date %s"  %( str(start), str(end)))
+        sys.exit(1)
+
+    
     cur = start
     while cur < end:
         breakbeg = datetime(cur.year,12,24)
