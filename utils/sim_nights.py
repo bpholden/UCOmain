@@ -36,11 +36,22 @@ def compute_simulation(curtime,result,star,apf_obs,slowdowns,fwhms,star_tab,owne
     
     meterrate = ec.getEXPMeter_Rate(result['VMAG'],result['BV'],actel,actfwhm,result['DECKER'])
     meterrate *= 1 + 0.11*metersig
-    meterrate /= actslow
+    try:
+        meterrate /= actslow
+    except:
+        meterrate = 0.0
+        
     specrate = ec.getSpec_Rate(result['VMAG'],result['BV'],actel,actfwhm,result['DECKER'])
     specrate *= 1 + 0.11*specsig
-    specrate /= actslow
-    metertime = result['COUNTS'] / meterrate
+    try:
+        specrate /= actslow
+    except:
+        specrate = 0.0
+        
+    try:
+        metertime = result['COUNTS'] / meterrate
+    except:
+        metertime = results['EXP_TIME'] + 1
     exp_time = result['EXP_TIME']
     barycentertime = curtime
     if metertime < exp_time:
