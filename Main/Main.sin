@@ -203,6 +203,10 @@ def args(apftask):
         opt.start = saved_time
 
     if opt.sheet != None:
+        try:
+            apftask.write('MASTER_SHEETLIST',opt.sheet,timeout=2)
+        except Exception as e:
+            apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
         opt.sheet = opt.sheet.split(",")
 
         
