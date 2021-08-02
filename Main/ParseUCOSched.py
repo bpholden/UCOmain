@@ -242,7 +242,7 @@ def findColumns(col_names,req_cols,opt_cols=[]):
     return didx
 
 
-def parseFracTable(sheet_table_name='2020B_frac',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',outfn=None,outdir=None):
+def parseFracTable(sheet_table_name='2021B_frac',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',outfn=None,outdir=None):
 
     apflog( "Starting parse of %s" % (sheet_table_name),echo=True)
     if not outdir :
@@ -304,7 +304,7 @@ def timeLeft():
     else:
         return None
 
-def parseRankTable(sheet_table_name='2020A_ranks',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
+def parseRankTable(sheet_table_name='2021B_ranks',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
 
     apflog( "Starting parse of %s" % (sheet_table_name),echo=True)
 
