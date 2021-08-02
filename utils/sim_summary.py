@@ -22,20 +22,18 @@ def sum_owner_times(vals):
             owner_tots[o] = 0.
             owner_els[o] = 0.
             owner_nexps[o] = 0
-    owner_tots['bstar'] = 0.
-    owner_els['bstar'] = 0.
-    owner_nexps['bstar'] = 0
+    owner_tots['total'] = 0.
+    owner_els['total'] = 0.
+    owner_nexps['total'] = 0
             
     for i in range(0,len(vals['owner'])):
-        m = re.search("\AHR",vals['name'][i])
-        if not m:
-            owner_tots[vals['owner'][i]] += float(vals['etime'][i])
-            owner_els[vals['owner'][i]] += float(vals['El'][i])
-            owner_nexps[vals['owner'][i]] += 1
-        else:
-            owner_tots['bstar'] = float(vals['etime'][i])
-            owner_els['bstar'] += float(vals['El'][i])
-            owner_nexps['bstar'] += 1
+        m = re.search("\ARECUR_A100",vals['owner'][i])
+        owner_tots[vals['owner'][i]] += float(vals['etime'][i])
+        owner_els[vals['owner'][i]] += float(vals['El'][i])
+        owner_nexps[vals['owner'][i]] += 1
+        owner_tots['total'] += float(vals['etime'][i])
+        owner_els['total'] += float(vals['El'][i])
+        owner_nexps['total'] += 1
 
             
     for o in owner_els.keys():
