@@ -311,7 +311,7 @@ class APF:
         s += "M2 Focus Value = % 4.3f\n" % (float(self.aafocus['binary'])*1000.0)
         s += "M2 Focus Value = % 4.3f (focus kwd)\n" % (float(self.focus['binary'])*1000.0)
         s += "Preferred M2 Focus Value =  % 4.3f\n" % (float(self.predTelFocus())*1000.0)
-        s += "Okay to open = %s -- %s\n" % (repr(self.openOK), self.checkapf['OPREASON'].read() )
+        s += "Okay to open = %s -- %s\n" % (self.openOK['ascii'], self.checkapf['OPREASON'].read() )
         s += "Current Weather = %s\n" % self.checkapf['WEATHER'].read()
 
         isopen, what = self.isOpen()
