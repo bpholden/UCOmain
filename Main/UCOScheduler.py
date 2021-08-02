@@ -42,6 +42,9 @@ def computePriorities(star_table,available,good_cadence,cur_dt,observed=None,hou
     else:
         done_sheets = []
 
+    if done_sheets != []:
+        apflog("The following sheets are finished for the night: %s" % (" ".join(done_sheets)),echo=True)
+
     bad_cadence = np.logical_not(good_cadence)
     if rank_table is not None:
         for sheetn in rank_table['sheetn']:
