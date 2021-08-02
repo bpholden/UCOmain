@@ -450,7 +450,7 @@ class Observe(threading.Thread):
                 apflog("opening hasn't successfully opened. Current sunel = %4.2f" % ( float(sunel)), level='warn', echo=True)
                 if ( float(sunel) < SchedulerConsts.SUNEL_ENDLIM):
                     result = self.apf.openat(sunset=sunset)
-                    if not result and self.apf.openOK:
+                    if not result and self.apf.openOK['binary']:
                         apflog("Error: opening has failed twice.", level='Alert', echo=True)
                         self.apf.close()
                         self.canOpen = False
@@ -759,7 +759,7 @@ class Observe(threading.Thread):
                                 apflog(outstr,level='info', echo=True)
                                 result = APFTask.waitFor(self.task, True, expression=chk_done, timeout=60)
                                 self.apf.DMReset()
-                                if self.apf.openOK is False:
+                                if self.apf.openOK['binary'] is False:
                                     closetime = datetime.now()
                                     APFTask.set(self.task, suffix="MESSAGE", value="Closing for weather", wait=False)
                                     apflog("No longer ok to open.", echo=True)
