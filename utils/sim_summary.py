@@ -4,43 +4,7 @@ import re
 import optparse
 import sys
 
-def init_sim_vals():
-    vals = dict()
-
-    sim_names = ('name','date','time','jd','etime','I2','El','Az','fwhm','slow','owner')
-    for n in sim_names:
-        vals[n] = []
-    return vals, sim_names
-
-def sum_owner_times(vals):
-
-    owner_tots = dict()
-    owner_els = dict()
-    owner_nexps = dict()
-    for o in vals['owner']:
-        if o not in owner_tots.keys():
-            owner_tots[o] = 0.
-            owner_els[o] = 0.
-            owner_nexps[o] = 0
-    owner_tots['total'] = 0.
-    owner_els['total'] = 0.
-    owner_nexps['total'] = 0
-            
-    for i in range(0,len(vals['owner'])):
-        m = re.search("\ARECUR_A100",vals['owner'][i])
-        owner_tots[vals['owner'][i]] += float(vals['etime'][i])
-        owner_els[vals['owner'][i]] += float(vals['El'][i])
-        owner_nexps[vals['owner'][i]] += 1
-        owner_tots['total'] += float(vals['etime'][i])
-        owner_els['total'] += float(vals['El'][i])
-        owner_nexps['total'] += 1
-
-            
-    for o in owner_els.keys():
-        if owner_nexps[o] > 0:
-            owner_els[o] /= owner_nexps[o]
-            
-    return owner_tots,owner_els,owner_nexps
+import NightSim
 
 def parse_args():
     parser = optparse.OptionParser()
@@ -70,17 +34,12 @@ simin = fp.read()
 fp.close()
 lines = simin.split("\n")
 
-sim_vals,sim_names = init_sim_vals()
+sim_vals,sim_names = NightSim.init_sim_vals()
 
-for l in lines:
-    if re.search("\A\#",l):
-        continue
-    d = l.split()
-    if len(d) == 11:
-        for i in range(0,len(sim_names)):
-            sim_vals[sim_names[i]].append(d[i])
+NightSim.read_sim_lines(lines,sim_names,sim_vals)
 
-owner_times, owner_els, owner_nexps = sum_owner_times(sim_vals)
+
+owner_times, owner_els, owner_nexps = NightSim.sum_owner_times(sim_vals)
 
 for o in owner_times.keys():
     if owner_nexps[o] > 0:
