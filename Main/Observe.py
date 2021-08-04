@@ -27,7 +27,6 @@ from x_gaussslit import *
 import ExposureCalculations
 import SchedulerConsts
 
-AVERAGE_INSTRFOC = 8522
 DMLIM = 1140
 
 class Observe(threading.Thread):
