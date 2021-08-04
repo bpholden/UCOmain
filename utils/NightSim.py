@@ -9,6 +9,8 @@ import optparse
 from datetime import datetime
 import re
 import os
+import ExposureCalculations
+import Generate_Errors 
 
 def sun_times(datestr):
     apf_obs = ephem.Observer()
@@ -99,6 +101,40 @@ def checkdate(datestr):
         return False
     
     return True
+
+
+def compute_simulation(result,curtime,star,apf_obs,slowdowns,fwhms,owner):
+    actel,actaz = compute_el(curtime,star,apf_obs)
+    actslow, actfwhm = rand_obs_sample(slowdowns,fwhms)
+    actfwhm = gen_seeing_el(actfwhm,actel)
+    lastfwhm = actfwhm
+    lastslow = actslow
+    meterrate = ExposureCalculations.getEXPMeter_Rate(result['VMAG'],result['BV'],actel,actfwhm,result['DECKER'])
+    meterrate *= 1 + 0.11*np.random.randn(1)
+    meterrate /= actslow
+    specrate = ExposureCalculations.getSpec_Rate(result['VMAG'],result['BV'],actel,actfwhm,result['DECKER'])
+    specrate *= 1 + 0.11*np.random.randn(1)
+    specrate /= actslow
+    metertime = result['COUNTS'] / meterrate
+    exp_time = result['EXP_TIME']
+    barycentertime = curtime
+    if metertime < exp_time:
+        fexptime = float(metertime)
+    else:
+        fexptime = float(exp_time)
+        
+    curtime += (fexptime+40.)/86400
+    barycentertime += fexptime/(2.*86400)
+    totcounts = fexptime * specrate
+
+    precision, true_error = Generate_Errors.compute_real_uncertainty(totcounts,result['BV'])
+    if actaz < 180:
+        actel *= -1.
+    outstr = "%s %s %.5f %.1f %.1f %.2f %.2f %.2f %.2f %s" %(result['NAME'] , ephem.Date(curtime), ephem.julian_date(ephem.Date(barycentertime)), fexptime, totcounts,  actel,actaz, actfwhm, actslow, owner)
+    print (outstr)
+
+    return curtime, lastfwhm, lastslow, outstr
+
 
 
 def init_sim_vals():

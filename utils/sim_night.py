@@ -12,42 +12,10 @@ import ephem
 import astropy.io.ascii
 
 import UCOScheduler as ds
-import ExposureCalculations as ec
-import Generate_Errors as ge
-import NightSim as ns
+
+import NightSim 
 import ParseUCOSched
 
-def compute_simulation(result,curtime,star,apf_obs,slowdowns,fwhms,outfp):
-    actel,actaz = ns.compute_el(curtime,star,apf_obs)
-    actslow, actfwhm = ns.rand_obs_sample(slowdowns,fwhms)
-    actfwhm = ns.gen_seeing_el(actfwhm,actel)
-    lastfwhm = actfwhm
-    lastslow = actslow
-    meterrate = ec.getEXPMeter_Rate(result['VMAG'],result['BV'],actel,actfwhm,result['DECKER'])
-    meterrate *= 1 + 0.11*np.random.randn(1)
-    meterrate /= actslow
-    specrate = ec.getSpec_Rate(result['VMAG'],result['BV'],actel,actfwhm,result['DECKER'])
-    specrate *= 1 + 0.11*np.random.randn(1)
-    specrate /= actslow
-    metertime = result['COUNTS'] / meterrate
-    exp_time = result['EXP_TIME']
-    barycentertime = curtime
-    if metertime < exp_time:
-        fexptime = float(metertime)
-    else:
-        fexptime = float(exp_time)
-        
-    curtime += (fexptime+40.)/86400
-    barycentertime += fexptime/(2.*86400)
-    totcounts = fexptime * specrate
-
-    precision, true_error = ge.compute_real_uncertainty(totcounts,result['BV'])
-    if actaz < 180:
-        actel *= -1.
-    outstr = "%s %s %.5f %.1f %.1f %.2f %.2f %.2f %.2f %s" %(result['NAME'] , ephem.Date(curtime), ephem.julian_date(ephem.Date(barycentertime)), fexptime, totcounts,  actel,actaz, actfwhm, actslow, result['owner'])
-    print (outstr)
-    outfp.write(outstr + "\n")
-    return curtime, lastfwhm, lastslow
 
 
 
@@ -74,7 +42,7 @@ if options.fixed != "":
     if not os.path.isfile(options.fixed):
         print ("%s is not a file" % (options.fixed))
 
-if not ns.checkdate(datestr):
+if not NightSim.checkdate(datestr):
     print ("%s is not an acceptable date string" % (datestr))
     sys.exit()
 
@@ -102,8 +70,8 @@ outfp.write(hdrstr)
         
 star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=options.googledex.split(","),outfn=options.infile,outdir=outdir)
 
-fwhms = ns.gen_seeing(val=1.0) # good conditions
-slowdowns = ns.gen_clouds(val=2) # typical conditions
+fwhms = NightSim.gen_seeing(val=1.0) # good conditions
+slowdowns = NightSim.gen_clouds(val=2) # typical conditions
 
 lastslow = 5
 lastfwhm = 15
@@ -111,7 +79,7 @@ otfn = "observed_targets"
 ot = open(otfn,"w")
 ot.close()
 observing = True
-curtime, endtime, apf_obs = ns.sun_times(datestr)
+curtime, endtime, apf_obs = NightSim.sun_times(datestr)
 bstar = options.bstar
 doTemp = True
 tempcount = 0
@@ -137,7 +105,8 @@ while observing:
         (idx,) = np.where(star_table['name'] == result['NAME'])
         idx = idx[0]
         for i in range(0,int(result['NEXP'])):
-            (curtime,lastfwhm,lastslow) = compute_simulation(result,curtime,stars[idx],apf_obs,slowdowns,fwhms,outfp)
+            (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
+            outfp.write(outstr + "\n")
         ot = open(otfn,"a+")
         for i in range(0,len(result["SCRIPTOBS"])):
             ot.write("%s\n" % (result["SCRIPTOBS"].pop()))

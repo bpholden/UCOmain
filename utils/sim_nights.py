@@ -13,59 +13,10 @@ import shutil
 import ephem
 import numpy as np
 
-import NightSim as ns
+import NightSim
 import UCOScheduler as ds
-import ExposureCalculations as ec
-import Generate_Errors as ge
 import ParseUCOSched
 
-def compute_simulation(curtime,result,star,apf_obs,slowdowns,fwhms,star_tab,owner):
-    actel,actaz = ns.compute_el(curtime,star,apf_obs)
-    actslow, actfwhm = ns.rand_obs_sample(slowdowns,fwhms)
-    if actslow < 0.3:
-        actslow = 0.3
-    actfwhm = ns.gen_seeing_el(actfwhm,actel)
-    lastfwhm = actfwhm
-    lastslow = actslow
-    metersig = np.random.randn(1)
-    specsig = np.random.randn(1)
-    if abs(specsig) > 3:
-        specsig = 3.
-    if abs(metersig) > 3:
-        metersig = 3.
-    
-    meterrate = ec.getEXPMeter_Rate(result['VMAG'],result['BV'],actel,actfwhm,result['DECKER'])
-    meterrate *= 1 + 0.11*metersig
-    try:
-        meterrate /= actslow
-    except:
-        meterrate = 0.0
-        
-    specrate = ec.getSpec_Rate(result['VMAG'],result['BV'],actel,actfwhm,result['DECKER'])
-    specrate *= 1 + 0.11*specsig
-    try:
-        specrate /= actslow
-    except:
-        specrate = 0.0
-        
-    try:
-        metertime = result['COUNTS'] / meterrate
-    except:
-        metertime = results['EXP_TIME'] + 1
-    exp_time = result['EXP_TIME']
-    barycentertime = curtime
-    if metertime < exp_time:
-        fexptime = metertime
-    else:
-        fexptime = exp_time
-        
-    curtime += (fexptime+40.)/86400
-    barycentertime += fexptime/(2.*86400)
-    totcounts = fexptime * specrate
-
-    outstr = "%s %s %.5f %.1f %.1f %.2f %.2f %.2f %.2f %s" %(result['NAME'] , ephem.Date(curtime), ephem.julian_date(ephem.Date(barycentertime)), fexptime, totcounts,  actel,actaz, actfwhm, actslow, owner)
-
-    return curtime, lastfwhm, lastslow, outstr
 
 
 def read_datefile(datefn):
@@ -79,7 +30,7 @@ def read_datefile(datefn):
     datelist = []
     for line in datefile:
         datestr, = line.split()
-        if not ns.checkdate(datestr):
+        if not NightSim.checkdate(datestr):
             print ("%s is not an acceptable date string" % (datestr))
             sys.exit()
         datelist.append(datestr)
@@ -228,8 +179,8 @@ if __name__ == "__main__":
         
         star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=options.sheetns.split(","),outfn=options.infile,outdir=options.outdir)
     
-        fwhms = ns.gen_seeing()
-        slowdowns = ns.gen_clouds()
+        fwhms = NightSim.gen_seeing()
+        slowdowns = NightSim.gen_clouds()
 
         doTemp = True
         lastslow = 5
@@ -238,7 +189,7 @@ if __name__ == "__main__":
         ot = open(otfn,"w")
         ot.close()
         observing = True
-        curtime, endtime, apf_obs = ns.sun_times(datestr)
+        curtime, endtime, apf_obs = NightSim.sun_times(datestr)
         while observing:
 
             result = ds.getNext(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile, outdir=options.outdir,template=doTemp,
@@ -252,7 +203,7 @@ if __name__ == "__main__":
                 idx = idx[0]
 
                 for i in range(0,int(result['NEXP'])):
-                    (curtime,lastfwhm,lastslow,outstr) = compute_simulation(curtime,result,stars[idx],apf_obs,slowdowns,fwhms,star_table[idx],result['owner'])
+                    (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(curtime,result,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
                     sim_results(outstr,star_strs,star_dates)
                     print (outstr)
                     masterfp.write("%s\n" % (outstr))
