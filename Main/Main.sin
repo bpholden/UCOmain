@@ -135,10 +135,8 @@ def calcFocusStartTime():
     t_delta = timedelta(0,start_time)
     sun_delta = timedelta(0,time_to_sunset)
     start_dt = dt + t_delta
-    start_str = "%s" % (start_dt)
     sun_dt = dt + sun_delta
-    sun_str = "%s" % (sun_dt)    
-    return start_time, start_str, sun_str
+    return start_time, start_dt, sun_dt
 
 def args(apftask):
     p_c = ["Init", "Focus", "Cal-Pre", "Cal-Post", "Watching"]
