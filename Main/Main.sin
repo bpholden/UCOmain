@@ -397,11 +397,11 @@ if __name__ == '__main__':
         APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)        
         apflog("Initialization finished")
         
-        stime, s_str, sun_str = calcFocusStartTime()
+        stime, s_dt, sun_dt = calcFocusStartTime()
         waitstr = "Will now wait %.1f seconds before starting focusinstr" % (stime)
         apflog(waitstr, echo=True)
         APFTask.set(parent, suffix="MESSAGE", value=waitstr, wait=False)
-        startstr = "Estimating focusinstr will start at %s for a sunset at %s" % (s_str,sun_str)
+        startstr = "Estimating focusinstr will start at %s for a sunset at %s" % ( start_dt, sun_dt) )
         apflog(startstr, echo=True)
         APFTask.set(parent, suffix="MESSAGE", value=startstr, wait=False)
         
