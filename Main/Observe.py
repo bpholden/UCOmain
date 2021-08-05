@@ -174,25 +174,6 @@ class Observe(threading.Thread):
 
     def checkServos(self):
 
-        rv = ktl.read('apftask','slew_allowed',binary=True)
-        if rv:
-            # it was cleared
-            apflog("slew allowed",level="error",echo=True)
-            # just to be safe
-            chk_done = "$checkapf.MOVE_PERM == true"
-            result = APFTask.waitFor(self.task, True, expression=chk_done, timeout=600)
-            if result:
-                ## this is temporary ##
-                rv = self.apf.homeTelescope()
-                if rv:
-                    ktl.write('apftask','scriptobs_message','')
-                    return True
-                else:
-                    return False
-            else:
-                apflog("Error: After 10 min move permission did not return, and the dome is still open.", level='error', echo=True)
-                return False
-
         ripd, running = self.apf.findRobot()
         if running:
             self.apf.killRobot(now=True)
