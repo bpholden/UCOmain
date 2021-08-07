@@ -27,7 +27,7 @@ FOCUSTIME = 3600. # minimum time before checking telescope focus
 TEMP_LIMIT = 35. # deg F at the APF
 wxtimeout = timedelta(seconds=1800)
 SUNEL_HOR = -3.2
-DEWARMAX = 8600
+DEWARMAX = 8650
 DEWARMIN = 8350
 TELFOCUSMIN = -0.00088
 TELFOCUSMAX = -0.00078
@@ -827,7 +827,7 @@ class APF:
                 if len(focusdict['PHASE']) > 0:
                     flags = " ".join(["-p", focusdict['phase']])
             else:
-                apflog("Focusinstr has failed. Setting to %s and trying again." % (lastfocus_dict["lastfocus"]), level='error', echo=True)
+                apflog("Focusinstr has failed, result = %s and value = %d. Setting to %s and trying again." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
                 APFLib.write("apfmot.DEWARFOCRAW", lastfocus_dict["lastfocus"])
             result = self.runFocusinstr(flags=flags)
             if not result:
