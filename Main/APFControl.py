@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import numpy as np
 
 try:
-    from apflog import *
+    from apflog import apflog
     import ktl
     import APF as APFLib
     import APFTask

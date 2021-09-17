@@ -21,9 +21,8 @@ except:
     pass
 
 import APFControl
-from apflog import *
+from apflog import apflog
 import UCOScheduler as ds
-from x_gaussslit import *
 import ExposureCalculations
 import SchedulerConsts
 
