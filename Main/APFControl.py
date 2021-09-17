@@ -1304,7 +1304,7 @@ class APF:
                     else:
                         apflog("Failure power cycling telescope",echo=True,level="alert")
                 if attempts == 7:
-                    lstr = "Closeup has failed % times consecutively. Human intervention likely required." % (attempts)
+                    lstr = "Closeup has failed %d times consecutively. Human intervention likely required." % (attempts)
                     areopen, whatsopen = self.isOpen()
                     if areopen == True:
                         # truly dire, the telescope is open
