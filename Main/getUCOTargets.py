@@ -7,12 +7,14 @@ from select import select
 import threading
 import time
 
+import APFTask
+
 import apflog
 import ParseUCOSched
 
 class getUCOTargets(threading.Thread):
 
-    def __init__(self, opt, task='master',prilim=0.5,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
+    def __init__(self, opt, task='master',prilim=0.5,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',wait_time=0, fake=False):
         threading.Thread.__init__(self)
         
         self.task = task
@@ -45,6 +47,7 @@ class getUCOTargets(threading.Thread):
         self.proceed = False
         self.proceed_timeout = 120
         self.reading = False
+        self.wait_time = wait_time
         
         self.prilim = prilim
         self.certificate = certificate
@@ -63,24 +66,30 @@ class getUCOTargets(threading.Thread):
 
     def run(self):
 
+        APFTask.wait(self.task, True, timeout=self.wait_time)
         
         if self.signal:
-            try:
-                star_table,stars = ParseUCOSched.parseUCOSched(sheetns=self.sheets,outfn='googledex.dat',
+            if self.fake:
+                print("Would have downloaded %s" % (self.sheetns))
+            else:
+                try:
+                    star_table,stars = ParseUCOSched.parseUCOSched(sheetns=self.sheets,outfn='googledex.dat',
                                                                    outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
-            except Exception as e:
-                apflog("Error: Cannot download googledex?! %s" % (e),level="error")
-                # goto backup
-                if os.path.exists("googledex.dat.1"):
-                    shutil.copyfile("googledex.dat.1","googledex.dat")
-
-            try:
-                rank_table = ds.makeRankTable(sheet_table_name=self.rank_table,outdir=os.getcwd(),certificate=self.certificate)
-            except Exception as e:
-                apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
-                # goto backup
-                if os.path.exists("rank_table.1"):
-                    shutil.copyfile("rank_table.1","rank_table")
+                except Exception as e:
+                    apflog("Error: Cannot download googledex?! %s" % (e),level="error")
+                    # goto backup
+                    if os.path.exists("googledex.dat.1"):
+                        shutil.copyfile("googledex.dat.1","googledex.dat")
+            if self.fake:
+                print("Would have downloaded %s" % (self.rank_table))
+            else:
+                try:
+                    rank_table = ds.makeRankTable(sheet_table_name=self.rank_table,outdir=os.getcwd(),certificate=self.certificate)
+                except Exception as e:
+                    apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
+                    # goto backup
+                    if os.path.exists("rank_table.1"):
+                        shutil.copyfile("rank_table.1","rank_table")
 
             if self.time_left is None :
                 hour_constraints=None
@@ -94,26 +103,30 @@ class getUCOTargets(threading.Thread):
                 else:
                     hour_constraints = None
                     
-            try:
-                hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints,
+            if self.fake:
+                print("Would have downloaded %s" % (self.frac_table))
+            else:
+                try:
+                    hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints,
                                                   certificate=self.certificate)
-            except Exception as e:
-                apflog("Error: Cannot download frac_table?! %s" % (e),level="error")
+                except Exception as e:
+                    apflog("Error: Cannot download frac_table?! %s" % (e),level="error")
 
         while self.signal and self.too is not None:
-            time.sleep(self.timeout)
-            # there is a horrible race condition here
-            # we need to download the TOO when getNext is not running
-            # download TOO
-            #
-            while self.proceed is False:
-                time.sleep(self.proceed_timeout)
 
-            self.reading = True
-            try:
-                ParseUCOSched.parseTOO(too_sheetns=self.too,outfn='googledex.dat',outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
-            except Exception as e:
-                apflog("Error: Cannot download %s: %s" % (self.too,e),level="error")
-            self.reading = False
+            if APFTask.waitfor(self.task,False,expression='apftask.SCRIPTOBS_PHASE==Observing',timeout=self.timeout):
+            
+                self.reading = True
+                try:
+                    ParseUCOSched.parseTOO(too_sheetns=self.too,outfn='googledex.dat',outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
+                except Exception as e:
+                    apflog("Error: Cannot download %s: %s" % (self.too,e),level="error")
+                self.reading = False
             
         return
+
+if __name__ == "__main__":
+
+    
+    APFTask.establish('example',os.getpid())
+    
