@@ -25,7 +25,7 @@ class getUCOTargets(threading.Thread):
         if opt.too:
             self.too = opt.too
         else:
-            opt.too = None
+            self.too = None
 
         if opt.rank_table:
             self.rank_table = opt.rank_table
