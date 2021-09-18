@@ -14,7 +14,7 @@ import ParseUCOSched
 
 class getUCOTargets(threading.Thread):
 
-    def __init__(self, opt, task='master',prilim=0.5,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',wait_time=0, fake=False):
+    def __init__(self, opt, task='master',prilim=0.5,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',wait_time=0):
         threading.Thread.__init__(self)
         
         self.task = task
@@ -69,7 +69,7 @@ class getUCOTargets(threading.Thread):
         APFTask.wait(self.task, True, timeout=self.wait_time)
         
         if self.signal:
-            if self.fake:
+            if self.debug:
                 print("Would have downloaded %s" % (self.sheetns))
             else:
                 try:
@@ -80,7 +80,7 @@ class getUCOTargets(threading.Thread):
                     # goto backup
                     if os.path.exists("googledex.dat.1"):
                         shutil.copyfile("googledex.dat.1","googledex.dat")
-            if self.fake:
+            if self.debug:
                 print("Would have downloaded %s" % (self.rank_table))
             else:
                 try:
@@ -103,7 +103,7 @@ class getUCOTargets(threading.Thread):
                 else:
                     hour_constraints = None
                     
-            if self.fake:
+            if self.debug:
                 print("Would have downloaded %s" % (self.frac_table))
             else:
                 try:
@@ -127,6 +127,18 @@ class getUCOTargets(threading.Thread):
 
 if __name__ == "__main__":
 
+    class Opt:
+        pass
+
     
-    APFTask.establish('example',os.getpid())
+    task = 'example'
+    APFTask.establish(task,os.getpid())
+    opt = Opt()
+    opt.test = True
+    opt.too = None
+    opt.rank_table = '2021B_ranks'
+    opt.frac_table = '2021B_frac'
+    opt.sheet = "RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A003,2021B_A005,2021B_A006,2021B_A007,2021B_A008,2021B_A010,2021B_A011,2021B_A012,2021B_A013,2021B_A014".split(",")
     
+    
+    get_targs = getUCOTargets(opt, task=task, fake=True)
