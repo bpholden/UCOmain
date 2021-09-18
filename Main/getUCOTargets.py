@@ -28,14 +28,14 @@ class getUCOTargets(threading.Thread):
             opt.too = None
 
         if opt.rank_table:
-            self.rank_tablen = opt.rank_table
+            self.rank_table = opt.rank_table
         else:
-            self.rank_tablen = None
+            self.rank_table = None
             
         if opt.frac_table:
-            self.frac_tablen = opt.frac_table
+            self.frac_table = opt.frac_table
         else:
-            self.frac_tablen = None
+            self.frac_table = None
 
         if opt.time_left:
             self.time_left = opt.time_left
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     opt = Opt()
     opt.test = True
     opt.too = None
-    opt.time_left = None
+    opt.time_left = os.abspath("/home/holden/time_left.csv")
     opt.rank_table = '2021B_ranks'
     opt.frac_table = '2021B_frac'
     opt.sheet = "RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A003,2021B_A005,2021B_A006,2021B_A007,2021B_A008,2021B_A010,2021B_A011,2021B_A012,2021B_A013,2021B_A014".split(",")
