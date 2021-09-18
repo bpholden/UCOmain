@@ -9,7 +9,7 @@ import time
 
 import APFTask
 
-import apflog
+from apflog import apflog
 import ParseUCOSched
 
 class getUCOTargets(threading.Thread):
