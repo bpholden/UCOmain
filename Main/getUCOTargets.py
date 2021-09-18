@@ -7,6 +7,8 @@ from select import select
 import threading
 import time
 
+import astropy.io.ascii
+
 import APFTask
 
 from apflog import apflog
