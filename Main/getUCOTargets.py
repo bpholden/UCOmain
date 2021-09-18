@@ -141,4 +141,4 @@ if __name__ == "__main__":
     opt.sheet = "RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A003,2021B_A005,2021B_A006,2021B_A007,2021B_A008,2021B_A010,2021B_A011,2021B_A012,2021B_A013,2021B_A014".split(",")
     
     
-    get_targs = getUCOTargets(opt, task=task, fake=True)
+    get_targs = getUCOTargets(opt, task=task)
