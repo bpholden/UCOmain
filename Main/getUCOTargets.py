@@ -70,7 +70,7 @@ class getUCOTargets(threading.Thread):
         
         if self.signal:
             if self.debug:
-                print("Would have downloaded %s" % (self.sheetns))
+                print("Would have downloaded %s" % (self.sheets))
             else:
                 try:
                     star_table,stars = ParseUCOSched.parseUCOSched(sheetns=self.sheets,outfn='googledex.dat',
