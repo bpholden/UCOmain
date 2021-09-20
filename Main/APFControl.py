@@ -480,10 +480,12 @@ class APF:
         curm2 = np.average(np.asarray(self.mon_lists['TM2CSUR']))
         curm2air = np.average(np.asarray(self.mon_lists['TM2CAIR']))
 
-        if curm2air - curdew < 2 or curm2 - curdew < 4:
-            self.dewTooClose = True
+        if self.dewTooClose:
+            if curm2air - curdew > 3 or curm2 - curdew > 5:
+                self.dewTooClose = False
         else:
-            self.dewTooClose = False
+            if curm2air - curdew < 2 or curm2 - curdew < 4:
+                self.dewTooClose = True
 
         return
 
