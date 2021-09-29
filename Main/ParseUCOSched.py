@@ -202,7 +202,7 @@ def retrieveCodex(req_cols,sheetns=["The Googledex"],certificate='UCSC_Dynamic_S
 
                 full_codex.append(nrow)
                 wait_time += .3
-            if sleep:
+            if sleep and ((sheetns.index(sheetn)+1) < len(sheetns)):
                 apflog("Sleeping %.1f seconds to keep Google happy" % (wait_time), level="info",echo=True)
                 time.sleep(wait_time)
 
