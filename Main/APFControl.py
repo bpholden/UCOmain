@@ -205,6 +205,11 @@ class APF:
         self.test = test
         self.task = task
 
+        try:
+            self.eosgcam['GENABLE'].write(True,binary=True)
+        except:
+            apflog("Cannot write True to eosgcam.GENABLE, issue with guider and/or dresden",level='error',echo=True)
+
         self.mon_lists = dict()
         self.avg_lists = dict()
         for kw in ('TM1S210','TM2CSUR','TM2CAIR','TAVERAGE','TTRUS045','TTRUS135','TTRUS225','TTRUS315','TEMPNOW3','TEMPNOW4','M5WIND','M3WIND','M5OUTEMP'):
