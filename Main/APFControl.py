@@ -532,8 +532,20 @@ class APF:
                 return
             apflog("%s should be restarted" % (taskname_val),echo=True)
         return
+
+
+    def restart(self,name,host):
+        apfcmd = os.path.join(LROOT,"bin/apf")
+        restart = '%s restart %s' % (apfcmd,name)
+        cmdlist = ["ssh", "-f", host, restart]
+        try:
+            p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
+        except Exception as e:
+            apflog("Cannot restart %s on %s: %s" % (name,host,e),level='error',echo=True)
+        return
+        
     
-    def miniMonMon(self,sta):
+    def miniMonMon(self,sta,host="hamburg"):
         if sta['populated'] == False:
             return
         try:
@@ -544,15 +556,23 @@ class APF:
         if sta_val > 3:
             # warning or higher
             nmsta = sta['name'].lower()
-            name = nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is 
-            apfcmd = os.path.join(LROOT,"bin/apf")
-            restart = '%s restart %s' % (apfcmd,name)
-            cmdlist = ["ssh", "-f", "hamburg", restart]
-            try:
-                p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
-            except Exception as e:
-                apflog("Cannot restart %s on hamburg: %s" % (name,e),level='error',echo=True)
-                return
+            name = nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is
+            self.restart(name,host)
+        return
+
+    def apfMonMon(self,sta,host="shred"):
+        if sta['populated'] == False:
+            return
+        try:
+            sta_val = sta['binary']
+        except:
+            return
+        
+        if sta_val > 3:
+            # warning or higher
+            nmsta = sta['name'].lower()
+            name = "apf" + nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is
+            self.restart(name,host)
         return
     ## end of callbacks for monitoring stuff
 
