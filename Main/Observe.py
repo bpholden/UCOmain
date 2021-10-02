@@ -365,7 +365,12 @@ class Observe(threading.Thread):
             else:
                 apflog("Observing target: %s" % self.target['NAME'], echo=True)
                 APFTask.set(self.task, suffix="MESSAGE", value="Observing target: %s"  % self.target['NAME'], wait=False)
-                self.scriptobs.stdin.write(self.target["SCRIPTOBS"].pop() + '\n')
+                try:
+                    self.scriptobs.stdin.write(self.target["SCRIPTOBS"].pop() + '\n')
+                except IOError as e:
+                    apflog("Cannot observe target %s: IOError: %s" % (self.target['NAME'],e), echo=True, level='error')
+                    return
+                    
 
             # Set the Vmag and B-V mag of the latest target
             self.VMAG = self.target["VMAG"]
