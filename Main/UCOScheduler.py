@@ -142,8 +142,6 @@ def makeHourTable(sheet_table_name,dt,outfn='hour_table',outdir=None,frac_fn='fr
     hour_table['tot'] =np.abs(tot*hour_table['frac'])
     hour_table['cur'] =0.0*hour_table['frac']
 
-    hour_table['tot'][hour_table['tot'] < 1.0] = 1.0
-    
     if hour_constraints is not None:
         if 'runname' in hour_constraints.keys() and 'left' in hour_constraints.keys():
             for runname in hour_constraints['runname']:
