@@ -435,7 +435,7 @@ class Observe(threading.Thread):
                 if ( float(sunel) < SchedulerConsts.SUNEL_ENDLIM):
                     result = self.apf.openat(sunset=sunset)
                     if not result and self.apf.openOK['binary']:
-                        apflog("Error: opening has failed twice.", level='Alert', echo=True)
+                        apflog("Error: opening has failed twice, likely needs intervention.", level='Alert', echo=True)
                         self.apf.close()
                         self.canOpen = False
 
