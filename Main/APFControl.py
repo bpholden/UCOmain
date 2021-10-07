@@ -656,7 +656,7 @@ class APF:
         # m1 m2 tavg m2air tf3 tf4
         slopes = np.asarray([-0.008501373571204436,0.018447192538919112,0.005045231856341733,-0.0034925932846514426,0.0030700884060842716,-0.014469348574232712])
         zeropoint_temps = np.asarray([15.556, 14.217, 14.595, 13.308, 15.739, 15.828])
-        predfoc = np.sum(slopes*(self.avgtemps-zeropoint_temps)) + TELFOCUSTYP # slope in mm per deg C, TELFOCUSTYP is the mean focus between 2016 - 2020
+        predfoc = 1.5*np.sum(slopes*(self.avgtemps-zeropoint_temps)) + TELFOCUSTYP # slope in mm per deg C, TELFOCUSTYP is the mean focus between 2016 - 2020
         predfoc /= 1000.0 # convert to meters
         return predfoc
 
