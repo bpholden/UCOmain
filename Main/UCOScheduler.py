@@ -407,7 +407,16 @@ def findClosest(ras,decs,ra,dec):
 
 
 def enoughTimeTemplates(star_table,stars,idx,apf_obs,dt):
-    tot_time = star_table['APFnshots'][idx]*star_table['texp'][idx]
+
+    if star_table['Vmag'][idx]  > 10:
+        count = 9
+    elif star_table['Vmag'][idx]  < 8:
+        count = 5
+    else:
+        count = 7
+
+    tot_time = count * 1200
+
     tot_time += 210 + (2*40 + 40*(star_table['APFnshots'][idx]-1)) + 2400 # two B star exposures + three 70 second acquisitions and the actual observation readout times
     vis, star_elevations, fin_els, scaled_els = Visible.visible(apf_obs,[stars[idx]],[tot_time])
     time_left_before_sunrise = computeSunrise(dt,horizon='-9')
