@@ -791,10 +791,10 @@ if __name__ == '__main__':
     else:
         hour_constraints = None
 
-    frac_tablen='2020B_frac'
+    frac_tablen='2021B_frac'
     hour_table = makeHourTable(frac_tablen,dt,hour_constraints=hour_constraints)
 
-    rank_tablen='2020B_ranks'
+    rank_tablen='2021B_ranks'
     rank_table = makeRankTable(rank_tablen)
 
 #    sheetn=["2018B"]
