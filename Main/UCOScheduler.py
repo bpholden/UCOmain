@@ -248,12 +248,7 @@ def makeScriptobsLine(star_table_row, t, decker="W", I2="Y", owner='public', foc
         ret += 'do= '
     # Count
     if temp:
-        if star_table_row['Vmag'] > 10:
-            count = 9
-        elif star_table_row['Vmag'] < 8:
-            count = 5
-        else:
-            count = 7
+        count = numTemplateExp(star_table_row['Vmag'])
     else:
         count = int(star_table_row['APFnshots'])
 
@@ -405,16 +400,23 @@ def findClosest(ras,decs,ra,dec):
 
     return min_ind
 
+def numTemplateExp(vmag):
+
+    count = 7
+
+    if vmag > 10:
+        count = 9
+        
+    elif vmag  < 8:
+        count = 5
+        
+
+    return count
 
 def enoughTimeTemplates(star_table,stars,idx,apf_obs,dt):
 
-    if star_table['Vmag'][idx]  > 10:
-        count = 9
-    elif star_table['Vmag'][idx]  < 8:
-        count = 5
-    else:
-        count = 7
-
+    count = numTemplateExp(star_table['Vmag'][idx])
+    
     tot_time = count * 1200
 
     tot_time += 210 + (2*40 + 40*(star_table['APFnshots'][idx]-1)) + 2400 # two B star exposures + three 70 second acquisitions and the actual observation readout times
