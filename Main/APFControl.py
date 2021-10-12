@@ -1186,7 +1186,7 @@ class APF:
             # This should really never happen. In case of a temporary condition, we give
             # a short waitfor rather than immediatly exiting.
             chk_open = "$checkapf.OPEN_OK == true"
-            result = APFLib.waitFor(self.task, False, chk_open, timeout=30)
+            result = APFTask.waitFor(self.task, False, chk_open, timeout=30)
             if not result:
                 apflog("Tried calling openat with OPEN_OK = False. Can't open.", echo=True)
                 apflog(self.checkapf["OPREASON"].read(), echo=True)
