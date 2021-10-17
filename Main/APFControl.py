@@ -395,10 +395,11 @@ class APF:
 
         try:
             eventval = event['binary']
-            if eventval == 0 or eventval == 7 :
-                self.ncountrate = 0
         except:
             return
+        
+        if eventval == 0 or eventval == 7 :
+            self.ncountrate = 0
 
         try:
             cnts = float(counts.read(binary=True,timeout=2))
