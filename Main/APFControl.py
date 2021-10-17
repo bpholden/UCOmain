@@ -1365,6 +1365,18 @@ class APF:
         return
 
 
+    def setTelFoc(self):
+        
+        predfocus  = self.predTelFocus()
+        self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
+        focus_diff = math.fabs(predfocus - self.focus['binary'])
+        
+        if focus_diff > 0.01/1000. :
+            try:
+                self.focus['binary'].write(predfocus,binary=True,wait=False)
+            except Exception as e:
+                apflog("Cannot write eostele.FOCUS: %s" % (e), level="error", echo=True)
+    
     def setAutofocVal(self):
         """ APFControl.setAutofocVal()
             tests when the last time the telescope was focused, if more than FOCUSTIME enable focus check
