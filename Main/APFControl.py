@@ -401,6 +401,9 @@ class APF:
         if eventval == 0 or eventval == 7 :
             self.ncountrate = 0
 
+        if eventval = 3:
+            self.setTelFoc()
+            
         try:
             cnts = float(counts.read(binary=True,timeout=2))
             time = float(elapsed.read(binary=True,timeout=2))
