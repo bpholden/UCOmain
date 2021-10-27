@@ -359,21 +359,6 @@ def initStarTable(col_list):
     return star_table
 
 
-def normalizePriorities(star_table,sheetns):
-
-    for sheetn in sheetns :
-
-        select = (star_table['sheetn'] == sheetn)&(star_table['Bstar'] == 'N')
-        if any(select):
-            offset = MAX_PRI - np.max(star_table['APFpri'][select])
-            star_table['APFpri'][select] += offset
-            
-        negselect = (star_table['sheetn'] == sheetn)&(star_table['Bstar'] == 'N')&(star_table['APFpri'] <1)
-        if any(negselect):
-            offset = np.min(star_table['APFpri'][negselect])
-            star_table['APFpri'][negselect] += -1*offset
-            
-    return
 
 def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',prilim=1,sleep=True):
     # These are the columns we need for scheduling
@@ -541,7 +526,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
             star_table_names = [n] + star_table_names
 
     star_table = astropy.table.Table(star_table,names=star_table_names)
-#    normalizePriorities(star_table,sheetns)
+
     return star_table
 
 def genStars(star_table):
