@@ -452,11 +452,11 @@ class APF:
             return
 
         if self.mon_lists[name] == []:
-            self.mon_lists[name] = [curval]*20
+            self.mon_lists[name] = [curval]*300
             self.avg_lists[name] = curval
         else:
             self.mon_lists[name].append(curval)
-            self.mon_lists[name] = self.mon_lists[name][-20:]
+            self.mon_lists[name] = self.mon_lists[name][-300:]
             self.avg_lists[name] = np.average(self.mon_lists[name])
 
         return
@@ -479,23 +479,24 @@ class APF:
             return
 
         if self.dewlist == []:
-            self.dewlist = [dewpt]*20
+            self.dewlist = [dewpt]
         else:
             self.dewlist.append(dewpt)
-            self.dewlist = self.dewlist[-20:]
+            if len(self.dewlist) >= 300:
+                self.dewlist = self.dewlist[-300:]
 
-        dewlist = np.asarray(self.dewlist)
+                dewlist = np.asarray(self.dewlist)
 
-        curdew = np.average(dewlist)
-        curm2 = np.average(np.asarray(self.mon_lists['TM2CSUR']))
-        curm2air = np.average(np.asarray(self.mon_lists['TM2CAIR']))
+                curdew = np.average(dewlist)
+                curm2 = np.average(np.asarray(self.mon_lists['TM2CSUR']))
+                curm2air = np.average(np.asarray(self.mon_lists['TM2CAIR']))
 
-        if self.dewTooClose:
-            if curm2air - curdew > 3 or curm2 - curdew > 5:
-                self.dewTooClose = False
-        else:
-            if curm2air - curdew < 2 or curm2 - curdew < 4:
-                self.dewTooClose = True
+                if self.dewTooClose:
+                    if curm2air - curdew > 3 or curm2 - curdew > 5:
+                        self.dewTooClose = False
+                else:
+                    if curm2air - curdew < 2 or curm2 - curdew < 4:
+                        self.dewTooClose = True
 
         return
 
