@@ -237,7 +237,7 @@ class Observe(threading.Thread):
 
             if self.apf.avg_fwhm < 1.0:
                 apflog("Warning!: AVG_FWHM = %4.2f. By Odin's beard that seems low." % self.apf.avg_fwhm, echo=True)
-                return 5
+                return SchedulerConsts.SLOWDOWN_MAX
             slowdown = 1
             apflog("Calculating expected counts")
             apflog("self.VMAG [%4.2f] - self.BV [%4.2f] - self.apf.ael [%4.2f]" % (self.VMAG, self.BV, self.apf.ael))
