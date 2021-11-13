@@ -31,11 +31,17 @@ BLANK = 'B'
 FIRST = '1'
 LAST = 'L'
 
-def computePriorities(star_table,available,good_cadence,cur_dt,observed=None,hour_table=None,rank_table=None):
+def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table=None):
     # make this a function, have it return the current priorities, than change references to the star_table below into references to the current priority list
     new_pri = np.zeros_like(star_table['APFpri'])
     new_pri += star_table['APFpri']
 
+    cadence_check = (ephem.julian_date(cur_dt) - star_table['lastobs'])
+    good_cadence = cadence_check > star_table['APFcad']
+    bad_cadence = np.logical_not(good_cadence)
+    
+    cadence_check /= star_table['APFcad']
+    
     if hour_table is not None:
         too_much = hour_table['cur']  > hour_table['tot']
         done_sheets = hour_table['sheetn'][too_much]
@@ -45,13 +51,14 @@ def computePriorities(star_table,available,good_cadence,cur_dt,observed=None,hou
     if done_sheets != []:
         apflog("The following sheets are finished for the night: %s" % (" ".join(done_sheets)),echo=True)
 
-    bad_cadence = np.logical_not(good_cadence)
+    bad_pri = np.floor(cadence_check * 10)
+    bad_pri = np.int_(bad_pri)
     if rank_table is not None:
         for sheetn in rank_table['sheetn']:
             if sheetn not in done_sheets:
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += rank_table['rank'][rank_table['sheetn'] == sheetn]
-                new_pri[cur & bad_cadence] += 10
+                new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
                 
     return new_pri
 
@@ -675,9 +682,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
             attempted = (star_table['name'] == n)
             available = available & np.logical_not(attempted) # Available and not observed
 
-    cadence_check = (ephem.julian_date(dt) - star_table['lastobs'])
-    good_cadence = cadence_check > star_table['APFcad']
-
+    
     if bstar:
         # We just need a B star
         apflog("getNext(): Selecting B stars",echo=True)
@@ -727,7 +732,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
         return None
 
 
-    final_priorities = computePriorities(star_table,available,good_cadence,dt,
+    final_priorities = computePriorities(star_table,dt,
                                              rank_table=makeRankTable(rank_sheetn),
                                              hour_table=hour_table,observed=observed)
 
