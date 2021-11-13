@@ -758,6 +758,8 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
 
     apflog("getNext(): selected target %s for program %s at priority %.0f" % (t_n,o_n,p_n) )
     nmstr= "getNext(): star names %s" % (np.asarray(star_table['name'][sort_i][sort_j]))
+    pristr= "getNext(): star priorities %s" % (np.asarray(final_priorities[sort_i][sort_j]))
+    mxpristr= "getNext(): max priority %d" % (pri)
     shstr= "getNext(): star sheet names %s" % (np.asarray(star_table['sheetn'][sort_i][sort_j]))
     if bstar:
         elstr= "getNext(): Bstar current elevations %s" % (cur_elevations[sort_i][sort_j])
@@ -765,6 +767,8 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
         elstr= "getNext(): star scaled elevations %s" % (scaled_elevations[sort_i][sort_j])
     apflog(nmstr,echo=True)
     apflog(shstr,echo=True)
+    apflog(pristr,echo=True)
+    apflog(mxpristr,echo=True)    
     apflog(elstr,echo=True)
 
     stars[idx].compute(apf_obs)
