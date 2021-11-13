@@ -59,6 +59,10 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += rank_table['rank'][rank_table['sheetn'] == sheetn]
                 new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
+            else:
+                cur = star_table['sheetn'] == sheetn
+                new_pri[cur & good_cadence] += 100
+                new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
                 
     return new_pri
 
