@@ -60,6 +60,11 @@ except Exception as e:
 if os.path.exists('hour_table'):
     os.remove('hour_table')
 
+tleftfn = 'time_left.csv'
+if os.path.exists(tleftfn):
+    hour_constraints = astropy.io.ascii.read(tleftfn)
+else:
+    hour_constraints = None
    
 
 rank_table = ds.makeRankTable(options.rank_sheetn)
@@ -68,7 +73,7 @@ rank_table = ds.makeRankTable(options.rank_sheetn)
 hdrstr = "#starname date time mjd exptime i2counts elevation azimuth fwhm slowdown owner\n"
 outfp.write(hdrstr)
         
-star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=options.googledex.split(","),outfn=options.infile,outdir=outdir)
+star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=options.googledex.split(","),outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
 
 fwhms = NightSim.gen_seeing(val=1.0) # good conditions
 slowdowns = NightSim.gen_clouds(val=2) # typical conditions
@@ -83,11 +88,6 @@ curtime, endtime, apf_obs = NightSim.sun_times(datestr)
 bstar = options.bstar
 doTemp = True
 tempcount = 0
-tleftfn = 'time_left.csv'
-if os.path.exists(tleftfn):
-    hour_constraints = astropy.io.ascii.read(tleftfn)
-else:
-    hour_constraints = None
 hour_table = ds.makeHourTable(options.frac_sheetn,curtime.datetime(),hour_constraints=hour_constraints)
 
 while observing:

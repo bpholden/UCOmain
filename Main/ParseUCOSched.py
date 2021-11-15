@@ -360,7 +360,7 @@ def initStarTable(col_list):
 
 
 
-def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',prilim=1,sleep=True):
+def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',prilim=1,sleep=True,hour_constraints=None):
     # These are the columns we need for scheduling
     req_cols = ["Star Name", "RA hr", "RA min", "RA sec", \
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
@@ -382,6 +382,10 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
     didx = findColumns(col_names,req_cols)
     star_table = initStarTable(req_cols)
 
+    if hour_constraints is not None:
+        done_names = hour_constraints['runname'][hour_constraints['left'] < 0]
+    
+
     stars = []
     # Build the star table to return to
     for ls in codex:
@@ -392,11 +396,13 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         apfpri = int(round(apfpri))
         nobs = intDefault(ls[didx["Nobs"]])
         totobs = intDefault(ls[didx["Total Obs"]],default=-1)
+        csheetn = checkFlag("sheetn",didx,ls,"\A(.*)",'public')
 
         if totobs > 0 and nobs >= totobs: continue
         if apfpri < prilim: continue
+        if csheetn in done_names: continue
         if apfpri > MAX_PRI: apfpri = MAX_PRI
-
+            
             
         name =parseStarname(ls[didx["Star Name"]])
         # Get the RA
@@ -497,7 +503,6 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
 
         # need to check raoff and decoff values and alarm on failure
 
-        csheetn = checkFlag("sheetn",didx,ls,"\A(.*)",'public')
 
         if 'Bstar' in didx:
             star_table['Bstar'].append(checkFlag('Bstar',didx,ls,"(Y|y)",'N'))
@@ -552,7 +557,7 @@ def genStars(star_table):
 
 
 
-def parseUCOSched(sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W', 'owner' : '', 'mode' : '', 'obsblock' : '', 'Bstar' : 'N' , 'raoff' : None, 'decoff' : None },force_download=False,prilim=0.5):
+def parseUCOSched(sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W', 'owner' : '', 'mode' : '', 'obsblock' : '', 'Bstar' : 'N' , 'raoff' : None, 'decoff' : None },force_download=False,prilim=0.5,hour_constraints=None):
     """ parseUCOSched parses google sheets and returns the output as a tuple
     This routine downloads the data if needed and saves the output to a file. If the file exists, it just reads in the file.
 
@@ -583,10 +588,10 @@ def parseUCOSched(sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4
         try:
             star_table = readStarTable(outfn)
         except:
-            star_table  = parseCodex(config,sheetns=sheetns,certificate=certificate,prilim=prilim)
+            star_table  = parseCodex(config,sheetns=sheetns,certificate=certificate,prilim=prilim,hour_constraints=hour_constraints)
 
     else:
-        star_table = parseCodex(config,sheetns=sheetns,certificate=certificate,prilim=prilim)
+        star_table = parseCodex(config,sheetns=sheetns,certificate=certificate,prilim=prilim,hour_constraints=hour_constraints)
 
     stars = genStars(star_table)
 
