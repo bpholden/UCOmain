@@ -343,6 +343,9 @@ class APF:
 
         return s
 
+    ## callbacks - these are the callbacks used to measure quantities or flip states
+    ## these are always running
+
     def ucamdispatchmon(self):
         if self.ucamd0sta['populated'] == False:
             return
@@ -580,6 +583,7 @@ class APF:
             name = "apf" + nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is
             self.restart(name,host)
         return
+    
     ## end of callbacks for monitoring stuff
 
 
@@ -1021,7 +1025,7 @@ class APF:
             apflog("Slewing by executing %s" %(cmd), echo=True)
             result, code = apftaskDo(cmd,cwd=os.path.curdir,debug=True)
             if not result:
-                apflog("Failed at slewing: %s" %(code), level="error", echo=True)
+                apflog("Failed at slewlock - check logs could be a slew failure or a failure to acquire: %s" %(code), level="error", echo=True)
 
         return result
 
@@ -1077,7 +1081,13 @@ class APF:
             apflog("centerup failed with code %d" % code, echo=True)
         return result
 
-    def focusTel(self):
+    def findStarfocusTel(self):
+        """ This finds a star in the catalog of pointing reference stars close
+        to the current position of the telescope.
+        It then runs slewlock to slew to the star, set up the guider, and center
+        the star on the slit.
+        Finally, once the star is acquired, it runs the telescope focus routine.
+        """
         star = self.findStar()
         if not star:
             apflog("Cannot find star near current position!?",level='error',echo=True)
@@ -1088,7 +1098,7 @@ class APF:
         except Exception as e:
             apflog("Cannot write SCRIPTOBS_VMAG: %s" % (e), level='error',echo=True)
         try:
-            sline = "%s %s %s pmra=%s pmdec=%s vmag=%s # end" % (star[0],star[1],star[2],star[4],star[5],star[6])
+            sline = "%s %f %f pmra=%s pmdec=%s vmag=%s # end" % (star[0],float(star[1])*3.819718,float(star[2])*57.295779,star[4],star[5],star[6])
             self.line.write(sline)
         except Exception as e:
             apflog("Cannot write SCRIPTOBS_LINE: %s" % (e), level='error',echo=True)
@@ -1477,7 +1487,7 @@ class APF:
         # Slew to the specified RA and DEC, set guide camera settings, and centerup( Slewlock )
         # Focus the telescope - all of this, including finding the star, is done in focusTel
         self.DMReset()
-        if self.focusTel():
+        if self.findStarfocusTel():
             return True
         else:
             return False
