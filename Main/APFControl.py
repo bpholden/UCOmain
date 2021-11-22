@@ -876,6 +876,11 @@ class APF:
             self.apfschedule('OWNRHINT').write(owner,timeout=10)
         except Exception as e:
             apflog("Cannot communicate with apfschedule %s" % (e), level='alert',echo=True)
+        try:
+            self.decker.write("W",timeout=10)
+            self.decker.waitFor(" == 'W (1.00:3.0)'",timeout=120)
+        except Exception as e:
+            apflog("Cannot communicate with apfmot.DECKER %s" % (e), level='alert',echo=True)
 
         return result
 
