@@ -110,6 +110,7 @@ class APF:
     aaz        = tel('AAZ')
     aafocus    = tel('AAFOCUS')
     focus      = tel('FOCUS')
+    faenable   = tel('FAENABLE')
 
     dome       = ktl.Service('eosdome')
     rspos      = dome('RSCURPOS')
@@ -278,7 +279,8 @@ class APF:
         self.rspos.monitor()
         self.focus.monitor()
         self.aafocus.monitor()
-
+        self.faenable.monitor()
+        
         self.apfteqsta.monitor()
         self.apfteqsta.callback(self.apftaskMon)
 
@@ -1390,9 +1392,9 @@ class APF:
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         focus_diff = math.fabs(predfocus - self.focus['binary'])
         
-        if focus_diff > 0.01/1000. :
+        if focus_diff > 0.01/1000. and self.mv_perm and self.faenable['binary'] == 1:
             try:
-                self.focus['binary'].write(predfocus,binary=True,wait=False)
+                self.focus.write(predfocus,binary=True,wait=False)
             except Exception as e:
                 apflog("Cannot write eostele.FOCUS: %s" % (e), level="error", echo=True)
     
