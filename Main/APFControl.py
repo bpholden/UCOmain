@@ -187,6 +187,7 @@ class APF:
 
     motor      = ktl.Service('apfmot')
     decker     = motor['DECKERNAM']
+#    deckerord  = motor['DECKERORD']
     dewarfoc   = motor["DEWARFOCRAW"]
 
     eosgcam    = ktl.Service('eosgcam')
@@ -266,6 +267,7 @@ class APF:
         self.ldone.monitor()
         self.counts.monitor()
         self.decker.monitor()
+#        self.deckerord.monitor()
         self.avg_fwhm.monitor()
         self.dewarfoc.monitor()
         self.mv_perm.monitor()
@@ -879,8 +881,8 @@ class APF:
         except Exception as e:
             apflog("Cannot communicate with apfschedule %s" % (e), level='alert',echo=True)
         try:
-            self.decker.write("W",timeout=10)
-            self.decker.waitFor(" == 'W (1.00:3.0)'",timeout=120)
+            self.deckerord.write("W (1.00:3.0)",wait=False)
+            self.deckerord.waitFor(" == 'W (1.00:3.0)'",timeout=120)
         except Exception as e:
             apflog("Cannot communicate with apfmot.DECKER %s" % (e), level='alert',echo=True)
 
