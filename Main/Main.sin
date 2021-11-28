@@ -429,6 +429,15 @@ if __name__ == '__main__':
             shutdown()
             
         result = apf.focusinstr()
+        if result is False:
+            rv = apf.ucamRestart()
+            if rv == False:
+                apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
+                shutdown()
+            result = apf.focusinstr()
+            if result is False:
+                shutdown()
+            
         
         apflog("Focus has finished. Setting phase to Cal-Pre")
         if not debug:
