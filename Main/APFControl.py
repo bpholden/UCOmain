@@ -870,21 +870,20 @@ class APF:
                 if len(focusdict['PHASE']) > 0:
                     flags = " ".join(["-p", focusdict['phase']])
             else:
-                apflog("Focusinstr has failed, result = %s and value = %d. Setting to %s and trying again." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
+                apflog("Focusinstr has failed, result = %s and value = %d." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
                 APFLib.write("apfmot.DEWARFOCRAW", lastfocus_dict["lastfocus"])
-            result = self.runFocusinstr(flags=flags)
-            if not result:
                 apflog("Focusinstr has failed. Setting to %s and exiting." % (lastfocus_dict["lastfocus"]), level='error', echo=True)
+                return False
 
         try:
             self.apfschedule('OWNRHINT').write(owner,timeout=10)
         except Exception as e:
             apflog("Cannot communicate with apfschedule %s" % (e), level='alert',echo=True)
         try:
-            self.deckerord.write("W (1.00:3.0)",wait=False)
-            self.deckerord.waitFor(" == 'W (1.00:3.0)'",timeout=120)
+            self.decker.write("W (1.00:3.0)",wait=False)
+            self.decker.waitFor(" == 'W (1.00:3.0)'",timeout=120)
         except Exception as e:
-            apflog("Cannot communicate with apfmot.DECKER %s" % (e), level='alert',echo=True)
+            apflog("Cannot communicate with apfmot.DECKERNAM %s" % (e), level='alert',echo=True)
 
         return result
 
