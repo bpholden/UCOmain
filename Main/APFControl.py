@@ -1396,7 +1396,7 @@ class APF:
         if focus_diff > 0.01/1000. and self.mv_perm and self.faenable['binary'] == 1:
             try:
                 self.focus.write(predfocus,binary=True,wait=False)
-                self.robot['MASTER_MESSAGE'].write("Wrote %f to eostele.Focus" % (predfocus/1000.) )
+                self.robot['MASTER_MESSAGE'].write("Wrote %f to eostele.Focus" % (predfocus*1000.) )
             except Exception as e:
                 apflog("Cannot write eostele.FOCUS: %s" % (e), level="error", echo=True)
     
