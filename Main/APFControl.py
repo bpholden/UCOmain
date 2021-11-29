@@ -1611,18 +1611,18 @@ class APF:
 
         apfschedule = ktl.Service('apfschedule')
         
-        
+        # check if the focusinstr or calibrate tasks are already running
         if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0 or ktl.read('apftask','CALIBRATE_PID',binary=True) > 0 or ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0 :
             return None
 
-        try:
-            exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent="master",dark=True)
-        except:
-            return False
+        # create exposure object
+        exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent="master",dark=True)
 
+        # Is the UCAM ok?
         if exp.comb.read(binary=True) > 0:
             return False
 
+        # read original values and save them
         try:
             outdir = exp.apfucam['OUTDIR'].read()
             orignam = exp.outfile.read()
@@ -1633,7 +1633,8 @@ class APF:
         
         ofn  = 'test_'
         obsn = '0001'
-        
+
+        # write test values
         try:
             exp.outfile.write(ofn)
             exp.obsnum.write(obsn)
@@ -1641,9 +1642,11 @@ class APF:
         except:
             return False
 
+        # final file name 
         ffn = exp.outfile.read() + exp.obsnum.read() + '.fits'
         fpath = os.path.join(outdir,ffn)
-        
+
+        # actually take a picture
         try:
             c = exp.expose(waitlast=True)
         except:
@@ -1651,11 +1654,13 @@ class APF:
 
         apfschedule['OWNRHINT'].write('public')
 
+        # the number of exposures (c) should be 1 
         if os.path.exists(fpath) and c == 1:
             rv = True
         else:
             rv = False
 
+        # restore original values
         try:
             exp.outfile.write(orignam)
             exp.obsnum.write(orignum)
