@@ -1616,7 +1616,7 @@ class APF:
             return None
 
         # create exposure object
-        exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent="master",dark=True)
+        exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent=self.task,dark=True)
 
         # Is the UCAM ok?
         if exp.comb.read(binary=True) > 0:
