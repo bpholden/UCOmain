@@ -1708,10 +1708,15 @@ class APF:
         except:
             apflog("UCAM status bad, cannot restart",level='alert')
             return False
-        ucamstat.waitFor(" != running",timeout=60)
-        status.waitFor(" != Running",timeout=60)
-        status.waitFor(" == Running",timeout=60)
 
+        # we cannot wait on the UCAM or UCAMLAUNCHER keywords,
+        # the dispatcher is down
+        APFTask.wait(self.task,timeout=240)
+        
+        command = apftask['UCAMLAUNCHER_UCAM_COMMAND']
+        ucamstat = apftask['UCAMLAUNCHER_UCAM_STATUS']
+        status = apftask['UCAMLAUNCHER_STATUS']
+        
         try:
             command.write("Run")
             ucamstat.waitFor(" == running",timeout=300)
