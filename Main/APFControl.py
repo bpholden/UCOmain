@@ -656,7 +656,7 @@ class APF:
                 #bad
                 replaceavg += curtemp
                 n_good += 1
-        if n_good < 4:
+        if n_good < 4 and n_good > 0:
             replaceavg /= n_good
             self.avgtemps[2] -= np.average(self.mon_lists["TAVERAGE"])
             self.avgtemps[2] += replaceavg
