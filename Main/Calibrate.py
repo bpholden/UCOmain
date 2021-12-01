@@ -81,10 +81,13 @@ class Calibrate(threading.Thread):
     def calibrate(self,phase):
         
         apflog("Starting calibrate %s script." % (phase), level='Info', echo=True)
-        self.apf.instrPermit()
+        if self.test:
+            apflog("Would have waited for permission (APFControl.instrPermit()) for phase %s" % (phase),echo=True)            
+        else:
+            self.apf.instrPermit()
 
         if self.test:
-            apflog("Would have run APFControl.ucamStatus() for time %s" % (time),echo=True)
+            apflog("Would have run APFControl.ucamStatus() for phase %s" % (phase),echo=True)
             result = True
         else:
             result = self.apf.ucamStatus()
