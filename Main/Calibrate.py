@@ -70,7 +70,7 @@ class Calibrate(threading.Thread):
             result = True
         else:            
             result = self.apf.focusinstr()
-            apflog("Focus has finished. Setting phase to Cal-Pre",echo=True)
+            apflog("Focus has finished.",echo=True)
             
         if not self.test:
             APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
@@ -161,9 +161,9 @@ if __name__ == "__main__":
             APFTask.wait(task,True,timeout=1)
         except KeyboardInterrupt:
             apflog("%s has been killed by user." % (calibrate.name), echo=True)
-            observe.stop()
+            calibrate.stop()
             sys.exit()
         except:
             apflog("%s killed by unknown." % (calbrate.name), echo=True)
-            observe.stop()
+            calibrate.stop()
             sys.exit()
