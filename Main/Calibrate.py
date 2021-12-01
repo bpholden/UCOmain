@@ -104,8 +104,8 @@ class Calibrate(threading.Thread):
             if not result:
                 apflog("Error: Calibrate Pre has failed twice. Observer is exiting.",level='error',echo=True)
                 self.apf.turnOffLamps()
-                sys.exit(2)
-
+                
+        return result
 
         
     def run(self):
