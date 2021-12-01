@@ -82,10 +82,14 @@ class Calibrate(threading.Thread):
         apflog("Starting calibrate %s script." % (phase), level='Info', echo=True)
         self.apf.instrPermit()
 
-        result = self.apf.ucamStatus()
-        if result is False:
-            apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
-            return False
+        if self.test:
+            apflog("Would have run APFControl.ucamStatus() for time %s" % (time),echo=True)
+            result = True
+        else:
+            result = self.apf.ucamStatus()
+            if result is False:
+                apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
+                return False
         
         time = phase[4:].lower()
 
