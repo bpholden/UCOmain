@@ -34,7 +34,7 @@ class Calibrate(threading.Thread):
         self.user = name
         self.owner = 'public'
         self.test = test
-        self.possible_phases = ['Focus','Cal-Pre','Cal-Post','Focus-Post']
+        self.possible_phases = ['Init','Focus','Cal-Pre','Cal-Post','Focus-Post']
         self.phase_index = phase_index
         
         self.name = 'Calibrate'
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     APFTask.waitFor(task, True,timeout=2)
     print(str(apf))
 
-    stime = time.time() + 10
+    stime = time.time() + 5
     calibrate = Calibrate(apf,'public',stime,task=task,test=True)
     while calibrate.signal:
         try:
