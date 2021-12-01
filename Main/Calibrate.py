@@ -138,7 +138,12 @@ class Calibrate(threading.Thread):
                 return
             
         return
-        
+
+
+    def stop(self):
+        self.signal = False
+        threading.Thread._Thread__stop(self)
+
 
 if __name__ == "__main__":
     
