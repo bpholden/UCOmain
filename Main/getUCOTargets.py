@@ -124,8 +124,11 @@ class getUCOTargets(threading.Thread):
                 except Exception as e:
                     apflog("Error: Cannot download %s: %s" % (self.too,e),level="error")
                 self.reading = False
-            
+
+        self.stop()
+                
         return
+
 
 if __name__ == "__main__":
 
