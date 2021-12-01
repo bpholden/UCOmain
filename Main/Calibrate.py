@@ -156,3 +156,14 @@ if __name__ == "__main__":
 
     stime = time.time() + 10
     calibrate = Calibrate(apf,'public',stime,task=task,test=True)
+    while calibrate.signal:
+        try:
+            APFTask.wait(task,True,timeout=1)
+        except KeyboardInterrupt:
+            apflog("%s has been killed by user." % (observe.name), echo=True)
+            observe.stop()
+            sys.exit()
+        except:
+            apflog("%s killed by unknown." % (observe.name), echo=True)
+            observe.stop()
+            sys.exit()
