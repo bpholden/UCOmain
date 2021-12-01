@@ -39,7 +39,7 @@ class Calibrate(threading.Thread):
         
         self.name = 'Calibrate'
         self.signal = True
-        self.start()
+#        self.start()
 
 
     def testBias(self):
@@ -69,6 +69,7 @@ class Calibrate(threading.Thread):
             apflog("Would have run APFControl.focusinstr",echo=True)
             result = True
         else:            
+
             result = self.apf.focusinstr()
             apflog("Focus has finished.",echo=True)
             
@@ -163,6 +164,10 @@ if __name__ == "__main__":
 
     stime = time.time() + 5
     calibrate = Calibrate(apf,'public',stime,task=task,test=True)
+    calibrate.testBias()
+    calibrate.focusInstr()
+    calibrate.calibrate()
+    calibrate.start()
     while calibrate.signal:
         try:
             APFTask.wait(task,True,timeout=1)
