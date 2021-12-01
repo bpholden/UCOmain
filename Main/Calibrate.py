@@ -166,7 +166,7 @@ if __name__ == "__main__":
     calibrate = Calibrate(apf,'public',stime,task=task,test=True)
     calibrate.testBias()
     calibrate.focusInstr()
-    calibrate.calibrate()
+    calibrate.calibrate('Cal-Pre')
     calibrate.start()
     while calibrate.signal:
         try:
