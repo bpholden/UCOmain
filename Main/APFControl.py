@@ -1290,7 +1290,9 @@ class APF:
 
 
     def servoFailure(self):
-        """checks for amplifier faults"""
+        """checks for amplifier faults
+        Checks all seven moving components.
+        """
         servo_failed = False
         prefixs = ["AZ","EL","FA","FB","FC","TR" ]
         for pr in prefixs:
@@ -1310,7 +1312,10 @@ class APF:
         return servo_failed
 
     def close(self, force=False):
-        """Checks that we have the proper permission, then runs the closeup script."""
+        """Checks that we have the proper permission, then runs the closeup script.
+        On failures retries, and also sends alerts. Good for waking people up.
+        """
+        
         if self.test: return True
         cmd = os.path.join(SCRIPTDIR,"closeup")
         if force:
@@ -1380,7 +1385,11 @@ class APF:
         return False
 
     def updateLastObs(self,obsnum):
-        """ If the last observation was a success, this function updates the file storing the last observation number and the hit_list which is required by the dynamic scheduler."""
+        """ If the last observation was a success, 
+        this function updates the file storing the last 
+        observation number and the hit_list which is 
+        required by the dynamic scheduler."""
+        
         if obsnum['populated']:
             APFLib.write(self.robot["MASTER_LAST_OBS_UCSC"], obsnum)
 
@@ -1388,6 +1397,10 @@ class APF:
 
 
     def setTelFoc(self):
+        """
+        Sets the telescope focus to the predicted value returned by
+        predTelFocus()
+        """
         
         predfocus  = self.predTelFocus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
