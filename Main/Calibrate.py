@@ -34,7 +34,7 @@ class Calibrate(threading.Thread):
         self.user = name
         self.owner = 'public'
         self.test = test
-        self.possible_phases['Focus','Cal-Pre','Cal-Post','Focus-Post']
+        self.possible_phases = ['Focus','Cal-Pre','Cal-Post','Focus-Post']
         self.phase_index = phase_index
         
         self.name = 'Calibrate'
