@@ -73,7 +73,7 @@ class Calibrate(threading.Thread):
             apflog("Focus has finished. Setting phase to Cal-Pre",echo=True)
             
         if not self.test:
-            APFTask.set(parent, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
+            APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
         return result
 
@@ -95,7 +95,7 @@ class Calibrate(threading.Thread):
         else:
             result = self.apf.calibrate(script = opt.calibrate, time = time)
             if not self.test:
-                APFTask.set(parent, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
+                APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
         if result == False:
             apflog("Calibrate Pre has failed. Trying again",level='warn',echo=True)
@@ -114,7 +114,7 @@ class Calibrate(threading.Thread):
         timeout = int(self.stime-now)
         if now < self.stime:
             apflog("Waiting until %s to begin" %  datetime.fromtimestamp(now),echo=True)
-            APFTask.wait(parent, True, timeout=timeout)
+            APFTask.wait(self.task, True, timeout=timeout)
 
         if self.phase_index == 1:
             bias_result = self.testBias()
@@ -124,7 +124,7 @@ class Calibrate(threading.Thread):
 
         for pi in (self.phase_index,self.phase_index+1):
             cur_phase = self.possible_phases[pi]
-            APFTask.phase(parent, self.possible_phases[pi])
+            APFTask.phase(self.task, self.possible_phases[pi])
             apflog("Phase now %s" % cur_phase,echo=True)
             if cur_phase[0:3] == 'Cal':
                 result = self.calibrate(cur_phase)
