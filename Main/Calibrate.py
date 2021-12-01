@@ -122,10 +122,13 @@ class Calibrate(threading.Thread):
         if bias_result is False:
             return
 
-        for pi in (self.phase_index,self.phase_index+1):
+        start = self.phase_index
+        end = self.phase_index+1
+        for pi in (start,end):
+            self.phase_index = pi
             cur_phase = self.possible_phases[pi]
             APFTask.phase(self.task, self.possible_phases[pi])
-            apflog("Phase now %s" % cur_phase,echo=True)
+            apflog("Phase now %s %d" % (cur_phase,pi),echo=True)
             if cur_phase[0:3] == 'Cal':
                 result = self.calibrate(cur_phase)
             else:
