@@ -39,7 +39,7 @@ class Calibrate(threading.Thread):
         
         self.name = 'Calibrate'
         self.signal = True
-#        self.start()
+        self.start()
 
 
     def testBias(self):
@@ -168,10 +168,6 @@ if __name__ == "__main__":
 
     stime = time.time() + 5
     calibrate = Calibrate(apf,'public',stime,task=task,test=True)
-    calibrate.testBias()
-    calibrate.focusInstr()
-    calibrate.calibrate('Cal-Pre')
-    calibrate.start()
     while calibrate.signal:
         try:
             APFTask.wait(task,True,timeout=1)
