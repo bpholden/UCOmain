@@ -13,7 +13,7 @@ import astropy.time
 import apflog
 import ktl
 
-class WatchData():
+class WatchData(threading.Thread):
 
     def __init__(self):
 
