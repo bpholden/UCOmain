@@ -1,9 +1,9 @@
 from __future__ import print_function
 from datetime import datetime, timedelta
+import glob
 import os
 import os.path
-import signal
-from select import select
+import sys
 import threading
 import time
 
@@ -16,9 +16,11 @@ import ktl
 class WatchData(threading.Thread):
 
     def __init__(self):
+        threading.Thread.__init__(self)
+        self.setDaemon(True)
 
         self.apfucam = ktl.Service('apfucam')
-        self.outdir = self.apfucam['OUTDIR']
+        self.outdir = self.apfucam['OUTDIR'].read()
         self.checked_list = {}
         self.signal = True
 
@@ -45,7 +47,7 @@ class WatchData(threading.Thread):
         bad = []
         for fn in file_list:
             if fn not in self.checked_list.keys():
-                rv = badFile(fn)
+                rv = self.badFile(fn)
                 self.checked_list[fn] = 'done'
                 if rv:
                     bad.append(fn)
