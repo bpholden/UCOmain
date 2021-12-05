@@ -858,6 +858,7 @@ class APF:
         lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal"])
         if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
+            
         result = self.runFocusinstr()
 
         dewarfocraw = self.dewarfoc.read(binary=True)
@@ -1659,6 +1660,7 @@ class APF:
         ffn = exp.outfile.read() + exp.obsnum.read() + '.fits'
         fpath = os.path.join(outdir,ffn)
 
+        apflog("Taking a test bias image called %s" % (ffn),echo=True)
         # actually take a picture
         try:
             c = exp.expose(waitlast=True)
@@ -1672,6 +1674,7 @@ class APF:
             rv = True
         else:
             rv = False
+        apflog("File located at %s is " % (fpath,os.path.exists(fpath)),echo=True)
 
         # restore original values
         try:
