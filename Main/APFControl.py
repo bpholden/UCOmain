@@ -1674,7 +1674,7 @@ class APF:
             rv = True
         else:
             rv = False
-        apflog("File located at %s is " % (fpath,os.path.exists(fpath)),echo=True)
+        apflog("File located at %s is %s" % (fpath,str(os.path.exists(fpath))),echo=True)
 
         # restore original values
         try:
@@ -1727,7 +1727,7 @@ class APF:
 
         # we cannot wait on the UCAM or UCAMLAUNCHER keywords,
         # the dispatcher is down
-        APFTask.wait(self.task,timeout=240)
+        APFTask.wait(self.task,False,timeout=240)
         
         command = apftask['UCAMLAUNCHER_UCAM_COMMAND']
         ucamstat = apftask['UCAMLAUNCHER_UCAM_STATUS']
