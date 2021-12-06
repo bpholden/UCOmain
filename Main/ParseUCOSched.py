@@ -384,7 +384,8 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
 
     if hour_constraints is not None:
         done_names = hour_constraints['runname'][hour_constraints['left'] < 0]
-    
+    else:
+        done_names = []
 
     stars = []
     # Build the star table to return to
