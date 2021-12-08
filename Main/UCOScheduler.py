@@ -33,6 +33,7 @@ LAST = 'L'
 
 def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table=None):
     # make this a function, have it return the current priorities, than change references to the star_table below into references to the current priority list
+    # new_pri = np.zeros_like(star_table['pri'])
     new_pri = np.zeros_like(star_table['APFpri'])
     new_pri += star_table['APFpri']
 
@@ -53,16 +54,23 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
 
     bad_pri = np.floor(cadence_check * 100)
     bad_pri = np.int_(bad_pri)
+
+    # low_pri = star_table['pri'] > 1
+    
     if rank_table is not None:
         for sheetn in rank_table['sheetn']:
             if sheetn not in done_sheets:
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += rank_table['rank'][rank_table['sheetn'] == sheetn]
                 new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
+                # new_pri[cur & low_pri] -= 40
             else:
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += 100
                 new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
+                # new_pri[cur & low_pri ] -= 40
+
+    # new_pri[new_pri < 0] = 1
                 
     return new_pri
 
