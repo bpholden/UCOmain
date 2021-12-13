@@ -121,7 +121,7 @@ class Calibrate(threading.Thread):
         if self.wait_time > 0:
             APFTask.wait(self.task, True, timeout=self.wait_time)
 
-        if self.phase_index == 1:
+        if self.phase_index == 0:
             bias_result = self.testBias()
         
         if bias_result is False:
