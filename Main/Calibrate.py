@@ -25,12 +25,12 @@ from apflog import *
 AVERAGE_INSTRFOC = 8522
 
 class Calibrate(threading.Thread):
-    def __init__(self, apf, name, stime, phase_index=1, task='master', test=False):
+    def __init__(self, apf, name, wait_time, phase_index=1, task='master', test=False):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.apf = apf
         self.task = task
-        self.stime = stime
+        self.wait_time = wait_time
         self.user = name
         self.owner = 'public'
         self.test = test
@@ -118,11 +118,8 @@ class Calibrate(threading.Thread):
         
     def run(self):
 
-        now = time.time()
-        timeout = int(self.stime-now)
-        if now < self.stime:
-            apflog("Waiting until %s to begin" %  datetime.fromtimestamp(now),echo=True)
-            APFTask.wait(self.task, True, timeout=timeout)
+        if self.wait_time > 0:
+            APFTask.wait(self.task, True, timeout=self.wait_time)
 
         if self.phase_index == 1:
             bias_result = self.testBias()
