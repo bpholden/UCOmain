@@ -341,23 +341,6 @@ if __name__ == '__main__':
     if phase_index == 0:
         apflog("Setting the task step to 0")
         APFTask.step(parent, 0)
-        apflog("Setting Observer Information", echo=True)
-        opt = setObsDefaults(opt)
-        apflog("Using %s for name and %s for obs number." % (opt.name, repr(opt.obsnum)), echo=True)
-        apf.setObserverInfo(num=opt.obsnum, name=opt.name, owner=opt.owner)
-
-        APFLib.write(apf.robot["SCRIPTOBS_MESSAGE"], "Setting defaults for observing.")
-        if opt.fixed:
-            if not os.path.exists(opt.fixed):
-                errmsg = "starlist %s does not exist" % (opt.fixed)
-                apflog(errmsg, level="error", echo=True)
-                shutdown()
-            if not debug:
-                APFTask.set(parent, "STARLIST", opt.fixed)
-        else:
-            if not debug:
-                APFTask.set(parent, "STARLIST", "")
-        
         if os.path.exists(os.path.join(os.getcwd(),"googledex.dat")):
             logpush(os.path.join(os.getcwd(),"googledex.dat"))
         
