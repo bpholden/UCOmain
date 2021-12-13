@@ -9,6 +9,7 @@ import time
 
 import astropy.io.ascii
 
+import ktl
 import APFTask
 
 from apflog import apflog
@@ -55,6 +56,10 @@ class getUCOTargets(threading.Thread):
         self.certificate = certificate
 
 
+        eostele = ktl.Service('eostele')
+        self.sunel = eostele['sunel']
+        self.sunel.monitor()
+
         if opt.test:
             self.debug = opt.test
         else:
@@ -68,7 +73,8 @@ class getUCOTargets(threading.Thread):
 
     def run(self):
 
-        APFTask.wait(self.task, True, timeout=self.wait_time)
+        expression = 'eostele.SUNEL < -4'
+        APFTask.waitFor(self.task, True, expression=expression, timeout=self.wait_time)
         
         if self.signal:
             if self.debug:
