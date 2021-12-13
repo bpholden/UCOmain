@@ -130,6 +130,8 @@ class Calibrate(threading.Thread):
 
         start = self.phase_index
         end = self.possible_phases.index('Watching')
+        apflog("Starting with phase %d %s" % (self.phase_index,self.possible_phases[self.phase_index]), echo=True)
+        
         for pi in range(start,end):
             self.phase_index = pi
             cur_phase = self.possible_phases[pi]

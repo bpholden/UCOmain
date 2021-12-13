@@ -351,6 +351,7 @@ if __name__ == '__main__':
         APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
         APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)        
         apflog("Initialization finished")
+        phase_index = phase_index + 1
 
     if phase_index <= 1: 
         stime, start_dt, sun_dt = calcFocusStartTime()
@@ -361,7 +362,6 @@ if __name__ == '__main__':
         apflog(startstr, echo=True)
         APFTask.set(parent, suffix="MESSAGE", value=startstr, wait=False)
         APFTask.wait(parent, True, timeout=stime)
-        phase_index = phase_index + 1
     else:
         stime = 0
 
