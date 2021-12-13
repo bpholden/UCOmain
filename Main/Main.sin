@@ -409,7 +409,13 @@ if __name__ == '__main__':
 
         stime = 0
 
-    # 4) Start the main watcher thread
+    if phase_index < 3:
+        apflog("Starting calibration thread at phase %s" % (possible_phases[phase_index]), echo=True)
+        calibrate = Calibrate(apf, 'public', stime, phase_index=phase_index, task=parent, test=debug, possible_phases=possible_phases)
+    else:
+        apflog("Skipping calibrations", echo=True)
+        
+    # Start the main watcher thread
     observe = Observe(apf,opt)
     if 'Watching' == str(phase).strip():
         apf.instrPermit()
