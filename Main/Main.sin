@@ -423,32 +423,34 @@ if __name__ == '__main__':
     apf.instrPermit()
     apflog("Starting the main watcher." ,echo=True)
 
-        if opt.binning > 1:
-            apfmon = ktl.Service('apfmon')
-            d = time.time() + 22.*3600
-            try:
-                apfmon['BINNINGDIS'].write(d,binary=True,timeout=2)
-            except:
-                apflog("cannot write apfmon7 keyword" % (e),level='Alert',echo=True)
+    bstr = "%d,%d" % (opt.binning,opt.binning)
+    apf.ucam['BINNING'].write(bstr)
+
+    if opt.binning > 1:
+        apfmon = ktl.Service('apfmon')
+        d = time.time() + 22.*3600
+        try:
+            apfmon['BINNINGDIS'].write(d,binary=True,timeout=2)
+        except:
+            apflog("cannot write apfmon7 keyword" % (e),level='Alert',echo=True)
             
-        if opt.fixed != None:
-            lastList = apf.robot["MASTER_STARLIST"].read()
-            # This resets lines done if this is a new target list
-            if opt.fixed != lastList:
-                APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
-                APFLib.write(apf.robot["MASTER_STARLIST"], opt.fixed)
-            if opt.line != None:
-                APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], int(opt.line))
-                apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
-            else:
-                apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
+    if opt.fixed != None:
+        lastList = apf.robot["MASTER_STARLIST"].read()
+        # This resets lines done if this is a new target list
+        if opt.fixed != lastList:
+            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
+            APFLib.write(apf.robot["MASTER_STARLIST"], opt.fixed)
+        if opt.line != None:
+            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], int(opt.line))
+            apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
         else:
-            apflog("Starting dynamic scheduler", echo=True)
-        observe.task = parent
-        # observe object should be set up for running now
-        observe.start()
+            apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
     else:
-        observe.signal = False
+        apflog("Starting dynamic scheduler", echo=True)
+        
+    observe.task = parent
+    # observe object should be set up for running now
+    observe.start()
 
     while observe.signal:
         # Observe is running, check for keyboard interupt
