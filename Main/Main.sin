@@ -347,9 +347,6 @@ if __name__ == '__main__':
         if os.path.exists(os.path.join(os.getcwd(),"robot.log")):
             logpush(os.path.join(os.getcwd(),"robot.log"))
             
-        if os.path.exists(os.path.join(os.getcwd(),"googledex.dat")):
-            logpush(os.path.join(os.getcwd(),"googledex.dat"))
-
         apflog("Setting SCRIPTOBS_LINES_DONE to 0")
         APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
         APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)        
