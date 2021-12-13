@@ -366,6 +366,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
                     "texp", "I2", "expcount","decker","Close Companion", "APFnshots", \
                     "owner", "APFpri", "APFcad", "lastobs", "B-V", \
+#                    "owner", "pri", "APFcad", "lastobs", "B-V", \
                     "uth","utm","duration", \
                     "Template", "Nobs", "Total Obs", \
                     "mode", "raoff", "decoff", "Bstar", "obsblock",\
@@ -393,6 +394,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         row = []
         if ls[0] == '':
             continue
+#        apfpri = floatDefault(ls[didx["pri"]])
         apfpri = floatDefault(ls[didx["APFpri"]])
         apfpri = int(round(apfpri))
         nobs = intDefault(ls[didx["Nobs"]])
