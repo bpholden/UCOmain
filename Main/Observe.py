@@ -633,6 +633,7 @@ class Observe(threading.Thread):
             ripd, running = self.apf.findRobot()
             cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
+            calibrating = (apf.focussta['binary'] < 3) or (apf.calsta['binary'] < 3)
 
             # Check and close for weather
             self.badweather = self.apf.dewTooClose or not self.apf.openOK
@@ -803,7 +804,7 @@ class Observe(threading.Thread):
                 rv = self.checkServos()
 
             # If we are open and scriptobs isn't running, start it up
-            if self.apf.isReadyForObserving()[0] and not running and float(cursunel) <= sunel_lim and self.apf.openOK:
+            if self.apf.isReadyForObserving()[0] and not running and float(cursunel) <= sunel_lim and self.apf.openOK and not calibrating:
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
                 rv = checkTelState()
                 if rv is False:
