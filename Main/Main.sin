@@ -417,9 +417,8 @@ if __name__ == '__main__':
         
     # Start the main watcher thread
     observe = Observe(apf,opt)
-    if 'Watching' == str(phase).strip():
-        apf.instrPermit()
-        apflog("Starting the main watcher." ,echo=True)
+    getUCOTargets = getUCOTargets(opt, task=parent)
+    
 
         downloadFiles(opt)
         
