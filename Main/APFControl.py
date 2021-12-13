@@ -1661,11 +1661,12 @@ class APF:
         fpath = os.path.join(outdir,ffn)
         while os.path.exists(fpath):
             obsn += 1
+            ffn = "%s%d.fits" % (ofn,obsn)
         
         # write test values
         try:
             exp.outfile.write(ofn)
-            exp.obsnum.write(obsn)
+            exp.obsnum.write(str(obsn))
             apfschedule['OWNRHINT'].write('unknown')
         except:
             return False
