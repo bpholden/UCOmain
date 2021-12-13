@@ -317,15 +317,6 @@ if __name__ == '__main__':
     apflog("Phase at start is: %s" % phase, echo=True)
     APFLib.write(apf.robot["SCRIPTOBS_MESSAGE"], '')
 
-    # Start the actual operations
-    # Goes through 5 steps:
-    # 1) Set the observer information
-    # 2) Run focuscube
-    # 3) Run calibrate ucsc pre
-    # 4) Start the main watcher
-    # 5) Run calibrate ucsc post
-    # Specifying a phase jumps straight to that point, and continues from there.
-
 
     # Make sure that the command line arguments are respected.
     # Regardless of phase, if a name, obsnum, or reset was commanded, make sure we perform these operations.
