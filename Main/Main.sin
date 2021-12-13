@@ -407,6 +407,7 @@ if __name__ == '__main__':
         phase_index = phase_index + 1
     else:
 
+        stime = 0
 
     # 4) Start the main watcher thread
     observe = Observe(apf,opt)
