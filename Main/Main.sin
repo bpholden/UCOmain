@@ -406,78 +406,8 @@ if __name__ == '__main__':
         APFTask.set(parent, suffix="MESSAGE", value=startstr, wait=False)
         
         APFTask.wait(parent, True, timeout=stime)
-        phase_index += 1
-        APFTask.phase(parent, possible_phases[phase_index])
-        apflog("Phase is now %s" % phase,echo=True)
-        
-    # 2) Run autofocus cube
-    if "Focus" == str(phase).strip():
-        
-        apflog("Starting focusinstr script.", level='Info', echo=True)
-
-        result = apf.testBias()
-        if result == None:
-            apflog("Focusinstr or calibrate or scriptobs are running?!", level='Error', echo=True)
-        if result == False:
-            # this is a UCAM problem
-            rv = apf.ucamRestart()
-            if rv == False:
-                apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
-                shutdown()
-        
-        result = apf.ucamStatus()
-        if result is False:
-            apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
-            shutdown()
-            
-        result = apf.focusinstr()
-        if result is False:
-            rv = apf.ucamRestart()
-            if rv == False:
-                apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
-                shutdown()
-            result = apf.focusinstr()
-            if result is False:
-                shutdown()
-            
-        
-        apflog("Focus has finished. Setting phase to Cal-Pre")
-        if not debug:
-            APFTask.set(parent, suffix="LAST_OBS_UCSC", value=apf.ucam["OBSNUM"].read())
-        phase_index += 1
-        APFTask.phase(parent, possible_phases[phase_index])
-        apflog("Phase now %s" % phase)
-
-    # 3) Run pre calibrations
-    if 'Cal-Pre' == str(phase).strip():
-        if not debug:
-            APFTask.set(parent, suffix="LAST_OBS_UCSC", value=apf.ucam["OBSNUM"].read())
-
-        apflog("Starting calibrate pre script.", level='Info', echo=True)
-        apf.instrPermit()
-
-        result = apf.ucamStatus()
-        if result is False:
-            apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
-            shutdown()
-        
-        result = apf.calibrate(script = opt.calibrate, time = 'pre')
-        if not debug:
-            APFTask.set(parent, suffix="LAST_OBS_UCSC", value=apf.ucam["OBSNUM"].read())
-
-        if result == False:
-            apflog("Calibrate Pre has failed. Trying again",level='warn',echo=True)
-            apf.instrPermit()
-            result = apf.calibrate(script = opt.calibrate, time = 'pre')
-            if not result:
-                apflog("Error: Calibrate Pre has failed twice. Observer is exiting.",level='error',echo=True)
-                apf.turnOffLamps()
-                sys.exit(2)
-
-        phase_index += 1
-
-        APFTask.phase(parent, possible_phases[phase_index])
-        apflog("Calibrate Pre has finished. Setting phase to %s." % phase)
+        phase_index = phase_index + 1
+    else:
 
 
     # 4) Start the main watcher thread
