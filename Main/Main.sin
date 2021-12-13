@@ -37,6 +37,8 @@ from apflog import *
 import UCOScheduler_V1 as ds
 import ParseUCOSched
 from Observe import Observe
+from Calibrate import Calibrate
+from getUCOTargets import getUCOTargets
 
 os.umask(0007)
 
