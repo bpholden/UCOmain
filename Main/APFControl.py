@@ -1656,8 +1656,12 @@ class APF:
 
         
         ofn  = 'test_'
-        obsn = '0001'
-
+        obsn = 1
+        ffn = "%s%d.fits" % (ofn,obsn)
+        fpath = os.path.join(outdir,ffn)
+        while os.path.exists(fpath):
+            obsn += 1
+        
         # write test values
         try:
             exp.outfile.write(ofn)
