@@ -25,7 +25,7 @@ from apflog import *
 AVERAGE_INSTRFOC = 8522
 
 class Calibrate(threading.Thread):
-    def __init__(self, apf, name, wait_time, phase_index=1, task='master', test=False, possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
+    def __init__(self, apf, name, wait_time, calfile, phase_index=1, task='master', test=False, possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.apf = apf
@@ -34,6 +34,7 @@ class Calibrate(threading.Thread):
         self.user = name
         self.owner = 'public'
         self.test = test
+        self.calfile = calfile
         self.possible_phases = possible_phases
         self.phase_index = phase_index
         
@@ -101,7 +102,7 @@ class Calibrate(threading.Thread):
             apflog("Would have run APFControl.calibrate for time %s" % (time),echo=True)
             result = True
         else:
-            result = self.apf.calibrate(script = opt.calibrate, time = time)
+            result = self.apf.calibrate(script = self.calfile, time = time)
             if not self.test:
                 APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
