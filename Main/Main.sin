@@ -420,10 +420,8 @@ if __name__ == '__main__':
     getUCOTargets = getUCOTargets(opt, task=parent)
     
 
-        downloadFiles(opt)
-        
-        bstr = "%d,%d" % (opt.binning,opt.binning)
-        apf.ucam['BINNING'].write(bstr)
+    apf.instrPermit()
+    apflog("Starting the main watcher." ,echo=True)
 
         if opt.binning > 1:
             apfmon = ktl.Service('apfmon')
