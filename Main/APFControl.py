@@ -1662,6 +1662,7 @@ class APF:
         while os.path.exists(fpath):
             obsn += 1
             ffn = "%s%d.fits" % (ofn,obsn)
+            fpath = os.path.join(outdir,ffn)
         
         # write test values
         try:
