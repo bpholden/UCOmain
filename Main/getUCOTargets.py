@@ -55,11 +55,6 @@ class getUCOTargets(threading.Thread):
         self.prilim = prilim
         self.certificate = certificate
 
-
-        eostele = ktl.Service('eostele')
-        self.sunel = eostele['sunel']
-        self.sunel.monitor()
-
         if opt.test:
             self.debug = opt.test
         else:
@@ -73,7 +68,10 @@ class getUCOTargets(threading.Thread):
 
     def run(self):
 
-        expression = 'eostele.SUNEL < -4'
+        # these tests are against binary values
+        # and binary values are in radians
+        # the test is for -4 degrees 
+        expression = '$eostele.SUNEL < -0.0698'
         APFTask.waitFor(self.task, True, expression=expression, timeout=self.wait_time)
         
         if self.signal:
