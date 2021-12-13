@@ -363,7 +363,6 @@ if __name__ == '__main__':
         APFTask.wait(parent, True, timeout=stime)
         phase_index = phase_index + 1
     else:
-
         stime = 0
 
     if phase_index < 3:
