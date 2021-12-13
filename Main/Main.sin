@@ -362,14 +362,13 @@ if __name__ == '__main__':
     # Make sure that the command line arguments are respected.
     # Regardless of phase, if a name, obsnum, or reset was commanded, make sure we perform these operations.
     
-    if "Init" == str(phase).strip():
+    if phase_index == 0:
         apflog("Setting the task step to 0")
         APFTask.step(parent, 0)
         apflog("Setting Observer Information", echo=True)
         opt = setObsDefaults(opt)
         apflog("Using %s for name and %s for obs number." % (opt.name, repr(opt.obsnum)), echo=True)
         apf.setObserverInfo(num=opt.obsnum, name=opt.name, owner=opt.owner)
-
 
         APFLib.write(apf.robot["SCRIPTOBS_MESSAGE"], "Setting defaults for observing.")
         if opt.fixed:
@@ -404,7 +403,6 @@ if __name__ == '__main__':
         startstr = "Estimating focusinstr will start at %s for a sunset at %s" % ( start_dt, sun_dt)
         apflog(startstr, echo=True)
         APFTask.set(parent, suffix="MESSAGE", value=startstr, wait=False)
-        
         APFTask.wait(parent, True, timeout=stime)
         phase_index = phase_index + 1
     else:
