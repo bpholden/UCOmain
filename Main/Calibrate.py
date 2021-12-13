@@ -123,10 +123,9 @@ class Calibrate(threading.Thread):
 
         if self.phase_index == 0:
             bias_result = self.testBias()
-        
-        if bias_result is False:
-            self.stop()
-            return
+            if bias_result is False:
+                self.stop()
+                return
 
         start = self.phase_index
         end = self.possible_phases.index('Watching')
