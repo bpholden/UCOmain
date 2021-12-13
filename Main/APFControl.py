@@ -162,6 +162,8 @@ class APF:
     observed     = robot['SCRIPTOBS_OBSERVED']
     apfteqsta    = robot['APFTEQ_STATUS']
     metxfersta   = robot['METSXFER_STATUS']
+    calsta       = robot['CALIBRATE_STATUS']
+    focussta     = robot['FOCUSINSTR_STATUS']
     
 
     ucam       = ktl.Service('apfucam')
@@ -288,6 +290,10 @@ class APF:
 
         self.metxfersta.monitor()
         self.metxfersta.callback(self.apftaskMon)
+        
+        self.calsta.monitor()
+        self.focussta.monitor()
+
         
         # Grab some initial values for the state of the telescope
 
@@ -1486,6 +1492,10 @@ class APF:
             return
         self.DMReset()
 
+        if self.calsta['binary'] < 3 or self.focussta['binary'] < 3:
+            apflog('Focusinstr and/or Calibrate are running, will skip evening star observation. focusinstr=%s calibrate=%s' % (self.calsta,self.focussta),echo=True)
+            return
+        
         # check on weirdness for UCAM host post-reboot
         self.ucamdispatchmon()
 
