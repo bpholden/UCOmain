@@ -633,7 +633,7 @@ class Observe(threading.Thread):
             ripd, running = self.apf.findRobot()
             cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
-            calibrating = (apf.focussta['binary'] < 3) or (apf.calsta['binary'] < 3)
+            calibrating = (self.apf.focussta['binary'] < 3) or (self.apf.calsta['binary'] < 3)
 
             # Check and close for weather
             self.badweather = self.apf.dewTooClose or not self.apf.openOK
