@@ -385,7 +385,7 @@ if __name__ == '__main__':
         
     # Start the main watcher thread
     observe = Observe(apf,opt)
-    getUCOTargets = getUCOTargets(opt, task=parent)
+    getUCOTargets = getUCOTargets(opt, task=parent,wait_time=stime+3.75*3600)
     
 
     apf.instrPermit()
