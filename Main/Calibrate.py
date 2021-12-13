@@ -25,7 +25,7 @@ from apflog import *
 AVERAGE_INSTRFOC = 8522
 
 class Calibrate(threading.Thread):
-    def __init__(self, apf, name, wait_time, phase_index=1, task='master', test=False):
+    def __init__(self, apf, name, wait_time, phase_index=1, task='master', test=False, possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.apf = apf
@@ -34,7 +34,7 @@ class Calibrate(threading.Thread):
         self.user = name
         self.owner = 'public'
         self.test = test
-        self.possible_phases = ['Init','Focus','Cal-Pre','Cal-Post','Focus-Post']
+        self.possible_phases = possible_phases
         self.phase_index = phase_index
         
         self.name = 'Calibrate'
@@ -125,11 +125,12 @@ class Calibrate(threading.Thread):
             bias_result = self.testBias()
         
         if bias_result is False:
+            self.stop()
             return
 
         start = self.phase_index
-        end = self.phase_index+1
-        for pi in (start,end):
+        end = self.possible_phases.index('Watching')
+        for pi in range(start,end):
             self.phase_index = pi
             cur_phase = self.possible_phases[pi]
             APFTask.phase(self.task, self.possible_phases[pi])
