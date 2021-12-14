@@ -463,7 +463,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         if expcount > EXP_LIM:
             expcount = EXP_LIM
         star_table['expcount'].append(expcount)
-        star_table['APFnshots'].append(intDefault(ls[didx["APFnshots"]],default=1))
+        star_table['nexp'].append(intDefault(ls[didx["APFnshots"]],default=1))
 
 
         # scheduler specific

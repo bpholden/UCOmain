@@ -269,7 +269,7 @@ def makeScriptobsLine(star_table_row, t, decker="W", I2="Y", owner='public', foc
     if temp:
         count = numTemplateExp(star_table_row['Vmag'])
     else:
-        count = int(star_table_row['APFnshots'])
+        count = int(star_table_row['nexp'])
 
     ret += 'count=%d ' % (count)
 
@@ -438,7 +438,7 @@ def enoughTimeTemplates(star_table,stars,idx,apf_obs,dt):
     
     tot_time = count * 1200
 
-    tot_time += 210 + (2*40 + 40*(star_table['APFnshots'][idx]-1)) + 2400 # two B star exposures + three 70 second acquisitions and the actual observation readout times
+    tot_time += 210 + (2*40 + 40*(star_table['nexp'][idx]-1)) + 2400 # two B star exposures + three 70 second acquisitions and the actual observation readout times
     vis, star_elevations, fin_els, scaled_els = Visible.visible(apf_obs,[stars[idx]],[tot_time])
     time_left_before_sunrise = computeSunrise(dt,horizon='-9')
 
@@ -528,7 +528,7 @@ def makeResult(stars,star_table,totexptimes,final_priorities,dt,idx,focval=0,bst
     res['BV']     = star_table['B-V'][idx]
     res['COUNTS'] = star_table['expcount'][idx]
     res['EXP_TIME'] = star_table['texp'][idx]
-    res['NEXP'] = star_table['APFnshots'][idx]
+    res['NEXP'] = star_table['nexp'][idx]
     res['TOTEXP_TIME'] = totexptimes[idx]
     res['NAME']   = star_table['name'][idx]
     res['PRI']    = final_priorities[idx]
@@ -680,7 +680,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
 
 
     totexptimes = np.zeros(targNum, dtype=float)
-    totexptimes = star_table['texp'] * star_table['APFnshots'] + 40 * (star_table['APFnshots']-1)
+    totexptimes = star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)
 
     available = np.ones(targNum, dtype=bool)
     cur_elevations = np.zeros(targNum, dtype=float)
