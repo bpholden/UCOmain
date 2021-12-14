@@ -144,12 +144,12 @@ if __name__ == "__main__":
     task = 'example'
     APFTask.establish(task,os.getpid())
     opt = Opt()
-    opt.test = True
+    opt.test = False
     opt.too = None
     opt.time_left = "/home/holden/time_left.csv"
     opt.rank_table = '2021B_ranks'
     opt.frac_table = '2021B_frac'
-    opt.sheet = "RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A003,2021B_A005,2021B_A006,2021B_A007,2021B_A008,2021B_A010,2021B_A011,2021B_A012,2021B_A013,2021B_A014".split(",")
+    opt.sheet = "RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A003,2021B_A005,2021B_A006,2021B_A007,2021B_A008,2021B_A010,2021B_A011".split(",")
     
     
     get_targs = getUCOTargets(opt, task=task)
