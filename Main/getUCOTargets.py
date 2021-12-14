@@ -92,7 +92,7 @@ class getUCOTargets(threading.Thread):
                 print("Would have downloaded %s" % (self.rank_table))
             else:
                 try:
-                    rank_table = ds.makeRankTable(sheet_table_name=self.rank_table,outdir=os.getcwd(),certificate=self.certificate)
+                    rank_table = ds.makeRankTable(self.rank_table,outdir=os.getcwd())
                 except Exception as e:
                     apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
                     # goto backup
@@ -115,8 +115,7 @@ class getUCOTargets(threading.Thread):
                 print("Would have downloaded %s" % (self.frac_table))
             else:
                 try:
-                    hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints,
-                                                  certificate=self.certificate)
+                    hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints)
                 except Exception as e:
                     apflog("Error: Cannot download frac_table?! %s" % (e),level="error")
 
