@@ -471,8 +471,8 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
 
 
         # scheduler specific
-#        star_table['APFpri'].append(apfpri)
-#        star_table['APFcad'].append(floatDefault(ls[didx["APFcad"]],default=0.7))
+        star_table['APFpri'].append(apfpri)
+        star_table['APFcad'].append(floatDefault(ls[didx["APFcad"]],default=0.7))
 #        star_table['pri'].append(apfpri)
 #        star_table['cad'].append(floatDefault(ls[didx["cad"]],default=0.7))
         star_table["lastobs"].append(floatDefault(ls[didx["lastobs"]],default=0))
