@@ -355,6 +355,9 @@ def initStarTable(col_list):
     star_table['totobs'] = []
     star_table['ra'] = []
     star_table['dec'] = []
+    star_table['nexp'] = []
+    star_table['cad'] = []
+    star_table['pri'] = []
 
     return star_table
 
@@ -364,9 +367,10 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
     # These are the columns we need for scheduling
     req_cols = ["Star Name", "RA hr", "RA min", "RA sec", \
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
-                    "texp", "I2", "expcount","decker","Close Companion", "APFnshots", \
+                    "texp", "I2", "expcount", "decker","Close Companion", "APFnshots", \
+#                    "texp", "I2", "expcount", "decker","Close Companion", "nexp", \
                     "owner", "APFpri", "APFcad", "lastobs", "B-V", \
-#                    "owner", "pri", "APFcad", "lastobs", "B-V", \
+#                    "owner", "pri", "cad", "lastobs", "B-V", \
                     "uth","utm","duration", \
                     "Template", "Nobs", "Total Obs", \
                     "mode", "raoff", "decoff", "Bstar", "obsblock",\
@@ -463,12 +467,14 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         if expcount > EXP_LIM:
             expcount = EXP_LIM
         star_table['expcount'].append(expcount)
-        star_table['APFnshots'].append(intDefault(ls[didx["APFnshots"]],default=1))
+        star_table['nexp'].append(intDefault(ls[didx["APFnshots"]],default=1))
 
 
         # scheduler specific
         star_table['APFpri'].append(apfpri)
         star_table['APFcad'].append(floatDefault(ls[didx["APFcad"]],default=0.7))
+#        star_table['pri'].append(apfpri)
+#        star_table['cad'].append(floatDefault(ls[didx["cad"]],default=0.7))
         star_table["lastobs"].append(floatDefault(ls[didx["lastobs"]],default=0))
 
         inval = floatDefault(ls[didx["B-V"]],default=0.7)
