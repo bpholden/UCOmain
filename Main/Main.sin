@@ -321,11 +321,6 @@ if __name__ == '__main__':
     # Make sure that the command line arguments are respected.
     # Regardless of phase, if a name, obsnum, or reset was commanded, make sure we perform these operations.
     
-    apflog("Setting Observer Information", echo=True)
-    opt = setObsDefaults(opt)
-    apflog("Using %s for name and %s for obs number." % (opt.name, repr(opt.obsnum)), echo=True)
-    apf.setObserverInfo(num=opt.obsnum, name=opt.name, owner=opt.owner)
-
     APFLib.write(apf.robot["SCRIPTOBS_MESSAGE"], "Setting defaults for observing.")
     if opt.fixed:
         if not os.path.exists(opt.fixed):
@@ -339,6 +334,11 @@ if __name__ == '__main__':
             APFTask.set(parent, "STARLIST", "")
         
     if phase_index == 0:
+        apflog("Setting Observer Information", echo=True)
+        opt = setObsDefaults(opt)
+        apflog("Using %s for name and %s for obs number." % (opt.name, repr(opt.obsnum)), echo=True)
+        apf.setObserverInfo(num=opt.obsnum, name=opt.name, owner=opt.owner)
+
         apflog("Setting the task step to 0")
         APFTask.step(parent, 0)
         if os.path.exists(os.path.join(os.getcwd(),"googledex.dat")):
