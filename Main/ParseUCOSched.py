@@ -355,6 +355,7 @@ def initStarTable(col_list):
     star_table['totobs'] = []
     star_table['ra'] = []
     star_table['dec'] = []
+    star_table['nexp'] = []
 
     return star_table
 
