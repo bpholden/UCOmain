@@ -52,7 +52,7 @@ def apflog(msg, level='Notice', echo=True):
     
     if level in ['error']:
         subject = "[APF] An Error has occured"
-        sendmail(subject, msg, to=['holden@ucolick.org','jrees@ucolick.org'])
+        sendmail(subject, msg, to=['holden@ucolick.org'])
     if level in ['Crit', 'Alert', 'Emerg']:
         subject = "[APF] An Error has occured"
         sendmail(subject, msg, to=['holden@ucolick.org','jrees@ucolick.org ','8314211210@txt.att.net'])
