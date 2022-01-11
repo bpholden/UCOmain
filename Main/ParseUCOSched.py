@@ -397,8 +397,11 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         row = []
         if ls[0] == '':
             continue
-#        apfpri = floatDefault(ls[didx["pri"]])
-        apfpri = floatDefault(ls[didx["APFpri"]])
+        if "pri" in didx and ls[didx["pri"]] is not None:
+            apfpri = floatDefault(ls[didx["pri"]])
+        else:
+            apfpri = floatDefault(ls[didx["APFpri"]])
+            
         apfpri = int(round(apfpri))
         nobs = intDefault(ls[didx["Nobs"]])
         totobs = intDefault(ls[didx["Total Obs"]],default=-1)
@@ -466,14 +469,21 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         if expcount > EXP_LIM:
             expcount = EXP_LIM
         star_table['expcount'].append(expcount)
-        star_table['nexp'].append(intDefault(ls[didx["APFnshots"]],default=1))
-
+        if "nexp" in didx and ls[didx["nexp"]] is not None:
+            star_table['nexp'].append(intDefault(ls[didx["nexp"]],default=1))
+        elif "count" in didx and ls[didx['count']] is not None:
+            star_table['nexp'].append(intDefault(ls[didx["count"]],default=1))
+        else:
+            star_table['nexp'].append(intDefault(ls[didx["APFnshots"]],default=1))
+        
 
         # scheduler specific
-        star_table['APFpri'].append(apfpri)
-        star_table['APFcad'].append(floatDefault(ls[didx["APFcad"]],default=0.7))
-#        star_table['pri'].append(apfpri)
-#        star_table['cad'].append(floatDefault(ls[didx["cad"]],default=0.7))
+        if "cad" in didx and ls[didx['cad']] is not None:
+            star_table['cad'].append(floatDefault(ls[didx["cad"]],default=0.7))
+        else:
+            star_table['cad'].append(floatDefault(ls[didx["APFcad"]],default=0.7))
+            
+        star_table['pri'].append(apfpri)
         star_table["lastobs"].append(floatDefault(ls[didx["lastobs"]],default=0))
 
         inval = floatDefault(ls[didx["B-V"]],default=0.7)
