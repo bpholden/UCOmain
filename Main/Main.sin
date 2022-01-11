@@ -32,7 +32,7 @@ try:
 except:
     pass
 
-import APFControl 
+import APFControl
 from apflog import *
 import UCOScheduler_V1 as ds
 import ParseUCOSched
@@ -81,18 +81,18 @@ def controlWatch(keyword,parent):
 
 def signalShutdown(signal,frame):
     shutdown()
-    
+
 def shutdown():
     if success == True:
         status = 'Exited/Success'
-        
+
     else:
         status = 'Exited/Failure'
 
     try:
         APFTask.set(parent, 'STATUS', status)
         sys.exit()
-    except:   
+    except:
         print('Exited/Failure')
         os._exit(1)
     else:
@@ -103,7 +103,7 @@ def getStartTime(hr,mn):
 
     lt = datetime.now()
     ct = datetime.utcnow()
-    
+
     td_utc = ct - lt
     td_utc_off = int(10*math.floor(td_utc.seconds/10))
 
@@ -111,7 +111,7 @@ def getStartTime(hr,mn):
     st = datetime(ct.year, ct.month, ct.day, hr, mn)
     if lt.hour >= 12 and ct.day == lt.day:
         # the usual start time is the afternoon,
-        # sunset is after the start of next day in UT 
+        # sunset is after the start of next day in UT
         # if the ut day and the local day are the same
         # it is early afternoon and we need to add a day
         # if it is late enough, the ut day will be correct
@@ -120,13 +120,13 @@ def getStartTime(hr,mn):
     # strftime assumes that this a local time, so the time stamp is wrong by the UT offset
     st -= timedelta(seconds=td_utc_off)
     ts = float(st.strftime("%s"))
-   
+
     return ts
 
 def calcFocusStartTime():
     # computes time 3.25 hours before sunset
     udt = datetime.utcnow()
-    dt = datetime.now()    
+    dt = datetime.now()
     time_to_sunset = ds.computeSunset(udt)
     if time_to_sunset > 36000:
         # the sun has already set
@@ -160,10 +160,10 @@ def args(apftask):
 
     parser.add_argument('--rank_table', default='2020B_ranks', help="Optional name for table of sheet ranks")
     parser.add_argument('--sheet',default="RECUR_A100",help="Optional name for a Google spreadsheet")
-    parser.add_argument('--owner',default='public',help="Optional name for file owners")    
+    parser.add_argument('--owner',default='public',help="Optional name for file owners")
     parser.add_argument('--frac_table',default='2020B_frac',help="Table of fractions of the night")
     parser.add_argument('--time_left',default=None,help="File name for remaining time in programs")
-    
+
     opt = parser.parse_args()
 
     possible_list = ''
@@ -182,7 +182,7 @@ def args(apftask):
             saved_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
         except Exception as e:
             apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e),level='warn',echo=True)
-                
+
     if opt.start != None and opt.fixed != None and saved_time == '':
 
         mtch = re.search("\A(\d+)\:(\d+)",opt.start)
@@ -194,11 +194,11 @@ def args(apftask):
                 apftask.write("MASTER_UTSTARTLIST", opt.start,wait=False)
             except Exception as e:
                 apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e),level='warn',echo=True)
-                
+
         else:
             print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
             shutdown()
-            
+
     elif opt.fixed != None and saved_time != '':
         opt.start = saved_time
 
@@ -209,7 +209,7 @@ def args(apftask):
             apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
         opt.sheet = opt.sheet.split(",")
 
-        
+
     return opt
 
 
@@ -239,7 +239,7 @@ def setObsDefaults(opt):
 if __name__ == '__main__':
 
     apflog("Starting main...")
-    apftask = ktl.Service("apftask")        
+    apftask = ktl.Service("apftask")
 
     # Parse the command line arguments
     opt = args(apftask)
@@ -295,7 +295,7 @@ if __name__ == '__main__':
     apf = APFControl.APF(task=parent, test=debug)
     APFTask.waitFor(parent, True, timeout=5)
     apf.initGuideCam()
-    
+
     # All the phase options that this script uses. This allows us to check if we exited out of the script early.
     possible_phases = ["Init", "Focus", "Cal-Pre", "Watching", "Cal-Post", "Focus-Post"]
     phase_index = 0
@@ -308,7 +308,7 @@ if __name__ == '__main__':
         # start where the main left off
         phase_index = possible_phases.index(str(phase.read()).strip())
         phase.poll()
-        
+
     # If the phase isn't a valid option, (say the watchdog was run last)
     # then assume we are starting a fresh night and start from setting the observer information.
     if str(phase).strip() not in possible_phases:
@@ -320,7 +320,7 @@ if __name__ == '__main__':
 
     # Make sure that the command line arguments are respected.
     # Regardless of phase, if a name, obsnum, or reset was commanded, make sure we perform these operations.
-    
+
     APFLib.write(apf.robot["SCRIPTOBS_MESSAGE"], "Setting defaults for observing.")
     if opt.fixed:
         if not os.path.exists(opt.fixed):
@@ -332,7 +332,7 @@ if __name__ == '__main__':
     else:
         if not debug:
             APFTask.set(parent, "STARLIST", "")
-        
+
     if phase_index == 0:
         apflog("Setting Observer Information", echo=True)
         opt = setObsDefaults(opt)
@@ -343,17 +343,17 @@ if __name__ == '__main__':
         APFTask.step(parent, 0)
         if os.path.exists(os.path.join(os.getcwd(),"googledex.dat")):
             logpush(os.path.join(os.getcwd(),"googledex.dat"))
-        
+
         if os.path.exists(os.path.join(os.getcwd(),"robot.log")):
             logpush(os.path.join(os.getcwd(),"robot.log"))
-            
+
         apflog("Setting SCRIPTOBS_LINES_DONE to 0")
         APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
-        APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)        
+        APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)
         apflog("Initialization finished")
         phase_index = phase_index + 1
 
-    if phase_index <= 1: 
+    if phase_index <= 1:
         stime, start_dt, sun_dt = calcFocusStartTime()
         waitstr = "Will now wait %.1f seconds before starting focusinstr" % (stime)
         apflog(waitstr, echo=True)
@@ -370,11 +370,11 @@ if __name__ == '__main__':
         calibrate = Calibrate(apf, 'public', stime, opt.calibrate, phase_index=phase_index, task=parent, test=debug, possible_phases=possible_phases)
     else:
         apflog("Skipping calibrations", echo=True)
-        
+
     # Start the main watcher thread
     observe = Observe(apf,opt)
     getUCOTargets = getUCOTargets(opt, task=parent,wait_time=stime+3.75*3600)
-    
+
 
     apf.instrPermit()
     apflog("Starting the main watcher." ,echo=True)
@@ -389,7 +389,7 @@ if __name__ == '__main__':
             apfmon['BINNINGDIS'].write(d,binary=True,timeout=2)
         except:
             apflog("cannot write apfmon7 keyword" % (e),level='Alert',echo=True)
-            
+
     if opt.fixed != None:
         lastList = apf.robot["MASTER_STARLIST"].read()
         # This resets lines done if this is a new target list
@@ -403,7 +403,7 @@ if __name__ == '__main__':
             apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
     else:
         apflog("Starting dynamic scheduler", echo=True)
-        
+
     observe.task = parent
     # observe object should be set up for running now
     observe.start()
@@ -414,7 +414,7 @@ if __name__ == '__main__':
             currTime = datetime.now()
             # Check if it is after ~8:00AM.
             # If it is, something must be hung up, so lets force
-            #  a closeup and run post cals. 
+            #  a closeup and run post cals.
             #  Log that we force a close so we can look into why this happened.
             if currTime.hour == 8:
                 # Its 8 AM. Lets closeup
@@ -432,7 +432,7 @@ if __name__ == '__main__':
                 observe.task = parent
 
                 observe.start()
-                
+
             if debug:
                 print('Observe is running.')
                 print(str(apf))
@@ -472,19 +472,19 @@ if __name__ == '__main__':
 
     if os.path.exists(os.path.join(os.getcwd(),"googledex.dat")):
         logpush(os.path.join(os.getcwd(),"googledex.dat"))
-        
+
     if os.path.exists(os.path.join(os.getcwd(),"rank_table")):
         logpush(os.path.join(os.getcwd(),"rank_table"))
-        
+
     if os.path.exists(os.path.join(os.getcwd(),"hour_table")):
         logpush(os.path.join(os.getcwd(),"hour_table"))
-        
+
     if os.path.exists(os.path.join(os.getcwd(),"frac_table")):
-        os.remove(os.path.join(os.getcwd(),"frac_table"))
-        
+        logpush(os.path.join(os.getcwd(),"frac_table"))
+
     if os.path.exists(os.path.join(os.getcwd(),"robot.log")):
         logpush(os.path.join(os.getcwd(),"robot.log"))
-        
+
 
     apfmon = ktl.Service('apfmon')
     try:
@@ -513,8 +513,8 @@ if __name__ == '__main__':
         APFTask.set(parent, suffix="LAST_OBS_UCSC", value=apf.ucam["OBSNUM"].read())
 
     bstr = "%d,%d" % (1,1)
-    apf.ucam['BINNING'].write(bstr) 
-            
+    apf.ucam['BINNING'].write(bstr)
+
     # Focus the instrument once more
     phase_index += 1
     APFTask.phase(parent, possible_phases[phase_index])
@@ -545,5 +545,3 @@ if __name__ == '__main__':
 
     success = True
     shutdown()
-
-
