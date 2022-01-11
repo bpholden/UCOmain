@@ -21,7 +21,7 @@ class getUCOTargets(threading.Thread):
 
     def __init__(self, opt, task='master',prilim=0.5,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',wait_time=0):
         threading.Thread.__init__(self)
-        
+
         self.task = task
         if opt.sheet:
             self.sheets = opt.sheet
@@ -36,7 +36,7 @@ class getUCOTargets(threading.Thread):
             self.rank_table = opt.rank_table
         else:
             self.rank_table = None
-            
+
         if opt.frac_table:
             self.frac_table = opt.frac_table
         else:
@@ -53,7 +53,7 @@ class getUCOTargets(threading.Thread):
         self.proceed_timeout = 120
         self.reading = False
         self.wait_time = wait_time
-        
+
         self.prilim = prilim
         self.certificate = certificate
 
@@ -72,10 +72,10 @@ class getUCOTargets(threading.Thread):
 
         # these tests are against binary values
         # and binary values are in radians
-        # the test is for -4 degrees 
+        # the test is for -4 degrees
         expression = '$eostele.SUNEL < -0.0698'
         APFTask.waitFor(self.task, True, expression=expression, timeout=self.wait_time)
-        
+
         if self.signal:
             if self.debug:
                 print("Would have downloaded %s" % (self.sheets))
@@ -110,19 +110,23 @@ class getUCOTargets(threading.Thread):
                         apflog("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
                 else:
                     hour_constraints = None
-                    
+
             if self.debug:
                 print("Would have downloaded %s" % (self.frac_table))
             else:
                 try:
                     hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints)
                 except Exception as e:
+                    hour_table = None
                     apflog("Error: Cannot download frac_table?! %s" % (e),level="error")
+                if hour_table is None and os.path.exists("frac_table.1"):
+                    shutil.copyfile("frac_table.1","frac_table")
+                    hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),frac_table='frac_table',hour_constraints=hour_constraints)
 
         while self.signal and self.too is not None:
 
             if APFTask.waitfor(self.task,False,expression='apftask.SCRIPTOBS_PHASE==Observing',timeout=self.timeout):
-            
+
                 self.reading = True
                 try:
                     ParseUCOSched.parseTOO(too_sheetns=self.too,outfn='googledex.dat',outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
@@ -131,7 +135,7 @@ class getUCOTargets(threading.Thread):
                 self.reading = False
 
         self.stop()
-                
+
         return
 
 
@@ -140,7 +144,7 @@ if __name__ == "__main__":
     class Opt:
         pass
 
-    
+
     task = 'example'
     APFTask.establish(task,os.getpid())
     opt = Opt()
@@ -150,6 +154,6 @@ if __name__ == "__main__":
     opt.rank_table = '2021B_ranks'
     opt.frac_table = '2021B_frac'
     opt.sheet = "RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A003,2021B_A005,2021B_A006,2021B_A007,2021B_A008,2021B_A010,2021B_A011".split(",")
-    
-    
+
+
     get_targs = getUCOTargets(opt, task=task)
