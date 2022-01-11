@@ -368,9 +368,8 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
     req_cols = ["Star Name", "RA hr", "RA min", "RA sec", \
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
                     "texp", "I2", "expcount", "decker","Close Companion", "APFnshots", \
-#                    "texp", "I2", "expcount", "decker","Close Companion", "nexp", \
                     "owner", "APFpri", "APFcad", "lastobs", "B-V", \
-#                    "owner", "pri", "cad", "lastobs", "B-V", \
+                    "cad", "pri", "nexp", "count",
                     "uth","utm","duration", \
                     "Template", "Nobs", "Total Obs", \
                     "mode", "raoff", "decoff", "Bstar", "obsblock",\
