@@ -33,15 +33,18 @@ LAST = 'L'
 
 def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table=None):
     # make this a function, have it return the current priorities, than change references to the star_table below into references to the current priority list
-    # new_pri = np.zeros_like(star_table['pri'])
-    new_pri = np.zeros_like(star_table['APFpri'])
-    new_pri += star_table['APFpri']
+    new_pri = np.zeros_like(star_table['pri'])
+    new_pri += star_table['pri']
+    # new priorities will be
+    # new_pri[star_table['pri'] == 1] += 0
+    # new_pri[star_table['pri'] == 2] -= 40
+    # new_pri[star_table['pri'] == 3] -= 80    
 
     cadence_check = (ephem.julian_date(cur_dt) - star_table['lastobs'])
-    good_cadence = cadence_check > star_table['APFcad']
+    good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
     
-    cadence_check /= star_table['APFcad']
+    cadence_check /= star_table['cad']
     
     if hour_table is not None:
         too_much = hour_table['cur']  > hour_table['tot']
