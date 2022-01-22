@@ -65,15 +65,6 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
             ret.append(False)
             continue
 
-        # THIS IS A HACK
-        # This will prevent targets from being selected that
-        # are on the negative end of the wrap.
-        if cur_az > 310:
-            fin_elevations.append(cur_el)
-            scaled_elevations.append(cur_el)
-            ret.append(False)
-            continue
-
         if dt > 0:
             # Is the target visible at the end of the observations?
             observer.date = ephem.Date(cdate + dt/86400.)
