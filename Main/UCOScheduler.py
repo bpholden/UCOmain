@@ -200,6 +200,9 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None):
     else:
         sheetns, ranks = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
 
+        if sheetns is None or len(sheetns) == 0:
+            return None
+        
         rank_table= astropy.table.Table([sheetns,ranks],names=['sheetn','rank'])
         try:
             rank_table.write(outfn,format='ascii')
