@@ -252,7 +252,7 @@ def downloadFiles(opt):
         star_table = None
 
     # goto backup
-    if if star_table is None and os.path.exists("googledex.dat.1"):
+    if star_table is None and os.path.exists("googledex.dat.1"):
         shutil.copyfile("googledex.dat.1","googledex.dat")
 
     try:
