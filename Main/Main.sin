@@ -249,17 +249,21 @@ def downloadFiles(opt):
         star_table,stars = ParseUCOSched.parseUCOSched(sheetns=opt.sheet,outfn='googledex.dat',outdir=os.getcwd(),hour_constraints=hour_constraints)
     except Exception as e:
         apflog("Error: Cannot download googledex?! %s" % (e),level="error")
-        # goto backup
-        if os.path.exists("googledex.dat.1"):
-            shutil.copyfile("googledex.dat.1","googledex.dat")
+        star_table = None
+
+    # goto backup
+    if if star_table is None and os.path.exists("googledex.dat.1"):
+        shutil.copyfile("googledex.dat.1","googledex.dat")
 
     try:
         rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd())
     except Exception as e:
         apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
-        # goto backup
-        if os.path.exists("rank_table.1"):
-            shutil.copyfile("rank_table.1","rank_table")
+        rank_table = None
+        
+    if rank_table is None and os.path.exists("rank_table.1"):
+        shutil.copyfile("rank_table.1","rank_table")
+            
             
     try:
         hour_table = ds.makeHourTable(opt.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints)
