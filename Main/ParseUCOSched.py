@@ -615,6 +615,9 @@ def parseUCOSched(sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4
 
     if len(stars) > 0:
         astropy.io.ascii.write(star_table,outfn, format='ecsv', overwrite=True)
+    else:
+        star_table = None
+        stars = None
 
     return (star_table, stars)
 
