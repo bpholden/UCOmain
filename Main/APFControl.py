@@ -1112,6 +1112,13 @@ class APF:
         except Exception as e:
             apflog("Cannot write SCRIPTOBS_LINE: %s" % (e), level='error',echo=True)
 
+        try:
+            robot['SCRIPTOBS_LINE_RESULT'].write(0)
+            robot['SCRIPTOBS_OBSERVED'].write(False)
+        except Exception as e:
+            apflog("Cannot write 0 to SCRIPTOBS_LINE_RESULT or False to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
+
+        
         predfocus  = self.predTelFocus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         
@@ -1511,8 +1518,17 @@ class APF:
         # Focus the telescope - all of this, including finding the star, is done in focusTel
         self.DMReset()
         if self.findStarfocusTel():
+            try:
+                robot['SCRIPTOBS_LINE_RESULT'].write(3)
+                robot['SCRIPTOBS_OBSERVED'].write(True)
+            except Exception as e:
+                apflog("Cannot write 3 to SCRIPTOBS_LINE_RESULT or True to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
             return True
         else:
+            try:
+                robot['SCRIPTOBS_LINE_RESULT'].write(2)
+            except Exception as e:
+                apflog("Cannot write 2 to SCRIPTOBS_LINE_RESULT: %s" % (e), level='warn', echo=True)
             return False
 
     def DMReset(self):
