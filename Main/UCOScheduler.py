@@ -37,8 +37,8 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
     new_pri += star_table['pri']
     # new priorities will be
     # new_pri[star_table['pri'] == 1] += 0
-    # new_pri[star_table['pri'] == 2] -= 40
-    # new_pri[star_table['pri'] == 3] -= 80    
+    # new_pri[star_table['pri'] == 2] -= 20
+    # new_pri[star_table['pri'] == 3] -= 40    
 
     cadence_check = (ephem.julian_date(cur_dt) - star_table['lastobs'])
     good_cadence = cadence_check > star_table['cad']
