@@ -397,10 +397,10 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         row = []
         if ls[0] == '':
             continue
-        #if "pri" in didx and ls[didx["pri"]] is not None:
-        #    apfpri = floatDefault(ls[didx["pri"]])
-        # else:
-        apfpri = floatDefault(ls[didx["APFpri"]])
+        if "pri" in didx and ls[didx["pri"]] is not None:
+            apfpri = floatDefault(ls[didx["pri"]])
+        else:
+            apfpri = floatDefault(ls[didx["APFpri"]])
 
         apfpri = int(round(apfpri))
         nobs = intDefault(ls[didx["Nobs"]])
