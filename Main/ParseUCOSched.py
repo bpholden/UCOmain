@@ -277,8 +277,11 @@ def parseFracTable(sheet_table_name='2021B_frac',certificate='UCSC_Dynamic_Sched
                 continue
             sheetns.append(row[0])
             frac.append(floatDefault(row[1]))
-
-
+            
+    wait_time = len(frac)
+    apflog("Sleeping %.1f seconds to keep Google happy" % (wait_time), level="info",echo=True)
+    time.sleep(wait_time)
+    
     return sheetns,frac
 
 def timeLeft():
