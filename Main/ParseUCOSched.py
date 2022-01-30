@@ -277,11 +277,11 @@ def parseFracTable(sheet_table_name='2021B_frac',certificate='UCSC_Dynamic_Sched
                 continue
             sheetns.append(row[0])
             frac.append(floatDefault(row[1]))
-            
+
     wait_time = len(frac)
     apflog("Sleeping %.1f seconds to keep Google happy" % (wait_time), level="info",echo=True)
     time.sleep(wait_time)
-    
+
     return sheetns,frac
 
 def timeLeft():
@@ -401,11 +401,10 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         if ls[0] == '':
             continue
         if "pri" in didx and ls[didx["pri"]] is not None:
-            apfpri = floatDefault(ls[didx["pri"]])
+            apfpri = intDefault(ls[didx["pri"]],default=-1)
         else:
-            apfpri = floatDefault(ls[didx["APFpri"]])
+            apfpri = intDefault(ls[didx["APFpri"]],default=-1)
 
-        apfpri = int(round(apfpri))
         nobs = intDefault(ls[didx["Nobs"]])
         totobs = intDefault(ls[didx["Total Obs"]],default=-1)
         csheetn = checkFlag("sheetn",didx,ls,"\A(.*)",'public')
