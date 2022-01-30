@@ -120,7 +120,7 @@ def getSpreadsheet(sheetn="The Googledex",certificate='UCSC_Dynamic_Scheduler-4f
     # the certificate has an email associated with it, that email must
     # have the document shared with it to allow access
 
-    certificate_path = os.path.dirname("/usr/local/lick/data/apf/master/")    
+    certificate_path = os.path.dirname("/usr/local/lick/data/apf/master/")
     if os.path.exists(certificate_path) is False:
         certificate_path = os.path.dirname(__file__)
     finpath = os.path.join(certificate_path, certificate)
@@ -277,8 +277,11 @@ def parseFracTable(sheet_table_name='2021B_frac',certificate='UCSC_Dynamic_Sched
                 continue
             sheetns.append(row[0])
             frac.append(floatDefault(row[1]))
-
-
+            
+    wait_time = len(frac)
+    apflog("Sleeping %.1f seconds to keep Google happy" % (wait_time), level="info",echo=True)
+    time.sleep(wait_time)
+    
     return sheetns,frac
 
 def timeLeft():
@@ -368,9 +371,8 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
     req_cols = ["Star Name", "RA hr", "RA min", "RA sec", \
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
                     "texp", "I2", "expcount", "decker","Close Companion", "APFnshots", \
-#                    "texp", "I2", "expcount", "decker","Close Companion", "nexp", \
                     "owner", "APFpri", "APFcad", "lastobs", "B-V", \
-#                    "owner", "pri", "cad", "lastobs", "B-V", \
+                    "cad", "pri", "nexp", "count",
                     "uth","utm","duration", \
                     "Template", "Nobs", "Total Obs", \
                     "mode", "raoff", "decoff", "Bstar", "obsblock",\
@@ -398,8 +400,11 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         row = []
         if ls[0] == '':
             continue
-#        apfpri = floatDefault(ls[didx["pri"]])
+        #if "pri" in didx and ls[didx["pri"]] is not None:
+        #    apfpri = floatDefault(ls[didx["pri"]])
+        # else:
         apfpri = floatDefault(ls[didx["APFpri"]])
+
         apfpri = int(round(apfpri))
         nobs = intDefault(ls[didx["Nobs"]])
         totobs = intDefault(ls[didx["Total Obs"]],default=-1)
@@ -409,8 +414,8 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         if apfpri < prilim: continue
         if csheetn in done_names: continue
         if apfpri > MAX_PRI: apfpri = MAX_PRI
-            
-            
+
+
         name =parseStarname(ls[didx["Star Name"]])
         # Get the RA
         raval,rahr,ramin,rasec = Coords.getRARad(ls[didx["RA hr"]], ls[didx["RA min"]], ls[didx["RA sec"]])
@@ -467,14 +472,21 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
         if expcount > EXP_LIM:
             expcount = EXP_LIM
         star_table['expcount'].append(expcount)
-        star_table['nexp'].append(intDefault(ls[didx["APFnshots"]],default=1))
+        if "nexp" in didx and ls[didx["nexp"]] is not None:
+            star_table['nexp'].append(intDefault(ls[didx["nexp"]],default=1))
+        elif "count" in didx and ls[didx['count']] is not None:
+            star_table['nexp'].append(intDefault(ls[didx["count"]],default=1))
+        else:
+            star_table['nexp'].append(intDefault(ls[didx["APFnshots"]],default=1))
 
 
         # scheduler specific
-        star_table['APFpri'].append(apfpri)
-        star_table['APFcad'].append(floatDefault(ls[didx["APFcad"]],default=0.7))
-#        star_table['pri'].append(apfpri)
-#        star_table['cad'].append(floatDefault(ls[didx["cad"]],default=0.7))
+        if "cad" in didx and ls[didx['cad']] is not None:
+            star_table['cad'].append(floatDefault(ls[didx["cad"]],default=0.7))
+        else:
+            star_table['cad'].append(floatDefault(ls[didx["APFcad"]],default=0.7))
+
+        star_table['pri'].append(apfpri)
         star_table["lastobs"].append(floatDefault(ls[didx["lastobs"]],default=0))
 
         inval = floatDefault(ls[didx["B-V"]],default=0.7)
@@ -606,12 +618,15 @@ def parseUCOSched(sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler-4f4
 
     if len(stars) > 0:
         astropy.io.ascii.write(star_table,outfn, format='ecsv', overwrite=True)
+    else:
+        star_table = None
+        stars = None
 
     return (star_table, stars)
 
 
 def parseTOO(too_sheetns=None,outfn='googledex.dat',outdir=None,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',prilim=0.5):
-    
+
     if not outdir :
         outdir = os.getcwd()
 
@@ -643,8 +658,8 @@ def parseTOO(too_sheetns=None,outfn='googledex.dat',outdir=None,certificate='UCS
     astropy.io.ascii.write(star_table,outfn, format='ecsv', overwrite=True)
 
 
-        
-        
+
+
 def updateLocalStarlist(intime, observed_file="observed_targets",outfn='parsesched.dat',toofn='too.dat',outdir=None):
     """
         Update the local copy of the googledex with the last observed star time.
@@ -677,7 +692,7 @@ def updateLocalStarlist(intime, observed_file="observed_targets",outfn='parsesch
         owner = obslog.owners[index]
         if owner == 'public':
             owner = 'RECUR_A100'
-            
+
         if isinstance(obstime,float):
             t = datetime.utcfromtimestamp(obstime)
         else:
@@ -771,10 +786,10 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate='
             # The columns that are updated are assigned above
             # By starting at 0 in vals, we will be indexed to the same row as in the sheet
 
-            
+
             # Did we observe this target tonight?
             local_name = parseStarname(v[nmcol])
-            
+
             if local_name in obslog.names:
                 # We observed this target, so update the cell in the worksheet
                 # update_cell(row, col, val) - col and row are 1 indexed
@@ -794,7 +809,7 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate='
                 if  star_table_row is not None:
                     if len(star_table_row['lastobs']) > 0:
                         jd = float(star_table_row['lastobs'][0])
-                        
+
                 # if the above fails, we should be able to use the observing log
                 # but this is JUST the UT hour and minute, not the day so we have to use the otime
                 # value to calculate the full JD

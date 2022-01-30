@@ -33,15 +33,18 @@ LAST = 'L'
 
 def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table=None):
     # make this a function, have it return the current priorities, than change references to the star_table below into references to the current priority list
-    # new_pri = np.zeros_like(star_table['pri'])
-    new_pri = np.zeros_like(star_table['APFpri'])
-    new_pri += star_table['APFpri']
+    new_pri = np.zeros_like(star_table['pri'])
+    new_pri += star_table['pri']
+    # new priorities will be
+    # new_pri[star_table['pri'] == 1] += 0
+    # new_pri[star_table['pri'] == 2] -= 20
+    # new_pri[star_table['pri'] == 3] -= 40    
 
     cadence_check = (ephem.julian_date(cur_dt) - star_table['lastobs'])
-    good_cadence = cadence_check > star_table['APFcad']
+    good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
     
-    cadence_check /= star_table['APFcad']
+    cadence_check /= star_table['cad']
     
     if hour_table is not None:
         too_much = hour_table['cur']  > hour_table['tot']
@@ -55,7 +58,7 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
     bad_pri = np.floor(cadence_check * 100)
     bad_pri = np.int_(bad_pri)
 
-    # low_pri = star_table['pri'] > 1
+
     
     if rank_table is not None:
         for sheetn in rank_table['sheetn']:
@@ -63,15 +66,11 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += rank_table['rank'][rank_table['sheetn'] == sheetn]
                 new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
-                # new_pri[cur & low_pri] -= 40
             else:
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += 100
                 new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
-                # new_pri[cur & low_pri ] -= 40
 
-    # new_pri[new_pri < 0] = 1
-                
     return new_pri
 
 def updateHourTable(hour_table,observed,dt,outfn='hour_table',outdir=None):
@@ -201,6 +200,9 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None):
     else:
         sheetns, ranks = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
 
+        if sheetns is None or len(sheetns) == 0:
+            return None
+        
         rank_table= astropy.table.Table([sheetns,ranks],names=['sheetn','rank'])
         try:
             rank_table.write(outfn,format='ascii')
@@ -819,7 +821,7 @@ if __name__ == '__main__':
     rank_table = makeRankTable(rank_tablen)
 
 #    sheetn=["2018B"]
-    sheetn="RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A003,2021B_A005,2021B_A006,2021B_A007,2021B_A008,2021B_A010,2021B_A011,2021B_A012,2021B_A013,2021B_A014"
+    sheetn="RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A003,2021B_A005,2021B_A006,2021B_A007,2021B_A008,2021B_A010,2021B_A011"
 
     # For some test input what would the best target be?
     otfn = "observed_targets"
