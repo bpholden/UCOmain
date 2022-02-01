@@ -120,14 +120,14 @@ def prep_master(outdir,mastername):
 
 def parse_args():
     parser = optparse.OptionParser()
-    parser.add_option("--sheetns",dest="sheetns",default="RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A005,2021B_A006,2021B_A007,2021B_A010,2021B_A011,2021B_A012,2021B_A013,2021B_A014")
+    parser.add_option("--sheetns",dest="sheetns",default="RECUR_A100,2022A_A002,2022A_A003,2022A_A004,2022A_A005,2022A_A006,2022A_A007,2022A_A008,2022A_A009,2022A_A010,2022A_A013,2022A_A014,2022A_A015,2022A_A016")
     parser.add_option("-i","--infile",dest="infile",default="googledex.dat")
     parser.add_option("-f","--file",dest="datefile",default="")
     parser.add_option("--seed",dest="seed",default=None)
     parser.add_option("-b","--bstar",dest="bstar",default=True,action="store_false")
     parser.add_option("-o","--outdir",dest="outdir",default=".")        
-    parser.add_option("--frac_table",dest="frac_sheetn",default="2021B_frac")
-    parser.add_option("--rank_table",dest="rank_sheetn",default="2021B_ranks")
+    parser.add_option("--frac_table",dest="frac_sheetn",default="2022A_frac")
+    parser.add_option("--rank_table",dest="rank_sheetn",default="2022A_ranks")
 
     parser.add_option("-m","--masterfile",dest="master",default="sim_master.simout")
     (options, args) = parser.parse_args()    
