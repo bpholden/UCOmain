@@ -1,6 +1,6 @@
 from __future__ import print_function
 import sys
-sys.path.append("../Main")
+sys.path.insert(1,"../Main")
 
 import pickle
 import optparse
