@@ -182,7 +182,6 @@ class APF:
     guide      = ktl.Service('apfguide')
     counts     = guide['COUNTS']
     kcountrate     = guide['COUNTRATE']
-    thresh     = guide['xpose_thresh']
     avg_fwhm   = guide['AVG_FWHM']
 
     motor      = ktl.Service('apfmot')
@@ -267,7 +266,6 @@ class APF:
         self.ldone.monitor()
         self.counts.monitor()
         self.decker.monitor()
-#        self.deckerord.monitor()
         self.avg_fwhm.monitor()
         self.dewarfoc.monitor()
         self.mv_perm.monitor()
