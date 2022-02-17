@@ -25,7 +25,7 @@ from apflog import *
 AVERAGE_INSTRFOC = 8522
 
 class Calibrate(threading.Thread):
-    def __init__(self, apf, name, wait_time, calfile, phase_index=1, task='master', test=False, possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
+    def __init__(self, apf, name, wait_time, calfile, phase_index=0, task='master', test=False, possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.apf = apf
