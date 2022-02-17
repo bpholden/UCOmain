@@ -184,7 +184,6 @@ class APF:
     guide      = ktl.Service('apfguide')
     counts     = guide['COUNTS']
     kcountrate     = guide['COUNTRATE']
-    thresh     = guide['xpose_thresh']
     avg_fwhm   = guide['AVG_FWHM']
 
     motor      = ktl.Service('apfmot')
@@ -269,7 +268,6 @@ class APF:
         self.ldone.monitor()
         self.counts.monitor()
         self.decker.monitor()
-#        self.deckerord.monitor()
         self.avg_fwhm.monitor()
         self.dewarfoc.monitor()
         self.mv_perm.monitor()
@@ -1119,8 +1117,8 @@ class APF:
             apflog("Cannot write SCRIPTOBS_LINE: %s" % (e), level='error',echo=True)
 
         try:
-            robot['SCRIPTOBS_LINE_RESULT'].write(0)
-            robot['SCRIPTOBS_OBSERVED'].write(False)
+            self.robot['SCRIPTOBS_LINE_RESULT'].write(0)
+            self.robot['SCRIPTOBS_OBSERVED'].write(False)
         except Exception as e:
             apflog("Cannot write 0 to SCRIPTOBS_LINE_RESULT or False to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
 
@@ -1529,14 +1527,14 @@ class APF:
         self.DMReset()
         if self.findStarfocusTel():
             try:
-                robot['SCRIPTOBS_LINE_RESULT'].write(3)
-                robot['SCRIPTOBS_OBSERVED'].write(True)
+                self.robot['SCRIPTOBS_LINE_RESULT'].write(3)
+                self.robot['SCRIPTOBS_OBSERVED'].write(True)
             except Exception as e:
                 apflog("Cannot write 3 to SCRIPTOBS_LINE_RESULT or True to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
             return True
         else:
             try:
-                robot['SCRIPTOBS_LINE_RESULT'].write(2)
+                self.robot['SCRIPTOBS_LINE_RESULT'].write(2)
             except Exception as e:
                 apflog("Cannot write 2 to SCRIPTOBS_LINE_RESULT: %s" % (e), level='warn', echo=True)
             return False

@@ -34,18 +34,18 @@ LAST = 'L'
 def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table=None):
     # make this a function, have it return the current priorities, than change references to the star_table below into references to the current priority list
     new_pri = np.zeros_like(star_table['pri'])
-    new_pri += star_table['pri']
+
     # new priorities will be
-    # new_pri[star_table['pri'] == 1] += 0
-    # new_pri[star_table['pri'] == 2] -= 20
-    # new_pri[star_table['pri'] == 3] -= 40    
+    new_pri[star_table['pri'] == 1] += 0
+    new_pri[star_table['pri'] == 2] -= 20
+    new_pri[star_table['pri'] == 3] -= 40
 
     cadence_check = (ephem.julian_date(cur_dt) - star_table['lastobs'])
     good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
-    
+
     cadence_check /= star_table['cad']
-    
+
     if hour_table is not None:
         too_much = hour_table['cur']  > hour_table['tot']
         done_sheets = hour_table['sheetn'][too_much]
@@ -59,7 +59,7 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
     bad_pri = np.int_(bad_pri)
 
 
-    
+
     if rank_table is not None:
         for sheetn in rank_table['sheetn']:
             if sheetn not in done_sheets:
@@ -184,11 +184,11 @@ def timeCheck(star_table,totexptimes,dt,hour_table):
     if maxexptime < TARGET_EXPOSURE_TIME_MIN:
         maxexptime = TARGET_EXPOSURE_TIME_MIN
         # this will try a target in case we get lucky
-        
+
     time_check = totexptimes <= maxexptime
 
     return time_check
-        
+
 def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None):
 
     if not outdir :
@@ -202,7 +202,7 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None):
 
         if sheetns is None or len(sheetns) == 0:
             return None
-        
+
         rank_table= astropy.table.Table([sheetns,ranks],names=['sheetn','rank'])
         try:
             rank_table.write(outfn,format='ascii')
@@ -427,17 +427,17 @@ def numTemplateExp(vmag):
 
     if vmag > 10:
         count = 9
-        
+
     elif vmag  < 8:
         count = 5
-        
+
 
     return count
 
 def enoughTimeTemplates(star_table,stars,idx,apf_obs,dt):
 
     count = numTemplateExp(star_table['Vmag'][idx])
-    
+
     tot_time = count * 1200
 
     tot_time += 210 + (2*40 + 40*(star_table['nexp'][idx]-1)) + 2400 # two B star exposures + three 70 second acquisitions and the actual observation readout times
@@ -543,7 +543,7 @@ def makeResult(stars,star_table,totexptimes,final_priorities,dt,idx,focval=0,bst
 
     if np.ma.is_masked(star_table[idx]['obsblock']):
         res['obsblock'] = ''
-        
+
         res['SCRIPTOBS'] = []
         scriptobs_line = makeScriptobsLine(star_table[idx], dt, decker=res['DECKER'], owner=res['owner'], I2=star_table['I2'][idx], focval=focval)
         scriptobs_line = scriptobs_line + " # end"
@@ -696,7 +696,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
             attempted = (star_table['name'] == n)
             available = available & np.logical_not(attempted) # Available and not observed
 
-    
+
     if bstar:
         # We just need a B star
         apflog("getNext(): Selecting B stars",echo=True)
@@ -732,7 +732,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     else:
         apflog( "getNext(): Couldn't find any suitable targets!",level="error",echo=True)
         return None
-    
+
     cur_elevations[available] += star_elevations[vis]
     scaled_elevations[available] += scaled_els[vis]
 
@@ -782,7 +782,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     apflog(nmstr,echo=True)
     apflog(shstr,echo=True)
     apflog(pristr,echo=True)
-    apflog(mxpristr,echo=True)    
+    apflog(mxpristr,echo=True)
     apflog(elstr,echo=True)
 
     stars[idx].compute(apf_obs)
@@ -814,14 +814,13 @@ if __name__ == '__main__':
     else:
         hour_constraints = None
 
-    frac_tablen='2021B_frac'
+    frac_tablen='2022A_frac'
     hour_table = makeHourTable(frac_tablen,dt,hour_constraints=hour_constraints)
 
-    rank_tablen='2021B_ranks'
+    rank_tablen='2022A_ranks'
     rank_table = makeRankTable(rank_tablen)
 
-#    sheetn=["2018B"]
-    sheetn="RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A003,2021B_A005,2021B_A006,2021B_A007,2021B_A008,2021B_A010,2021B_A011"
+    sheetn="RECUR_A100,2022A_A002,2022A_A003,2022A_A004,2022A_A005,2022A_A006,2022A_A007,2022A_A008,2022A_A009,2022A_A010,2022A_A013,2022A_A014,2022A_A015,2022A_A016"
 
     # For some test input what would the best target be?
     otfn = "observed_targets"
