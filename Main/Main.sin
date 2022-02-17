@@ -396,7 +396,6 @@ if __name__ == '__main__':
         APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
         APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)
         apflog("Initialization finished")
-        phase_index = phase_index + 1
 
     if phase_index <= 1:
         stime, start_dt, sun_dt = calcFocusStartTime()
