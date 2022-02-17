@@ -126,6 +126,8 @@ class Calibrate(threading.Thread):
 
     def run(self):
 
+        apflog("Will start with phase %d %s after %.1f seconds" % (self.phase_index,self.possible_phases[self.phase_index],self.wait_time), echo=True)
+
         if self.wait_time > 0:
             APFTask.wait(self.task, True, timeout=self.wait_time)
 
@@ -137,7 +139,6 @@ class Calibrate(threading.Thread):
 
         start = self.phase_index
         end = self.possible_phases.index('Watching')
-        apflog("Starting with phase %d %s" % (self.phase_index,self.possible_phases[self.phase_index]), echo=True)
 
         for pi in range(start,end):
             self.phase_index = pi
