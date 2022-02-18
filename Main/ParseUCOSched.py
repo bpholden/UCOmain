@@ -265,7 +265,7 @@ def timeLeft():
     else:
         return None
 
-def parseRankTable(sheet_table_name='2021B_ranks',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
+def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
 
     apflog( "Starting parse of %s" % (sheet_table_name),echo=True)
 
@@ -294,6 +294,7 @@ def parseRankTable(sheet_table_name='2021B_ranks',certificate='UCSC_Dynamic_Sche
                 if ky in sheetns:
                     sindx = sheetns.index(ky)
                     rank[sindx] = -1000
+                    frac[sindx] = 0.0
 
     return sheetns,rank
 
