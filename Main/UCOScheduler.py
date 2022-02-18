@@ -216,8 +216,6 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
                     if hour_constraints['left'][hour_constraints['runname']==runname] < 0:
                         rank_table['rank'][rank_table['sheetn']==runname] = -1000
 
-
-        
         try:
             rank_table.write(outfn,format='ascii')
         except Exception as e:
