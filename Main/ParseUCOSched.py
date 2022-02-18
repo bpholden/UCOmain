@@ -242,30 +242,7 @@ def findColumns(col_names,req_cols,opt_cols=[]):
     return didx
 
 
-def timeLeft():
-    cmd = "/usr/local/lick/bin/timereport/time_left"
-    if os.path.exists(cmd):
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        while p.poll() is None:
-            time.sleep(1)
-        out, err = p.communicate()
-        if len(err):
-            return None
-
-        rv = dict()
-        lines = out.split('\n')
-        if len(lines) <= 1:
-            return None
-        for ln in lines[1:]:
-            d = ln.split(",")
-            if len(d) >= 2:
-                rv[d[0].strip()] = d[1].strip()
-        return rv
-
-    else:
-        return None
-
-def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',hour_constraints=None):
+def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json':
 
     apflog( "Starting parse of %s" % (sheet_table_name),echo=True)
 
@@ -287,19 +264,6 @@ def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Sche
                 rank.append(crank)
                 cfrac = floatDefault(row[2])
                 frac.append(cfrac)
-
-    if hour_constraints:
-        time_left = hour_constraints
-    else:
-        time_left = timeLeft()
-        
-    if time_left is not None:
-        for ky in time_left.keys():
-            if time_left[ky] <= 0:
-                if ky in sheetns:
-                    sindx = sheetns.index(ky)
-                    rank[sindx] = -1000
-                    frac[sindx] = 0.0
 
     return sheetns,rank,frac
 

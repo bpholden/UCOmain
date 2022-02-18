@@ -158,6 +158,36 @@ def makeHourTable(rank_table,dt,outfn='hour_table',outdir=None,hour_constraints=
         apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
     return hour_table
 
+def timeLeft():
+    cmd = "/usr/local/lick/bin/timereport/time_left"
+    if os.path.exists(cmd):
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        while p.poll() is None:
+            time.sleep(1)
+        out, err = p.communicate()
+        if len(err):
+            return None
+
+        sheetns = []
+        left = []
+        alloc = []
+        used = []
+        lines = out.split('\n')
+        if len(lines) <= 1:
+            return None
+        for ln in lines[1:]:
+            d = ln.split(",")
+            if len(d) >= 2:
+                sheetns.append(d[0].strip()]
+                left[d[1].strip()]
+                alloc[d[2].strip()]
+                used[d[3].strip()]
+
+        rv = astropy.table.Table([sheetns,left,alloc,used],names=["runname","left","alloc","used"])
+                
+    else:
+        return None
+
 
 def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constraints=None):
 
@@ -168,12 +198,25 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
     if os.path.exists(outfn):
         rank_table = astropy.table.Table.read(outfn,format='ascii')
     else:
-        sheetns, ranks, fracs = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name,hour_constraints=hour_constraints)
-
+        sheetns, ranks, fracs = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
         if sheetns is None or len(sheetns) == 0:
             return None
 
         rank_table= astropy.table.Table([sheetns,ranks,fracs],names=['sheetn','rank','frac'])
+
+        if hour_constraints:
+            time_left = hour_constraints
+        else:
+            time_left = timeLeft()
+            
+        if time_left is not None:
+            if 'runname' in hour_constraints.keys() and 'left' in hour_constraints.keys():
+                for runname in hour_constraints['runname']:
+                    if hour_constraints['left'][hour_constraints['runname']==runname] < 0:
+                        rank_table['rank'][rank_table['sheetn']==runname] = -1000
+
+
+        
         try:
             rank_table.write(outfn,format='ascii')
         except Exception as e:
