@@ -172,7 +172,7 @@ def timeCheck(star_table,totexptimes,dt,hour_table):
 
     return time_check
 
-def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None):
+def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constraints=None):
 
     if not outdir :
         outdir = os.getcwd()
