@@ -159,20 +159,6 @@ def makeHourTable(rank_table,dt,outfn='hour_table',outdir=None,hour_constraints=
     return hour_table
 
 
-def timeCheck(star_table,totexptimes,dt,hour_table):
-
-    maxexptime = TARGET_EXPOSURE_TIME_MAX
-    time_left_before_sunrise = computeSunrise(dt,horizon='-9')
-    if maxexptime > time_left_before_sunrise:
-        maxexptime = time_left_before_sunrise
-    if maxexptime < TARGET_EXPOSURE_TIME_MIN:
-        maxexptime = TARGET_EXPOSURE_TIME_MIN
-        # this will try a target in case we get lucky
-
-    time_check = totexptimes <= maxexptime
-
-    return time_check
-
 def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constraints=None):
 
     if not outdir :
@@ -194,6 +180,22 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
             apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
 
     return rank_table
+
+
+
+def timeCheck(star_table,totexptimes,dt,hour_table):
+
+    maxexptime = TARGET_EXPOSURE_TIME_MAX
+    time_left_before_sunrise = computeSunrise(dt,horizon='-9')
+    if maxexptime > time_left_before_sunrise:
+        maxexptime = time_left_before_sunrise
+    if maxexptime < TARGET_EXPOSURE_TIME_MIN:
+        maxexptime = TARGET_EXPOSURE_TIME_MIN
+        # this will try a target in case we get lucky
+
+    time_check = totexptimes <= maxexptime
+
+    return time_check
 
 
 def makeScriptobsLine(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='',temp=False):
