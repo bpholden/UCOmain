@@ -66,12 +66,12 @@ else:
    
 
 rank_table = ds.makeRankTable(options.rank_sheetn)
-
+sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
     
 hdrstr = "#starname date time mjd exptime i2counts elevation azimuth fwhm slowdown owner\n"
 outfp.write(hdrstr)
         
-star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=options.googledex.split(","),outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
+star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
 
 fwhms = NightSim.gen_seeing(val=1.0) # good conditions
 slowdowns = NightSim.gen_clouds(val=2) # typical conditions
