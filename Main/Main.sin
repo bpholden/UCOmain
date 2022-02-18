@@ -263,6 +263,8 @@ def downloadFiles(opt):
             
     if opt.sheet:
         sheet_list = opt.sheet
+    else:
+        sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
             
     try:
         star_table,stars = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn='googledex.dat',outdir=os.getcwd(),hour_constraints=hour_constraints)
