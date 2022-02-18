@@ -279,10 +279,13 @@ def parseRankTable(sheet_table_name='2021B_ranks',certificate='UCSC_Dynamic_Sche
             apflog("Worksheet %s exists but is empty, skipping" % (sheet_table_name), level='error', echo=True)
             return None, None
         for row in cur_codex[1:]:
-            sheetns.append(row[0])
-            crank = floatDefault(row[1])
-            crank = int(round(crank))
-            rank.append(crank)
+            if row[0] != "":
+                sheetns.append(row[0])
+                crank = floatDefault(row[1])
+                crank = int(round(crank))
+                rank.append(crank)
+                cfrac = floatDefault(row[2])
+                frac.append(cfrac)
 
     time_left = timeLeft()
     if time_left is not None:
