@@ -657,8 +657,8 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     apflog("getNext(): Updating star list with previous observations",echo=True)
     observed, star_table = ParseUCOSched.updateLocalStarlist(ptime,outfn=outfn,toofn=toofn,observed_file="observed_targets")
 
-    rank_table = makeRankTable(rank_tablen,hour_constraints=hour_constraints)
-    hour_table = makeHourTable(rank_table,ptime,hour_constraints=hour_constraints)
+    rank_table = makeRankTable(rank_sheetn)
+    hour_table = makeHourTable(rank_table,ptime)
 
     if hour_table is not None:
         hour_table = updateHourTable(hour_table,observed,ptime)
