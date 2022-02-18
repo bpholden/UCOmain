@@ -155,8 +155,8 @@ def args(apftask):
     parser.add_argument('-s', '--start', default=None, type=str, help="When specified with a fixed starlist, this option starts that list at that time.")
     parser.add_argument('--raster', action='store_true', default=False, help="If a fixed starlist is given, use it for a raster scan.")
 
-    parser.add_argument('--rank_table', default='2020B_ranks', help="Optional name for table of sheet ranks")
-    parser.add_argument('--sheet',default="RECUR_A100",help="Optional name for a Google spreadsheet")
+    parser.add_argument('--rank_table', default='2022A_ranks', help="Optional name for table of sheet ranks")
+    parser.add_argument('--sheet',default=None,help="Optional name for a Google spreadsheet")
     parser.add_argument('--owner',default='public',help="Optional name for file owners")    
 
     parser.add_argument('--time_left',default=None,help="File name for remaining time in programs")
