@@ -258,6 +258,8 @@ def downloadFiles(opt):
         except Exception as e:
             apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
             rank_table = None
+
+    hour_table = ds.makeHourTable(rank_table,datetime.now(),hour_constraints=hour_constraints)
             
     if opt.sheet:
         sheet_list = opt.sheet
