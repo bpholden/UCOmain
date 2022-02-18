@@ -34,6 +34,17 @@ if __name__ == "__main__":
     config['raoff'] = None
     config['decoff'] = None
 
+    if opt.time_left is not None and os.path.exists(opt.time_left):
+        try:
+            hour_constraints = astropy.io.ascii.read(opt.time_left)
+        except Exception as e:
+            hour_constraints = None
+            print("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
+    else:
+        hour_constraints = None
+
+    if opt.rank_sheet is not None:
+        rank_table = ds.makeRankTable(opt.rank_sheet,hour_constraints=hour_constraints)
         
     ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=outfn,outdir=outdir,config=config)
 
