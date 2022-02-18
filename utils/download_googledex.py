@@ -57,8 +57,4 @@ if __name__ == "__main__":
     if sheet_list:
         ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn=outfn,outdir=outdir,config=config)
 
-    if opt.frac_sheet is not None:
-        hour_table = ds.makeHourTable(opt.frac_sheet,datetime.datetime.now())
-    if opt.rank_sheet is not None:
-        rank_table = ds.makeRankTable(opt.rank_sheet)
 
