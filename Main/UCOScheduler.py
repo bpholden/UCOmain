@@ -133,7 +133,7 @@ def makeHourTable(rank_table,dt,outfn='hour_table',outdir=None,hour_constraints=
 
     # file does not exist to make it from scratch using the fracs
 
-    hour_table= astropy.table.Table(rank_table,names=['sheetn','frac'])
+    hour_table = astropy.table.Table([rank_table['sheetn'],rank_table['frac']],names=['sheetn','frac'])
 
     sunset,sunrise = computeSunsetRise(dt,horizon='-9')
     if sunrise < sunset:
