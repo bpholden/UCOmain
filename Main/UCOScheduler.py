@@ -189,7 +189,7 @@ def timeCheck(star_table,totexptimes,dt,hour_table):
 
     return time_check
 
-def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None):
+def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constraints=None):
 
     if not outdir :
         outdir = os.getcwd()
@@ -198,7 +198,7 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None):
     if os.path.exists(outfn):
         rank_table = astropy.table.Table.read(outfn,format='ascii')
     else:
-        sheetns, ranks = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
+        sheetns, ranks = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name,time_left=hour_constraints)
 
         if sheetns is None or len(sheetns) == 0:
             return None
