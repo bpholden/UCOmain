@@ -49,6 +49,7 @@ if options.outfile == None:
     outfile = "%s.simout" % (fdatestr )
 else:
     outfile = options.outfile
+    
 try:
     outfp = open(outfile,"w+")
 except Exception as e:
