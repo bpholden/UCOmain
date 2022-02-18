@@ -132,7 +132,7 @@ def makeHourTable(rank_table,dt,outfn='hour_table',outdir=None,hour_constraints=
         return hour_table
 
 
-    hour_table= astropy.table.Table(frac_table,names=['sheetn','frac'])
+    hour_table= astropy.table.Table(rank_table,names=['sheetn','frac'])
 
     sunset,sunrise = computeSunsetRise(dt,horizon='-9')
     if sunrise < sunset:
