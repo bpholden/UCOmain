@@ -812,7 +812,10 @@ class Observe(threading.Thread):
 
             # If we are open and scriptobs isn't running, start it up
             if self.apf.isReadyForObserving()[0] and not running and float(cursunel) <= sunel_lim and self.apf.openOK and not focusing:
-                APFTask.abort("CALIBRATE")
+                calstat = APFTask.get('CALIBRATE',['STATUS'])
+                if calstat['STATUS'] in ['Running', 'Pausing', 'Paused']:
+                    APFTask.abort("CALIBRATE")
+                    
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
                 rv = checkTelState()
                 if rv is False:
