@@ -54,7 +54,8 @@ if __name__ == "__main__":
     if opt.sheetn is not None:
         sheet_list = opt.sheetn.split(",")
         
-    ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=outfn,outdir=outdir,config=config)
+    if sheet_list:
+        ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn=outfn,outdir=outdir,config=config)
 
     if opt.frac_sheet is not None:
         hour_table = ds.makeHourTable(opt.frac_sheet,datetime.datetime.now())
