@@ -623,7 +623,7 @@ def configDefaults(owner):
 
     return config
 
-def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_A100"],owner='public',outfn="googledex.dat",toofn="too.dat",outdir=None,focval=0,inst='',rank_sheetn='rank_table',frac_sheet=None):
+def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_A100"],owner='public',outfn="googledex.dat",toofn="too.dat",outdir=None,focval=0,inst='',rank_sheetn='rank_table'):
     """ Determine the best target for UCSC team to observe for the given input.
         Takes the time, seeing, and slowdown factor.
         Returns a dict with target RA, DEC, Total Exposure time, and scritobs line
@@ -657,10 +657,11 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     apflog("getNext(): Updating star list with previous observations",echo=True)
     observed, star_table = ParseUCOSched.updateLocalStarlist(ptime,outfn=outfn,toofn=toofn,observed_file="observed_targets")
 
-    hour_table = None
-    if frac_sheet is not None:
-        hour_table = makeHourTable(frac_sheet,dt)
-        hour_table = updateHourTable(hour_table,observed,dt)
+    rank_table = makeRankTable(rank_tablen,hour_constraints=hour_constraints)
+    hour_table = makeHourTable(rank_table,ptime,hour_constraints=hour_constraints)
+
+    if hour_table is not None:
+        hour_table = updateHourTable(hour_table,observed,ptime)
 
     # Parse the Googledex
     # Note -- RA and Dec are returned in Radians
@@ -775,8 +776,9 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
 
 
     final_priorities = computePriorities(star_table,dt,
-                                             rank_table=makeRankTable(rank_sheetn),
-                                             hour_table=hour_table,observed=observed)
+                                             rank_table=rank_table,
+                                             hour_table=hour_table,
+                                             observed=observed)
 
     try:
         pri = max(final_priorities[available])
@@ -853,13 +855,13 @@ if __name__ == '__main__':
     otfn = "observed_targets"
     ot = open(otfn,"w")
     starttime = time.time()
-    result = getNext(starttime, 7.99, 0.4, bstar=True,sheetns=sheet_list,rank_sheetn=rank_tablen,frac_sheet=frac_tablen)
+    result = getNext(starttime, 7.99, 0.4, bstar=True,sheetns=sheet_list,rank_sheetn=rank_tablen)
     ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
     starttime += 400
     for i in range(5):
 
-        result = getNext(starttime, 7.99, 0.4, bstar=False,sheetns=sheetn,template=True,rank_sheetn=rank_tablen,frac_sheet=frac_tablen)
+        result = getNext(starttime, 7.99, 0.4, bstar=False,sheetns=sheetn,template=True,rank_sheetn=rank_tablen)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
         if result is None:
