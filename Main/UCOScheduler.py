@@ -120,7 +120,7 @@ def updateHourTable(hour_table,observed,dt,outfn='hour_table',outdir=None):
     return hour_table
 
 
-def makeHourTable(sheet_table_name,dt,outfn='hour_table',outdir=None,frac_fn='frac_table',hour_constraints=None):
+def makeHourTable(rank_table,dt,outfn='hour_table',outdir=None,hour_constraints=None):
 
     if not outdir :
         outdir = os.getcwd()
