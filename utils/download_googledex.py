@@ -15,6 +15,10 @@ if __name__ == "__main__":
     parser.add_argument('-r', '--rank_sheet', dest='rank_sheet', default=None, help='Rank table, will make sheet list')
     parser.add_argument('-t', '--time_left', dest='time_left', default=None, help='Use an existing time_left file')
     opt = parser.parse_args()
+
+    if opt.sheetn is None and opt.rank_sheet is None:
+        print("Need either a list of sheets or a rank table")
+        sys.exit(0)
     
     sheetns = opt.sheetn.split(",")
     outdir = "."
