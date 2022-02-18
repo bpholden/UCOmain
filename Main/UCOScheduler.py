@@ -800,19 +800,19 @@ if __name__ == '__main__':
     else:
         hour_constraints = None
 
-    frac_tablen='2022A_frac'
-    hour_table = makeHourTable(frac_tablen,dt,hour_constraints=hour_constraints)
-
     rank_tablen='2022A_ranks'
-    rank_table = makeRankTable(rank_tablen)
+    rank_table = makeRankTable(rank_tablen,hour_constraints=hour_constraints)
 
-    sheetn="RECUR_A100,2022A_A002,2022A_A003,2022A_A004,2022A_A005,2022A_A006,2022A_A007,2022A_A008,2022A_A009,2022A_A010,2022A_A013,2022A_A014,2022A_A015,2022A_A016"
+    frac_tablen='2022A_frac'
+    hour_table = makeHourTable(rank_table,dt,hour_constraints=hour_constraints)
+
+    sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
     # For some test input what would the best target be?
     otfn = "observed_targets"
     ot = open(otfn,"w")
     starttime = time.time()
-    result = getNext(starttime, 7.99, 0.4, bstar=True,sheetns=sheetn.split(","),rank_sheetn=rank_tablen,frac_sheet=frac_tablen)
+    result = getNext(starttime, 7.99, 0.4, bstar=True,sheetns=sheet_list,rank_sheetn=rank_tablen,frac_sheet=frac_tablen)
     ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
     starttime += 400
