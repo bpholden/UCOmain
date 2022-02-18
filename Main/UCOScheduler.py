@@ -131,6 +131,7 @@ def makeHourTable(rank_table,dt,outfn='hour_table',outdir=None,hour_constraints=
         hour_table =  astropy.table.Table.read(outfn,format='ascii')
         return hour_table
 
+    # file does not exist to make it from scratch using the fracs
 
     hour_table= astropy.table.Table(rank_table,names=['sheetn','frac'])
 
