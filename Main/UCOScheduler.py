@@ -179,10 +179,10 @@ def timeLeft():
         for ln in lines[1:]:
             d = ln.split(",")
             if len(d) >= 2:
-                sheetns.append(d[0].strip()]
-                left[d[1].strip()]
-                alloc[d[2].strip()]
-                used[d[3].strip()]
+                sheetns.append(d[0].strip())
+                left.append(d[1].strip())
+                alloc.append(d[2].strip())
+                used.append(d[3].strip())
 
         rv = astropy.table.Table([sheetns,left,alloc,used],names=["runname","left","alloc","used"])
                 
