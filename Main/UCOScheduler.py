@@ -181,12 +181,12 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
     if os.path.exists(outfn):
         rank_table = astropy.table.Table.read(outfn,format='ascii')
     else:
-        sheetns, ranks = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
+        sheetns, ranks, fracs = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name,hour_constraints=hour_constraints)
 
         if sheetns is None or len(sheetns) == 0:
             return None
 
-        rank_table= astropy.table.Table([sheetns,ranks],names=['sheetn','rank'])
+        rank_table= astropy.table.Table([sheetns,ranks],names=['sheetn','rank','frac'])
         try:
             rank_table.write(outfn,format='ascii')
         except Exception as e:
