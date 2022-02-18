@@ -271,6 +271,7 @@ def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Sche
 
     sheetns = []
     rank = []
+    frac = []
 
     worksheet = getSpreadsheet(sheetn=sheet_table_name,certificate=certificate)
     if worksheet:
@@ -300,7 +301,7 @@ def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Sche
                     rank[sindx] = -1000
                     frac[sindx] = 0.0
 
-    return sheetns,rank
+    return sheetns,rank,frac
 
 
 def initStarTable(col_list):
