@@ -20,7 +20,6 @@ if __name__ == "__main__":
         print("Need either a list of sheets or a rank table")
         sys.exit(0)
     
-    sheetns = opt.sheetn.split(",")
     outdir = "."
     outfn = "googledex.dat"
     if os.path.exists(os.path.join(outdir,outfn)):
