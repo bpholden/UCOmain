@@ -265,7 +265,7 @@ def timeLeft():
     else:
         return None
 
-def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
+def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',hour_constraints=None):
 
     apflog( "Starting parse of %s" % (sheet_table_name),echo=True)
 
@@ -287,7 +287,11 @@ def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Sche
                 cfrac = floatDefault(row[2])
                 frac.append(cfrac)
 
-    time_left = timeLeft()
+    if hour_constraints:
+        time_left = hour_constraints
+    else:
+        time_left = timeLeft()
+        
     if time_left is not None:
         for ky in time_left.keys():
             if time_left[ky] <= 0:
