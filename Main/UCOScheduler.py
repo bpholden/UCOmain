@@ -847,7 +847,6 @@ if __name__ == '__main__':
     rank_tablen='2022A_ranks'
     rank_table = makeRankTable(rank_tablen,hour_constraints=hour_constraints)
 
-    frac_tablen='2022A_frac'
     hour_table = makeHourTable(rank_table,dt,hour_constraints=hour_constraints)
 
     sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
