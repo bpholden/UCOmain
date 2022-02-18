@@ -173,7 +173,7 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
         if sheetns is None or len(sheetns) == 0:
             return None
 
-        rank_table= astropy.table.Table([sheetns,ranks],names=['sheetn','rank','frac'])
+        rank_table= astropy.table.Table([sheetns,ranks,fracs],names=['sheetn','rank','frac'])
         try:
             rank_table.write(outfn,format='ascii')
         except Exception as e:
