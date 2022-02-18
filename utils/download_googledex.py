@@ -32,7 +32,7 @@ if __name__ == "__main__":
     config['owner']='public'
     config['inst']='levy'
     config['raoff'] = None
-    config['decoff'] = None 
+    config['decoff'] = None
 
         
     ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=outfn,outdir=outdir,config=config)
