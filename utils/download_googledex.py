@@ -3,6 +3,8 @@ import sys
 import os
 import argparse
 import datetime
+import astropy.io.ascii
+
 sys.path.append("../Main")
 
 import ParseUCOSched
