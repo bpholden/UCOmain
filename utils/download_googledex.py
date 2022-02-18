@@ -11,9 +11,9 @@ import UCOScheduler as ds
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Set default options")
-    parser.add_argument('sheetn',type=str)
-    parser.add_argument('-f', '--frac_sheet', dest='frac_sheet', default=None, help='Download a frac table as well')
-    parser.add_argument('-r', '--rank_sheet', dest='rank_sheet', default=None, help='Download a rank table as well')
+    parser.add_argument('-s', '--sheet_list', dest='sheetn', default=None, help='List of sheets')
+    parser.add_argument('-r', '--rank_sheet', dest='rank_sheet', default=None, help='Rank table, will make sheet list')
+    parser.add_argument('-t', '--time_left', dest='time_left', default=None, help='Use an existing time_left file')
     opt = parser.parse_args()
     
     sheetns = opt.sheetn.split(",")
