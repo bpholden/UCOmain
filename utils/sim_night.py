@@ -86,12 +86,13 @@ curtime, endtime, apf_obs = NightSim.sun_times(datestr)
 bstar = options.bstar
 doTemp = True
 tempcount = 0
-hour_table = ds.makeHourTable(options.frac_sheetn,curtime.datetime(),hour_constraints=hour_constraints)
+
+hour_table = ds.makeHourTable(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
 
 while observing:
     curtime = ephem.Date(curtime)
 
-    result = ds.getNext(curtime.datetime(), lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,sheetns=options.googledex.split(","),outdir=outdir,frac_sheet=options.frac_sheetn,rank_sheetn=options.rank_sheetn)
+    result = ds.getNext(curtime.datetime(), lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,sheetns=sheet_list,outdir=outdir,rank_sheetn=options.rank_sheetn)
     if result:
         if bstar:
             bstar = False
