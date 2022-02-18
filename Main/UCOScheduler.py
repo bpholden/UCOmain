@@ -131,23 +131,6 @@ def makeHourTable(rank_table,dt,outfn='hour_table',outdir=None,hour_constraints=
         hour_table =  astropy.table.Table.read(outfn,format='ascii')
         return hour_table
 
-    frac_fn = os.path.join(outdir,frac_fn)
-    if os.path.exists(frac_fn):
-        frac_table = astropy.table.Table.read(frac_fn,format='ascii')
-    else:
-        sheetns, fracs = ParseUCOSched.parseFracTable(sheet_table_name=sheet_table_name,outfn=frac_fn)
-        frac_table = []
-        for i in range(0,len(fracs)):
-            frow = []
-            frow.append(sheetns[i])
-            frow.append(fracs[i])
-            frac_table.append(frow)
-        frac_table = astropy.table.Table(rows=frac_table,names=['sheetn','frac'])
-        try:
-            frac_table.write(frac_fn,format='ascii')
-        except Exception as e:
-            apflog("Cannot write table %s: %s" % (frac_fn,e),level='error',echo=True)
-
 
     hour_table= astropy.table.Table(frac_table,names=['sheetn','frac'])
 
