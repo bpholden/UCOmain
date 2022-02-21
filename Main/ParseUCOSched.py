@@ -242,28 +242,12 @@ def findColumns(col_names,req_cols,opt_cols=[]):
     return didx
 
 
-def parseFracTable(sheet_table_name='2021B_frac',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',outfn=None,outdir=None):
+def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
 
     apflog( "Starting parse of %s" % (sheet_table_name),echo=True)
-    if not outdir :
-        outdir = os.getcwd()
-    if outfn is not None and os.path.exists(os.path.join(outdir,outfn)):
-        sheetns=[]
-        frac=[]
-        with open(os.path.join(outdir,outfn)) as fp:
-            lines = fp.readlines()
-            for ln in lines:
-                row = ln.strip().split()
-                if row[0] == 'sheetn':
-                    continue
-                sheetns.append(row[0])
-                try:
-                    frac.append(float(row[0]))
-                except:
-                    frac.append(0)
-        return sheetns,frac
 
     sheetns = []
+    rank = []
     frac = []
 
     worksheet = getSpreadsheet(sheetn=sheet_table_name,certificate=certificate)
@@ -272,69 +256,16 @@ def parseFracTable(sheet_table_name='2021B_frac',certificate='UCSC_Dynamic_Sched
         if len(cur_codex) <= 0:
             apflog("Worksheet %s exists but is empty, skipping" % (sheet_table_name), level='error', echo=True)
             return None, None
-        for row in cur_codex:
-            if row[0] == 'sheetn':
-                continue
-            sheetns.append(row[0])
-            frac.append(floatDefault(row[1]))
-
-    wait_time = len(frac)
-    apflog("Sleeping %.1f seconds to keep Google happy" % (wait_time), level="info",echo=True)
-    time.sleep(wait_time)
-
-    return sheetns,frac
-
-def timeLeft():
-    cmd = "/usr/local/lick/bin/timereport/time_left"
-    if os.path.exists(cmd):
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        while p.poll() is None:
-            time.sleep(1)
-        out, err = p.communicate()
-        if len(err):
-            return None
-
-        rv = dict()
-        lines = out.split('\n')
-        if len(lines) <= 1:
-            return None
-        for ln in lines[1:]:
-            d = ln.split(",")
-            if len(d) >= 2:
-                rv[d[0].strip()] = d[1].strip()
-        return rv
-
-    else:
-        return None
-
-def parseRankTable(sheet_table_name='2021B_ranks',certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json'):
-
-    apflog( "Starting parse of %s" % (sheet_table_name),echo=True)
-
-    sheetns = []
-    rank = []
-
-    worksheet = getSpreadsheet(sheetn=sheet_table_name,certificate=certificate)
-    if worksheet:
-        cur_codex = worksheet.get_all_values()
-        if len(cur_codex) <= 0:
-            apflog("Worksheet %s exists but is empty, skipping" % (sheet_table_name), level='error', echo=True)
-            return None, None
         for row in cur_codex[1:]:
-            sheetns.append(row[0])
-            crank = floatDefault(row[1])
-            crank = int(round(crank))
-            rank.append(crank)
+            if row[0] != "":
+                sheetns.append(row[0])
+                crank = floatDefault(row[1])
+                crank = int(round(crank))
+                rank.append(crank)
+                cfrac = floatDefault(row[2])
+                frac.append(cfrac)
 
-    time_left = timeLeft()
-    if time_left is not None:
-        for ky in time_left.keys():
-            if time_left[ky] <= 0:
-                if ky in sheetns:
-                    sindx = sheetns.index(ky)
-                    rank[sindx] = -1000
-
-    return sheetns,rank
+    return sheetns,rank,frac
 
 
 def initStarTable(col_list):

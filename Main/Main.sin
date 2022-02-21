@@ -155,10 +155,10 @@ def args(apftask):
     parser.add_argument('-s', '--start', default=None, type=str, help="When specified with a fixed starlist, this option starts that list at that time.")
     parser.add_argument('--raster', action='store_true', default=False, help="If a fixed starlist is given, use it for a raster scan.")
 
-    parser.add_argument('--rank_table', default='2020B_ranks', help="Optional name for table of sheet ranks")
-    parser.add_argument('--sheet',default="RECUR_A100",help="Optional name for a Google spreadsheet")
+    parser.add_argument('--rank_table', default='2022A_ranks', help="Optional name for table of sheet ranks")
+    parser.add_argument('--sheet',default=None,help="Optional name for a Google spreadsheet")
     parser.add_argument('--owner',default='public',help="Optional name for file owners")    
-    parser.add_argument('--frac_table',default='2020B_frac',help="Table of fractions of the night")
+
     parser.add_argument('--time_left',default=None,help="File name for remaining time in programs")
     
     opt = parser.parse_args()
@@ -244,9 +244,30 @@ def downloadFiles(opt):
             except Exception as e:
                 hour_constraints = None
                 apflog("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
-
+                
     try:
-        star_table,stars = ParseUCOSched.parseUCOSched(sheetns=opt.sheet,outfn='googledex.dat',outdir=os.getcwd(),hour_constraints=hour_constraints)
+        rank_table = ds.makeRankTable(opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+    except Exception as e:
+        apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
+        rank_table = None
+        
+    if rank_table is None and os.path.exists("rank_table.1"):
+        shutil.copyfile("rank_table.1","rank_table")
+        try:
+            rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+        except Exception as e:
+            apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
+            rank_table = None
+
+    hour_table = ds.makeHourTable(rank_table,datetime.now(),hour_constraints=hour_constraints)
+            
+    if opt.sheet:
+        sheet_list = opt.sheet
+    else:
+        sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
+            
+    try:
+        star_table,stars = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn='googledex.dat',outdir=os.getcwd(),hour_constraints=hour_constraints)
     except Exception as e:
         apflog("Error: Cannot download googledex?! %s" % (e),level="error")
         star_table = None
@@ -255,28 +276,7 @@ def downloadFiles(opt):
     if star_table is None and os.path.exists("googledex.dat.1"):
         shutil.copyfile("googledex.dat.1","googledex.dat")
 
-    try:
-        rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd())
-    except Exception as e:
-        apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
-        rank_table = None
-        
-    if rank_table is None and os.path.exists("rank_table.1"):
-        shutil.copyfile("rank_table.1","rank_table")
             
-            
-    try:
-        hour_table = ds.makeHourTable(opt.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints)
-    except Exception as e:
-        apflog("Error: Cannot download frac_table?! %s" % (e),level="error")
-        hour_table = None
-    if hour_table is None and os.path.exists("frac_table.1"):
-        try:
-            hour_table = ds.makeHourTable(opt.frac_table,datetime.now(),outdir=os.getcwd(),frac_fn='frac_table.1',hour_constraints=hour_constraints)
-        except Exception as e:
-            apflog("Error: Cannot reuse frac_table.1?! %s" % (e),level="error")
-            hour_table = None
-                    
 
 if __name__ == '__main__':
 

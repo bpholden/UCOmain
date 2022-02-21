@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import numpy as np
 import astropy
 import astropy.io
+import astropy.table
 import ephem
 from ExposureCalculations import getI2_M, getI2_K, getEXPMeter, getEXPMeter_Rate, getEXPTime
 import ParseUCOSched
@@ -120,7 +121,7 @@ def updateHourTable(hour_table,observed,dt,outfn='hour_table',outdir=None):
     return hour_table
 
 
-def makeHourTable(sheet_table_name,dt,outfn='hour_table',outdir=None,frac_fn='frac_table',hour_constraints=None):
+def makeHourTable(rank_table,dt,outfn='hour_table',outdir=None,hour_constraints=None):
 
     if not outdir :
         outdir = os.getcwd()
@@ -131,25 +132,9 @@ def makeHourTable(sheet_table_name,dt,outfn='hour_table',outdir=None,frac_fn='fr
         hour_table =  astropy.table.Table.read(outfn,format='ascii')
         return hour_table
 
-    frac_fn = os.path.join(outdir,frac_fn)
-    if os.path.exists(frac_fn):
-        frac_table = astropy.table.Table.read(frac_fn,format='ascii')
-    else:
-        sheetns, fracs = ParseUCOSched.parseFracTable(sheet_table_name=sheet_table_name,outfn=frac_fn)
-        frac_table = []
-        for i in range(0,len(fracs)):
-            frow = []
-            frow.append(sheetns[i])
-            frow.append(fracs[i])
-            frac_table.append(frow)
-        frac_table = astropy.table.Table(rows=frac_table,names=['sheetn','frac'])
-        try:
-            frac_table.write(frac_fn,format='ascii')
-        except Exception as e:
-            apflog("Cannot write table %s: %s" % (frac_fn,e),level='error',echo=True)
+    # file does not exist to make it from scratch using the fracs
 
-
-    hour_table= astropy.table.Table(frac_table,names=['sheetn','frac'])
+    hour_table = astropy.table.Table([rank_table['sheetn'],rank_table['frac']],names=['sheetn','frac'])
 
     sunset,sunrise = computeSunsetRise(dt,horizon='-9')
     if sunrise < sunset:
@@ -174,6 +159,71 @@ def makeHourTable(sheet_table_name,dt,outfn='hour_table',outdir=None,frac_fn='fr
         apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
     return hour_table
 
+def timeLeft():
+    cmd = "/usr/local/lick/bin/timereport/time_left"
+    if os.path.exists(cmd):
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        while p.poll() is None:
+            time.sleep(1)
+        out, err = p.communicate()
+        if len(err):
+            return None
+
+        sheetns = []
+        left = []
+        alloc = []
+        used = []
+        lines = out.split('\n')
+        if len(lines) <= 1:
+            return None
+        for ln in lines[1:]:
+            d = ln.split(",")
+            if len(d) >= 2:
+                sheetns.append(d[0].strip())
+                left.append(d[1].strip())
+                alloc.append(d[2].strip())
+                used.append(d[3].strip())
+
+        rv = astropy.table.Table([sheetns,left,alloc,used],names=["runname","left","alloc","used"])
+                
+    else:
+        return None
+
+
+def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constraints=None):
+
+    if not outdir :
+        outdir = os.getcwd()
+
+    outfn = os.path.join(outdir,outfn)
+    if os.path.exists(outfn):
+        rank_table = astropy.table.Table.read(outfn,format='ascii')
+    else:
+        sheetns, ranks, fracs = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
+        if sheetns is None or len(sheetns) == 0:
+            return None
+
+        rank_table= astropy.table.Table([sheetns,ranks,fracs],names=['sheetn','rank','frac'])
+
+        if hour_constraints:
+            time_left = hour_constraints
+        else:
+            time_left = timeLeft()
+            
+        if time_left is not None:
+            if 'runname' in hour_constraints.keys() and 'left' in hour_constraints.keys():
+                for runname in hour_constraints['runname']:
+                    if hour_constraints['left'][hour_constraints['runname']==runname] < 0:
+                        rank_table['rank'][rank_table['sheetn']==runname] = -1000
+
+        try:
+            rank_table.write(outfn,format='ascii')
+        except Exception as e:
+            apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
+
+    return rank_table
+
+
 
 def timeCheck(star_table,totexptimes,dt,hour_table):
 
@@ -188,28 +238,6 @@ def timeCheck(star_table,totexptimes,dt,hour_table):
     time_check = totexptimes <= maxexptime
 
     return time_check
-
-def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None):
-
-    if not outdir :
-        outdir = os.getcwd()
-
-    outfn = os.path.join(outdir,outfn)
-    if os.path.exists(outfn):
-        rank_table = astropy.table.Table.read(outfn,format='ascii')
-    else:
-        sheetns, ranks = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
-
-        if sheetns is None or len(sheetns) == 0:
-            return None
-
-        rank_table= astropy.table.Table([sheetns,ranks],names=['sheetn','rank'])
-        try:
-            rank_table.write(outfn,format='ascii')
-        except Exception as e:
-            apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
-
-    return rank_table
 
 
 def makeScriptobsLine(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='',temp=False):
@@ -595,7 +623,7 @@ def configDefaults(owner):
 
     return config
 
-def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_A100"],owner='public',outfn="googledex.dat",toofn="too.dat",outdir=None,focval=0,inst='',rank_sheetn='rank_table',frac_sheet=None):
+def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_A100"],owner='public',outfn="googledex.dat",toofn="too.dat",outdir=None,focval=0,inst='',rank_sheetn='rank_table'):
     """ Determine the best target for UCSC team to observe for the given input.
         Takes the time, seeing, and slowdown factor.
         Returns a dict with target RA, DEC, Total Exposure time, and scritobs line
@@ -629,10 +657,11 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     apflog("getNext(): Updating star list with previous observations",echo=True)
     observed, star_table = ParseUCOSched.updateLocalStarlist(ptime,outfn=outfn,toofn=toofn,observed_file="observed_targets")
 
-    hour_table = None
-    if frac_sheet is not None:
-        hour_table = makeHourTable(frac_sheet,dt)
-        hour_table = updateHourTable(hour_table,observed,dt)
+    rank_table = makeRankTable(rank_sheetn)
+    hour_table = makeHourTable(rank_table,ptime)
+
+    if hour_table is not None:
+        hour_table = updateHourTable(hour_table,observed,ptime)
 
     # Parse the Googledex
     # Note -- RA and Dec are returned in Radians
@@ -747,8 +776,9 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
 
 
     final_priorities = computePriorities(star_table,dt,
-                                             rank_table=makeRankTable(rank_sheetn),
-                                             hour_table=hour_table,observed=observed)
+                                             rank_table=rank_table,
+                                             hour_table=hour_table,
+                                             observed=observed)
 
     try:
         pri = max(final_priorities[available])
@@ -814,25 +844,24 @@ if __name__ == '__main__':
     else:
         hour_constraints = None
 
-    frac_tablen='2022A_frac'
-    hour_table = makeHourTable(frac_tablen,dt,hour_constraints=hour_constraints)
-
     rank_tablen='2022A_ranks'
-    rank_table = makeRankTable(rank_tablen)
+    rank_table = makeRankTable(rank_tablen,hour_constraints=hour_constraints)
 
-    sheetn="RECUR_A100,2022A_A002,2022A_A003,2022A_A004,2022A_A005,2022A_A006,2022A_A007,2022A_A008,2022A_A009,2022A_A010,2022A_A013,2022A_A014,2022A_A015,2022A_A016"
+    hour_table = makeHourTable(rank_table,dt,hour_constraints=hour_constraints)
+
+    sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
     # For some test input what would the best target be?
     otfn = "observed_targets"
     ot = open(otfn,"w")
     starttime = time.time()
-    result = getNext(starttime, 7.99, 0.4, bstar=True,sheetns=sheetn.split(","),rank_sheetn=rank_tablen,frac_sheet=frac_tablen)
+    result = getNext(starttime, 7.99, 0.4, bstar=True,sheetns=sheet_list,rank_sheetn=rank_tablen)
     ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
     starttime += 400
     for i in range(5):
 
-        result = getNext(starttime, 7.99, 0.4, bstar=False,sheetns=sheetn,template=True,rank_sheetn=rank_tablen,frac_sheet=frac_tablen)
+        result = getNext(starttime, 7.99, 0.4, bstar=False,sheetns=sheet_list,template=True,rank_sheetn=rank_tablen)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
         if result is None:
