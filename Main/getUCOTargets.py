@@ -59,6 +59,10 @@ class getUCOTargets(threading.Thread):
         else:
             self.debug = False
 
+        if self.rank_table is None and self.sheets is None:
+            apflog("Error: no rank table and no sheet list provided", level='error')
+            return
+
         self.start()
 
     def stop(self):
