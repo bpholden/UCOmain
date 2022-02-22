@@ -80,6 +80,9 @@ class getUCOTargets(threading.Thread):
         if self.signal is False:
             return
 
+        if self.debug:
+            print("Would have downloaded %s" % (self.rank_table))
+        else:
             if self.time_left is None :
                 hour_constraints=None
             else:
@@ -91,6 +94,39 @@ class getUCOTargets(threading.Thread):
                         apflog("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
                 else:
                     hour_constraints = None
+
+            try:
+                rank_table = ds.makeRankTable(self.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+            except Exception as e:
+                apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
+                # goto backup
+                if os.path.exists("rank_table.1"):
+                    shutil.copyfile("rank_table.1","rank_table")
+                    try:
+                        rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+                    except Exception as e:
+                        apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
+                        rank_table = None
+
+            if self.signal is False:
+                return
+
+            if self.sheets is None:
+                self.sheets = list(rank_table['sheetn'][rank_table['rank'] > 0])
+
+            if self.debug:
+                print("Would have downloaded %s" % (self.sheets))
+            else:
+                if self.signal is False:
+                    return
+                try:
+                    star_table,stars = ParseUCOSched.parseUCOSched(sheetns=self.sheets,outfn='googledex.dat',
+                                                                   outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
+                except Exception as e:
+                    apflog("Error: Cannot download googledex?! %s" % (e),level="error")
+                    # goto backup
+                    if os.path.exists("googledex.dat.1"):
+                        shutil.copyfile("googledex.dat.1","googledex.dat")
 
             if self.debug:
                 print("Would have downloaded %s" % (self.frac_table))
