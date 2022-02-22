@@ -23,10 +23,7 @@ class getUCOTargets(threading.Thread):
         threading.Thread.__init__(self)
 
         self.task = task
-        if opt.sheet:
-            self.sheets = opt.sheet
-        else:
-            self.sheets = ['RECUR_A100']
+
         if opt.too:
             self.too = opt.too
         else:
@@ -46,6 +43,11 @@ class getUCOTargets(threading.Thread):
             self.time_left = opt.time_left
         else:
             self.time_left = None
+
+        if opt.sheet:
+            self.sheets = opt.sheet
+        else:
+            self.sheets = None
 
         self.signal = True
         self.timeout = 1200
