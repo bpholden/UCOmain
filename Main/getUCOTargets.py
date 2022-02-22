@@ -132,13 +132,10 @@ class getUCOTargets(threading.Thread):
                 print("Would have made hour table")
             else:
                 try:
-                    hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints)
+                    hour_table = ds.makeHourTable(rank_table,datetime.now(),hour_constraints=hour_constraints)
                 except Exception as e:
                     hour_table = None
-                    apflog("Error: Cannot download frac_table?! %s" % (e),level="error")
-                if hour_table is None and os.path.exists("frac_table.1"):
-                    shutil.copyfile("frac_table.1","frac_table")
-                    hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),frac_table='frac_table',hour_constraints=hour_constraints)
+                    apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
 
         while self.signal and self.too is not None:
 
