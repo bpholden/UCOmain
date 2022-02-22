@@ -3,7 +3,6 @@ import sys
 import os
 import argparse
 import datetime
-
 import astropy.io.ascii
 
 sys.path.append("../Main")
@@ -14,13 +13,15 @@ import UCOScheduler as ds
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Set default options")
-    parser.add_argument('sheetn',type=str)
-    parser.add_argument('-f', '--frac_sheet', dest='frac_sheet', default=None, help='Download a frac table as well')
-    parser.add_argument('-r', '--rank_sheet', dest='rank_sheet', default=None, help='Download a rank table as well')
+    parser.add_argument('-s', '--sheet_list', dest='sheetn', default=None, help='List of sheets')
+    parser.add_argument('-r', '--rank_sheet', dest='rank_sheet', default=None, help='Rank table, will make sheet list')
     parser.add_argument('-t', '--time_left', dest='time_left', default=None, help='Use an existing time_left file')
     opt = parser.parse_args()
-    
-    sheetns = opt.sheetn.split(",")
+
+    if opt.sheetn is None and opt.rank_sheet is None:
+        print("Need either a list of sheets or a rank table")
+        sys.exit(0)
+
     outdir = "."
     outfn = "googledex.dat"
     if os.path.exists(os.path.join(outdir,outfn)):
@@ -36,24 +37,24 @@ if __name__ == "__main__":
     config['owner']='public'
     config['inst']='levy'
     config['raoff'] = None
-    config['decoff'] = None 
+    config['decoff'] = None
 
-        
-    ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=outfn,outdir=outdir,config=config)
-
-    if opt.frac_sheet is not None:
-        
-        if opt.time_left is not None and os.path.exists(opt.time_left):
-            try:
-                hour_constraints = astropy.io.ascii.read(opt.time_left)
-            except Exception as e:
-                hour_constraints = None
-                print("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
-        else:
+    if opt.time_left is not None and os.path.exists(opt.time_left):
+        try:
+            hour_constraints = astropy.io.ascii.read(opt.time_left)
+        except Exception as e:
             hour_constraints = None
+            print("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
+    else:
+        hour_constraints = None
 
-        hour_table = ds.makeHourTable(opt.frac_sheet,datetime.datetime.now(),hour_constraints=hour_constraints)
-        
     if opt.rank_sheet is not None:
-        rank_table = ds.makeRankTable(opt.rank_sheet)
+        rank_table = ds.makeRankTable(opt.rank_sheet,hour_constraints=hour_constraints)
+        hour_table = ds.makeHourTable(rank_table,datetime.datetime.now(),hour_constraints=hour_constraints)
+        sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
+    if opt.sheetn is not None:
+        sheet_list = opt.sheetn.split(",")
+
+    if sheet_list:
+        ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn=outfn,outdir=outdir,config=config)

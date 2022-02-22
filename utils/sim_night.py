@@ -22,8 +22,6 @@ import ParseUCOSched
 parser = optparse.OptionParser()
 parser.add_option("-d","--date",dest="date",default="today")
 parser.add_option("-f","--fixed",dest="fixed",default="")
-parser.add_option("-g","--googledex",dest="googledex",default="RECUR_A100,2022A_A002,2022A_A003,2022A_A004,2022A_A005,2022A_A006,2022A_A007,2022A_A008,2022A_A009,2022A_A010,2022A_A013,2022A_A014,2022A_A015,2022A_A016")
-parser.add_option("--frac_table",dest="frac_sheetn",default="2022A_frac")
 parser.add_option("--rank_table",dest="rank_sheetn",default="2022A_ranks")
 parser.add_option("-i","--infile",dest="infile",default="googledex.dat")
 parser.add_option("-o","--outfile",dest="outfile",default=None)
@@ -51,6 +49,7 @@ if options.outfile == None:
     outfile = "%s.simout" % (fdatestr )
 else:
     outfile = options.outfile
+    
 try:
     outfp = open(outfile,"w+")
 except Exception as e:
@@ -68,12 +67,12 @@ else:
    
 
 rank_table = ds.makeRankTable(options.rank_sheetn)
-
+sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
     
 hdrstr = "#starname date time mjd exptime i2counts elevation azimuth fwhm slowdown owner\n"
 outfp.write(hdrstr)
         
-star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=options.googledex.split(","),outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
+star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
 
 fwhms = NightSim.gen_seeing(val=1.0) # good conditions
 slowdowns = NightSim.gen_clouds(val=2) # typical conditions
@@ -88,12 +87,13 @@ curtime, endtime, apf_obs = NightSim.sun_times(datestr)
 bstar = options.bstar
 doTemp = True
 tempcount = 0
-hour_table = ds.makeHourTable(options.frac_sheetn,curtime.datetime(),hour_constraints=hour_constraints)
+
+hour_table = ds.makeHourTable(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
 
 while observing:
     curtime = ephem.Date(curtime)
 
-    result = ds.getNext(curtime.datetime(), lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,sheetns=options.googledex.split(","),outdir=outdir,frac_sheet=options.frac_sheetn,rank_sheetn=options.rank_sheetn)
+    result = ds.getNext(curtime.datetime(), lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,sheetns=sheet_list,outdir=outdir,rank_sheetn=options.rank_sheetn)
     if result:
         if bstar:
             bstar = False
