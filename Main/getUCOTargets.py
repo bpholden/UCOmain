@@ -77,28 +77,8 @@ class getUCOTargets(threading.Thread):
         expression = '$eostele.SUNEL < -0.0698'
         APFTask.waitFor(self.task, True, expression=expression, timeout=self.wait_time)
 
-        if self.signal:
-            if self.debug:
-                print("Would have downloaded %s" % (self.sheets))
-            else:
-                try:
-                    star_table,stars = ParseUCOSched.parseUCOSched(sheetns=self.sheets,outfn='googledex.dat',
-                                                                   outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
-                except Exception as e:
-                    apflog("Error: Cannot download googledex?! %s" % (e),level="error")
-                    # goto backup
-                    if os.path.exists("googledex.dat.1"):
-                        shutil.copyfile("googledex.dat.1","googledex.dat")
-            if self.debug:
-                print("Would have downloaded %s" % (self.rank_table))
-            else:
-                try:
-                    rank_table = ds.makeRankTable(self.rank_table,outdir=os.getcwd())
-                except Exception as e:
-                    apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
-                    # goto backup
-                    if os.path.exists("rank_table.1"):
-                        shutil.copyfile("rank_table.1","rank_table")
+        if self.signal is False:
+            return
 
             if self.time_left is None :
                 hour_constraints=None
