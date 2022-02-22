@@ -129,7 +129,7 @@ class getUCOTargets(threading.Thread):
                         shutil.copyfile("googledex.dat.1","googledex.dat")
 
             if self.debug:
-                print("Would have downloaded %s" % (self.frac_table))
+                print("Would have made hour table")
             else:
                 try:
                     hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints)
