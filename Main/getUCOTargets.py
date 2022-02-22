@@ -34,11 +34,6 @@ class getUCOTargets(threading.Thread):
         else:
             self.rank_table = None
 
-        if opt.frac_table:
-            self.frac_table = opt.frac_table
-        else:
-            self.frac_table = None
-
         if opt.time_left:
             self.time_left = opt.time_left
         else:
