@@ -236,49 +236,6 @@ def setObsDefaults(opt):
     return opt
 
 
-def downloadFiles(opt):
-
-    if opt.time_left is None:
-        hour_constraints=None
-    else:
-        if os.path.exists(opt.time_left):
-            try:
-                hour_constraints = astropy.io.ascii.read(opt.time_left)
-            except Exception as e:
-                hour_constraints = None
-                apflog("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
-
-    try:
-        rank_table = ds.makeRankTable(opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
-    except Exception as e:
-        apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
-        rank_table = None
-
-    if rank_table is None and os.path.exists("rank_table.1"):
-        shutil.copyfile("rank_table.1","rank_table")
-        try:
-            rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
-        except Exception as e:
-            apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
-            rank_table = None
-
-    hour_table = ds.makeHourTable(rank_table,datetime.now(),hour_constraints=hour_constraints)
-
-    if opt.sheet:
-        sheet_list = opt.sheet
-    else:
-        sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
-
-    try:
-        star_table,stars = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn='googledex.dat',outdir=os.getcwd(),hour_constraints=hour_constraints)
-    except Exception as e:
-        apflog("Error: Cannot download googledex?! %s" % (e),level="error")
-        star_table = None
-
-    # goto backup
-    if star_table is None and os.path.exists("googledex.dat.1"):
-        shutil.copyfile("googledex.dat.1","googledex.dat")
-
 
 
 if __name__ == '__main__':
