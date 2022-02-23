@@ -74,10 +74,7 @@ class Observe(threading.Thread):
             self.rank_tablen = opt.rank_table
         else:
             self.rank_tablen = None
-        if opt.frac_table:
-            self.frac_tablen = opt.frac_table
-        else:
-            self.frac_tablen = None
+
         if opt.start:
             try:
                 self.starttime = float(opt.start)
@@ -355,7 +352,7 @@ class Observe(threading.Thread):
             self.apf.updateWindshield(self.windshield_mode)
             self.focval = self.apf.setAutofocVal()
 
-            self.target = ds.getNext(time.time(), seeing, slowdown, bstar=self.obsBstar,sheetns=self.sheetn, owner=self.owner, template=self.doTemp,focval=self.focval,rank_sheetn=self.rank_tablen,frac_sheet=self.frac_tablen)
+            self.target = ds.getNext(time.time(), seeing, slowdown, bstar=self.obsBstar,sheetns=self.sheetn, owner=self.owner, template=self.doTemp,focval=self.focval,rank_sheetn=self.rank_tablen)
 
             if self.target is None:
                 apflog("No acceptable target was found. Since there does not seem to be anything to observe, %s will now shut down." % (self.name), echo=True)
@@ -880,7 +877,6 @@ if __name__ == "__main__":
     opt.fixed = None
     opt.sheet = 'Bstars'
     opt.rank_table = '2020B_ranks'
-    opt.frac_table = '2020B_fracs'
     opt.start = None
     opt.test = True
     opt.raster = False

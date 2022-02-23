@@ -166,8 +166,5 @@ if __name__ == "__main__":
     opt.too = None
     opt.time_left = "/home/holden/time_left.csv"
     opt.rank_table = '2022A_ranks'
-    opt.frac_table = '2022A_frac'
-    opt.sheet = "RECUR_A100,2022A_A002,2022A_A003,2022A_A004,2022A_A006,2022A_A007,2022A_A008,2022A_A009,2022A_A010,2022A_A013,2022A_A014,2022A_A015".split(",")
-
 
     get_targs = getUCOTargets(opt, task=task)
