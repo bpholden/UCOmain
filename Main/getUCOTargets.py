@@ -34,11 +34,6 @@ class getUCOTargets(threading.Thread):
         else:
             self.rank_table = None
             
-        if opt.frac_table:
-            self.frac_table = opt.frac_table
-        else:
-            self.frac_table = None
-
         if opt.time_left:
             self.time_left = opt.time_left
         else:
@@ -105,9 +100,6 @@ class getUCOTargets(threading.Thread):
                 else:
                     hour_constraints = None
                     
-            if self.debug:
-                print("Would have downloaded %s" % (self.frac_table))
-            else:
                 try:
                     hour_table = ds.makeHourTable(self.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints,
                                                   certificate=self.certificate)
@@ -143,7 +135,6 @@ if __name__ == "__main__":
     opt.too = None
     opt.time_left = "/home/holden/time_left.csv"
     opt.rank_table = '2021B_ranks'
-    opt.frac_table = '2021B_frac'
     opt.sheet = "RECUR_A100,2021B_A000,2021B_A001,2021B_A002,2021B_A003,2021B_A005,2021B_A006,2021B_A007,2021B_A008,2021B_A010,2021B_A011,2021B_A012,2021B_A013,2021B_A014".split(",")
     
     
