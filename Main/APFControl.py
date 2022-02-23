@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import numpy as np
 
 try:
-    from apflog import *
+    from apflog import apflog
     import ktl
     import APF as APFLib
     import APFTask
@@ -27,12 +27,13 @@ FOCUSTIME = 3600. # minimum time before checking telescope focus
 TEMP_LIMIT = 35. # deg F at the APF
 wxtimeout = timedelta(seconds=1800)
 SUNEL_HOR = -3.2
-DEWARMAX = 8600
+DEWARMAX = 8650
 DEWARMIN = 8350
 TELFOCUSMIN = -0.00088
 TELFOCUSMAX = -0.00078
 #TELFOCUSTYP = -0.8348
 TELFOCUSTYP = -0.83665
+#TELFOCUSTYP = -0.83089
 TELFOCUSMAXOFF = 0.00002
 MEANDIFF = 1.3806
 SLOPE = -0.00920
@@ -109,6 +110,7 @@ class APF:
     aaz        = tel('AAZ')
     aafocus    = tel('AAFOCUS')
     focus      = tel('FOCUS')
+    faenable   = tel('FAENABLE')
 
     dome       = ktl.Service('eosdome')
     rspos      = dome('RSCURPOS')
@@ -180,11 +182,11 @@ class APF:
     guide      = ktl.Service('apfguide')
     counts     = guide['COUNTS']
     kcountrate     = guide['COUNTRATE']
-    thresh     = guide['xpose_thresh']
     avg_fwhm   = guide['AVG_FWHM']
 
     motor      = ktl.Service('apfmot')
     decker     = motor['DECKERNAM']
+#    deckerord  = motor['DECKERORD']
     dewarfoc   = motor["DEWARFOCRAW"]
 
     eosgcam    = ktl.Service('eosgcam')
@@ -204,6 +206,11 @@ class APF:
         # Set up the calling task that set up the monitor and if this is a test instance
         self.test = test
         self.task = task
+
+        try:
+            self.eosgcam['GENABLE'].write(True,binary=True)
+        except:
+            apflog("Cannot write True to eosgcam.GENABLE, issue with guider and/or dresden",level='error',echo=True)
 
         self.mon_lists = dict()
         self.avg_lists = dict()
@@ -272,7 +279,8 @@ class APF:
         self.rspos.monitor()
         self.focus.monitor()
         self.aafocus.monitor()
-
+        self.faenable.monitor()
+        
         self.apfteqsta.monitor()
         self.apfteqsta.callback(self.apftaskMon)
 
@@ -311,7 +319,7 @@ class APF:
         s += "M2 Focus Value = % 4.3f\n" % (float(self.aafocus['binary'])*1000.0)
         s += "M2 Focus Value = % 4.3f (focus kwd)\n" % (float(self.focus['binary'])*1000.0)
         s += "Preferred M2 Focus Value =  % 4.3f\n" % (float(self.predTelFocus())*1000.0)
-        s += "Okay to open = %s -- %s\n" % (repr(self.openOK), self.checkapf['OPREASON'].read() )
+        s += "Okay to open = %s -- %s\n" % (self.openOK['ascii'], self.checkapf['OPREASON'].read() )
         s += "Current Weather = %s\n" % self.checkapf['WEATHER'].read()
 
         isopen, what = self.isOpen()
@@ -336,6 +344,9 @@ class APF:
         s += 'APFmon is %s' % (stasum)
 
         return s
+
+    ## callbacks - these are the callbacks used to measure quantities or flip states
+    ## these are always running
 
     def ucamdispatchmon(self):
         if self.ucamd0sta['populated'] == False:
@@ -389,11 +400,15 @@ class APF:
 
         try:
             eventval = event['binary']
-            if eventval == 0 or eventval == 7 :
-                self.ncountrate = 0
         except:
             return
+        
+        if eventval == 0 or eventval == 7 :
+            self.ncountrate = 0
 
+        if eventval == 3:
+            self.setTelFoc()
+            
         try:
             cnts = float(counts.read(binary=True,timeout=2))
             time = float(elapsed.read(binary=True,timeout=2))
@@ -442,11 +457,11 @@ class APF:
             return
 
         if self.mon_lists[name] == []:
-            self.mon_lists[name] = [curval]*20
+            self.mon_lists[name] = [curval]*300
             self.avg_lists[name] = curval
         else:
             self.mon_lists[name].append(curval)
-            self.mon_lists[name] = self.mon_lists[name][-20:]
+            self.mon_lists[name] = self.mon_lists[name][-300:]
             self.avg_lists[name] = np.average(self.mon_lists[name])
 
         return
@@ -469,21 +484,24 @@ class APF:
             return
 
         if self.dewlist == []:
-            self.dewlist = [dewpt]*20
+            self.dewlist = [dewpt]
         else:
             self.dewlist.append(dewpt)
-            self.dewlist = self.dewlist[-20:]
+            if len(self.dewlist) >= 300:
+                self.dewlist = self.dewlist[-300:]
 
-        dewlist = np.asarray(self.dewlist)
+                dewlist = np.asarray(self.dewlist)
 
-        curdew = np.average(dewlist)
-        curm2 = np.average(np.asarray(self.mon_lists['TM2CSUR']))
-        curm2air = np.average(np.asarray(self.mon_lists['TM2CAIR']))
+                curdew = np.average(dewlist)
+                curm2 = np.average(np.asarray(self.mon_lists['TM2CSUR']))
+                curm2air = np.average(np.asarray(self.mon_lists['TM2CAIR']))
 
-        if curm2air - curdew < 2 or curm2 - curdew < 4:
-            self.dewTooClose = True
-        else:
-            self.dewTooClose = False
+                if self.dewTooClose:
+                    if curm2air - curdew > 3 or curm2 - curdew > 5:
+                        self.dewTooClose = False
+                else:
+                    if curm2air - curdew < 2 or curm2 - curdew < 4:
+                        self.dewTooClose = True
 
         return
 
@@ -525,8 +543,20 @@ class APF:
                 return
             apflog("%s should be restarted" % (taskname_val),echo=True)
         return
+
+
+    def restart(self,name,host):
+        apfcmd = os.path.join(LROOT,"bin/apf")
+        restart = '%s restart %s' % (apfcmd,name)
+        cmdlist = ["ssh", "-f", host, restart]
+        try:
+            p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
+        except Exception as e:
+            apflog("Cannot restart %s on %s: %s" % (name,host,e),level='error',echo=True)
+        return
+        
     
-    def miniMonMon(self,sta):
+    def miniMonMon(self,sta,host="hamburg"):
         if sta['populated'] == False:
             return
         try:
@@ -537,16 +567,25 @@ class APF:
         if sta_val > 3:
             # warning or higher
             nmsta = sta['name'].lower()
-            name = nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is 
-            apfcmd = os.path.join(LROOT,"bin/apf")
-            restart = '%s restart %s' % (apfcmd,name)
-            cmdlist = ["ssh", "-f", "hamburg", restart]
-            try:
-                p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
-            except Exception as e:
-                apflog("Cannot restart %s on hamburg: %s" % (name,e),level='error',echo=True)
-                return
+            name = nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is
+            self.restart(name,host)
         return
+
+    def apfMonMon(self,sta,host="shred"):
+        if sta['populated'] == False:
+            return
+        try:
+            sta_val = sta['binary']
+        except:
+            return
+        
+        if sta_val > 3:
+            # warning or higher
+            nmsta = sta['name'].lower()
+            name = "apf" + nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is
+            self.restart(name,host)
+        return
+    
     ## end of callbacks for monitoring stuff
 
 
@@ -563,14 +602,14 @@ class APF:
         self.fits3pre.write('')
         if self.gexptime.read(binary=True) >= 1:
             try:
-                self.sumframe.write(1,wait=False)
-                self.gexptime.write(1,wait=False)
+                self.sumframe.write(1,wait=True)
+                self.gexptime.write(1,wait=True)
             except:
                 apflog("Cannot write eosgcam.SUMFRAME or eosgcam.GEXPTIME",level='warn',echo=True)
         else:
             try:
                 self.gexptime.write(1,wait=True)
-                self.sumframe.write(1,wait=False)
+                self.sumframe.write(1,wait=True)
             except:
                 apflog("Cannot write eosgcam.SUMFRAME or eosgcam.GEXPTIME",level='warn',echo=True)
 
@@ -615,7 +654,7 @@ class APF:
                 #bad
                 replaceavg += curtemp
                 n_good += 1
-        if n_good < 4:
+        if n_good < 4 and n_good > 0:
             replaceavg /= n_good
             self.avgtemps[2] -= np.average(self.mon_lists["TAVERAGE"])
             self.avgtemps[2] += replaceavg
@@ -627,7 +666,9 @@ class APF:
 
         self.avgTelTemps()
         # m1 m2 tavg m2air tf3 tf4
-        slopes = np.asarray([-0.008501373571204436,0.018447192538919112,0.005045231856341733,-0.0034925932846514426,0.0030700884060842716,-0.014469348574232712])
+        slopes = np.asarray([-0.008501,0.018447,0.005045,-0.0034926,0.003070,-0.014469])
+#        slopes = np.asarray([-0.0108,0.00535,0.00006,0.2784,-0.00351,-0.01825])
+#        zeropoint_temps = np.asarray([16.031,14.611,14.634,15.110,16.219,16.249])
         zeropoint_temps = np.asarray([15.556, 14.217, 14.595, 13.308, 15.739, 15.828])
         predfoc = np.sum(slopes*(self.avgtemps-zeropoint_temps)) + TELFOCUSTYP # slope in mm per deg C, TELFOCUSTYP is the mean focus between 2016 - 2020
         predfoc /= 1000.0 # convert to meters
@@ -815,6 +856,7 @@ class APF:
         lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal"])
         if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
+            
         result = self.runFocusinstr()
 
         dewarfocraw = self.dewarfoc.read(binary=True)
@@ -827,16 +869,20 @@ class APF:
                 if len(focusdict['PHASE']) > 0:
                     flags = " ".join(["-p", focusdict['phase']])
             else:
-                apflog("Focusinstr has failed. Setting to %s and trying again." % (lastfocus_dict["lastfocus"]), level='error', echo=True)
+                apflog("Focusinstr has failed, result = %s, current focus is value = %d, and last value was %d." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
                 APFLib.write("apfmot.DEWARFOCRAW", lastfocus_dict["lastfocus"])
-            result = self.runFocusinstr(flags=flags)
-            if not result:
                 apflog("Focusinstr has failed. Setting to %s and exiting." % (lastfocus_dict["lastfocus"]), level='error', echo=True)
+                return False
 
         try:
             self.apfschedule('OWNRHINT').write(owner,timeout=10)
         except Exception as e:
             apflog("Cannot communicate with apfschedule %s" % (e), level='alert',echo=True)
+        try:
+            self.decker.write("W (1.00:3.0)",wait=False)
+            self.decker.waitFor(" == 'W (1.00:3.0)'",timeout=120)
+        except Exception as e:
+            apflog("Cannot communicate with apfmot.DECKERNAM %s" % (e), level='alert',echo=True)
 
         return result
 
@@ -931,11 +977,15 @@ class APF:
                         apflog('focusinstr failed in or after cleanup, proceeding with value %s' % (str(resultd['LASTFOCUS'])), echo=True)
                         result = True
                 except:
-                    apflog("focusinstr failed, exited with Exited/Unknown" ,echo=True, level="error")
+                    apflog("focusinstr failed, exited with Exited/Unknown", echo=True, level="error")
                     result = False
             expression="($apftask.FOCUSINSTR_LASTFOCUS > 0)"
-            if not APFTask.waitFor(self.task,True,expression=expression,timeout=30):
-                apflog("focusinstr failed to find an adequate focus" ,echo=True, level="error")
+            if not APFTask.waitFor(self.task,True,expression=expression,timeout=1):
+                apflog("focusinstr failed to find an adequate focus", echo=True, level="error")
+                result = False
+            expression="($apftask.FOCUSINSTR_MEASURED == 1)"
+            if not APFTask.waitFor(self.task,True,expression=expression,timeout=1):
+                apflog("focusinstr fit to the data failed", echo=True, level="error")
                 result = False
             return result
 
@@ -982,7 +1032,7 @@ class APF:
             apflog("Slewing by executing %s" %(cmd), echo=True)
             result, code = apftaskDo(cmd,cwd=os.path.curdir,debug=True)
             if not result:
-                apflog("Failed at slewing: %s" %(code), level="error", echo=True)
+                apflog("Failed at slewlock - check logs could be a slew failure or a failure to acquire: %s" %(code), level="error", echo=True)
 
         return result
 
@@ -1038,7 +1088,13 @@ class APF:
             apflog("centerup failed with code %d" % code, echo=True)
         return result
 
-    def focusTel(self):
+    def findStarfocusTel(self):
+        """ This finds a star in the catalog of pointing reference stars close
+        to the current position of the telescope.
+        It then runs slewlock to slew to the star, set up the guider, and center
+        the star on the slit.
+        Finally, once the star is acquired, it runs the telescope focus routine.
+        """
         star = self.findStar()
         if not star:
             apflog("Cannot find star near current position!?",level='error',echo=True)
@@ -1049,11 +1105,18 @@ class APF:
         except Exception as e:
             apflog("Cannot write SCRIPTOBS_VMAG: %s" % (e), level='error',echo=True)
         try:
-            sline = "%s %s %s pmra=%s pmdec=%s vmag=%s # end" % (star[0],star[1],star[2],star[4],star[5],star[6])
+            sline = "%s %f %f pmra=%s pmdec=%s vmag=%s # end" % (star[0],float(star[1])*3.819718,float(star[2])*57.295779,star[4],star[5],star[6])
             self.line.write(sline)
         except Exception as e:
             apflog("Cannot write SCRIPTOBS_LINE: %s" % (e), level='error',echo=True)
 
+        try:
+            self.robot['SCRIPTOBS_LINE_RESULT'].write(0)
+            self.robot['SCRIPTOBS_OBSERVED'].write(False)
+        except Exception as e:
+            apflog("Cannot write 0 to SCRIPTOBS_LINE_RESULT or False to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
+
+        
         predfocus  = self.predTelFocus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         
@@ -1155,7 +1218,7 @@ class APF:
             # This should really never happen. In case of a temporary condition, we give
             # a short waitfor rather than immediatly exiting.
             chk_open = "$checkapf.OPEN_OK == true"
-            result = APFLib.waitFor(self.task, False, chk_open, timeout=30)
+            result = APFTask.waitFor(self.task, False, chk_open, timeout=30)
             if not result:
                 apflog("Tried calling openat with OPEN_OK = False. Can't open.", echo=True)
                 apflog(self.checkapf["OPREASON"].read(), echo=True)
@@ -1233,7 +1296,9 @@ class APF:
 
 
     def servoFailure(self):
-        """checks for amplifier faults"""
+        """checks for amplifier faults
+        Checks all seven moving components.
+        """
         servo_failed = False
         prefixs = ["AZ","EL","FA","FB","FC","TR" ]
         for pr in prefixs:
@@ -1250,13 +1315,13 @@ class APF:
                 servo_failed = True
                 apflog("Error: Fatal Following Error: %s %s" % (nm,val), level="alert", echo=True)
 
-        if servo_failed:
-            return True
-        else:
-            return False
+        return servo_failed
 
     def close(self, force=False):
-        """Checks that we have the proper permission, then runs the closeup script."""
+        """Checks that we have the proper permission, then runs the closeup script.
+        On failures retries, and also sends alerts. Good for waking people up.
+        """
+        
         if self.test: return True
         cmd = os.path.join(SCRIPTDIR,"closeup")
         if force:
@@ -1303,7 +1368,7 @@ class APF:
                     else:
                         apflog("Failure power cycling telescope",echo=True,level="alert")
                 if attempts == 7:
-                    lstr = "Closeup has failed % times consecutively. Human intervention likely required." % (attempts)
+                    lstr = "Closeup has failed %d times consecutively. Human intervention likely required." % (attempts)
                     areopen, whatsopen = self.isOpen()
                     if areopen == True:
                         # truly dire, the telescope is open
@@ -1326,13 +1391,34 @@ class APF:
         return False
 
     def updateLastObs(self,obsnum):
-        """ If the last observation was a success, this function updates the file storing the last observation number and the hit_list which is required by the dynamic scheduler."""
+        """ If the last observation was a success, 
+        this function updates the file storing the last 
+        observation number and the hit_list which is 
+        required by the dynamic scheduler."""
+        
         if obsnum['populated']:
             APFLib.write(self.robot["MASTER_LAST_OBS_UCSC"], obsnum)
 
         return
 
 
+    def setTelFoc(self):
+        """
+        Sets the telescope focus to the predicted value returned by
+        predTelFocus()
+        """
+        
+        predfocus  = self.predTelFocus()
+        self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
+        focus_diff = math.fabs(predfocus - self.focus['binary'])
+        
+        if focus_diff > 0.01/1000. and self.mv_perm and self.faenable['binary'] == 1:
+            try:
+                self.focus.write(predfocus,binary=True,wait=False)
+                self.robot['MASTER_MESSAGE'].write("Wrote %f to eostele.Focus" % (predfocus*1000.) )
+            except Exception as e:
+                apflog("Cannot write eostele.FOCUS: %s" % (e), level="error", echo=True)
+    
     def setAutofocVal(self):
         """ APFControl.setAutofocVal()
             tests when the last time the telescope was focused, if more than FOCUSTIME enable focus check
@@ -1429,9 +1515,18 @@ class APF:
         # Slew to the specified RA and DEC, set guide camera settings, and centerup( Slewlock )
         # Focus the telescope - all of this, including finding the star, is done in focusTel
         self.DMReset()
-        if self.focusTel():
+        if self.findStarfocusTel():
+            try:
+                self.robot['SCRIPTOBS_LINE_RESULT'].write(3)
+                self.robot['SCRIPTOBS_OBSERVED'].write(True)
+            except Exception as e:
+                apflog("Cannot write 3 to SCRIPTOBS_LINE_RESULT or True to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
             return True
         else:
+            try:
+                self.robot['SCRIPTOBS_LINE_RESULT'].write(2)
+            except Exception as e:
+                apflog("Cannot write 2 to SCRIPTOBS_LINE_RESULT: %s" % (e), level='warn', echo=True)
             return False
 
     def DMReset(self):
@@ -1544,18 +1639,18 @@ class APF:
 
         apfschedule = ktl.Service('apfschedule')
         
-        
+        # check if the focusinstr or calibrate tasks are already running
         if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0 or ktl.read('apftask','CALIBRATE_PID',binary=True) > 0 or ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0 :
             return None
 
-        try:
-            exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent="master",dark=True)
-        except:
-            return False
+        # create exposure object
+        exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent=self.task,dark=True)
 
+        # Is the UCAM ok?
         if exp.comb.read(binary=True) > 0:
             return False
 
+        # read original values and save them
         try:
             outdir = exp.apfucam['OUTDIR'].read()
             orignam = exp.outfile.read()
@@ -1566,7 +1661,8 @@ class APF:
         
         ofn  = 'test_'
         obsn = '0001'
-        
+
+        # write test values
         try:
             exp.outfile.write(ofn)
             exp.obsnum.write(obsn)
@@ -1574,9 +1670,12 @@ class APF:
         except:
             return False
 
+        # final file name 
         ffn = exp.outfile.read() + exp.obsnum.read() + '.fits'
         fpath = os.path.join(outdir,ffn)
-        
+
+        apflog("Taking a test bias image called %s" % (ffn),echo=True)
+        # actually take a picture
         try:
             c = exp.expose(waitlast=True)
         except:
@@ -1584,11 +1683,14 @@ class APF:
 
         apfschedule['OWNRHINT'].write('public')
 
+        # the number of exposures (c) should be 1 
         if os.path.exists(fpath) and c == 1:
             rv = True
         else:
             rv = False
+        apflog("File located at %s is %s" % (fpath,str(os.path.exists(fpath))),echo=True)
 
+        # restore original values
         try:
             exp.outfile.write(orignam)
             exp.obsnum.write(orignum)
@@ -1636,10 +1738,15 @@ class APF:
         except:
             apflog("UCAM status bad, cannot restart",level='alert')
             return False
-        ucamstat.waitFor(" != running",timeout=60)
-        status.waitFor(" != Running",timeout=60)
-        status.waitFor(" == Running",timeout=60)
 
+        # we cannot wait on the UCAM or UCAMLAUNCHER keywords,
+        # the dispatcher is down
+        APFTask.wait(self.task,False,timeout=240)
+        
+        command = apftask['UCAMLAUNCHER_UCAM_COMMAND']
+        ucamstat = apftask['UCAMLAUNCHER_UCAM_STATUS']
+        status = apftask['UCAMLAUNCHER_STATUS']
+        
         try:
             command.write("Run")
             ucamstat.waitFor(" == running",timeout=300)

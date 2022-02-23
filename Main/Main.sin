@@ -35,7 +35,6 @@ except:
 import APFControl 
 from apflog import *
 import UCOScheduler_V1 as ds
-from x_gaussslit import *
 import ParseUCOSched
 from Observe import Observe
 
@@ -57,14 +56,14 @@ def controlWatch(keyword,parent):
         if value == "Abort":
             APFTask.set(parent, suffix='STATUS', value='Exited/Failure')
             APF.log("Aborted by APFTask")
-            os.kill(os.getpid(), signal.SIGINT)
+            shutdown()
         elif value == "Pause" and not paused:
             try:
                 APFTask.set(parent, suffix='STATUS', value='PAUSED')
                 paused = True
             except:
                 APF.log("Failure to set STATUS in APFTask", level="error")
-                os.kill(os.getpid(),signal.SIGINT)
+                shutdown()
 
         else:
             try:
@@ -72,7 +71,7 @@ def controlWatch(keyword,parent):
                 paused = False
             except:
                 APF.log("Failure to set STATUS in APFTask", level=error)
-                os.kill(os.getpid(), signal.SIGINT)
+                shutdown()
 
     except:
         return
@@ -99,21 +98,27 @@ def shutdown():
         os._exit(0)
 
 def getStartTime(hr,mn):
+
     lt = datetime.now()
     ct = datetime.utcnow()
     
     td_utc = ct - lt
     td_utc_off = int(10*math.floor(td_utc.seconds/10))
 
+    # the hr and mn arguments are for the UT time
     st = datetime(ct.year, ct.month, ct.day, hr, mn)
-    if ct.hour > 18:
-        # early afternoon
-        oneday = timedelta(days=1)
-        st += oneday
+    if lt.hour >= 12 and ct.day == lt.day:
+        # the usual start time is the afternoon,
+        # sunset is after the start of next day in UT 
+        # if the ut day and the local day are the same
+        # it is early afternoon and we need to add a day
+        # if it is late enough, the ut day will be correct
+        st += timedelta(days=1)
 
+    # strftime assumes that this a local time, so the time stamp is wrong by the UT offset
+    st -= timedelta(seconds=td_utc_off)
     ts = float(st.strftime("%s"))
-    ts -= td_utc_off
-
+   
     return ts
 
 def calcFocusStartTime():
@@ -129,12 +134,10 @@ def calcFocusStartTime():
     t_delta = timedelta(0,start_time)
     sun_delta = timedelta(0,time_to_sunset)
     start_dt = dt + t_delta
-    start_str = "%s" % (start_dt)
     sun_dt = dt + sun_delta
-    sun_str = "%s" % (sun_dt)    
-    return start_time, start_str, sun_str
+    return start_time, start_dt, sun_dt
 
-def args():
+def args(apftask):
     p_c = ["Init", "Focus", "Cal-Pre", "Cal-Post", "Watching"]
     w_c = ["on", "off", "auto"]
     b_c = [1, 2, 4]
@@ -152,27 +155,55 @@ def args():
     parser.add_argument('-s', '--start', default=None, type=str, help="When specified with a fixed starlist, this option starts that list at that time.")
     parser.add_argument('--raster', action='store_true', default=False, help="If a fixed starlist is given, use it for a raster scan.")
 
-    parser.add_argument('--rank_table', default='2020B_ranks', help="Optional name for table of sheet ranks")
-    parser.add_argument('--sheet',default="RECUR_A100",help="Optional name for a Google spreadsheet")
+    parser.add_argument('--rank_table', default='2022A_ranks', help="Optional name for table of sheet ranks")
+    parser.add_argument('--sheet',default=None,help="Optional name for a Google spreadsheet")
     parser.add_argument('--owner',default='public',help="Optional name for file owners")    
-    parser.add_argument('--frac_table',default='2020B_frac',help="Table of fractions of the night")
+
     parser.add_argument('--time_left',default=None,help="File name for remaining time in programs")
     
     opt = parser.parse_args()
 
-    if opt.start != None:
+    possible_list = ''
+    possible_time = ''
+    try:
+        possible_list = apftask.read('MASTER_STARLIST',timeout=5)
+    except Exception as e:
+        apflog("Cannot read apftask.MASTER_STARLIST: %s" % (e),level='warn',echo=True)
+
+    if possible_list != '' and opt.fixed == None:
+        opt.fixed = possible_list
+
+    saved_time = ''
+    if opt.fixed != None:
+        try:
+            saved_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
+        except Exception as e:
+            apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e),level='warn',echo=True)
+                
+    if opt.start != None and opt.fixed != None and saved_time == '':
 
         mtch = re.search("\A(\d+)\:(\d+)",opt.start)
         if mtch:
             hr = int(mtch.group(1))
             mn = int(mtch.group(2))
             opt.start = getStartTime(hr,mn)
+            try:
+                apftask.write("MASTER_UTSTARTLIST", opt.start,wait=False)
+            except Exception as e:
+                apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e),level='warn',echo=True)
+                
         else:
             print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
             shutdown()
-
+            
+    elif opt.fixed != None and saved_time != '':
+        opt.start = saved_time
 
     if opt.sheet != None:
+        try:
+            apftask.write('MASTER_SHEETLIST',opt.sheet,timeout=2)
+        except Exception as e:
+            apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
         opt.sheet = opt.sheet.split(",")
 
         
@@ -204,23 +235,6 @@ def setObsDefaults(opt):
 
 def downloadFiles(opt):
 
-    try:
-        star_table,stars = ParseUCOSched.parseUCOSched(sheetns=opt.sheet,outfn='googledex.dat',outdir=os.getcwd())
-    except Exception as e:
-        apflog("Error: Cannot download googledex?! %s" % (e),level="error")
-        # goto backup
-        if os.path.exists("googledex.dat.1"):
-            shutil.copyfile("googledex.dat.1","googledex.dat")
-
-    try:
-        rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd())
-    except Exception as e:
-        apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
-        # goto backup
-        if os.path.exists("rank_table.1"):
-            shutil.copyfile("rank_table.1","rank_table")
-
-
     if opt.time_left is None:
         hour_constraints=None
     else:
@@ -230,18 +244,47 @@ def downloadFiles(opt):
             except Exception as e:
                 hour_constraints = None
                 apflog("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
+                
+    try:
+        rank_table = ds.makeRankTable(opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+    except Exception as e:
+        apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
+        rank_table = None
+        
+    if rank_table is None and os.path.exists("rank_table.1"):
+        shutil.copyfile("rank_table.1","rank_table")
+        try:
+            rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+        except Exception as e:
+            apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
+            rank_table = None
+
+    hour_table = ds.makeHourTable(rank_table,datetime.now(),hour_constraints=hour_constraints)
+            
+    if opt.sheet:
+        sheet_list = opt.sheet
+    else:
+        sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
             
     try:
-        hour_table = ds.makeHourTable(opt.frac_table,datetime.now(),outdir=os.getcwd(),hour_constraints=hour_constraints)
+        star_table,stars = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn='googledex.dat',outdir=os.getcwd(),hour_constraints=hour_constraints)
     except Exception as e:
-        apflog("Error: Cannot download frac_table?! %s" % (e),level="error")
+        apflog("Error: Cannot download googledex?! %s" % (e),level="error")
+        star_table = None
+
+    # goto backup
+    if star_table is None and os.path.exists("googledex.dat.1"):
+        shutil.copyfile("googledex.dat.1","googledex.dat")
+
+            
 
 if __name__ == '__main__':
 
     apflog("Starting main...")
+    apftask = ktl.Service("apftask")        
 
     # Parse the command line arguments
-    opt = args()
+    opt = args(apftask)
 
     # Register the atexit function after parsing the command line arguments
     # This prevents printing the help followed by exited/failure message
@@ -266,7 +309,6 @@ if __name__ == '__main__':
         parent = 'master'
 
 
-    apftask = ktl.Service("apftask")        
     # Establish this as the only running main script ( Or example task in test mode )
     try:
         apflog("Attempting to establish apftask as %s" % parent)
@@ -365,11 +407,11 @@ if __name__ == '__main__':
         APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)        
         apflog("Initialization finished")
         
-        stime, s_str, sun_str = calcFocusStartTime()
+        stime, start_dt, sun_dt = calcFocusStartTime()
         waitstr = "Will now wait %.1f seconds before starting focusinstr" % (stime)
         apflog(waitstr, echo=True)
         APFTask.set(parent, suffix="MESSAGE", value=waitstr, wait=False)
-        startstr = "Estimating focusinstr will start at %s for a sunset at %s" % (s_str,sun_str)
+        startstr = "Estimating focusinstr will start at %s for a sunset at %s" % ( start_dt, sun_dt)
         apflog(startstr, echo=True)
         APFTask.set(parent, suffix="MESSAGE", value=startstr, wait=False)
         
@@ -399,6 +441,15 @@ if __name__ == '__main__':
             shutdown()
             
         result = apf.focusinstr()
+        if result is False:
+            rv = apf.ucamRestart()
+            if rv == False:
+                apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
+                shutdown()
+            result = apf.focusinstr()
+            if result is False:
+                shutdown()
+            
         
         apflog("Focus has finished. Setting phase to Cal-Pre")
         if not debug:
@@ -472,7 +523,7 @@ if __name__ == '__main__':
         else:
             apflog("Starting dynamic scheduler", echo=True)
         observe.task = parent
-
+        # observe object should be set up for running now
         observe.start()
     else:
         observe.signal = False
@@ -549,8 +600,8 @@ if __name__ == '__main__':
         logpush(os.path.join(os.getcwd(),"hour_table"))
         
     if os.path.exists(os.path.join(os.getcwd(),"frac_table")):
-        os.remove(os.path.join(os.getcwd(),"frac_table"))
-        
+        logpush(os.path.join(os.getcwd(),"frac_table"))
+                
     if os.path.exists(os.path.join(os.getcwd(),"robot.log")):
         logpush(os.path.join(os.getcwd(),"robot.log"))
         
@@ -603,7 +654,8 @@ if __name__ == '__main__':
     if not debug:
         APFTask.set(parent, suffix="LAST_OBS_UCSC", value=apf.ucam["OBSNUM"].read())
         APFTask.set(parent, suffix="MESSAGE",value="Updating last observation number to %s" % (apf.ucam["OBSNUM"].read()),wait=False)
-
+        apftask('MASTER_STARLIST').write('')
+        apftask('MASTER_UTSTARTLIST').write('')
 
     rv = apf.turnOffInst()
     APFTask.set(parent, suffix="MESSAGE",value="Turning off the motors",wait=False)
