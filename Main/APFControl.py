@@ -1397,7 +1397,8 @@ class APF:
         required by the dynamic scheduler."""
         
         if obsnum['populated']:
-            APFLib.write(self.robot["MASTER_LAST_OBS_UCSC"], obsnum)
+            if obsnum >= 10000:
+                APFLib.write(self.robot["MASTER_LAST_OBS_UCSC"], obsnum)
 
         return
 
