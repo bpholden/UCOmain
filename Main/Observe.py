@@ -74,7 +74,6 @@ class Observe(threading.Thread):
             self.rank_tablen = opt.rank_table
         else:
             self.rank_tablen = None
-
         if opt.start:
             try:
                 self.starttime = float(opt.start)
@@ -812,7 +811,7 @@ class Observe(threading.Thread):
                 calstat = APFTask.get('CALIBRATE',['STATUS'])
                 if calstat['STATUS'] in ['Running', 'Pausing', 'Paused']:
                     APFTask.abort("CALIBRATE")
-                    
+
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
                 rv = checkTelState()
                 if rv is False:
@@ -876,7 +875,7 @@ if __name__ == "__main__":
     opt.windshield = 'auto'
     opt.fixed = None
     opt.sheet = 'Bstars'
-    opt.rank_table = '2020B_ranks'
+    opt.rank_table = '2022A_ranks'
     opt.start = None
     opt.test = True
     opt.raster = False
