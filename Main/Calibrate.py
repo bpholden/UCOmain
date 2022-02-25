@@ -131,12 +131,6 @@ class Calibrate(threading.Thread):
         if self.wait_time > 0:
             APFTask.wait(self.task, True, timeout=self.wait_time)
 
-        if self.phase_index == 0:
-            bias_result = self.testBias()
-            if bias_result is False:
-                self.stop()
-                return
-
         start = self.phase_index
         end = self.possible_phases.index('Watching')
 
@@ -145,10 +139,16 @@ class Calibrate(threading.Thread):
             cur_phase = self.possible_phases[pi]
             APFTask.phase(self.task, self.possible_phases[pi])
             apflog("Phase now %s %d" % (cur_phase,pi),echo=True)
-            if cur_phase[0:3] == 'Cal':
-                result = self.calibrate(cur_phase)
-            else:
+            
+            if pi == 0:
+                result = self.testBias()
+                if result is False:
+                    self.stop()
+                    return
+            elif pi == 1:
                 result = self.focusInstr()
+            elif pi == 2:
+                result = self.calibrate(cur_phase)
 
             if result:
                 apflog("Phase %s is complete" % cur_phase,echo=True)
