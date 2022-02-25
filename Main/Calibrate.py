@@ -174,7 +174,7 @@ if __name__ == "__main__":
     APFTask.waitFor(task, True,timeout=2)
     print(str(apf))
 
-    calibrate = Calibrate(apf,'public',5,task=task,test=True)
+    calibrate = Calibrate(apf,'public',5,'uco',task=task,test=True)
     while calibrate.signal:
         try:
             APFTask.wait(task,True,timeout=1)
