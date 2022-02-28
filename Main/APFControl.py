@@ -165,7 +165,7 @@ class APF:
     
 
     ucam       = ktl.Service('apfucam')
-    user       = ucam['OUTFILE']
+    outfile    = ucam['OUTFILE']
     elapsed    = ucam['ELAPSED']
     obsnum     = ucam['OBSNUM']
     event      = ucam['EVENT']
@@ -206,7 +206,8 @@ class APF:
         # Set up the calling task that set up the monitor and if this is a test instance
         self.test = test
         self.task = task
-
+        self.desired_outfile = None
+        
         try:
             self.eosgcam['GENABLE'].write(True,binary=True)
         except:
