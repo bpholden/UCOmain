@@ -744,7 +744,8 @@ class APF:
         apflog("Setting science camera parameters.")
         self.ucam('OBSERVER').write(name)
         self.apfschedule('OWNRHINT').write(owner)
-        self.user.write(name)
+        self.outfile.write(name)
+        self.desired_outfile = name
         self.ucam('OUTDIR').write('/data/apf/')
         self.obsnum.write(str(num))
         self.robot['UCAMLAUNCHER_UCAM_PCC'].write(0)
