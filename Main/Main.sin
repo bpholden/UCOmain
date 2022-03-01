@@ -81,6 +81,7 @@ def signalShutdown(signal,frame):
     shutdown()
     
 def shutdown():
+    global success
     if success == True:
         status = 'Exited/Success'
         
