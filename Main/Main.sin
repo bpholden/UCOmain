@@ -251,7 +251,7 @@ def downloadFiles(opt):
                 apflog("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
                 
     try:
-        rank_table = ds.makeRankTable(opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+        rank_table = ds.makeRankTable(opt.rank_table,hour_constraints=hour_constraints)
     except Exception as e:
         apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
         rank_table = None
@@ -259,7 +259,7 @@ def downloadFiles(opt):
     if rank_table is None and os.path.exists("rank_table.1"):
         shutil.copyfile("rank_table.1","rank_table")
         try:
-            rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+            rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,hour_constraints=hour_constraints)
         except Exception as e:
             apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
             rank_table = None
