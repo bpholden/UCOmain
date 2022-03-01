@@ -855,7 +855,7 @@ class APF:
         else:
             self.apfschedule('OWNRHINT').write('public')
 
-        if self.outfile != self.desired_outfile:
+        if self.outfile.read() != self.desired_outfile:
             apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
             self.outfile.write(self.desired_outfile)
 
@@ -894,7 +894,7 @@ class APF:
 
     def calibrate(self, script, time):
 
-        if self.outfile != self.desired_outfile:
+        if self.outfile.read() != self.desired_outfile:
             apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
             self.outfile.write(self.desired_outfile)
 
