@@ -34,7 +34,7 @@ except:
 
 import APFControl 
 from apflog import *
-import UCOScheduler_V1 as ds
+import UCOScheduler as ds
 import ParseUCOSched
 from Observe import Observe
 
