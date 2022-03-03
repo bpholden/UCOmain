@@ -360,8 +360,10 @@ if __name__ == '__main__':
         APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)
         apflog("Initialization finished")
 
+    stime, start_dt, sun_dt, target_time = calcFocusStartTime()
+
     if phase_index <= 1:
-        stime, start_dt, sun_dt = calcFocusStartTime()
+
         waitstr = "Will now wait %.1f seconds before starting focusinstr" % (stime)
         apflog(waitstr, echo=True)
         APFTask.set(parent, suffix="MESSAGE", value=waitstr, wait=False)
