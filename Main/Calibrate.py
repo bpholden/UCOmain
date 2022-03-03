@@ -139,7 +139,7 @@ class Calibrate(threading.Thread):
             cur_phase = self.possible_phases[pi]
             APFTask.phase(self.task, self.possible_phases[pi])
             apflog("Phase now %s %d" % (cur_phase,pi),echo=True)
-            
+
             if pi == 0:
                 result = self.testBias()
                 if result is False:
@@ -174,6 +174,7 @@ if __name__ == "__main__":
     APFTask.waitFor(task, True,timeout=2)
     print(str(apf))
 
+    stime = time.time() + 5
     calibrate = Calibrate(apf,'public',5,'uco',task=task,test=True)
     while calibrate.signal:
         try:

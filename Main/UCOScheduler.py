@@ -5,6 +5,7 @@ import sys
 import time
 import re
 from datetime import datetime, timedelta
+import subprocess
 
 import numpy as np
 import astropy

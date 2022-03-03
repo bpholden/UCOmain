@@ -34,7 +34,7 @@ except:
 
 import APFControl
 from apflog import *
-import UCOScheduler_V1 as ds
+import UCOScheduler as ds
 import ParseUCOSched
 from Observe import Observe
 from Calibrate import Calibrate
@@ -83,6 +83,7 @@ def signalShutdown(signal,frame):
     shutdown()
 
 def shutdown():
+    global success
     if success == True:
         status = 'Exited/Success'
 
@@ -144,7 +145,7 @@ def args(apftask):
     w_c = ["on", "off", "auto"]
     b_c = [1, 2, 4]
     parser = argparse.ArgumentParser(description="Set default options")
-    parser.add_argument('-n', '--name', type=str,default='apf', help='This values is used as the UCAM observer name, as well as the file prefix.')
+    parser.add_argument('-n', '--name', type=str,default=None, help='This values is used as the UCAM observer name, as well as the file prefix.')
     parser.add_argument('-o', '--obsnum', type=int, help='Sets the UCAM observation number to this integer value.')
     parser.add_argument('-b', '--binning', choices=b_c, default=1, type=int, help='Sets the UCAM binning, bins in both pixels, allowed to be 1, 2 or 4.')
     parser.add_argument('-p', '--phase', choices=p_c, help='Specify the starting phase of the watcher. Allows for skipping standard procedures.')
@@ -226,7 +227,12 @@ def findObsNum(last):
 def setObsDefaults(opt):
     opt.owner = 'public'
     if opt.name == None:
-        opt.name = 'apf'
+        now = datetime.now()
+        oneday = timedelta(days=-1)
+        if now.hour < 12:
+            now += oneday
+        opt.name = '%4d%02d%02d' % (now.year,now.month,now.day)
+
     if opt.obsnum == None:
         apflog("Figuring out what the observation number should be.",echo=True)
         opt.obsnum = findObsNum(int(ktl.read('apftask','MASTER_LAST_OBS_UCSC',binary=True)))

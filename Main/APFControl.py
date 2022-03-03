@@ -167,7 +167,7 @@ class APF:
 
 
     ucam       = ktl.Service('apfucam')
-    user       = ucam['OUTFILE']
+    outfile    = ucam['OUTFILE']
     elapsed    = ucam['ELAPSED']
     obsnum     = ucam['OBSNUM']
     event      = ucam['EVENT']
@@ -208,7 +208,8 @@ class APF:
         # Set up the calling task that set up the monitor and if this is a test instance
         self.test = test
         self.task = task
-
+        self.desired_outfile = None
+        
         try:
             self.eosgcam['GENABLE'].write(True,binary=True)
         except:
@@ -749,7 +750,8 @@ class APF:
         apflog("Setting science camera parameters.")
         self.ucam('OBSERVER').write(name)
         self.apfschedule('OWNRHINT').write(owner)
-        self.user.write(name)
+        self.outfile.write(name)
+        self.desired_outfile = name
         self.ucam('OUTDIR').write('/data/apf/')
         self.obsnum.write(str(num))
         self.robot['UCAMLAUNCHER_UCAM_PCC'].write(0)
@@ -758,7 +760,7 @@ class APF:
         apflog("Observer = %s" % self.ucam('OBSERVER').read(),echo=True)
         apflog("Ownrhint = %s" % self.apfschedule('OWNRHINT').read(),echo=True)
         apflog("Output directory = %s" % self.ucam('OUTDIR').read(),echo=True)
-        apflog("File prefix = %s" % self.user.read(), echo=True)
+        apflog("File prefix = %s" % self.outfile.read(), echo=True)
         apflog("Observation number = %s" % self.obsnum.read(), echo=True)
 
         return
@@ -859,6 +861,10 @@ class APF:
         else:
             self.apfschedule('OWNRHINT').write('public')
 
+        if self.outfile.read() != self.desired_outfile:
+            apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
+            self.outfile.write(self.desired_outfile)
+
         lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal"])
         if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
@@ -875,7 +881,7 @@ class APF:
                 if len(focusdict['PHASE']) > 0:
                     flags = " ".join(["-p", focusdict['phase']])
             else:
-                apflog("Focusinstr has failed, result = %s, current focus is value = %d, and last value was %d." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
+                apflog("Focusinstr has failed, result = %s, current focus is value = %d, and last value was %s." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
                 APFLib.write("apfmot.DEWARFOCRAW", lastfocus_dict["lastfocus"])
                 apflog("Focusinstr has failed. Setting to %s and exiting." % (lastfocus_dict["lastfocus"]), level='error', echo=True)
                 return False
@@ -893,6 +899,11 @@ class APF:
         return result
 
     def calibrate(self, script, time):
+
+        if self.outfile.read() != self.desired_outfile:
+            apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
+            self.outfile.write(self.desired_outfile)
+
         s_calibrate = os.path.join(SCRIPTDIR,"calibrate")
         if self.test:
             apflog("Test Mode: calibrate %s %s." % (script, time))
