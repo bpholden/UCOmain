@@ -113,6 +113,8 @@ class getUCOTargets(threading.Thread):
 
             if self.sheets is None:
                 self.sheets = list(rank_table['sheetn'][rank_table['rank'] > 0])
+            if np.any(rank_table['too']):
+                self.too = list(rank_table['sheetn'][rank_table['too']])
 
             if self.debug:
                 print("Would have downloaded %s" % (self.sheets))
