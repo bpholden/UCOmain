@@ -26,7 +26,6 @@ class getUCOTargets(threading.Thread):
 
         self.rank_table = opt.rank_table
         self.time_left = opt.time_left
-        self.sheets = opt.sheet
 
         self.too = None
         self.signal = True
