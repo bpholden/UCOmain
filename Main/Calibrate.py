@@ -133,6 +133,8 @@ class Calibrate(threading.Thread):
 
         start = self.phase_index
         end = self.possible_phases.index('Watching')
+        if start > end:
+            end = len(self.possible_phases) + 1
 
         for pi in range(start,end):
             self.phase_index = pi
