@@ -24,26 +24,11 @@ class getUCOTargets(threading.Thread):
 
         self.task = task
 
-        if opt.too:
-            self.too = opt.too
-        else:
-            self.too = None
+        self.rank_table = opt.rank_table
+        self.time_left = opt.time_left
+        self.sheets = opt.sheet
 
-        if opt.rank_table:
-            self.rank_table = opt.rank_table
-        else:
-            self.rank_table = None
-
-        if opt.time_left:
-            self.time_left = opt.time_left
-        else:
-            self.time_left = None
-
-        if opt.sheet:
-            self.sheets = opt.sheet
-        else:
-            self.sheets = None
-
+        self.too = None
         self.signal = True
         self.timeout = 1200
         self.proceed = False
