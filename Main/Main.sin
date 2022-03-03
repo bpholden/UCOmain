@@ -138,7 +138,7 @@ def calcFocusStartTime():
     sun_delta = timedelta(0,time_to_sunset)
     start_dt = dt + t_delta
     sun_dt = dt + sun_delta
-    return start_time, start_dt, sun_dt
+    return start_time, start_dt, sun_dt, time_to_sunset + 1200
 
 def args(apftask):
     p_c = ["Init", "Focus", "Cal-Pre", "Cal-Post", "Watching"]
@@ -381,7 +381,7 @@ if __name__ == '__main__':
 
     # Start the main watcher thread
     observe = Observe(apf,opt)
-    getUCOTargets = getUCOTargets(opt, task=parent,wait_time=stime+3.75*3600)
+    getUCOTargets = getUCOTargets(opt, task=parent,wait_time=target_time)
 
 
     apf.instrPermit()
