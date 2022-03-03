@@ -28,6 +28,7 @@ class getUCOTargets(threading.Thread):
         self.time_left = opt.time_left
 
         self.too = None
+        self.sheets = None
         self.signal = True
         self.timeout = 1200
         self.proceed = False
