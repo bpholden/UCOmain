@@ -117,7 +117,8 @@ class getUCOTargets(threading.Thread):
                 self.too = list(rank_table['sheetn'][rank_table['too']])
 
             if self.debug:
-                print("Would have downloaded %s" % (self.sheets))
+                print("Would have downloaded %s" % (" ".join(self.sheets)))
+                print("TOO sheets found are: %s" % (" ".join(self.too)))
             else:
                 if self.signal is False:
                     return
@@ -164,8 +165,7 @@ if __name__ == "__main__":
     task = 'example'
     APFTask.establish(task,os.getpid())
     opt = Opt()
-    opt.test = False
-    opt.too = None
+    opt.test = True
     opt.time_left = "/home/holden/time_left.csv"
     opt.rank_table = '2022A_ranks'
 
