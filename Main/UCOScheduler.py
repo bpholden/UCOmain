@@ -205,7 +205,7 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
             return None
         toos = []
         for a in asciitoos:
-            if str(a) is 'y':
+            if str(a) == 'y':
                 toos.append(True)
             else:
                 toos.append(False)
