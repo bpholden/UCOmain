@@ -8,6 +8,7 @@ import threading
 import time
 
 import astropy.io.ascii
+import numpy as np
 
 import ktl
 import APFTask
