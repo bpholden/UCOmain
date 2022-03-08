@@ -202,6 +202,13 @@ def args(apftask):
 
     elif opt.fixed != None and saved_time != '':
         opt.start = saved_time
+        
+    if opt.name == None:
+        now = datetime.now()
+        oneday = timedelta(days=-1)
+        if now.hour < 12:
+            now += oneday
+        opt.name = '%4d%02d%02d' % (now.year,now.month,now.day)
 
     if opt.sheet != None:
         try:
@@ -226,13 +233,6 @@ def findObsNum(last):
 
 def setObsDefaults(opt):
     opt.owner = 'public'
-    if opt.name == None:
-        now = datetime.now()
-        oneday = timedelta(days=-1)
-        if now.hour < 12:
-            now += oneday
-        opt.name = '%4d%02d%02d' % (now.year,now.month,now.day)
-
     if opt.obsnum == None:
         apflog("Figuring out what the observation number should be.",echo=True)
         opt.obsnum = findObsNum(int(ktl.read('apftask','MASTER_LAST_OBS_UCSC',binary=True)))
