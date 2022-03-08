@@ -99,6 +99,9 @@ class getUCOTargets(threading.Thread):
 
             if self.sheets is None:
                 self.sheets = list(rank_table['sheetn'][rank_table['rank'] > 0])
+
+            apftask.write('MASTER_SHEETLIST',self.sheets,timeout=2)
+                
             if np.any(rank_table['too']):
                 self.too = list(rank_table['sheetn'][rank_table['too']])
 
