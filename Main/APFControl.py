@@ -1879,8 +1879,6 @@ if __name__ == '__main__':
 
     print(str(apf))
 
-    apf.testBias()
-
     while True:
         APFTask.wait(task,True,timeout=10)
         print(str(apf))
