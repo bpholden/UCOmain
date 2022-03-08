@@ -360,7 +360,8 @@ if __name__ == '__main__':
         APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)
         apflog("Initialization finished")
 
-    apf.desired_outfile = opt.name
+    if apf.desired_outfile is None and opt.name is not None:
+        apf.desired_outfile = opt.name
 
     stime, start_dt, sun_dt, target_time = calcFocusStartTime()
 
