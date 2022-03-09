@@ -5,7 +5,6 @@ import re
 import sys
 import json
 import time
-import subprocess
 
 import ephem
 import numpy as np
