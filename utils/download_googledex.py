@@ -21,7 +21,7 @@ if __name__ == "__main__":
     if opt.sheetn is None and opt.rank_sheet is None:
         print("Need either a list of sheets or a rank table")
         sys.exit(0)
-    
+
     outdir = "."
     outfn = "googledex.dat"
     if os.path.exists(os.path.join(outdir,outfn)):
@@ -55,8 +55,6 @@ if __name__ == "__main__":
 
     if opt.sheetn is not None:
         sheet_list = opt.sheetn.split(",")
-        
+
     if sheet_list:
         ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn=outfn,outdir=outdir,config=config)
-
-

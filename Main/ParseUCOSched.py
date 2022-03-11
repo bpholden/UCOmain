@@ -5,7 +5,6 @@ import re
 import sys
 import json
 import time
-import subprocess
 
 import ephem
 import numpy as np
@@ -249,6 +248,7 @@ def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Sche
     sheetns = []
     rank = []
     frac = []
+    too = []
 
     worksheet = getSpreadsheet(sheetn=sheet_table_name,certificate=certificate)
     if worksheet:
@@ -264,8 +264,10 @@ def parseRankTable(sheet_table_name='2022A_ranks',certificate='UCSC_Dynamic_Sche
                 rank.append(crank)
                 cfrac = floatDefault(row[2])
                 frac.append(cfrac)
+                too.append(row[3].lower())
 
-    return sheetns,rank,frac
+
+    return sheetns,rank,frac,too
 
 
 def initStarTable(col_list):

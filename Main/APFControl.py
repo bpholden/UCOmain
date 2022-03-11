@@ -162,7 +162,9 @@ class APF:
     observed     = robot['SCRIPTOBS_OBSERVED']
     apfteqsta    = robot['APFTEQ_STATUS']
     metxfersta   = robot['METSXFER_STATUS']
-    
+    calsta       = robot['CALIBRATE_STATUS']
+    focussta     = robot['FOCUSINSTR_STATUS']
+
 
     ucam       = ktl.Service('apfucam')
     outfile    = ucam['OUTFILE']
@@ -281,13 +283,17 @@ class APF:
         self.focus.monitor()
         self.aafocus.monitor()
         self.faenable.monitor()
-        
+
         self.apfteqsta.monitor()
         self.apfteqsta.callback(self.apftaskMon)
 
         self.metxfersta.monitor()
         self.metxfersta.callback(self.apftaskMon)
-        
+
+        self.calsta.monitor()
+        self.focussta.monitor()
+
+
         # Grab some initial values for the state of the telescope
 
         self.wx.read()
@@ -341,7 +347,7 @@ class APF:
         stasum = ''
         for kw in self.apfstas:
             stasum += '%s %s ' % (kw['name'],kw['ascii'])
-                                         
+
         s += 'APFmon is %s' % (stasum)
 
         return s
@@ -403,13 +409,13 @@ class APF:
             eventval = event['binary']
         except:
             return
-        
+
         if eventval == 0 or eventval == 7 :
             self.ncountrate = 0
 
         if eventval == 3:
             self.setTelFoc()
-            
+
         try:
             cnts = float(counts.read(binary=True,timeout=2))
             time = float(elapsed.read(binary=True,timeout=2))
@@ -522,21 +528,21 @@ class APF:
             taskname_split =  taskname_status.split("_")
             taskname = taskname_split[0]
             apflog("%s has status %s" % (taskname,status['ascii']),level='error',echo=True)
-            
+
             # now we need the runhost
             runhost_keyword = taskname.upper() + "_RUNHOST"
             runhost = ktl.read('apftask',runhost_keyword)
 
             master_runhost_keyword = 'MASTER_RUNHOST'
             current_host = ktl.read('apftask',master_runhost_keyword)
-            
+
             apfcmd = os.path.join(LROOT,"bin/apf")
             restart = '%s restart %s' % (apfcmd,taskname)
             if runhost == current_host:
                 cmdlist = restart.split()
             else:
                 cmdlist = ["ssh", "-f", runhost, restart]
-                
+
             try:
                 p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
             except Exception as e:
@@ -555,8 +561,8 @@ class APF:
         except Exception as e:
             apflog("Cannot restart %s on %s: %s" % (name,host,e),level='error',echo=True)
         return
-        
-    
+
+
     def miniMonMon(self,sta,host="hamburg"):
         if sta['populated'] == False:
             return
@@ -564,7 +570,7 @@ class APF:
             sta_val = sta['binary']
         except:
             return
-        
+
         if sta_val > 3:
             # warning or higher
             nmsta = sta['name'].lower()
@@ -579,14 +585,14 @@ class APF:
             sta_val = sta['binary']
         except:
             return
-        
+
         if sta_val > 3:
             # warning or higher
             nmsta = sta['name'].lower()
             name = "apf" + nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is
             self.restart(name,host)
         return
-    
+
     ## end of callbacks for monitoring stuff
 
 
@@ -629,10 +635,10 @@ class APF:
         * Air temp at FCU2 (eostele.TEMPNOW3)
         * Air temp at FCU3 (eostele.TEMPNOW4)
 
-        The values for the trusses themselves are also included. 
-        This checks the values and if one is out of nominal range, 
+        The values for the trusses themselves are also included.
+        This checks the values and if one is out of nominal range,
         after taking into the offset between the truss temperature
-        and the usual average, it computes a new value for the 
+        and the usual average, it computes a new value for the
         truss average using only the trusses with nominal temperatures.
 
         """
@@ -862,7 +868,7 @@ class APF:
         lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal"])
         if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
-            
+
         result = self.runFocusinstr()
 
         dewarfocraw = self.dewarfoc.read(binary=True)
@@ -1127,10 +1133,10 @@ class APF:
         except Exception as e:
             apflog("Cannot write 0 to SCRIPTOBS_LINE_RESULT or False to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
 
-        
+
         predfocus  = self.predTelFocus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
-        
+
         if self.slew(star):
             return self.runFocusTel()
         return False
@@ -1332,7 +1338,7 @@ class APF:
         """Checks that we have the proper permission, then runs the closeup script.
         On failures retries, and also sends alerts. Good for waking people up.
         """
-        
+
         if self.test: return True
         cmd = os.path.join(SCRIPTDIR,"closeup")
         if force:
@@ -1402,11 +1408,11 @@ class APF:
         return False
 
     def updateLastObs(self,obsnum):
-        """ If the last observation was a success, 
-        this function updates the file storing the last 
-        observation number and the hit_list which is 
+        """ If the last observation was a success,
+        this function updates the file storing the last
+        observation number and the hit_list which is
         required by the dynamic scheduler."""
-        
+
         if obsnum['populated']:
             if obsnum >= 10000:
                 APFLib.write(self.robot["MASTER_LAST_OBS_UCSC"], obsnum)
@@ -1419,18 +1425,18 @@ class APF:
         Sets the telescope focus to the predicted value returned by
         predTelFocus()
         """
-        
+
         predfocus  = self.predTelFocus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         focus_diff = math.fabs(predfocus - self.focus['binary'])
-        
+
         if focus_diff > 0.01/1000. and self.mv_perm and self.faenable['binary'] == 1:
             try:
                 self.focus.write(predfocus,binary=True,wait=False)
                 self.robot['MASTER_MESSAGE'].write("Wrote %f to eostele.Focus" % (predfocus*1000.) )
             except Exception as e:
                 apflog("Cannot write eostele.FOCUS: %s" % (e), level="error", echo=True)
-    
+
     def setAutofocVal(self):
         """ APFControl.setAutofocVal()
             tests when the last time the telescope was focused, if more than FOCUSTIME enable focus check
@@ -1446,12 +1452,12 @@ class APF:
         predfocus  = self.predTelFocus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         focus_diff = math.fabs(predfocus - self.focus['binary'])
-        
+
         if focus_diff > 0.01/1000. :
             self.autofoc.write("robot_autofocus_enable")
             focval = 1
             APFTask.set(self.task, suffix="MESSAGE", value="Current telescope focus more than %6.3f microns from predicted." % (focus_diff*1000.), wait=False)
-            
+
         if focus_diff < 0.01/1000. and current_val == 'robot_autofocus_enable':
             self.autofoc.write("robot_autofocus_disable")
             APFTask.set(self.task, suffix="MESSAGE", value="Disabling autofocus", wait=False)
@@ -1482,7 +1488,7 @@ class APF:
                 wvel = self.avg_lists['M3WIND']
             else:
                 wvel = self.avg_lists['M5WIND']
-                
+
             apflog("Current median wind speed is %.2f with the limit %.2f" % (wvel,WINDSHIELD_LIMIT), level='debug')
             if currMode == 'enable' and wvel <= WINDSHIELD_LIMIT and float(self.avg_lists['M5OUTEMP']) > TEMP_LIMIT:
                 apflog("Setting scriptobs_windshield to Disable")
@@ -1495,13 +1501,17 @@ class APF:
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
 
         return rv
-        
+
     def eveningStar(self):
         """Aim the APF at the desired target. This calls prep-obs, slewlock, and focus-telescope."""
         if self.isOpen()[0] == False:
             apflog("APF is not open. Can't target a star while closed.",level='error',echo=True)
             return
         self.DMReset()
+
+        if self.calsta['binary'] < 3 or self.focussta['binary'] < 3:
+            apflog('Focusinstr and/or Calibrate are running, will skip evening star observation. focusinstr=%s calibrate=%s' % (self.calsta,self.focussta),echo=True)
+            return
 
         # check on weirdness for UCAM host post-reboot
         self.ucamdispatchmon()
@@ -1650,7 +1660,7 @@ class APF:
 
 
         apfschedule = ktl.Service('apfschedule')
-        
+
         # check if the focusinstr or calibrate tasks are already running
         if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0 or ktl.read('apftask','CALIBRATE_PID',binary=True) > 0 or ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0 :
             return None
@@ -1670,19 +1680,25 @@ class APF:
         except:
             return False
 
-        
+
         ofn  = 'test_'
-        obsn = '0001'
+        obsn = 1
+        ffn = "%s%d.fits" % (ofn,obsn)
+        fpath = os.path.join(outdir,ffn)
+        while os.path.exists(fpath):
+            obsn += 1
+            ffn = "%s%d.fits" % (ofn,obsn)
+            fpath = os.path.join(outdir,ffn)
 
         # write test values
         try:
             exp.outfile.write(ofn)
-            exp.obsnum.write(obsn)
+            exp.obsnum.write(str(obsn))
             apfschedule['OWNRHINT'].write('unknown')
         except:
             return False
 
-        # final file name 
+        # final file name
         ffn = exp.outfile.read() + exp.obsnum.read() + '.fits'
         fpath = os.path.join(outdir,ffn)
 
@@ -1695,7 +1711,7 @@ class APF:
 
         apfschedule['OWNRHINT'].write('public')
 
-        # the number of exposures (c) should be 1 
+        # the number of exposures (c) should be 1
         if os.path.exists(fpath) and c == 1:
             rv = True
         else:
@@ -1754,11 +1770,11 @@ class APF:
         # we cannot wait on the UCAM or UCAMLAUNCHER keywords,
         # the dispatcher is down
         APFTask.wait(self.task,False,timeout=240)
-        
+
         command = apftask['UCAMLAUNCHER_UCAM_COMMAND']
         ucamstat = apftask['UCAMLAUNCHER_UCAM_STATUS']
         status = apftask['UCAMLAUNCHER_STATUS']
-        
+
         try:
             command.write("Run")
             ucamstat.waitFor(" == running",timeout=300)

@@ -186,7 +186,7 @@ def timeLeft():
                 used.append(d[3].strip())
 
         rv = astropy.table.Table([sheetns,left,alloc,used],names=["runname","left","alloc","used"])
-                
+
     else:
         return None
 
@@ -200,17 +200,23 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
     if os.path.exists(outfn):
         rank_table = astropy.table.Table.read(outfn,format='ascii')
     else:
-        sheetns, ranks, fracs = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
+        sheetns, ranks, fracs, asciitoos = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
         if sheetns is None or len(sheetns) == 0:
             return None
+        toos = []
+        for a in asciitoos:
+            if str(a) == 'y':
+                toos.append(True)
+            else:
+                toos.append(False)
 
-        rank_table= astropy.table.Table([sheetns,ranks,fracs],names=['sheetn','rank','frac'])
+        rank_table= astropy.table.Table([sheetns,ranks,fracs,toos],names=['sheetn','rank','frac','too'])
 
         if hour_constraints:
             time_left = hour_constraints
         else:
             time_left = timeLeft()
-            
+
         if time_left is not None:
             if 'runname' in hour_constraints.keys() and 'left' in hour_constraints.keys():
                 for runname in hour_constraints['runname']:

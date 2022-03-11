@@ -279,7 +279,7 @@ class Observe(threading.Thread):
         def popNext():
 
             curstr = None
-            
+
             if self.target is not None and 'SCRIPTOBS' in self.target.keys():
                 tlist = self.target["SCRIPTOBS"]
                 if len(tlist) > 0:
@@ -295,7 +295,7 @@ class Observe(threading.Thread):
                 else:
                     apflog("getTarget(): Finished fixed starlist.",echo=True)
                     self.fixedtarget = None
-                        
+
             return curstr
 
         # This is called when an observation finishes, and selects the next target
@@ -335,7 +335,7 @@ class Observe(threading.Thread):
                 if curstr:
                     self.scriptobs.stdin.write(curstr)
                     return
-            
+
             # Calculate the slowdown factor.
             slowdown = calcSlowdown()
 
@@ -372,7 +372,7 @@ class Observe(threading.Thread):
                 except IOError as e:
                     apflog("Cannot observe target %s: IOError: %s" % (self.target['NAME'],e), echo=True, level='error')
                     return
-                    
+
 
             # Set the Vmag and B-V mag of the latest target
             self.VMAG = self.target["VMAG"]
@@ -574,7 +574,7 @@ class Observe(threading.Thread):
                     self.starttime = None
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
                     APFLib.write(self.apf.robot["MASTER_UTSTARTLIST"], "")
-                    
+
                 # this reads in the list and appends it to self.target
 
                 tot = readStarlistFile()
@@ -635,6 +635,8 @@ class Observe(threading.Thread):
             ripd, running = self.apf.findRobot()
             cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
+            focusing = (self.apf.focussta['binary'] < 3)
+            calibrating = (self.apf.calsta['binary'] < 3)
 
             # Check and close for weather
             self.badweather = self.apf.dewTooClose or not self.apf.openOK
@@ -805,7 +807,11 @@ class Observe(threading.Thread):
                 rv = self.checkServos()
 
             # If we are open and scriptobs isn't running, start it up
-            if self.apf.isReadyForObserving()[0] and not running and float(cursunel) <= sunel_lim and self.apf.openOK:
+            if self.apf.isReadyForObserving()[0] and not running and float(cursunel) <= sunel_lim and self.apf.openOK and not focusing:
+                calstat = APFTask.get('CALIBRATE',['STATUS'])
+                if calstat['STATUS'] in ['Running', 'Pausing', 'Paused']:
+                    APFTask.abort("CALIBRATE")
+
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
                 rv = checkTelState()
                 if rv is False:
