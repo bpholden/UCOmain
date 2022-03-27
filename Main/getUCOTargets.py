@@ -24,7 +24,7 @@ class getUCOTargets(threading.Thread):
         threading.Thread.__init__(self)
 
         self.task = task
-
+        self.apftask = ktl.Service('apftask')
         self.rank_table = opt.rank_table
         self.time_left = opt.time_left
 
@@ -101,13 +101,13 @@ class getUCOTargets(threading.Thread):
                 self.sheets = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
             try:
-                apftask.write('MASTER_SHEETLIST',",".join(self.sheets),timeout=2)
+                self.apftask.write('MASTER_SHEETLIST',",".join(self.sheets),timeout=2)
             except Exception as e:
                 apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
 
-                
-            if np.any(rank_table['too']):
-                self.too = list(rank_table['sheetn'][rank_table['too']])
+            if 'too' in rank_table.columns:
+                if np.any(rank_table['too']):
+                    self.too = list(rank_table['sheetn'][rank_table['too']])
 
             if self.debug:
                 print("Would have downloaded %s" % (" ".join(self.sheets)))
