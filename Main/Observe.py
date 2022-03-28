@@ -171,7 +171,7 @@ class Observe(threading.Thread):
         else:
             self.BstarFailures += 1
             if self.BstarFailures%3 == 0:
-                apflog("%d failures of observing a Bstar in a row - suggesting homing telescope or closing for the night" % (self.BstarFailures), echo=True, level='alert')
+                apflog("%d failures of observing a star in a row - suggesting homing telescope or closing for the night" % (self.BstarFailures), echo=True, level='Alert')
 
     def checkServos(self):
 
