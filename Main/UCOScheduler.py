@@ -199,16 +199,16 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
     outfn = os.path.join(outdir,outfn)
     if os.path.exists(outfn):
         rank_table = astropy.table.Table.read(outfn,format='ascii')
+        # the Booleans are now strings, so we have to convert back
+        bs = [ True if sb == 'True' else False for sb in rank_table['too'] ]
+        rank_table['too'] = bs
     else:
         sheetns, ranks, fracs, asciitoos = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
         if sheetns is None or len(sheetns) == 0:
             return None
-        toos = []
-        for a in asciitoos:
-            if str(a) == 'y':
-                toos.append(True)
-            else:
-                toos.append(False)
+            # this should result in this function being called again but with the 
+            # backup table being used
+        toos = [ True if str(a) == 'y' else False for a in asciitoos ]
 
         rank_table= astropy.table.Table([sheetns,ranks,fracs,toos],names=['sheetn','rank','frac','too'])
 
