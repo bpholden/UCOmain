@@ -413,16 +413,6 @@ class Observe(threading.Thread):
             else:
                 apflog("UCAM OK", echo=True)
 
-            result = self.apf.enableObsInst()
-            if result == False:
-                apflog("Cannot enable instrument", level='warn', echo=True)
-                result = self.apf.enableObsInst()
-                if not result:
-                    apflog("Error: cannot enable instrument twice.", level='alert', echo=True)
-                    return result
-            else:
-                apflog("Instrument OK", echo=True)
-
             apflog("Running open at %s as sunel = %4.2f" % (when, float(sunel)),echo=True)
             (apfopen,what) =self.apf.isOpen()
             if apfopen:
@@ -813,6 +803,17 @@ class Observe(threading.Thread):
                     APFTask.abort("CALIBRATE")
 
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
+                
+                result = self.apf.enableObsInst()
+                if result == False:
+                    apflog("Cannot enable instrument", level='warn', echo=True)
+                    result = self.apf.enableObsInst()
+                    if not result:
+                        apflog("Error: cannot enable instrument twice.", level='alert', echo=True)
+                        return result
+                else:
+                    apflog("Instrument OK", echo=True)
+                    
                 rv = checkTelState()
                 if rv is False:
                     # this means that the telescope is not slewing and is not tracking
