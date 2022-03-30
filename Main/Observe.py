@@ -660,7 +660,7 @@ class Observe(threading.Thread):
                 apflog("Entering target section",echo=True)
                 if self.fixedList is None or self.shouldStartList() == False:
                     self.lastObsSuccess = self.checkObsSuccess()
-                    self.obsBstar = self.checkBstar(haveobserved)
+                    self.checkStar(haveobserved)
 
                     APFTask.set(self.task, suffix="MESSAGE", value="Calling getTarget", wait=False)
                     apflog("Scriptobs phase is input ( dynamic scheduler ), calling getTarget.")
