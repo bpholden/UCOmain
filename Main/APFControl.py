@@ -190,6 +190,7 @@ class APF:
     decker     = motor['DECKERNAM']
 #    deckerord  = motor['DECKERORD']
     dewarfoc   = motor["DEWARFOCRAW"]
+    hatchpos   = motor["HATCHPOS"]
 
     eosgcam    = ktl.Service('eosgcam')
     fits3pre   = eosgcam('FITS3PRE')
@@ -250,6 +251,8 @@ class APF:
         self.event.monitor()
         self.event.callback(self.eventmon)
 
+        self.hatchpos.monitor()
+        
         self.nerase.monitor()
 
         self.down.monitor()
