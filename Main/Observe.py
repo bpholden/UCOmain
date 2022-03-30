@@ -153,7 +153,7 @@ class Observe(threading.Thread):
         return retval
 
 
-    def checkBstar(self,haveobserved):
+    def checkStar(self,haveobserved):
         """ Observe.obsBstar(haveobserved)
             if observing has begun, and the last observation was a success, set Observe.obsBstar to false, writes master_obsbstar to
             the current value of obsBstar
@@ -167,11 +167,11 @@ class Observe(threading.Thread):
                 ktl.write('apftask','MASTER_OBSBSTAR',self.obsBstar,binary=True)
             except Exception, e:
                 apflog("Error: Cannot communicate with apftask: %s" % (e),level="error")
-            self.BstarFailures = 0
+            self.starFailures = 0
         else:
-            self.BstarFailures += 1
-            if self.BstarFailures%3 == 0:
-                apflog("%d failures of observing a star in a row - suggesting homing telescope or closing for the night" % (self.BstarFailures), echo=True, level='Alert')
+            self.starFailures += 1
+            if self.starFailures%3 == 0:
+                apflog("%d failures of observing a star in a row - suggesting homing telescope or closing for the night" % (self.starFailures), echo=True, level='Alert')
 
     def checkServos(self):
 
