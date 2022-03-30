@@ -347,6 +347,8 @@ class Observe(threading.Thread):
                 seeing = float(self.apf.avg_fwhm)
                 apflog("getTarget(): Current AVG_FWHM = %4.2f" % seeing)
 
+            self.apf.setTelFoc()
+            self.apf.hatchCorrect()
             self.apf.initGuideCam()
             self.apf.updateWindshield(self.windshield_mode)
             self.focval = self.apf.setAutofocVal()
