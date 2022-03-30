@@ -854,17 +854,20 @@ class APF:
             return
 
         try:
-            curval = self.hatchpos['binary']
+            curval = self.hatchpos.binary
         except Exception as e:
             apflog("Exception in hatchCorrect: %s" % (e), level='error')
             return
 
         if curval == 0:
-            self.hatchpos.write(2)
-            self.hatchpos.waitFor("==2")
-            self.hatchpos.write(1)
+            self.hatchpos.write(2,wait=False)
+            if self.hatchpos.waitFor("==2",timeout=10):
+                self.hatchpos.write(1,wait=False)
+                self.hatchpos.waitFor("==1",timeout=10)
+            else:
+                return False
 
-        return
+        return True
     
     def focusinstr(self,obsnum=None):
         self.instrPermit()
