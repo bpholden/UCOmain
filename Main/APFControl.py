@@ -865,6 +865,7 @@ class APF:
             self.hatchpos.write(1)
 
         return
+    
     def focusinstr(self,obsnum=None):
         self.instrPermit()
         rv = self.enableCalInst()
