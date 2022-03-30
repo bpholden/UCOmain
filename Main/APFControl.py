@@ -847,6 +847,24 @@ class APF:
         rv = self.writeStages(stagelist,'MOO','Off')
         return rv
 
+
+    def hatchCorrect(self):
+        
+        if self.hatchpos['populated'] == False:
+            return
+
+        try:
+            curval = self.hatchpos['binary']
+        except Exception as e:
+            apflog("Exception in hatchCorrect: %s" % (e), level='error')
+            return
+
+        if curval == 0:
+            self.hatchpos.write(2)
+            self.hatchpos.waitFor("==2")
+            self.hatchpos.write(1)
+
+        return
     def focusinstr(self,obsnum=None):
         self.instrPermit()
         rv = self.enableCalInst()
