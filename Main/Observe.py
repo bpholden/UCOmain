@@ -60,7 +60,7 @@ class Observe(threading.Thread):
         self.obsBstar = True
         self.lastObsSuccess = True
         self.lastObsFinished = True
-        self.BstarFailures = 0
+        self.starFailures = 0
 
         if opt.fixed:
             self.fixedList = opt.fixed
@@ -136,7 +136,7 @@ class Observe(threading.Thread):
         """
         retval = False
 
-        if self.lineresult.read(binary=True) == 3:
+        if self.observed.read(binary=True) == True:
             retval = True
         return retval
 
