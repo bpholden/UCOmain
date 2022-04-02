@@ -883,3 +883,20 @@ if __name__ == '__main__':
             starttime += result["EXP_TIME"]
 
     print("Done")
+    
+    print("Testing templates")
+
+    star_table, stars = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn='googledex.dat',outdir=".",config=configDefaults('public'))
+    idx, = np.asarray(star_table['name'] == '185144').nonzero()
+    idx = idx[0]
+    bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
+    bidx,bfinidx = findBstars(star_table,idx,bstars)
+    bline = makeScriptobsLine(star_table[bstars][bidx],dt,decker="N",I2="Y", owner='public',focval=2)
+    line  = makeScriptobsLine(star_table[idx],dt,decker="N",I2="N", owner='public',temp=True)
+    bfinline = makeScriptobsLine(star_table[bstars][bfinidx],dt,decker="N",I2="Y",owner='public',focval=0)
+    res= []
+    res.append(bfinline + " # temp=Y end")
+    res.append(line + " # temp=Y")
+    res.append(bline + " # temp=Y")
+    [ print(r) for r in res]
+
