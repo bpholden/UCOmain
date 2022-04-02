@@ -829,9 +829,9 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
         bidx,bfinidx = findBstars(star_table,idx,bstars)
 
         if enoughTimeTemplates(star_table,stars,idx,apf_obs,dt):
-            bline = makeScriptobsLine(star_table[bidx],dt,decker="N",I2="Y", owner=res['owner'],focval=2)
+            bline = makeScriptobsLine(star_table[bstars][bidx],dt,decker="N",I2="Y", owner=res['owner'],focval=2)
             line  = makeScriptobsLine(star_table[idx],dt,decker="N",I2="N", owner=res['owner'],temp=True)
-            bfinline = makeScriptobsLine(star_table[bfinidx],dt,decker="N",I2="Y",owner=res['owner'],focval=0)
+            bfinline = makeScriptobsLine(star_table[bstars][bfinidx],dt,decker="N",I2="Y",owner=res['owner'],focval=0)
             res['SCRIPTOBS'] = []
             res['SCRIPTOBS'].append(bfinline + " # temp=Y end")
             res['SCRIPTOBS'].append(line + " # temp=Y")
