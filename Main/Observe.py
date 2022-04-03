@@ -723,7 +723,7 @@ class Observe(threading.Thread):
                 APFTask.phase(self.task, "Watching")
                 if not self.apf.isReadyForObserving()[0] and float(cursunel) < SchedulerConsts.SUNEL_HOR:
                     if float(cursunel) > sunel_lim and not rising:
-                    APFTask.phase(self.task, "Watching")
+                        APFTask.phase(self.task, "Watching")
                         APFTask.set(self.task, suffix="MESSAGE", value="Open at sunset", wait=False)
                         success = opening(cursunel, sunset=True)
                         if success is False:
