@@ -1938,7 +1938,8 @@ if __name__ == '__main__':
     APFTask.waitFor(task, True,timeout=2)
 
     print(str(apf))
-
+    apf.turnOffInst()
+    apf.testBias()
     while True:
         APFTask.wait(task,True,timeout=10)
         print(str(apf))
