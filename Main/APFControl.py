@@ -164,6 +164,7 @@ class APF:
     metxfersta   = robot['METSXFER_STATUS']
     calsta       = robot['CALIBRATE_STATUS']
     focussta     = robot['FOCUSINSTR_STATUS']
+    ucamcmd      = robot['UCAMLAUNCHER_UCAM_COMMAND']
 
 
     ucam       = ktl.Service('apfucam')
@@ -191,6 +192,7 @@ class APF:
 #    deckerord  = motor['DECKERORD']
     dewarfoc   = motor["DEWARFOCRAW"]
     hatchpos   = motor["HATCHPOS"]
+    ucampower = apfmot['UCAMPOWER']
 
     eosgcam    = ktl.Service('eosgcam')
     fits3pre   = eosgcam('FITS3PRE')
@@ -252,7 +254,7 @@ class APF:
         self.event.callback(self.eventmon)
 
         self.hatchpos.monitor()
-        
+        self.ucampower.monitor()
         self.nerase.monitor()
 
         self.down.monitor()
@@ -805,31 +807,33 @@ class APF:
 
     def enableObsInst(self):
 
-        rv = True
-
         stagelist = ['CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
-        rv = self.writeStages(stagelist,'MOE','Off')
-        rv = self.writeStages(stagelist,'MOO','Off')
-        rv = self.writeStages(stagelist,'MOD','Pos')
+        rv1 = self.writeStages(stagelist,'MOE','Off')
+        rv2 = self.writeStages(stagelist,'MOO','Off')
+        rv3 = self.writeStages(stagelist,'MOD','Pos')
         stagelist = ['ADC','DECKER','DEWARFOC']
-        rv = self.writeStages(stagelist,'MOE','On')
-        rv = self.writeStages(stagelist,'MOO','On')
-        rv = self.writeStages(stagelist,'MOD','Pos')
-
+        rv4 = self.writeStages(stagelist,'MOE','On')
+        rv5 = self.writeStages(stagelist,'MOO','On')
+        rv6 = self.writeStages(stagelist,'MOD','Pos')
+        
+        retval = rv1 and rv2 and rv3 and rv4 and rv5 and rv6
         return rv
 
     def enableCalInst(self):
 
-        rv = True
+        retval = True
+        
         stagelist = ['ADC','CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
-        rv = self.writeStages(stagelist,'MOE','Off')
-        rv = self.writeStages(stagelist,'MOO','Off')
-        rv = self.writeStages(stagelist,'MOD','Pos')
+        rv1 = self.writeStages(stagelist,'MOE','Off')
+        rv2 = self.writeStages(stagelist,'MOO','Off')
+        rv3 = self.writeStages(stagelist,'MOD','Pos')
         stagelist = ['DECKER','DEWARFOC']
-        rv = self.writeStages(stagelist,'MOE','On')
-        rv = self.writeStages(stagelist,'MOO','On')
-        rv = self.writeStages(stagelist,'MOD','Pos')
-        return rv
+        rv4 = self.writeStages(stagelist,'MOE','On')
+        rv5 = self.writeStages(stagelist,'MOO','On')
+        rv6 = self.writeStages(stagelist,'MOD','Pos')
+        
+        retval = rv1 and rv2 and rv3 and rv4 and rv5 and rv6
+        return retval
 
 
     def disableInst(self):
@@ -1683,9 +1687,19 @@ class APF:
 
     def testBias(self):
 
-
+        apftask = ktl.Service('apftask')
+        
+        if self.ucampower == False:
+            self.ucampower.write('On',wait=False)
+            rv = self.ucampower.waitFor('== On',timeout=30)
+            APFTask.wait(self.task, True, timeout=5)            
+            if rv == False:
+                apflog('Cannot power on UCam',level='Alert',echo=True)
+                return False
+            ucamcmd.write('Run')
+            APFTask.wait(self.task, True, timeout=10)
+            
         apfschedule = ktl.Service('apfschedule')
-
         # check if the focusinstr or calibrate tasks are already running
         if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0 or ktl.read('apftask','CALIBRATE_PID',binary=True) > 0 or ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0 :
             return None
@@ -1693,8 +1707,9 @@ class APF:
         # create exposure object
         exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent=self.task,dark=True)
 
+        combval = exp.comb.binary
         # Is the UCAM ok?
-        if exp.comb.read(binary=True) > 0:
+        if combval > 0:
             return False
 
         # read original values and save them
@@ -1728,8 +1743,9 @@ class APF:
         fpath = os.path.join(outdir,ffn)
 
         apflog("Taking a test bias image called %s" % (ffn),echo=True)
-        # actually take a picture
+        # take two pictures
         try:
+            c = exp.expose(waitlast=True)
             c = exp.expose(waitlast=True)
         except:
             rv = False
