@@ -1701,9 +1701,23 @@ class APF:
             if rv == False:
                 apflog('Cannot power on UCam',level='Alert',echo=True)
                 return False
-            self.ucamcmd.write('Run')
-            APFTask.wait(self.task, True, timeout=10)
             
+            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
+            APFTask.wait(self.task, True, timeout=1)                        
+            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
+            APFTask.wait(self.task, True, timeout=1)                        
+            rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
+            if rv == 0:
+                apflog("UCAM software did not start, trying again",echo=True,level='Warn')
+                ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
+                APFTask.wait(self.task, True, timeout=1)                        
+                ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
+                APFTask.wait(self.task, True, timeout=1)                        
+                rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
+                if rv == 0:
+                    apflog("UCAM software did not start",echo=True,level='Alert')
+                    return False
+                
         apfschedule = ktl.Service('apfschedule')
         # check if the focusinstr or calibrate tasks are already running
         if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0 or ktl.read('apftask','CALIBRATE_PID',binary=True) > 0 or ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0 :
