@@ -192,7 +192,7 @@ class APF:
 #    deckerord  = motor['DECKERORD']
     dewarfoc   = motor["DEWARFOCRAW"]
     hatchpos   = motor["HATCHPOS"]
-    ucampower = apfmot['UCAMPOWER']
+    ucampower  = motor['UCAMPOWER']
 
     eosgcam    = ktl.Service('eosgcam')
     fits3pre   = eosgcam('FITS3PRE')
