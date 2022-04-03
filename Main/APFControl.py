@@ -852,7 +852,7 @@ class APF:
 
         ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
         APFTask.wait(self.task, True, timeout=1)                        
-        self.ucampower['Off']
+        self.ucampower.write('Off')
         
         return rv1 and rv2
 
