@@ -1696,7 +1696,7 @@ class APF:
             if rv == False:
                 apflog('Cannot power on UCam',level='Alert',echo=True)
                 return False
-            ucamcmd.write('Run')
+            self.ucamcmd.write('Run')
             APFTask.wait(self.task, True, timeout=10)
             
         apfschedule = ktl.Service('apfschedule')
