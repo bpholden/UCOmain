@@ -847,9 +847,14 @@ class APF:
     def turnOffInst(self):
 
         stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','IODINE','DECKER','DEWARFOC']
-        rv = self.writeStages(stagelist,'MOE','Off')
-        rv = self.writeStages(stagelist,'MOO','Off')
-        return rv
+        rv1 = self.writeStages(stagelist,'MOE','Off')
+        rv2 = self.writeStages(stagelist,'MOO','Off')
+
+        ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
+        APFTask.wait(self.task, True, timeout=1)                        
+        self.ucampower['Off']
+        
+        return rv1 and rv2
 
 
     def hatchCorrect(self):
