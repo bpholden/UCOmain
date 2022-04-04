@@ -25,7 +25,7 @@ from apflog import *
 AVERAGE_INSTRFOC = 8522
 
 class Calibrate(threading.Thread):
-    def __init__(self, apf, name, wait_time, calfile, phase_index=0, task='master', test=False, possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
+    def __init__(self, apf, name, wait_time, calfile, outfile, obsnum, phase_index=0, task='master', test=False, possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.apf = apf
@@ -37,6 +37,8 @@ class Calibrate(threading.Thread):
         self.calfile = calfile
         self.possible_phases = possible_phases
         self.phase_index = phase_index
+        self.outfile = outfile
+        self.obsnum = obsnum
 
         self.name = 'Calibrate'
         self.signal = True
@@ -65,6 +67,8 @@ class Calibrate(threading.Thread):
         return result
 
     def focusInstr(self):
+
+        self.apf.setObservingInfo(num=self.obsnum, name=self.outfile, owner=self.owner)
 
         if self.test:
             apflog("Would have run APFControl.focusinstr",echo=True)
