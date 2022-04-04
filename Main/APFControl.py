@@ -817,7 +817,7 @@ class APF:
         rv6 = self.writeStages(stagelist,'MOD','Pos')
         
         retval = rv1 and rv2 and rv3 and rv4 and rv5 and rv6
-        return rv
+        return retval
 
     def enableCalInst(self):
 
