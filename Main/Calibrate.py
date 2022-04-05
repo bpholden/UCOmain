@@ -68,7 +68,10 @@ class Calibrate(threading.Thread):
 
     def focusInstr(self):
 
-        self.apf.setObservingInfo(num=self.obsnum, name=self.outfile, owner=self.owner)
+        if self.test:
+            apflog("Would have set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
+        else:
+            self.apf.setObservingInfo(num=self.obsnum, name=self.outfile, owner=self.owner)
 
         if self.test:
             apflog("Would have run APFControl.focusinstr",echo=True)
@@ -181,7 +184,7 @@ if __name__ == "__main__":
     print(str(apf))
 
     stime = 5
-    calibrate = Calibrate(apf,'public',stime,'uco',task=task,test=True)
+    calibrate = Calibrate(apf,'public',stime,'uco','test_1',10000,task=task,test=True)
     while calibrate.signal:
         try:
             APFTask.wait(task,True,timeout=1)
