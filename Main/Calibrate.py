@@ -71,13 +71,14 @@ class Calibrate(threading.Thread):
         if self.test:
             apflog("Would have set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
         else:
-            self.apf.setObservingInfo(num=self.obsnum, name=self.outfile, owner=self.owner)
+            apflog("Will set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
+            self.apf.setObserverInfo(num=self.obsnum, name=self.outfile, owner=self.owner)
 
         if self.test:
             apflog("Would have run APFControl.focusinstr",echo=True)
             result = True
         else:
-
+            apflog("Focus begun.", echo=True)
             result = self.apf.focusinstr()
             apflog("Focus has finished.",echo=True)
 
