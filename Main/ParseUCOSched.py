@@ -191,7 +191,7 @@ def retrieveCodex(req_cols,sheetns=["The Googledex"],certificate='UCSC_Dynamic_S
             for row in cur_codex[1:]:
                 nrow = []
                 for c in req_cols:
-                    if c in didx.keys():
+                    if c in list(didx.keys()):
                         nrow.append(row[didx[c]])
                     else:
                         if c is 'sheetn':
@@ -234,7 +234,7 @@ def findColumns(col_names,req_cols,opt_cols=[]):
             didx[r] = col_names.index(r)
 
     # hack to handle an error
-    if req_cols[0] == "Star Name" and req_cols[0] not in didx.keys():
+    if req_cols[0] == "Star Name" and req_cols[0] not in list(didx.keys()):
         didx[req_cols[0]] = 0
         apflog("Pasting 'Star Name' into column 0 of google spreadsheet" , level="Warn",echo=True)
 
@@ -469,7 +469,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
                 star_table['sheetn'].append(csheetn)
 
     badkeylist = []
-    for k in star_table.keys():
+    for k in list(star_table.keys()):
         if len(star_table[k]) == 0:
             badkeylist.append(k)
     for k in badkeylist:

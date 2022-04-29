@@ -95,7 +95,7 @@ def updateHourTable(hour_table,observed,dt,outfn='hour_table',outdir=None):
     nobj = len(observed.names)
     for i in range(0,nobj):
             own = observed.owners[i]
-            if own not in hours.keys():
+            if own not in list(hours.keys()):
                     hours[own] = 0.0
 
     cur = dt
@@ -108,7 +108,7 @@ def updateHourTable(hour_table,observed,dt,outfn='hour_table',outdir=None):
                 hours[observed.owners[i]] += hourdiff
             cur = prev
 
-    for ky in hours.keys():
+    for ky in list(hours.keys()):
         if ky == 'public':
             hour_table['cur'][hour_table['sheetn'] == 'RECUR_A100'] = hours[ky]
         else:
@@ -147,7 +147,7 @@ def makeHourTable(rank_table,dt,outfn='hour_table',outdir=None,hour_constraints=
     hour_table['cur'] =0.0*hour_table['frac']
 
     if hour_constraints is not None:
-        if 'runname' in hour_constraints.keys() and 'left' in hour_constraints.keys():
+        if 'runname' in list(hour_constraints.keys()) and 'left' in list(hour_constraints.keys()):
             for runname in hour_constraints['runname']:
                 if hour_constraints['left'][hour_constraints['runname']==runname] < hour_table['tot'][hour_table['sheetn']==runname]:
                     hour_table['tot'][hour_table['sheetn']==runname] = hour_constraints['left'][hour_constraints['runname']==runname]
@@ -218,7 +218,7 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
             time_left = timeLeft()
 
         if time_left is not None:
-            if 'runname' in hour_constraints.keys() and 'left' in hour_constraints.keys():
+            if 'runname' in list(hour_constraints.keys()) and 'left' in list(hour_constraints.keys()):
                 for runname in hour_constraints['runname']:
                     if hour_constraints['left'][hour_constraints['runname']==runname] < 0:
                         rank_table['rank'][rank_table['sheetn']==runname] = -1000
