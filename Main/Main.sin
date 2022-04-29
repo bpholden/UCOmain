@@ -405,7 +405,7 @@ if __name__ == '__main__':
 
     if phase_index < 3:
         apflog("Starting calibration thread at phase %s" % (possible_phases[phase_index]), echo=True)
-        calibrate = Calibrate(apf, 'public', stime, opt.calibrate, opt.name, opt.phase_index=phase_index, task=parent, test=debug, possible_phases=possible_phases)
+        calibrate = Calibrate(apf, 'public', stime, opt.calibrate, opt.name, opt.obsnum, opt.phase_index=phase_index, task=parent, test=debug, possible_phases=possible_phases)
     else:
         apflog("Skipping calibrations", echo=True)
 
