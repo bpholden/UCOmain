@@ -165,7 +165,7 @@ class Observe(threading.Thread):
             self.obsBstar = False
             try:
                 ktl.write('apftask','MASTER_OBSBSTAR',self.obsBstar,binary=True)
-            except Exception, e:
+            except Exception as e:
                 apflog("Error: Cannot communicate with apftask: %s" % (e),level="error")
             self.starFailures = 0
         else:
@@ -287,7 +287,7 @@ class Observe(threading.Thread):
                     curstr = tlist.pop() + '\n'
                     return curstr
 
-            if self.fixedtarget is not None and 'SCRIPTOBS' in self.fixedtarget.keys():
+            if self.fixedtarget is not None and 'SCRIPTOBS' in list(self.fixedtarget.keys()):
                 tlist = self.fixedtarget["SCRIPTOBS"]
                 if len(tlist) > 0:
                     apflog("getTarget(): Going through fixed starlist.",echo=True)
@@ -314,7 +314,7 @@ class Observe(threading.Thread):
             try:
                 self.obsBstar = ktl.read("apftask", "MASTER_OBSBSTAR",binary=True)
                 apflog("getTarget(): Setting obsBstar to %s" % (str(self.obsBstar)),echo=True)
-            except Exception, e:
+            except Exception as e:
                 apflog("getTarget(): Cannot read apftask.MASTER_OBSBSTAR: %s" % (e),level='error',echo=True)
                 self.obsBstar = True
 
