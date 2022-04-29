@@ -280,7 +280,7 @@ class Observe(threading.Thread):
 
             curstr = None
 
-            if self.target is not None and 'SCRIPTOBS' in self.target.keys():
+            if self.target is not None and 'SCRIPTOBS' in list(self.target.keys()):
                 tlist = self.target["SCRIPTOBS"]
                 if len(tlist) > 0:
                     apflog("getTarget(): Going through remaining target queue.",echo=True)
