@@ -23,6 +23,7 @@ import glob
 
 import numpy as np
 import astropy.io.ascii
+import astropy.time
 
 try:
     import ktl
@@ -173,8 +174,17 @@ def args(apftask):
     except Exception as e:
         apflog("Cannot read apftask.MASTER_STARLIST: %s" % (e),level='warn',echo=True)
 
-    if possible_list != '' and opt.fixed == None:
-        opt.fixed = possible_list
+    if opt.fixed != None:
+        # This resets lines done if this is a new target list
+        if opt.fixed != possible_list:
+            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
+            APFLib.write(apf.robot["MASTER_STARLIST"], opt.fixed)
+        if opt.line != None:
+            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], int(opt.line))
+            apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
+        else:
+            apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
+    else:
 
     saved_time = ''
     if opt.fixed != None:
@@ -215,6 +225,17 @@ def args(apftask):
         except Exception as e:
             apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
         opt.sheet = opt.sheet.split(",")
+
+
+    bstr = "%d,%d" % (opt.binning,opt.binning)
+    apf.ucam['BINNING'].write(bstr)
+    if opt.binning > 1:
+        apfmon = ktl.Service('apfmon')
+        d = time.time() + 22.*3600
+        try:
+            apfmon['BINNINGDIS'].write(d,binary=True,timeout=2)
+        except:
+            apflog("cannot write apfmon7 keyword" % (e),level='Alert',echo=True)
 
 
     return opt
@@ -364,6 +385,13 @@ if __name__ == '__main__':
 
     stime, start_dt, sun_dt, target_time = calcFocusStartTime()
 
+    ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
+    APFTask.wait(self.task, True, timeout=1)
+    ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","reboot")
+    APFTask.wait(self.task, True, timeout=120)
+    ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
+
+    
     if phase_index <= 1:
 
         waitstr = "Will now wait %.1f seconds before starting focusinstr" % (stime)
@@ -377,7 +405,7 @@ if __name__ == '__main__':
 
     if phase_index < 3:
         apflog("Starting calibration thread at phase %s" % (possible_phases[phase_index]), echo=True)
-        calibrate = Calibrate(apf, 'public', stime, opt.calibrate, opt.name, opt.obsnum, phase_index=phase_index, task=parent, test=debug, possible_phases=possible_phases)
+        calibrate = Calibrate(apf, 'public', stime, opt.calibrate, opt.name, opt.phase_index=phase_index, task=parent, test=debug, possible_phases=possible_phases)
     else:
         apflog("Skipping calibrations", echo=True)
 
@@ -385,34 +413,9 @@ if __name__ == '__main__':
     observe = Observe(apf,opt)
     getUCOTargets = getUCOTargets(opt, task=parent,wait_time=target_time)
 
-
     apf.instrPermit()
     apflog("Starting the main watcher." ,echo=True)
-
-    bstr = "%d,%d" % (opt.binning,opt.binning)
-    apf.ucam['BINNING'].write(bstr)
-
-    if opt.binning > 1:
-        apfmon = ktl.Service('apfmon')
-        d = time.time() + 22.*3600
-        try:
-            apfmon['BINNINGDIS'].write(d,binary=True,timeout=2)
-        except:
-            apflog("cannot write apfmon7 keyword" % (e),level='Alert',echo=True)
-
-    if opt.fixed != None:
-        lastList = apf.robot["MASTER_STARLIST"].read()
-        # This resets lines done if this is a new target list
-        if opt.fixed != lastList:
-            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
-            APFLib.write(apf.robot["MASTER_STARLIST"], opt.fixed)
-        if opt.line != None:
-            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], int(opt.line))
-            apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
-        else:
-            apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
-    else:
-        apflog("Starting dynamic scheduler", echo=True)
+    mstart = astropy.time.Time(ktl.read("apftask","master_last_start"),format='isot')
 
     observe.task = parent
     # observe object should be set up for running now
@@ -442,6 +445,13 @@ if __name__ == '__main__':
                 observe.task = parent
 
                 observe.start()
+                
+            if calibrate.isAlive() is False:
+                fstart = astropy.time.Time(fstart = ktl.read("apftask","focusinstr_last_start"),format='isot')
+                if ktl.read("apftask","focusinstr_status",binary=True) > 3 or fstart < mstart:
+                    # this means that the thread died, usually because of an uncaught exception
+                    apflog("Calibrate thread has died!", level='Alert', echo=True)
+
 
             if debug:
                 print('Observe is running.')
