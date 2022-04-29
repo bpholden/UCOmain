@@ -39,7 +39,7 @@ from Observe import Observe
 from Calibrate import Calibrate
 from getUCOTargets import getUCOTargets
 
-os.umask(0007)
+os.umask(0o007)
 
 success = False
 
@@ -502,7 +502,7 @@ if __name__ == '__main__':
 
     try:
         apf.ok2open.monitor(start=False)
-    except Exception, e:
+    except Exception as e:
         apflog("Note: Cannot stop monitoring ok2open. %s" % (e), level="warn", echo=True)
     # 5) Take morning calibrations
     phase_index += 1
