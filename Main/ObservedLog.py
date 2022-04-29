@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import re
 import os
 try:
@@ -66,26 +68,26 @@ class ObservedLog():
                     else:
                         ovals, keyvals = self.parse_key_vals(line)
                         self.names.append(ovals[0])
-                        if 'uth' in keyvals.keys():
+                        if 'uth' in list(keyvals.keys()):
                             self.times.append( ( int(keyvals['uth']), int(keyvals['utm']) ) )
                         else:
                             self.times.append(float(ovals[1]))
 
                         
-                        if 'temp' in keyvals.keys():
+                        if 'temp' in list(keyvals.keys()):
                             self.temps.append("Y")
                         else:
                             self.temps.append("N")
                             
-                        if 'owner' in keyvals.keys():
+                        if 'owner' in list(keyvals.keys()):
                             self.owners.append(keyvals['owner'])
                         else:
                             self.owners.append(None)
 
-                        if 'coverid' in keyvals.keys():
+                        if 'coverid' in list(keyvals.keys()):
                             self.sheetns.append(keyvals['coversheetid'])
                         else:
-                            if 'owner' in keyvals.keys():
+                            if 'owner' in list(keyvals.keys()):
                                 self.sheetns.append(keyvals['owner'])
                             else:
                                 self.sheetns.append(None)

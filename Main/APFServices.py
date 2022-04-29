@@ -11,7 +11,7 @@ def generic(machine,services,command):
         try:
             p = subprocess.check_output(cmdlst)
             return(True,p)
-        except Exception, e:
+        except Exception as e:
             return(False,e)
     else:
         s = "%s is not in the list of correct machines" % (machine)
