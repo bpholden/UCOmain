@@ -404,7 +404,7 @@ if __name__ == '__main__':
 
     apf.instrPermit()
     apflog("Starting the main watcher." ,echo=True)
-    mstart = astropy.time.Time(ktl.read("apftask","master_last_start"),format='isot')
+    mstart = astropy.time.Time(ktl.read("apftask","master_last_start",binary=True),format='unix')
 
     observe.task = parent
     # observe object should be set up for running now
@@ -435,8 +435,8 @@ if __name__ == '__main__':
 
                 observe.start()
                 
-            if calibrate.isAlive() is False:
-                fstart = astropy.time.Time(fstart = ktl.read("apftask","focusinstr_last_start"),format='isot')
+            if calibrate.isAlive() is False and ktl.read("apftask","focusinstr_status",binary=True) != 3:
+                fstart = astropy.time.Time(ktl.read("apftask","focusinstr_last_start",binary=True),format='unix')
                 if ktl.read("apftask","focusinstr_status",binary=True) > 3 or fstart < mstart:
                     # this means that the thread died, usually because of an uncaught exception
                     apflog("Calibrate thread has died!", level='Alert', echo=True)
