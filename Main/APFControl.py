@@ -750,7 +750,7 @@ class APF:
         else:
             return self.isReadyForObservingDirect()
 
-    def setObserverInfo(self, num=10000, name='Robot', owner='public'):
+    def setObserverInfo(self, num=10000, name='Robot', owner='public', binning=1):
         if self.test: return
         apflog("Setting science camera parameters.")
         self.ucam('OBSERVER').write(name)
@@ -761,10 +761,14 @@ class APF:
         self.obsnum.write(str(num))
         self.robot['UCAMLAUNCHER_UCAM_PCC'].write(0)
 
+        bstr = "%d,%d" % (opt.binning,opt.binning)
+        apf.ucam['BINNING'].write(bstr)
+        
         apflog("Updated science camera parameters:")
         apflog("Observer = %s" % self.ucam('OBSERVER').read(),echo=True)
         apflog("Ownrhint = %s" % self.apfschedule('OWNRHINT').read(),echo=True)
         apflog("Output directory = %s" % self.ucam('OUTDIR').read(),echo=True)
+        apflog("Binning = %s" % self.ucam('BINNING').read(),echo=True)
         apflog("File prefix = %s" % self.outfile.read(), echo=True)
         apflog("Observation number = %s" % self.obsnum.read(), echo=True)
 

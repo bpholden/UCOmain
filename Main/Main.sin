@@ -225,9 +225,6 @@ def args(apftask):
             apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
         opt.sheet = opt.sheet.split(",")
 
-
-    bstr = "%d,%d" % (opt.binning,opt.binning)
-    apf.ucam['BINNING'].write(bstr)
     if opt.binning > 1:
         apfmon = ktl.Service('apfmon')
         d = time.time() + 22.*3600
@@ -364,7 +361,7 @@ if __name__ == '__main__':
         apflog("Setting Observer Information", echo=True)
         opt = setObsDefaults(opt)
         apflog("Using %s for name and %s for obs number." % (opt.name, repr(opt.obsnum)), echo=True)
-        apf.setObserverInfo(num=opt.obsnum, name=opt.name, owner=opt.owner)
+        apf.setObserverInfo(num=opt.obsnum, name=opt.name, owner=opt.owner, binning=opt.binning)
 
         apflog("Setting the task step to 0")
         APFTask.step(parent, 0)
