@@ -761,7 +761,7 @@ class APF:
         self.obsnum.write(str(num))
         self.robot['UCAMLAUNCHER_UCAM_PCC'].write(0)
 
-        bstr = "%d,%d" % (opt.binning,opt.binning)
+        bstr = "%d,%d" % (binning,binning)
         apf.ucam['BINNING'].write(bstr)
         
         apflog("Updated science camera parameters:")
