@@ -184,7 +184,6 @@ def args(apftask):
             apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
         else:
             apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
-    else:
 
     saved_time = ''
     if opt.fixed != None:
