@@ -174,17 +174,6 @@ def args(apftask):
     except Exception as e:
         apflog("Cannot read apftask.MASTER_STARLIST: %s" % (e),level='warn',echo=True)
 
-    if opt.fixed != None:
-        # This resets lines done if this is a new target list
-        if opt.fixed != possible_list:
-            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
-            APFLib.write(apf.robot["MASTER_STARLIST"], opt.fixed)
-        if opt.line != None:
-            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], int(opt.line))
-            apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
-        else:
-            apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
-
     saved_time = ''
     if opt.fixed != None:
         try:
@@ -319,7 +308,18 @@ if __name__ == '__main__':
     apf = APFControl.APF(task=parent, test=debug)
     APFTask.waitFor(parent, True, timeout=5)
     apf.initGuideCam()
+    if opt.fixed != None:
+        # This resets lines done if this is a new target list
+        if opt.fixed != possible_list:
+            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
+            APFLib.write(apf.robot["MASTER_STARLIST"], opt.fixed)
+        if opt.line != None:
+            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], int(opt.line))
+            apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
+        else:
+            apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
 
+    
     # All the phase options that this script uses. This allows us to check if we exited out of the script early.
     possible_phases = ["Init", "Focus", "Cal-Pre", "Watching", "Cal-Post", "Focus-Post"]
     phase_index = 0
