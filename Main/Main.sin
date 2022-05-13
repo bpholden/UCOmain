@@ -167,13 +167,6 @@ def args(apftask):
 
     opt = parser.parse_args()
 
-    possible_list = ''
-    possible_time = ''
-    try:
-        possible_list = apftask.read('MASTER_STARLIST',timeout=5)
-    except Exception as e:
-        apflog("Cannot read apftask.MASTER_STARLIST: %s" % (e),level='warn',echo=True)
-
     saved_time = ''
     if opt.fixed != None:
         try:
@@ -308,6 +301,13 @@ if __name__ == '__main__':
     apf = APFControl.APF(task=parent, test=debug)
     APFTask.waitFor(parent, True, timeout=5)
     apf.initGuideCam()
+
+    possible_list = ''
+    try:
+        possible_list = apftask.read('MASTER_STARLIST',timeout=5)
+    except Exception as e:
+        apflog("Cannot read apftask.MASTER_STARLIST: %s" % (e),level='warn',echo=True)
+
     if opt.fixed != None:
         # This resets lines done if this is a new target list
         if opt.fixed != possible_list:
@@ -318,6 +318,7 @@ if __name__ == '__main__':
             apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
         else:
             apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
+
 
     
     # All the phase options that this script uses. This allows us to check if we exited out of the script early.
