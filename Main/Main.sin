@@ -155,7 +155,7 @@ def args(apftask):
     parser.add_argument('-w', '--windshield', choices=w_c, default='auto', help="Turn windshielding on, off, or let the software decide based on the current average wind speed (Default is auto). Velocity > %.1f mph turns windshielding on." % (APFControl.WINDSHIELD_LIMIT))
     parser.add_argument('-c', '--calibrate', default='uco', type=str, help="Specify the calibrate script to use. Specify string to be used in calibrate 'arg' pre/post")
     parser.add_argument('-l', '--line', type=int, help="If a fixed starlist is given, starts the list at line N.")
-    parser.add_argument('-s', '--start', default=None, type=str, help="When specified with a fixed starlist, this option starts that list at that time.")
+    parser.add_argument('-s', '--start', default=None, type=str, help="When specified with a fixed starlist, this option starts that list at that UT (e.g. 09:00).")
     parser.add_argument('--raster', action='store_true', default=False, help="If a fixed starlist is given, use it for a raster scan.")
     parser.add_argument('--too', default=None, help="Download this sheet every 20 minutes for ToO targets")
 
