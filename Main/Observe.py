@@ -68,8 +68,6 @@ class Observe(threading.Thread):
             self.fixedList = None
         if opt.sheet:
             self.sheetn = opt.sheet
-        else:
-            self.sheetn = 'RECUR_A100'
         if opt.rank_table:
             self.rank_tablen = opt.rank_table
         else:
@@ -104,6 +102,13 @@ class Observe(threading.Thread):
         self.observed = self.apftask['SCRIPTOBS_OBSERVED']
         self.observed.monitor()
 
+        if opt.sheet is False:
+            sheetlist = self.apftask['MASTER_SHEETLIST'].read().split(",")
+            if len(sheetlist) > 0:
+                self.sheetn = sheetlist
+            else:
+                self.sheetn = ["RECUR_A100",]
+                
         self.canOpen = True
         self.badWeather = False
 
