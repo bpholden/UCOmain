@@ -1547,13 +1547,13 @@ class APF:
         This will attempt to fix that by checking if the dome is open, checking if the FCs are on, and
         then turning them on, then off. Which is the only way to turn them off. 
         """
-        if 'Vents' in whatsopn['ascii'] or 'DomeShutter' in whatsopn['ascii']:
+        if 'Vents' in self.whatsopn['ascii'] or 'DomeShutter' in self.whatsopn['ascii']:
             # fcs should be off
             for fc in ('FC2','FC3'):
-                if dome[fc].read(binary=True):
-                    dome[fc + 'CMD'].write(True)
+                if self.dome[fc].read(binary=True):
+                    self.dome[fc + 'CMD'].write(True)
                     time.sleep(.1)
-                    dome[fc + 'CMD'].write(False)
+                    self.dome[fc + 'CMD'].write(False)
         return
     
     def eveningStar(self):
@@ -1958,7 +1958,7 @@ if __name__ == '__main__':
     APFTask.waitFor(task, True,timeout=2)
 
     print(str(apf))
-    
+    apf.checkFCs()
     while True:
         APFTask.wait(task,True,timeout=10)
         print(str(apf))
