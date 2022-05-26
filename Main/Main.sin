@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 import math
 import os
 import os.path
-import shutil
 import signal
 from select import select
 import re
