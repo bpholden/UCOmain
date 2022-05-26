@@ -2,6 +2,7 @@ from __future__ import print_function
 from datetime import datetime, timedelta
 import os
 import os.path
+import shutil
 import signal
 from select import select
 import re
@@ -205,6 +206,22 @@ class Observe(threading.Thread):
             closing(force=True)
             return False
 
+    def checkFiles(self,outfn='googledex.dat'):
+        outdir = os.getcwd()
+        fullpath = os.path.join(outdir,outfn)
+        if os.path.isfile(fullpath):
+            return
+        else:
+            # make it so
+            backup = fullpath + ".1"
+            try:
+                shutil.copyfile(backup,fullpath)
+            except Exception as e:
+                err_str = "Cannot copy %s to %s: %s %s" % (backup,fullpath,type(e),e)
+                apflog(err_str, echo=True, level='error')
+
+        return
+        
     def shouldStartList(self):
         """ Observe.shouldStartList()
             should we start a fixed observing list or not? true if start time is None or if w/in + 1 hour - 0.5 hours of start time
@@ -316,12 +333,8 @@ class Observe(threading.Thread):
                 apflog("getTarget(): Not at end of block but out of targets.",echo=True)
 
 
-            try:
-                self.obsBstar = ktl.read("apftask", "MASTER_OBSBSTAR",binary=True)
-                apflog("getTarget(): Setting obsBstar to %s" % (str(self.obsBstar)),echo=True)
-            except Exception as e:
-                apflog("getTarget(): Cannot read apftask.MASTER_OBSBSTAR: %s" % (e),level='error',echo=True)
-                self.obsBstar = True
+            self.obsBstar = ktl.read("apftask", "MASTER_OBSBSTAR",binary=True)
+            apflog("getTarget(): Setting obsBstar to %s" % (str(self.obsBstar)),echo=True)
 
             if self.scriptobs is None:
                 apflog("Called getTarget, but there is not instance of scriptobs associated with %s. This is an error condition." % (self.name), level='error', echo=True)
@@ -361,7 +374,10 @@ class Observe(threading.Thread):
             self.apf.updateWindshield(self.windshield_mode)
             self.focval = self.apf.setAutofocVal()
 
-            self.target = ds.getNext(time.time(), seeing, slowdown, bstar=self.obsBstar,sheetns=self.sheetn, owner=self.owner, template=self.doTemp,focval=self.focval,rank_sheetn=self.rank_tablen)
+            self.checkFiles()
+            self.target = ds.getNext(time.time(), seeing, slowdown, bstar=self.obsBstar, \
+                                         sheetns=self.sheetn, owner=self.owner, template=self.doTemp, \
+                                         focval=self.focval,rank_sheetn=self.rank_tablen)
 
             if self.target is None:
                 apflog("No acceptable target was found. Since there does not seem to be anything to observe, %s will now shut down." % (self.name), echo=True)
