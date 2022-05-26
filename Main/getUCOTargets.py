@@ -60,7 +60,7 @@ class getUCOTargets(threading.Thread):
         # these tests are against binary values
         # and binary values are in radians
         # the test is for -4 degrees
-        expression = '$eostele.SUNEL < -0.0698'
+        expression = '$eostele.SUNEL < -0.0'
         APFTask.waitFor(self.task, True, expression=expression, timeout=self.wait_time)
 
         if self.signal is False:
