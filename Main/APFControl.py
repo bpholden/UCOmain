@@ -1540,6 +1540,22 @@ class APF:
 
         return rv
 
+
+    def checkFCs(self):
+        """
+        If the dome is open the FCs should be off. Sometimes they are commanded off but do not turn off.
+        This will attempt to fix that by checking if the dome is open, checking if the FCs are on, and
+        then turning them on, then off. Which is the only way to turn them off. 
+        """
+        if 'Vents' in whatsopn['ascii'] or 'DomeShutter' in whatsopn['ascii']:
+            # fcs should be off
+            for fc in ('FC2','FC3'):
+                if dome[fc].read(binary=True):
+                    dome[fc + 'CMD'].write(True)
+                    time.sleep(.1)
+                    dome[fc + 'CMD'].write(False)
+        return
+    
     def eveningStar(self):
         """Aim the APF at the desired target. This calls prep-obs, slewlock, and focus-telescope."""
         if self.isOpen()[0] == False:

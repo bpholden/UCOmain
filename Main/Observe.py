@@ -441,6 +441,8 @@ class Observe(threading.Thread):
                         self.apf.close()
                         self.canOpen = False
 
+            self.apf.checkFCs()
+
             if datetime.now().strftime("%p") == 'PM':
                 setting = True
             else:
