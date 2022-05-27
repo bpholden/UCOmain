@@ -69,6 +69,8 @@ class Observe(threading.Thread):
             self.fixedList = None
         if opt.sheet:
             self.sheetn = opt.sheet
+        else:
+            self.sheetn = None
         if opt.rank_table:
             self.rank_tablen = opt.rank_table
         else:
