@@ -157,6 +157,8 @@ class Calibrate(threading.Thread):
                     return
             elif pi == 1:
                 result = self.focusInstr()
+                if result == False:
+                    result = self.focusInstr()
             elif pi == 2:
                 result = self.calibrate(cur_phase)
 
