@@ -97,27 +97,21 @@ class Calibrate(threading.Thread):
         apflog("Starting calibrate %s script." % (phase), level='Info', echo=True)
         if self.test:
             apflog("Would have waited for permission (APFControl.instrPermit()) for phase %s" % (phase),echo=True)
-        else:
-            self.apf.instrPermit()
-
-        if self.test:
             apflog("Would have run APFControl.ucamStatus() for phase %s" % (phase),echo=True)
+            apflog("Would have run APFControl.calibrate for time %s" % (time),echo=True)
             result = True
-        else:
-            result = self.apf.ucamStatus()
-            if result is False:
-                apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
-                return False
+            
+        self.apf.instrPermit()
+        
+        result = self.apf.ucamStatus()
+        if result is False:
+            apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
+            return False
 
         time = phase[4:].lower()
 
-        if self.test:
-            apflog("Would have run APFControl.calibrate for time %s" % (time),echo=True)
-            result = True
-        else:
-            result = self.apf.calibrate(script = self.calfile, time = time)
-            if not self.test:
-                APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
+        result = self.apf.calibrate(script = self.calfile, time = time)
+        APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
         if result == False:
             apflog("Calibrate Pre has failed. Trying again",level='warn',echo=True)
