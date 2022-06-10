@@ -66,24 +66,22 @@ class Calibrate(threading.Thread):
 
         return result
 
-    def focusInstr(self):
+    def focusInstr(self,setup=True):
 
         if self.test:
             apflog("Would have set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
-        else:
+            apflog("Would have run APFControl.focusinstr",echo=True)
+            return True
+        
+        if setup:
             apflog("Will set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
             self.apf.setObserverInfo(num=self.obsnum, name=self.outfile, owner=self.owner)
 
-        if self.test:
-            apflog("Would have run APFControl.focusinstr",echo=True)
-            result = True
-        else:
-            apflog("Focus begun.", echo=True)
-            result = self.apf.focusinstr()
-            apflog("Focus has finished.",echo=True)
+        apflog("Focus begun.", echo=True)
+        result = self.apf.focusinstr()
+        apflog("Focus has finished.",echo=True)
 
-        if not self.test:
-            APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
+        APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
         return result
 
@@ -158,7 +156,7 @@ class Calibrate(threading.Thread):
             elif pi == 1:
                 result = self.focusInstr()
                 if result == False:
-                    result = self.focusInstr()
+                    result = self.focusInstr(setup=False)
             elif pi == 2:
                 result = self.calibrate(cur_phase)
 
