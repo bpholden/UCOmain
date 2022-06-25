@@ -1488,10 +1488,9 @@ class APF:
 
         if focus_diff > 0.01/1000. :
             self.focus.write(predfocus,binary=True,wait=False)
-            self.robot['MASTER_MESSAGE'].write("Wrote %f to eostele.Focus" % (predfocus*1000.) )
             self.autofoc.write("robot_autofocus_enable")
             focval = 1
-            APFTask.set(self.task, suffix="MESSAGE", value="Current telescope focus more than %6.3f microns from predicted." % (focus_diff*1000.), wait=False)
+            APFTask.set(self.task, suffix="MESSAGE", value="Current telescope focus more than %6.3f microns from predicted, setting to %.3f." % (focus_diff*1000.,predfocus), wait=False)
 
         if focus_diff < 0.01/1000. and current_val == 'robot_autofocus_enable':
             self.autofoc.write("robot_autofocus_disable")
