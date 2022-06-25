@@ -59,7 +59,6 @@ class Calibrate(threading.Thread):
                 if rv == False:
                     apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
 
-
         result = self.apf.ucamStatus()
         if result is False:
             apflog("Failure in UCAM status and restart!", level='Alert', echo=True)

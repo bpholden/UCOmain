@@ -200,10 +200,9 @@ class APF:
     gexptime   = eosgcam('GEXPTIME')
     sumframe   = eosgcam('SUMFRAME')
 
-
     apfmon     = ktl.Service('apfmon')
     ucamd0sta  = apfmon['UCAMDSTA0STA']
-
+    
     apfminimon = ktl.Service('apfminimon')
 
     def __init__(self, task="example", test=False):
@@ -1780,7 +1779,6 @@ class APF:
         apflog("Taking a test bias image called %s" % (ffn),echo=True)
         # take two pictures
         try:
-            c = exp.expose(waitlast=True)
             c = exp.expose(waitlast=True)
         except:
             rv = False
