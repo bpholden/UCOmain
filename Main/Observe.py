@@ -490,6 +490,8 @@ class Observe(threading.Thread):
                 else:
                     apflog("Failure power cycling telescope",echo=True,level="alert")
 
+            self.apf.checkFCs()
+
             return
 
 
