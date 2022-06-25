@@ -582,7 +582,7 @@ class APF:
             self.restart(name,host)
         return
 
-    def apfMonMon(self,sta,host="shred"):
+    def apfMonMon(self,sta,host="shadow"):
         if sta['populated'] == False:
             return
         try:
