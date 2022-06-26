@@ -29,10 +29,11 @@ wxtimeout = timedelta(seconds=1800)
 SUNEL_HOR = -3.2
 DEWARMAX = 8650
 DEWARMIN = 8350
-TELFOCUSMIN = -0.00088
-TELFOCUSMAX = -0.00078
+TELFOCUSMIN = -0.00090
+TELFOCUSMAX = -0.00074
 #TELFOCUSTYP = -0.8348
 TELFOCUSTYP = -0.83665
+TELFOCUSTYP = -0.83530
 #TELFOCUSTYP = -0.83089
 TELFOCUSMAXOFF = 0.00002
 MEANDIFF = 1.3806
@@ -678,9 +679,11 @@ class APF:
         self.avgTelTemps()
         # m1 m2 tavg m2air tf3 tf4
         slopes = np.asarray([-0.008501,0.018447,0.005045,-0.0034926,0.003070,-0.014469])
+        slopes = np.asarray([-0.008500, 0.020585, 0.006763, -0.005539, 0.002979, -0.016039])
 #        slopes = np.asarray([-0.0108,0.00535,0.00006,0.2784,-0.00351,-0.01825])
 #        zeropoint_temps = np.asarray([16.031,14.611,14.634,15.110,16.219,16.249])
         zeropoint_temps = np.asarray([15.556, 14.217, 14.595, 13.308, 15.739, 15.828])
+        zeropoint_temps = np.asarray([15.594, 14.283, 14.664, 13.367, 15.796, 15.884])  
         predfoc = np.sum(slopes*(self.avgtemps-zeropoint_temps)) + TELFOCUSTYP # slope in mm per deg C, TELFOCUSTYP is the mean focus between 2016 - 2020
         predfoc /= 1000.0 # convert to meters
         return predfoc
