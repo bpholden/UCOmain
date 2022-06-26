@@ -1486,15 +1486,11 @@ class APF:
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         focus_diff = math.fabs(predfocus - self.focus['binary'])
 
-        if focus_diff > 0.01/1000. :
-            self.focus.write(predfocus,binary=True,wait=False)
-            self.autofoc.write("robot_autofocus_enable")
-            focval = 1
-            APFTask.set(self.task, suffix="MESSAGE", value="Current telescope focus more than %6.3f microns from predicted, setting to %.3f." % (focus_diff*1000.,predfocus*1000), wait=False)
+        self.focus.write(predfocus,binary=True,wait=False)
+        self.autofoc.write("robot_autofocus_enable")
+        focval = 1
+        APFTask.set(self.task, suffix="MESSAGE", value="Current telescope focus more than %6.3f microns from predicted, setting to %.3f." % (focus_diff*1000.,predfocus*1000), wait=False)
 
-        if focus_diff < 0.01/1000. and current_val == 'robot_autofocus_enable':
-            self.autofoc.write("robot_autofocus_disable")
-            APFTask.set(self.task, suffix="MESSAGE", value="Disabling autofocus", wait=False)
         return focval
 
     def updateWindshield(self, state):
