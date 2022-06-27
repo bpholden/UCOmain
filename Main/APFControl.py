@@ -648,8 +648,15 @@ class APF:
 
         """
 
-        self.avgtemps = [self.avg_lists[nm] for nm in ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')]
-
+        #self.avgtemps = [self.avg_lists[nm] for nm in ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')]
+        self.avgtemps = []
+        self.avgtemps.append(self.m1tempkw.read(binary=True))
+        self.avgtemps.append(self.m2tempkw.read(binary=True))
+        self.avgtemps.append(self.taveragekw.read(binary=True))                
+        self.avgtemps.append(self.m2airkw.read(binary=True))
+        self.avgtemps.append(self.temp3now.read(binary=True))
+        self.avgtemps.append(self.temp4now.read(binary=True))        
+        
         # TAVERAGE is the average of the four trusses
         temp_names = ["TTRUS135","TTRUS225","TTRUS045","TTRUS315"]
         offsets = dict()
@@ -668,8 +675,8 @@ class APF:
                 n_good += 1
         if n_good < 4 and n_good > 0:
             replaceavg /= n_good
-            self.avgtemps[2] -= np.average(self.mon_lists["TAVERAGE"])
-            self.avgtemps[2] += replaceavg
+            #self.avgtemps[2] -= np.average(self.mon_lists["TAVERAGE"])
+            #self.avgtemps[2] += replaceavg
 
         self.avgtemps = np.asarray(self.avgtemps)
         return
