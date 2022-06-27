@@ -218,11 +218,6 @@ class APF:
         except:
             apflog("Cannot write True to eosgcam.GENABLE, issue with guider and/or dresden",level='error',echo=True)
 
-        self.mon_lists = dict()
-        self.avg_lists = dict()
-        for kw in ('TM1S210','TM2CSUR','TM2CAIR','TAVERAGE','TTRUS045','TTRUS135','TTRUS225','TTRUS315','TEMPNOW3','TEMPNOW4','M5WIND','M3WIND','M5OUTEMP'):
-            self.mon_lists[kw] = []
-            self.avg_lists[kw] = None
 
         self.apfstas = []
         for n in range(1,8):
@@ -260,7 +255,12 @@ class APF:
         self.down.monitor()
         self.whatsopn.monitor()
 
+        self.mon_lists = dict()
+        self.avg_lists = dict()
+            
         for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,self.t045kw,self.t135kw,self.t225kw,self.t315kw,self.temp3now,self.temp4now,self.wx,self.altwx,self.airtemp):
+            self.mon_lists[kw['name']] = []
+            self.avg_lists[kw['name']] = None
             kw.monitor()
             kw.callback(self.listMon)
             kw.read()
@@ -1499,7 +1499,7 @@ class APF:
         self.focus.write(predfocus,binary=True,wait=False)
         self.autofoc.write("robot_autofocus_enable")
         focval = 1
-        APFTask.set(self.task, suffix="MESSAGE", value="Current telescope focus more than %6.3f microns from predicted, setting to %.3f." % (focus_diff*1000.,predfocus*1000), wait=False)
+        APFTask.set(self.task, suffix="MESSAGE", value="Current telescope focus more than %6.3f microns from predicted, setting to %.3f." % (focus_diff*1e6,predfocus*1000), wait=False)
 
         return focval
 
