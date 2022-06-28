@@ -418,7 +418,7 @@ class APF:
         if eventval == 0 or eventval == 7 :
             self.ncountrate = 0
 
-        if eventval == 3:
+        if eventval == 4:
             self.setTelFoc()
 
         try:
