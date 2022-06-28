@@ -1471,9 +1471,8 @@ class APF:
 
         predfocus  = self.predTelFocus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
-        focus_diff = math.fabs(predfocus - self.focus['binary'])
 
-        if focus_diff > 0.01/1000. and self.mv_perm and self.faenable['binary'] == 1:
+        if self.mv_perm and self.faenable['binary'] == 1:
             try:
                 self.focus.write(predfocus,binary=True,wait=False)
                 self.robot['MASTER_MESSAGE'].write("Wrote %f to eostele.Focus" % (predfocus*1000.) )
