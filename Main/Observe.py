@@ -878,7 +878,6 @@ class Observe(threading.Thread):
                 self.apf.DMReset()
 #                apflog("The APF is open, the DM timer is clicking down, and scriptobs is %s." % ( str(running)),level="debug")
 
-
             if not self.apf.isOpen()[0] and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
