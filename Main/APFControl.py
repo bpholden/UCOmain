@@ -418,8 +418,8 @@ class APF:
         if eventval == 0 or eventval == 7 :
             self.ncountrate = 0
 
-        if eventval == 4:
-            self.setTelFoc()
+        #if eventval == 4:
+        #    self.setTelFoc()
 
         try:
             cnts = float(counts.read(binary=True,timeout=2))
