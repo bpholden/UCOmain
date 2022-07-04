@@ -29,15 +29,10 @@ wxtimeout = timedelta(seconds=1800)
 SUNEL_HOR = -3.2
 DEWARMAX = 8650
 DEWARMIN = 8350
-TELFOCUSMIN = -0.00090
-TELFOCUSMAX = -0.00074
-#TELFOCUSTYP = -0.8348
-TELFOCUSTYP = -0.83665
-TELFOCUSTYP = -0.83530
-#TELFOCUSTYP = -0.83089
+TELFOCUSMIN = -0.00096
+TELFOCUSMAX = -0.00070
+TELFOCUSTYP = -0.83529
 TELFOCUSMAXOFF = 0.00002
-MEANDIFF = 1.3806
-SLOPE = -0.00920
 
 if "LROOT" in os.environ:
     LROOT = os.environ["LROOT"]
@@ -658,25 +653,23 @@ class APF:
         self.avgtemps.append(self.temp4now.read(binary=True))        
         
         # TAVERAGE is the average of the four trusses
-        temp_names = ["TTRUS135","TTRUS225","TTRUS045","TTRUS315"]
-        offsets = dict()
-        offsets['TTRUS135'] = -0.18
-        offsets['TTRUS225'] =  0.33
-        offsets['TTRUS045'] = -0.32
-        offsets['TTRUS315'] =  0.15
+        # temp_names = ["TTRUS135","TTRUS225","TTRUS045","TTRUS315"]
+        # offsets = dict()
+        # offsets['TTRUS135'] = -0.18
+        # offsets['TTRUS225'] =  0.33
+        # offsets['TTRUS045'] = -0.32
+        # offsets['TTRUS315'] =  0.15
 
-        replaceavg = 0.0
-        n_good = 0
-        for tnm in temp_names:
-            curtemp = np.average(self.mon_lists[tnm])
-            if np.abs(curtemp - self.avgtemps[2] - offsets[tnm]) < 1:
-                #bad
-                replaceavg += curtemp
-                n_good += 1
-        if n_good < 4 and n_good > 0:
-            replaceavg /= n_good
-            #self.avgtemps[2] -= np.average(self.mon_lists["TAVERAGE"])
-            #self.avgtemps[2] += replaceavg
+        # replaceavg = 0.0
+        # n_good = 0
+        # for tnm in temp_names:
+        #     curtemp = np.average(self.mon_lists[tnm])
+        #     if np.abs(curtemp - self.avgtemps[2] - offsets[tnm]) < 1:
+        #         #bad
+        #         replaceavg += curtemp
+        #         n_good += 1
+        # if n_good < 4 and n_good > 0:
+        #     replaceavg /= n_good
 
         self.avgtemps = np.asarray(self.avgtemps)
         return
@@ -685,12 +678,6 @@ class APF:
 
         self.avgTelTemps()
         # m1 m2 tavg m2air tf3 tf4
-#        slopes = np.asarray([-0.008501,0.018447,0.005045,-0.0034926,0.003070,-0.014469])
-#        slopes = np.asarray([-0.008500, 0.020585, 0.006763, -0.005539, 0.002979, -0.016039])
-#        slopes = np.asarray([-0.0108,0.00535,0.00006,0.2784,-0.00351,-0.01825])
-#        zeropoint_temps = np.asarray([16.031,14.611,14.634,15.110,16.219,16.249])
-#        zeropoint_temps = np.asarray([15.556, 14.217, 14.595, 13.308, 15.739, 15.828])
-#        zeropoint_temps = np.asarray([15.594, 14.283, 14.664, 13.367, 15.796, 15.884])
 
         # values as of July 3 2022
         # Final_focus_temp_fits.ipynb which (along with the data) should get checked in
