@@ -684,7 +684,7 @@ class APF:
         slopes = np.asarray([-0.007930, 0.021897, 0.011436, -0.008821, 0.001830, -0.017760])
         zeropoint_temps = np.asarray([15.549, 14.195, 14.610, 13.285, 15.716, 15.797])
         
-        predfoc = np.sum(slopes*(self.avgtemps-zeropoint_temps)) + TELFOCUSTYP # slope in mm per deg C, TELFOCUSTYP is the mean focus between 2016 - 2020
+        predfoc = np.sum(slopes*(self.avgtemps-zeropoint_temps)) + TELFOCUSTYP 
         predfoc /= 1000.0 # convert to meters
         return predfoc
 
@@ -919,7 +919,6 @@ class APF:
             else:
                 apflog("Focusinstr has failed, result = %s, current focus is value = %d, and last value was %s." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
                 APFLib.write("apfmot.DEWARFOCRAW", lastfocus_dict["lastfocus"])
-                apflog("Focusinstr has failed. Setting to %s and exiting." % (lastfocus_dict["lastfocus"]), level='error', echo=True)
                 return False
 
         try:

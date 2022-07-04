@@ -529,7 +529,7 @@ if __name__ == '__main__':
     apflog("Running Focus-Post", echo=True)
     result = apf.focusinstr()
     if not result:
-        apflog("Focus-post has failed", level='error', echo=True)
+        apflog("Focus-post has failed", echo=True)
     else:
         apflog("Focus-post has finished successfully.", echo=True)
 
