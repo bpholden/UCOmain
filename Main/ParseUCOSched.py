@@ -306,7 +306,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
                     "texp", "I2", "expcount", "decker","Close Companion", "APFnshots", \
                     "owner", "APFpri", "APFcad", "lastobs", "B-V", \
                     "cad", "pri", "nexp", "count",
-                    "uth","utm","duration", \
+                    "night_cad","night_obs", \
                     "Template", "Nobs", "Total Obs", \
                     "mode", "raoff", "decoff", "Bstar", "obsblock",\
                     'sheetn' \
@@ -417,6 +417,10 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate='UCSC_Dynamic_Scheduler
             star_table['cad'].append(floatDefault(ls[didx["cad"]],default=0.7))
         else:
             star_table['cad'].append(floatDefault(ls[didx["APFcad"]],default=0.7))
+            
+        star_table['night_cad'].append(floatDefault(ls[didx["night_cad"]],default=-1.0))
+        star_table['night_cad'] /= (60*24) # value is in minutes
+        star_table['night_exp'].append(0)
 
         star_table['pri'].append(apfpri)
         star_table["lastobs"].append(floatDefault(ls[didx["lastobs"]],default=0))
