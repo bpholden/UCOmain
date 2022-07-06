@@ -46,7 +46,9 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
     good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
 
-    cadence_check /= star_table['cad']
+    doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] > 0)
+    if np.any(doubles):
+        redo = (star_table['night_cad'] > 0) & (star_table['night_obs'] > 0) & (star_table['night_cad'] > cadence_check)
 
     if hour_table is not None:
         too_much = hour_table['cur']  > hour_table['tot']
@@ -57,9 +59,9 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
     if done_sheets != []:
         apflog("The following sheets are finished for the night: %s" % (" ".join(done_sheets)),echo=True)
 
+    cadence_check /= star_table['cad']
     bad_pri = np.floor(cadence_check * 100)
     bad_pri = np.int_(bad_pri)
-
 
 
     if rank_table is not None:
@@ -72,6 +74,9 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += 100
                 new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
+
+    if np.any(redo)
+        new_pri[redo] = np.max(rank_table['rank'])
 
     return new_pri
 
