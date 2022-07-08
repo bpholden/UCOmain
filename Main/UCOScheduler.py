@@ -75,7 +75,7 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
                 new_pri[cur & good_cadence] += 100
                 new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
 
-    if np.any(redo)
+    if np.any(redo):
         new_pri[redo] = np.max(rank_table['rank'])
 
     return new_pri
