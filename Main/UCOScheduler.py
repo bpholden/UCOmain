@@ -49,6 +49,8 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
     doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] > 0)
     if np.any(doubles):
         redo = (star_table['night_cad'] > 0) & (star_table['night_obs'] > 0) & (star_table['night_cad'] > cadence_check)
+    else:
+        redo = np.zeros(1,dtype=bool)
 
     if hour_table is not None:
         too_much = hour_table['cur']  > hour_table['tot']
