@@ -362,7 +362,7 @@ def computeDatetime(ctime):
         dt = ctime.datetime()
     else:
         #punt and use current UT
-        dt = datetime.utcfromtimestamp(int(time.time()))
+        dt = datetime.utcnow()
     return dt
 
 
