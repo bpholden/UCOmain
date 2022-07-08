@@ -424,7 +424,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         if night_cad > 0:
             night_cad /= 60*24
         star_table['night_cad'].append(night_cad)
-        star_table['night_exp'].append(0)
+        star_table['night_obs'].append(0)
 
         star_table['pri'].append(apfpri)
         star_table["lastobs"].append(floatDefault(ls[didx["lastobs"]],default=0))
