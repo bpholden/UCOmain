@@ -596,6 +596,9 @@ class APF:
     ## end of callbacks for monitoring stuff
 
 
+    ## these are various methods, there are a LOT of them
+    ##
+    
     def sunRising(self):
         # the sun also rises
         now = datetime.now()
@@ -622,6 +625,18 @@ class APF:
 
         return
 
+    def validateUCAMoutputs(self):
+
+        if self.outfile.read() != self.desired_outfile:
+            apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
+            self.outfile.write(self.desired_outfile)
+
+        if self.obsnum < self.robot["MASTER_LAST_OBS_UCSC"]:
+            apflog("Output file number is %s which is less than the last logged value %s" % (self.obsnum, self.robot["MASTER_LAST_OBS_UCSC"]),level='error',echo=True)
+            self.obsnum.write(self.robot["MASTER_LAST_OBS_UCSC"])
+
+        return
+    
     def avgTelTemps(self):
         """
         self.avgTelTemp()
@@ -897,10 +912,9 @@ class APF:
         else:
             self.apfschedule('OWNRHINT').write('public')
 
-        if self.outfile.read() != self.desired_outfile:
-            apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
-            self.outfile.write(self.desired_outfile)
 
+        self.validateUCAMoutputs()
+        
         lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal"])
         if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
@@ -935,10 +949,8 @@ class APF:
 
     def calibrate(self, script, time):
 
-        if self.outfile.read() != self.desired_outfile:
-            apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
-            self.outfile.write(self.desired_outfile)
-
+        self.validateUCAMoutputs()
+        
         s_calibrate = os.path.join(SCRIPTDIR,"calibrate")
         if self.test:
             apflog("Test Mode: calibrate %s %s." % (script, time))

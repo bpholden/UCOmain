@@ -333,7 +333,7 @@ if __name__ == '__main__':
         phase_index = possible_phases.index(str(phase.read()).strip())
         phase.poll()
 
-    # If the phase isn't a valid option, (say the watchdog was run last)
+    # If the phase isn't a valid option
     # then assume we are starting a fresh night and start from setting the observer information.
     if str(phase).strip() not in possible_phases:
         apflog("Starting phase is not valid. Phase being set to Init", echo=True)
