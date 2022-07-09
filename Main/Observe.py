@@ -644,6 +644,9 @@ class Observe(threading.Thread):
         self.apf.DMZero()
         haveobserved = False
         failstart = 0
+
+        self.apf.validateUCAMoutputs()
+        
         while self.signal:
             # Check on everything
             if self.apf.sunRising():
