@@ -871,7 +871,6 @@ if __name__ == '__main__':
     starttime = time.time()
     result = getNext(starttime, 7.99, 0.4, bstar=True,sheetns=sheet_list,rank_sheetn=rank_tablen)
     ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
-    ot.close()
     starttime += 400
     for i in range(5):
 
@@ -884,13 +883,11 @@ if __name__ == '__main__':
             for k in result:
                 print(k, result[k])
         while len(result["SCRIPTOBS"]) > 0:
-            ot = open(otfn,"a")
             ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
-            ot.close()
             starttime += result["EXP_TIME"]
 
     print("Done")
-    
+    ot.close()
     print("Testing templates")
 
     star_table, stars = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn='googledex.dat',outdir=".",config=configDefaults('public'))
