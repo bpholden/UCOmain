@@ -120,14 +120,12 @@ def prep_master(outdir,mastername):
 
 def parse_args():
     parser = optparse.OptionParser()
-    parser.add_option("--sheetns",dest="sheetns",default="RECUR_A100,2022A_A002,2022A_A003,2022A_A004,2022A_A005,2022A_A006,2022A_A007,2022A_A008,2022A_A009,2022A_A010,2022A_A013,2022A_A014,2022A_A015,2022A_A016")
     parser.add_option("-i","--infile",dest="infile",default="googledex.dat")
     parser.add_option("-f","--file",dest="datefile",default="")
     parser.add_option("--seed",dest="seed",default=None)
     parser.add_option("-b","--bstar",dest="bstar",default=True,action="store_false")
     parser.add_option("-o","--outdir",dest="outdir",default=".")        
-    parser.add_option("--frac_table",dest="frac_sheetn",default="2022A_frac")
-    parser.add_option("--rank_table",dest="rank_sheetn",default="2022A_ranks")
+    parser.add_option("--rank_table",dest="rank_sheetn",default="2022B_ranks")
 
     parser.add_option("-m","--masterfile",dest="master",default="sim_master.simout")
     (options, args) = parser.parse_args()    
@@ -170,14 +168,19 @@ if __name__ == "__main__":
 
     options,datelist = parse_args()
     bstar = options.bstar
-    masterfp,star_strs, star_dates = prep_master(options.outdir,options.master)
+    masterfp,star_strs,star_dates = prep_master(options.outdir,options.master)
+
+    rank_table = ds.makeRankTable(options.rank_sheetn)
+    sheetns = list(rank_table['sheetn'][rank_table['rank'] > 0])
     
     for datestr in datelist:
 
         if os.path.exists('hour_table'):
             os.remove('hour_table')
+            
+        hour_table = ds.makeHourTable(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
         
-        star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=options.sheetns.split(","),outfn=options.infile,outdir=options.outdir)
+        star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=options.infile,outdir=options.outdir)
     
         fwhms = NightSim.gen_seeing()
         slowdowns = NightSim.gen_clouds()
