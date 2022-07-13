@@ -46,9 +46,9 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
     good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
 
-    doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] > 0)
+    doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
     if np.any(doubles):
-        redo = (star_table['night_cad'] > 0) & (star_table['night_obs'] > 0) & (star_table['night_cad'] > cadence_check)
+        redo = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1) & (star_table['night_cad'] > cadence_check)
     else:
         redo = np.zeros(1,dtype=bool)
 
