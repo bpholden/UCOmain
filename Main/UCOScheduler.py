@@ -46,9 +46,9 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
     good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
 
-    doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
-    if np.any(doubles):
-        redo = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1) & (star_table['night_cad'] > cadence_check)
+    started_doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
+    if np.any(started_doubles):
+        redo = started_doubles & (star_table['night_cad'] > cadence_check)
     else:
         redo = np.zeros(1,dtype=bool)
 
@@ -238,6 +238,17 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
     return rank_table
 
 
+def totExpTimes(star_table,targNum):
+    
+    totexptimes = np.zeros(targNum, dtype=float)
+    doubles = (star_table['night_cad'] > 0)  & (star_table['night_obs'] == 0)
+    singles = np.logical_not(doubles)
+    
+    totexptimes[singles] = star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)  
+    totexptimes[doubles] = 2*(star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)) + star_table['night_cad']*86400
+                                  
+
+    return totexptimes
 
 def timeCheck(star_table,totexptimes,dt,hour_table):
 
