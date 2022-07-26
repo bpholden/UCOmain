@@ -1491,9 +1491,10 @@ class APF:
         # check last telescope focus
         lastfoc = self.robot['FOCUSTEL_LAST_SUCCESS'].read(binary=True)
         current_val = self.autofoc.read()
-        cur_sunel = self.sunel.read(binary=True)
-        too_close = self.sunRising() and (cur_sunel > -20)
-        focval = 0
+
+        if self.sunRising() and (self.sunel.read(binary=True) > -20):
+            self.autofoc.write("robot_autofocus_disable")
+            return 0
 
         predfocus  = self.predTelFocus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
