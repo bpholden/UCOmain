@@ -201,7 +201,7 @@ if __name__ == "__main__":
         ot.close()
         observing = True
         while observing:
-            curtime = ephem.Date(curtime)
+
             result = ds.getNext(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,
                                     sheetns=sheetns,outdir=options.outdir,rank_sheetn=options.rank_sheetn)
             if result:
@@ -213,7 +213,7 @@ if __name__ == "__main__":
                 idx = idx[0]
 
                 for i in range(0,int(result['NEXP'])):
-                    (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(curtime,result,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
+                    (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
                     sim_results(outstr,star_strs,star_dates)
                     print (outstr)
                     masterfp.write("%s\n" % (outstr))
