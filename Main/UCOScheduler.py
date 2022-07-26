@@ -724,11 +724,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
 
     do_templates = template and templateConditions(moon, seeing, slowdown)
 
-
-    apflog("getNext(): Parsed the Googledex...",echo=True)
-
-
-    apflog("getNext(): Finding B stars",echo=True)
+    apflog("getNext(): Will attempt templates = %s" % str(do_templates) ,echo=True)
     # Note which of these are B-Stars for later.
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
 
