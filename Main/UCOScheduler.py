@@ -728,7 +728,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
 
     apflog("getNext(): Computing exposure times",echo=True)
-    totexptimes = totExpTimes(star_table,)
+    totexptimes = totExpTimes(star_table,targNum)
 
     available = np.ones(targNum, dtype=bool)
     cur_elevations = np.zeros(targNum, dtype=float)
