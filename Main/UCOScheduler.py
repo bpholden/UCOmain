@@ -739,8 +739,11 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     scaled_elevations = np.zeros(targNum, dtype=float)
 
     # Is the target behind the moon?
+
     moon_check = behindMoon(moon,star_table['ra'],star_table['dec'])
     available = available & moon_check
+    apflog("getNext(): Moon visibility check - stars rejected = %s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)])),echo=True)
+    
     if len(last_objs_attempted)>0:
         for n in last_objs_attempted:
             attempted = (star_table['name'] == n)
@@ -751,16 +754,10 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
         # We just need a B star
         apflog("getNext(): Selecting B stars",echo=True)
         available = available & bstars
-
     else:
-
         apflog("getNext(): Culling B stars",echo=True)
         available = available & np.logical_not(bstars)
 
-    # Calculate the exposure time for the target
-    # Want to pass the entire list of targets to this function
-
-    apflog("getNext(): Computing exposure times",echo=True)
     exp_counts = star_table['expcount']
 
     # Is the exposure time too long?
