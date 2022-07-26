@@ -178,6 +178,14 @@ if __name__ == "__main__":
         if os.path.exists('hour_table'):
             os.remove('hour_table')
             
+        tleftfn = 'time_left.csv'
+        if os.path.exists(tleftfn):
+            hour_constraints = astropy.io.ascii.read(tleftfn)
+        else:
+            hour_constraints = None
+             
+        curtime, endtime, apf_obs = NightSim.sun_times(datestr)
+        
         hour_table = ds.makeHourTable(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
         
         star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=options.infile,outdir=options.outdir)
@@ -192,11 +200,10 @@ if __name__ == "__main__":
         ot = open(otfn,"w")
         ot.close()
         observing = True
-        curtime, endtime, apf_obs = NightSim.sun_times(datestr)
         while observing:
-
-            result = ds.getNext(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile, outdir=options.outdir,template=doTemp,
-                                    frac_sheet=options.frac_sheetn,rank_sheetn=options.rank_sheetn)
+            curtime = ephem.Date(curtime)
+            result = ds.getNext(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,
+                                    sheetns=sheetns,outdir=options.outdir,rank_sheetn=options.rank_sheetn)
             if result:
                 if bstar:
                     bstar = False
