@@ -241,13 +241,13 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
 
 def timeCheck(star_table,totexptimes,dt,hour_table):
 
-    maxexptime = TARGET_EXPOSURE_TIME_MAX
-    time_left_before_sunrise = computeSunrise(dt,horizon='-9')
-    if maxexptime > time_left_before_sunrise:
-        maxexptime = time_left_before_sunrise
+    maxexptime = computeSunrise(dt,horizon='-9')
     if maxexptime < TARGET_EXPOSURE_TIME_MIN:
         maxexptime = TARGET_EXPOSURE_TIME_MIN
         # this will try a target in case we get lucky
+        # bright stars often have longer than
+        # necessary exposure times, relying on the
+        # exposure meter
 
     time_check = totexptimes <= maxexptime
 
