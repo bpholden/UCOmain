@@ -241,12 +241,12 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
 def totExpTimes(star_table,targNum):
     
     totexptimes = np.zeros(targNum, dtype=float)
+
+    nobs = np.ones(targNum)
     doubles = (star_table['night_cad'] > 0)  & (star_table['night_obs'] == 0)
-    singles = np.logical_not(doubles)
+    nobs[doubles] = 2
     
-    totexptimes[singles] = star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)  
-    totexptimes[doubles] = 2*(star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)) + star_table['night_cad']*86400
-                                  
+    totexptimes = nobs*(star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)) + (nobs-1)*star_table['night_cad']*86400
 
     return totexptimes
 
