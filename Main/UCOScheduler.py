@@ -629,7 +629,6 @@ def behindMoon(moon,ras,decs):
     minMoonDist = ((moon.phase / 100.) * md) + TARGET_MOON_DIST_MIN
     moonDist = np.degrees(np.sqrt((moon.ra - ras)**2 + (moon.dec - decs)**2))
 
-    apflog("behindMoon(): Culling stars behind the moon",echo=True)
     moon_check = moonDist > minMoonDist
 
     return moon_check
@@ -728,11 +727,8 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     # Note which of these are B-Stars for later.
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
 
-    # Distance to stay away from the moon
-
-
-    totexptimes = np.zeros(targNum, dtype=float)
-    totexptimes = star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)
+    apflog("getNext(): Computing exposure times",echo=True)
+    totexptimes = totExpTimes(star_table,)
 
     available = np.ones(targNum, dtype=bool)
     cur_elevations = np.zeros(targNum, dtype=float)
