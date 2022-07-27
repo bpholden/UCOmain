@@ -215,7 +215,6 @@ if __name__ == "__main__":
                 for i in range(0,int(result['NEXP'])):
                     (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
                     sim_results(outstr,star_strs,star_dates)
-                    print (outstr)
                     masterfp.write("%s\n" % (outstr))
                     
                 ot = open(otfn,"a+")

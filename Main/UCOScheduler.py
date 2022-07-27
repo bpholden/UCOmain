@@ -59,7 +59,7 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
         done_sheets = []
 
     if done_sheets != []:
-        apflog("The following sheets are finished for the night: %s" % (" ".join(done_sheets)),echo=True)
+        apflog("The following sheets are finished for the night: %s" % (" ".join(list(done_sheets))),echo=True)
 
     cadence_check /= star_table['cad']
     bad_pri = np.floor(cadence_check * 100)
@@ -745,7 +745,6 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
             attempted = (star_table['name'] == n)
             available = available & np.logical_not(attempted) # Available and not observed
 
-
     if bstar:
         # We just need a B star
         apflog("getNext(): Selecting B stars",echo=True)
@@ -753,8 +752,6 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     else:
         apflog("getNext(): Culling B stars",echo=True)
         available = available & np.logical_not(bstars)
-
-    exp_counts = star_table['expcount']
 
     # Is the exposure time too long?
     apflog("getNext(): Removing really long exposures",echo=True)
@@ -787,7 +784,6 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     if len(star_table['name'][available]) < 1:
         apflog( "getNext(): Couldn't find any suitable targets!",level="error",echo=True)
         return None
-
 
     final_priorities = computePriorities(star_table,dt,
                                              rank_table=rank_table,
