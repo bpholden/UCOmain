@@ -176,7 +176,8 @@ def updateHourConstraints(tleftfn):
             
         used = hour_table['cur'][hour_table['sheetn'] == sheetn]
         time_left['used'][time_left['runname'] == runname] += used
-        time_left['left'][time_left['runname'] == runname] = time_left['alloc'][time_left['runname'] == runname] - time_left['used'][time_left['runname'] == runname]
+        if runname != 'public':
+            time_left['left'][time_left['runname'] == runname] = time_left['alloc'][time_left['runname'] == runname] - time_left['used'][time_left['runname'] == runname]
 
     time_left.write(tleftfn,format='csv',overwrite=True)
     
