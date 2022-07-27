@@ -12,6 +12,7 @@ import shutil
 
 import ephem
 import numpy as np
+import astropy
 
 import NightSim
 import UCOScheduler as ds
@@ -161,6 +162,24 @@ def parse_args():
             
     return options, datelist
 
+
+def updateHourConstraints(tleftfn):
+
+    hour_table =  astropy.io.ascii.read('hour_table')
+    time_left = astropy.io.ascii.read(tleftfn)
+
+    for sheetn in hour_table['sheetn']:
+        if sheetn == 'RECUR_A100':
+            runname = 'public'
+        else:
+            runname = sheetn
+            
+        used = hour_table['cur'][hour_table['sheetn'] == sheetn]
+        time_left['used'][time_left['runname'] == runname] += used
+        time_left['left'][time_left['runname'] == runname] = time_left['alloc'][time_left['runname'] == runname] - time_left['used'][time_left['runname'] == runname]
+
+    time_left.write(tleftfn,format='csv',overwrite=True)
+    
 ###
 
 if __name__ == "__main__":
@@ -230,6 +249,8 @@ if __name__ == "__main__":
             curtime = ephem.Date(curtime)
         
         print ("sun rose")
+        if hour_constraints:
+            updateHourConstraints(tleftfn)
 
         if os.path.isfile(otfn):
             try:
