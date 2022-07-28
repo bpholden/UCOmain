@@ -167,7 +167,7 @@ def updateConstraints(googledex):
 
     star_table = astropy.io.ascii.read(googledex)
     star_table['night_obs'] = 0
-    astropy.io.ascii.write(googlgdex,format='ecsv',overwrite=True)
+    astropy.io.ascii.write(googledex,format='ecsv',overwrite=True)
     
     return
 
