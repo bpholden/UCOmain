@@ -163,6 +163,14 @@ def parse_args():
     return options, datelist
 
 
+def updateConstraints(googledex):
+
+    star_table = astropy.io.ascii.read(googledex)
+    star_table['night_obs'] = 0
+    astropy.io.ascii.write(googlgdex,format='ecsv',overwrite=True)
+    
+    return
+
 def updateHourConstraints(tleftfn):
 
     hour_table =  astropy.io.ascii.read('hour_table')
@@ -180,7 +188,7 @@ def updateHourConstraints(tleftfn):
             time_left['left'][time_left['runname'] == runname] = time_left['alloc'][time_left['runname'] == runname] - time_left['used'][time_left['runname'] == runname]
 
     time_left.write(tleftfn,format='csv',overwrite=True)
-    
+    return 
 ###
 
 if __name__ == "__main__":
@@ -252,6 +260,7 @@ if __name__ == "__main__":
         print ("sun rose")
         if hour_constraints:
             updateHourConstraints(tleftfn)
+        updateConstraints(os.path.join(options.outdir,options.infile))
 
         if os.path.isfile(otfn):
             try:
