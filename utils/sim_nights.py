@@ -12,6 +12,7 @@ import shutil
 
 import ephem
 import numpy as np
+import astropy
 
 import NightSim
 import UCOScheduler as ds
@@ -120,14 +121,12 @@ def prep_master(outdir,mastername):
 
 def parse_args():
     parser = optparse.OptionParser()
-    parser.add_option("--sheetns",dest="sheetns",default="RECUR_A100,2022A_A002,2022A_A003,2022A_A004,2022A_A005,2022A_A006,2022A_A007,2022A_A008,2022A_A009,2022A_A010,2022A_A013,2022A_A014,2022A_A015,2022A_A016")
     parser.add_option("-i","--infile",dest="infile",default="googledex.dat")
     parser.add_option("-f","--file",dest="datefile",default="")
     parser.add_option("--seed",dest="seed",default=None)
     parser.add_option("-b","--bstar",dest="bstar",default=True,action="store_false")
     parser.add_option("-o","--outdir",dest="outdir",default=".")        
-    parser.add_option("--frac_table",dest="frac_sheetn",default="2022A_frac")
-    parser.add_option("--rank_table",dest="rank_sheetn",default="2022A_ranks")
+    parser.add_option("--rank_table",dest="rank_sheetn",default="2022B_ranks")
 
     parser.add_option("-m","--masterfile",dest="master",default="sim_master.simout")
     (options, args) = parser.parse_args()    
@@ -163,6 +162,33 @@ def parse_args():
             
     return options, datelist
 
+
+def updateConstraints(googledex):
+
+    star_table = astropy.io.ascii.read(googledex)
+    star_table['night_obs'] = 0
+    astropy.io.ascii.write(googledex,format='ecsv',overwrite=True)
+    
+    return
+
+def updateHourConstraints(tleftfn):
+
+    hour_table =  astropy.io.ascii.read('hour_table')
+    time_left = astropy.io.ascii.read(tleftfn)
+
+    for sheetn in hour_table['sheetn']:
+        if sheetn == 'RECUR_A100':
+            runname = 'public'
+        else:
+            runname = sheetn
+            
+        used = hour_table['cur'][hour_table['sheetn'] == sheetn]
+        time_left['used'][time_left['runname'] == runname] += used
+        if runname != 'public':
+            time_left['left'][time_left['runname'] == runname] = time_left['alloc'][time_left['runname'] == runname] - time_left['used'][time_left['runname'] == runname]
+
+    time_left.write(tleftfn,format='csv',overwrite=True)
+    return 
 ###
 
 if __name__ == "__main__":
@@ -170,14 +196,27 @@ if __name__ == "__main__":
 
     options,datelist = parse_args()
     bstar = options.bstar
-    masterfp,star_strs, star_dates = prep_master(options.outdir,options.master)
+    masterfp,star_strs,star_dates = prep_master(options.outdir,options.master)
+
+    rank_table = ds.makeRankTable(options.rank_sheetn)
+    sheetns = list(rank_table['sheetn'][rank_table['rank'] > 0])
     
     for datestr in datelist:
 
         if os.path.exists('hour_table'):
             os.remove('hour_table')
+            
+        tleftfn = 'time_left.csv'
+        if os.path.exists(tleftfn):
+            hour_constraints = astropy.io.ascii.read(tleftfn)
+        else:
+            hour_constraints = None
+             
+        curtime, endtime, apf_obs = NightSim.sun_times(datestr)
         
-        star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=options.sheetns.split(","),outfn=options.infile,outdir=options.outdir)
+        hour_table = ds.makeHourTable(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
+        
+        star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=options.infile,outdir=options.outdir)
     
         fwhms = NightSim.gen_seeing()
         slowdowns = NightSim.gen_clouds()
@@ -189,11 +228,10 @@ if __name__ == "__main__":
         ot = open(otfn,"w")
         ot.close()
         observing = True
-        curtime, endtime, apf_obs = NightSim.sun_times(datestr)
         while observing:
 
-            result = ds.getNext(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile, outdir=options.outdir,template=doTemp,
-                                    frac_sheet=options.frac_sheetn,rank_sheetn=options.rank_sheetn)
+            result = ds.getNext(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,
+                                    sheetns=sheetns,outdir=options.outdir,rank_sheetn=options.rank_sheetn)
             if result:
                 if bstar:
                     bstar = False
@@ -203,9 +241,8 @@ if __name__ == "__main__":
                 idx = idx[0]
 
                 for i in range(0,int(result['NEXP'])):
-                    (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(curtime,result,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
+                    (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
                     sim_results(outstr,star_strs,star_dates)
-                    print (outstr)
                     masterfp.write("%s\n" % (outstr))
                     
                 ot = open(otfn,"a+")
@@ -221,6 +258,9 @@ if __name__ == "__main__":
             curtime = ephem.Date(curtime)
         
         print ("sun rose")
+        if hour_constraints:
+            updateHourConstraints(tleftfn)
+        updateConstraints(os.path.join(options.outdir,options.infile))
 
         if os.path.isfile(otfn):
             try:

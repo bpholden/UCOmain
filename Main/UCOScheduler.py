@@ -46,7 +46,11 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
     good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
 
-    cadence_check /= star_table['cad']
+    started_doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
+    if np.any(started_doubles):
+        redo = started_doubles & (star_table['night_cad'] > cadence_check)
+    else:
+        redo = np.zeros(1,dtype=bool)
 
     if hour_table is not None:
         too_much = hour_table['cur']  > hour_table['tot']
@@ -55,11 +59,11 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
         done_sheets = []
 
     if done_sheets != []:
-        apflog("The following sheets are finished for the night: %s" % (" ".join(done_sheets)),echo=True)
+        apflog("The following sheets are finished for the night: %s" % (" ".join(list(done_sheets))),echo=True)
 
+    cadence_check /= star_table['cad']
     bad_pri = np.floor(cadence_check * 100)
     bad_pri = np.int_(bad_pri)
-
 
 
     if rank_table is not None:
@@ -72,6 +76,9 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += 100
                 new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
+
+    if np.any(redo):
+        new_pri[redo] = np.max(rank_table['rank'])
 
     return new_pri
 
@@ -231,16 +238,27 @@ def makeRankTable(sheet_table_name,outfn='rank_table',outdir=None,hour_constrain
     return rank_table
 
 
+def totExpTimes(star_table,targNum):
+    
+    totexptimes = np.zeros(targNum, dtype=float)
+
+    nobs = np.ones(targNum)
+    doubles = (star_table['night_cad'] > 0)  & (star_table['night_obs'] == 0)
+    nobs[doubles] = 2
+    
+    totexptimes = nobs*(star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)) + (nobs-1)*star_table['night_cad']*86400
+
+    return totexptimes
 
 def timeCheck(star_table,totexptimes,dt,hour_table):
 
-    maxexptime = TARGET_EXPOSURE_TIME_MAX
-    time_left_before_sunrise = computeSunrise(dt,horizon='-9')
-    if maxexptime > time_left_before_sunrise:
-        maxexptime = time_left_before_sunrise
+    maxexptime = computeSunrise(dt,horizon='-9')
     if maxexptime < TARGET_EXPOSURE_TIME_MIN:
         maxexptime = TARGET_EXPOSURE_TIME_MIN
         # this will try a target in case we get lucky
+        # bright stars often have longer than
+        # necessary exposure times, relying on the
+        # exposure meter
 
     time_check = totexptimes <= maxexptime
 
@@ -357,7 +375,7 @@ def computeDatetime(ctime):
         dt = ctime.datetime()
     else:
         #punt and use current UT
-        dt = datetime.utcfromtimestamp(int(time.time()))
+        dt = datetime.utcnow()
     return dt
 
 
@@ -611,7 +629,6 @@ def behindMoon(moon,ras,decs):
     minMoonDist = ((moon.phase / 100.) * md) + TARGET_MOON_DIST_MIN
     moonDist = np.degrees(np.sqrt((moon.ra - ras)**2 + (moon.dec - decs)**2))
 
-    apflog("behindMoon(): Culling stars behind the moon",echo=True)
     moon_check = moonDist > minMoonDist
 
     return moon_check
@@ -706,48 +723,35 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
 
     do_templates = template and templateConditions(moon, seeing, slowdown)
 
-
-    apflog("getNext(): Parsed the Googledex...",echo=True)
-
-
-    apflog("getNext(): Finding B stars",echo=True)
+    apflog("getNext(): Will attempt templates = %s" % str(do_templates) ,echo=True)
     # Note which of these are B-Stars for later.
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
 
-    # Distance to stay away from the moon
-
-
-    totexptimes = np.zeros(targNum, dtype=float)
-    totexptimes = star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)
+    apflog("getNext(): Computing exposure times",echo=True)
+    totexptimes = totExpTimes(star_table,targNum)
 
     available = np.ones(targNum, dtype=bool)
     cur_elevations = np.zeros(targNum, dtype=float)
     scaled_elevations = np.zeros(targNum, dtype=float)
 
     # Is the target behind the moon?
+
     moon_check = behindMoon(moon,star_table['ra'],star_table['dec'])
     available = available & moon_check
+    apflog("getNext(): Moon visibility check - stars rejected = %s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)])),echo=True)
+    
     if len(last_objs_attempted)>0:
         for n in last_objs_attempted:
             attempted = (star_table['name'] == n)
             available = available & np.logical_not(attempted) # Available and not observed
 
-
     if bstar:
         # We just need a B star
         apflog("getNext(): Selecting B stars",echo=True)
         available = available & bstars
-
     else:
-
         apflog("getNext(): Culling B stars",echo=True)
         available = available & np.logical_not(bstars)
-
-    # Calculate the exposure time for the target
-    # Want to pass the entire list of targets to this function
-
-    apflog("getNext(): Computing exposure times",echo=True)
-    exp_counts = star_table['expcount']
 
     # Is the exposure time too long?
     apflog("getNext(): Removing really long exposures",echo=True)
@@ -780,7 +784,6 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
     if len(star_table['name'][available]) < 1:
         apflog( "getNext(): Couldn't find any suitable targets!",level="error",echo=True)
         return None
-
 
     final_priorities = computePriorities(star_table,dt,
                                              rank_table=rank_table,
@@ -851,7 +854,7 @@ if __name__ == '__main__':
     else:
         hour_constraints = None
 
-    rank_tablen='2022A_ranks'
+    rank_tablen='2022B_ranks'
     rank_table = makeRankTable(rank_tablen,hour_constraints=hour_constraints)
 
     hour_table = makeHourTable(rank_table,dt,hour_constraints=hour_constraints)
@@ -864,7 +867,6 @@ if __name__ == '__main__':
     starttime = time.time()
     result = getNext(starttime, 7.99, 0.4, bstar=True,sheetns=sheet_list,rank_sheetn=rank_tablen)
     ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
-    ot.close()
     starttime += 400
     for i in range(5):
 
@@ -877,13 +879,11 @@ if __name__ == '__main__':
             for k in result:
                 print(k, result[k])
         while len(result["SCRIPTOBS"]) > 0:
-            ot = open(otfn,"a")
             ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
-            ot.close()
             starttime += result["EXP_TIME"]
 
     print("Done")
-    
+    ot.close()
     print("Testing templates")
 
     star_table, stars = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn='googledex.dat',outdir=".",config=configDefaults('public'))
