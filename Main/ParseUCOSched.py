@@ -731,60 +731,77 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=D
 
             if local_name in obslog.names:
                 # We observed this target, so update the cell in the worksheet
-                # update_cell(row, col, val) - col and row are 1 indexed
-                nameidx = obslog.names.index(local_name)
-                otime = obslog.times[nameidx]
-                taketemp = obslog.temps[nameidx]
-                curowner = obslog.owners[nameidx]
-                if curowner == 'public':
-                    curowner = 'RECUR_A100'
-                jd = None
-                try:
-                    star_table_row = star_table[(star_table['name'] == local_name)&(star_table['sheetn'] == sheetn)]
-                except:
-                    star_table_row = None
 
-                # idealy get JD from the local table
-                if  star_table_row is not None:
-                    if len(star_table_row['lastobs']) > 0:
-                        jd = float(star_table_row['lastobs'][0])
-
-                # if the above fails, we should be able to use the observing log
-                # but this is JUST the UT hour and minute, not the day so we have to use the otime
-                # value to calculate the full JD
-                if jd is None:
-                    if isinstance(otime,float):
-                        t = datetime.utcfromtimestamp(otime)
+                prev = -1
+                for n_appear in range(0,obslog.names.count(local_name)):
+                    # a target can be observed more than once a night
+                    if n_appear == 0:
+                        nameidx = obslog.names.index(local_name)
+                        prev = nameidx
+                        # this is the first appearance and the first
+                        # observation
                     else:
-                        hr, mn = otime
-                        t = datetime(ctime.year, ctime.month, ctime.day, hr, mn)
-                    jd = float(ephem.julian_date(t))
-                try:
-                    pastdate = float(v[col])
-                except:
-                    pastdate = 0.0
-                try:
-                    n = int(v[nobscol])
-                except:
-                    n = 0
-                try:
-                    if round(jd, 3) > pastdate and curowner == sheetn:
-                        ws.update_cell(i+1, col+1, round(jd, 3) )
-                        ws.update_cell(i+1, nobscol+1, n + 1 ) # sheets are indexed at 1 not at 0 like python lists
+                        nameidx = obslog.names.index(local_name,prev)
+                        prev = nameidx
+                        # this is any new observation of the same target
+
+                    # observation details
+                    otime = obslog.times[nameidx]
+                    taketemp = obslog.temps[nameidx]
+                    curowner = obslog.owners[nameidx]
+                    if curowner == 'public':
+                        curowner = 'RECUR_A100'
+                    jd = None
+                    try:
+                        star_table_row = star_table[(star_table['name'] == local_name)&(star_table['sheetn'] == sheetn)]
+                    except:
+                        star_table_row = None
+
+                    # ideally get JD from the local table -
+                    # this will always be the value of the last observation
+                    if  star_table_row is not None:
+                        if len(star_table_row['lastobs']) > 0:
+                            jd = float(star_table_row['lastobs'][0])
+
+                    # if the above fails, we should be able to use the observing log
+                    # but this is JUST the UT hour and minute, not the day so we have to use the otime
+                    # value to calculate the full JD
+                    if jd is None:
+                        if isinstance(otime,float):
+                            t = datetime.utcfromtimestamp(otime)
+                        else:
+                            hr, mn = otime
+                            t = datetime(ctime.year, ctime.month, ctime.day, hr, mn)
+                        jd = float(ephem.julian_date(t))
+                    try:
+                        pastdate = float(v[col])
+                    except:
+                        pastdate = 0.0
+                    try:
+                        n = int(v[nobscol])
+                    except:
+                        n = 0
+                        
+                    # update_cell(row, col, val) - col and row are 1 indexed
+                    try:
+                        if round(jd, 3) > pastdate and curowner == sheetn:
+                            ws.update_cell(i+1, col+1, round(jd, 3) )
+                            ws.update_cell(i+1, nobscol+1, n + 1 ) 
+                            nupdates += 2
+                            apflog( "Updated %s from %.4f to %.4f and %d in %s" % (v[0],pastdate,round(jd, 3),n+1,sheetn),echo=True)
+                    except:
+                        apflog("Updated %s to %.4f and %d in %s" % (v[0],round(jd,3),1,sheetn),echo=True)
+                        ws.update_cell(i+1, col+1, round(jd,3) )
+                        ws.update_cell(i+1, nobscol+1, 1 )
                         nupdates += 2
-                        apflog( "Updated %s from %.4f to %.4f and %d in %s" % (v[0],pastdate,round(jd, 3),n+1,sheetn),echo=True)
-                except:
-                    apflog("Updated %s to %.4f and %d in %s" % (v[0],round(jd,3),1,sheetn),echo=True)
-                    ws.update_cell(i+1, col+1, round(jd,3) )
-                    ws.update_cell(i+1, nobscol+1, 1 )
-                    nupdates += 2
-                try:
-                   have_temp = v[tempcol]
-                   if taketemp == "Y" and have_temp == "N" and curowner == sheetn:
-                       ws.update_cell(i+1, tempcol+1, "Y")
-                       nupdates += 1
-                       apflog( "Updated %s to having a template in %s" % (v[0],sheetn),echo=True)
-                except:
-                    apflog( "Error logging template obs for %s" % (v[0]),echo=True,level='error')
+                    try:
+                        have_temp = v[tempcol]
+                        if taketemp == "Y" and have_temp == "N" and curowner == sheetn:
+                            ws.update_cell(i+1, tempcol+1, "Y")
+                            nupdates += 1
+                            apflog( "Updated %s to having a template in %s" % (v[0],sheetn),echo=True)
+                    except:
+                        apflog( "Error logging template obs for %s" % (v[0]),echo=True,level='error')
+            # bottom of loop
 
     return nupdates
