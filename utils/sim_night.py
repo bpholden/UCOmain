@@ -75,7 +75,7 @@ outfp.write(hdrstr)
 star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
 
 fwhms = NightSim.gen_seeing(val=1.0) # good conditions
-slowdowns = NightSim.gen_clouds(val=2) # typical conditions
+slowdowns = NightSim.gen_clouds(val=.6) # typical conditions
 
 lastslow = 5
 lastfwhm = 15
