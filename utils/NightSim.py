@@ -58,13 +58,13 @@ def gen_clouds(nsize=200,val=-1):
         val = np.random.uniform(size=1)
     alpha = 0.353
     if val < 0.7:
-        mean = np.random.normal(loc=2.,scale=0.1,size=1)
+        mean = np.random.normal(loc=1.,scale=0.1,size=1)
         rms  = np.random.normal(loc=0.05,scale=0.01,size=1)
     elif val > 0.9:
-        mean = np.random.normal(loc=4.0,scale=0.4,size=1)
+        mean = np.random.normal(loc=2.0,scale=0.4,size=1)
         rms  = np.random.normal(loc=0.5,scale=0.1,size=1)
     else:
-        mean = np.random.normal(loc=3.4,scale=0.1,size=1)
+        mean = np.random.normal(loc=1.7,scale=0.1,size=1)
         rms  = np.random.normal(loc=0.3,scale=0.05,size=1)
 
     real_rms = np.sqrt((1-alpha**2) * rms**2)
