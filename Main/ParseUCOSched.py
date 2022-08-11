@@ -665,6 +665,28 @@ def updateLocalStarlist(intime, observed_file="observed_targets",outfn='parsesch
 
     return obslog, star_table
 
+def observedJD(star_table_row,otime,ctime):
+    jd = None
+    
+    # ideally get JD from the local table -
+    # this will always be the value of the last observation
+    if  star_table_row is not None:
+        if len(star_table_row['lastobs']) > 0:
+            jd = float(star_table_row['lastobs'][0])
+            
+    # if the above fails, we should be able to use the observing log
+    # but this is JUST the UT hour and minute, not the day so we have to use the otime
+    # value to calculate the full JD
+    if jd is None:
+        if isinstance(otime,float):
+            t = datetime.utcfromtimestamp(otime)
+        else:
+            hr, mn = otime
+            t = datetime(ctime.year, ctime.month, ctime.day, hr, mn)
+            jd = float(ephem.julian_date(t))
+
+    return jd
+
 def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=DEFAULT_CERT,outfn='parsesched.dat',outdir=None):
     """
         Update the online googledex lastobs column assuming things in filename have been observed.
@@ -751,28 +773,14 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=D
                     curowner = obslog.owners[nameidx]
                     if curowner == 'public':
                         curowner = 'RECUR_A100'
-                    jd = None
+
                     try:
                         star_table_row = star_table[(star_table['name'] == local_name)&(star_table['sheetn'] == sheetn)]
                     except:
                         star_table_row = None
-
-                    # ideally get JD from the local table -
-                    # this will always be the value of the last observation
-                    if  star_table_row is not None:
-                        if len(star_table_row['lastobs']) > 0:
-                            jd = float(star_table_row['lastobs'][0])
-
-                    # if the above fails, we should be able to use the observing log
-                    # but this is JUST the UT hour and minute, not the day so we have to use the otime
-                    # value to calculate the full JD
-                    if jd is None:
-                        if isinstance(otime,float):
-                            t = datetime.utcfromtimestamp(otime)
-                        else:
-                            hr, mn = otime
-                            t = datetime(ctime.year, ctime.month, ctime.day, hr, mn)
-                        jd = float(ephem.julian_date(t))
+                        
+                    jd = observedJD(star_table_row,otime,ctime)
+                    
                     try:
                         pastdate = float(v[col])
                     except:
