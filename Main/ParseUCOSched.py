@@ -687,6 +687,26 @@ def observedJD(star_table_row,otime,ctime):
 
     return jd
 
+def logValues(local_name, obslog, prev):
+
+    if prev < 0:
+        nameidx = obslog.names.index(local_name)
+        # this is the first appearance and the first
+        # observation
+    else:
+        nameidx = obslog.names.index(local_name,prev)
+        # this is any new observation of the same target
+        
+    prev = nameidx
+    # observation details
+    otime = obslog.times[nameidx]
+    taketemp = obslog.temps[nameidx]
+    curowner = obslog.owners[nameidx]
+    if curowner == 'public':
+        curowner = 'RECUR_A100'
+
+    return otime, taketemp, curowner, prev
+
 def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=DEFAULT_CERT,outfn='parsesched.dat',outdir=None):
     """
         Update the online googledex lastobs column assuming things in filename have been observed.
@@ -753,27 +773,12 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=D
 
             if local_name in obslog.names:
                 # We observed this target, so update the cell in the worksheet
-
                 prev = -1
                 for n_appear in range(0,obslog.names.count(local_name)):
                     # a target can be observed more than once a night
-                    if n_appear == 0:
-                        nameidx = obslog.names.index(local_name)
-                        prev = nameidx
-                        # this is the first appearance and the first
-                        # observation
-                    else:
-                        nameidx = obslog.names.index(local_name,prev)
-                        prev = nameidx
-                        # this is any new observation of the same target
 
-                    # observation details
-                    otime = obslog.times[nameidx]
-                    taketemp = obslog.temps[nameidx]
-                    curowner = obslog.owners[nameidx]
-                    if curowner == 'public':
-                        curowner = 'RECUR_A100'
-
+                    otime, taketemp, curowner, prev = logValues(local_name, obslog, prev)
+                    
                     try:
                         star_table_row = star_table[(star_table['name'] == local_name)&(star_table['sheetn'] == sheetn)]
                     except:
