@@ -689,15 +689,9 @@ def observedJD(star_table_row,otime,ctime):
 
 def logValues(local_name, obslog, prev):
 
-    if prev < 0:
-        nameidx = obslog.names.index(local_name)
-        # this is the first appearance and the first
-        # observation
-    else:
-        nameidx = obslog.names.index(local_name,prev)
-        # this is any new observation of the same target
+    nameidx = obslog.names.index(local_name,prev)
         
-    prev = nameidx
+    prev = nameidx+1
     # observation details
     otime = obslog.times[nameidx]
     taketemp = obslog.temps[nameidx]
@@ -773,7 +767,7 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=D
 
             if local_name in obslog.names:
                 # We observed this target, so update the cell in the worksheet
-                prev = -1
+                prev = 0
                 for n_appear in range(0,obslog.names.count(local_name)):
                     # a target can be observed more than once a night
 
