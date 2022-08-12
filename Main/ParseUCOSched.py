@@ -703,13 +703,12 @@ def logValues(local_name, obslog, prev):
 
     return otime, taketemp, curowner, prev
 
-def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=DEFAULT_CERT,outfn='parsesched.dat',outdir=None):
+def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='parsesched.dat',outdir=None):
     """
         Update the online googledex lastobs column assuming things in filename have been observed.
         updateSheetLastobs(filename, sheetn="The Googledex",time=None,certificate=DEFAULT_CERT)
 
         filename - where the observations are logged
-        sheetns - list of sheets that will be updated
         ctime - current time as a time stamp
         certificate - required for authentication
         outfn - the local copy of the star list
