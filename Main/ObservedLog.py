@@ -92,11 +92,6 @@ class ObservedLog():
                             else:
                                 self.sheetns.append(None)
             
-        self.names.reverse()
-        self.times.reverse()
-        self.temps.reverse()
-        self.owners.reverse()
-        self.sheetns.reverse()
         return 
         
 
