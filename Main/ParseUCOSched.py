@@ -627,36 +627,38 @@ def updateLocalStarlist(intime, observed_file="observed_targets",outfn='parsesch
         too_table = None
 
     for name in obslog.names:
-        index = obslog.names.index(name)
-        obstime = obslog.times[index]
-        owner = obslog.owners[index]
-        if owner == 'public':
-            owner = 'RECUR_A100'
 
-        if isinstance(obstime,float):
-            t = datetime.utcfromtimestamp(obstime)
-        else:
-            hr, min = obstime
-            if type(intime) != datetime:
-                intime = datetime.utcnow()
-            t = datetime(intime.year, intime.month, intime.day, hr, min)
+        prev = 0
+        for n_appear in range(0,obslog.names.count(name)):
 
+            obstime, taketemp, owner, prev = logValues(name, obslog, prev)
 
-        jd = round(float(ephem.julian_date(t)), 4)
+            if owner == 'public':
+                owner = 'RECUR_A100'
 
-        selection = (star_table['name'] == name) & (star_table['sheetn'] == owner)
-        if any(selection):
-            if np.any(jd > star_table['lastobs'][selection]):
-                star_table['lastobs'][selection] = jd
-                star_table['nobs'][selection] += 1
-                star_table['night_obs'][selection] += 1
-                apflog( "Updating local googledex star %s in program %s to %.4f" % (name,owner, jd),echo=True)
-        elif too_table is not None:
-            selection = (too_table['name'] == name) & (too_table['sheetn'] == owner)
-            if any(selection) and jd > too_table['lastobs'][selection]:
-                apflog( "Updating ToO target %s from time %.4f to %.4f" % (name, too_table['lastobs'][selection], jd),echo=True)
-                too_table['lastobs'][selection] = jd
-                too_table['nobs'][selection] += 1
+            if isinstance(obstime,float):
+                t = datetime.utcfromtimestamp(obstime)
+            else:
+                hr, min = obstime
+                if type(intime) != datetime:
+                    intime = datetime.utcnow()
+                t = datetime(intime.year, intime.month, intime.day, hr, min)
+
+            jd = round(float(ephem.julian_date(t)), 4)
+
+            selection = (star_table['name'] == name) & (star_table['sheetn'] == owner)
+            if any(selection):
+                if np.any(jd > star_table['lastobs'][selection]):
+                    star_table['lastobs'][selection] = jd
+                    star_table['nobs'][selection] += 1
+                    star_table['night_obs'][selection] += 1
+                    apflog( "Updating local googledex star %s in program %s to %.4f" % (name,owner, jd),echo=True)
+            elif too_table is not None:
+                selection = (too_table['name'] == name) & (too_table['sheetn'] == owner)
+                if any(selection) and jd > too_table['lastobs'][selection]:
+                    apflog( "Updating ToO target %s from time %.4f to %.4f" % (name, too_table['lastobs'][selection], jd),echo=True)
+                    too_table['lastobs'][selection] = jd
+                    too_table['nobs'][selection] += 1
 
     astropy.io.ascii.write(star_table,outfn, format='ecsv', overwrite=True)
     if too_table is not None:
