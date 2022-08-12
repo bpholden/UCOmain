@@ -119,5 +119,8 @@ while observing:
         observing = False
         
         
+print("Updating star list with final observations")
+curtime = ephem.Date(curtime)
+observed, star_table = ParseUCOSched.updateLocalStarlist(curtime.datetime(),outfn=options.infile,observed_file=otfn)
 print ("sun rose")
 outfp.close()
