@@ -752,7 +752,11 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=D
         col = vals[0].index("lastobs")
         nobscol = vals[0].index("Nobs")
         tempcol = vals[0].index("Template")
-
+        try:
+            nightobscol = vals[0].index('night_obs')
+        except:
+            nightobscol = -1
+            
         wait_time = len(vals)
         time.sleep(wait_time)
 
@@ -796,7 +800,11 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=D
                     try:
                         if round(jd, 3) > pastdate and curowner == sheetn:
                             ws.update_cell(i+1, col+1, round(jd, 3) )
-                            ws.update_cell(i+1, nobscol+1, new_nobs ) 
+                            ws.update_cell(i+1, nobscol+1, new_nobs )
+                            if nightobscol >= 0:
+                                ws.update_cell(i+1, nightobscol+1, n_appear+1)
+                                nupdates += 1
+                            
                             nupdates += 2
                             apflog( "Updated %s from %.4f to %.4f and %d in %s" % (v[0],pastdate,round(jd, 3),new_nobs,sheetn),echo=True)
                     except:
@@ -805,6 +813,10 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=D
                             ws.update_cell(i+1, col+1, round(jd,3) )
                             ws.update_cell(i+1, nobscol+1, new_nobs )
                             nupdates += 2
+                            if nightobscol >= 0:
+                                ws.update_cell(i+1, nightobscol+1, n_appear+1)
+                                nupdates += 1
+
                     try:
                         have_temp = v[tempcol]
                         if taketemp == "Y" and have_temp == "N" and curowner == sheetn:
@@ -813,6 +825,13 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=D
                             apflog( "Updated %s to having a template in %s" % (v[0],sheetn),echo=True)
                     except:
                         apflog( "Error logging template obs for %s" % (v[0]),echo=True,level='error')
+            else:
+                if nightobscol >= 0:
+                    apflog("%d %s" % (i,str(v[nightobscol])),echo=True)
+                    if i > 0:
+                        ws.update_cell(i+1, nightobscol+1, 0)
+                        apflog( "Updated %s (in columnd %d) to have %d" % (v[0],nightobscol+1,0),echo=True)
+                        nupdates += 1
             # bottom of loop
 
     return nupdates
