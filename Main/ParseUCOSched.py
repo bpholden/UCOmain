@@ -825,12 +825,12 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
                     except:
                         apflog( "Error logging template obs for %s" % (v[0]),echo=True,level='error')
             else:
-                if nightobscol >= 0:
-                    apflog("%d %s" % (i,str(v[nightobscol])),echo=True)
-                    if i > 0:
-                        ws.update_cell(i+1, nightobscol+1, 0)
-                        apflog( "Updated %s (in columnd %d) to have %d" % (v[0],nightobscol+1,0),echo=True)
-                        nupdates += 1
+                pass
+                # if nightobscol >= 0:
+                #     if i > 0:
+                #         ws.update_cell(i+1, nightobscol+1, 0)
+                #         apflog( "Updated %s (in columnd %d) to have %d" % (v[0],nightobscol+1,0),echo=True)
+                #         nupdates += 1
             # bottom of loop
 
     return nupdates
