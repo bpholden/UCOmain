@@ -797,10 +797,11 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=D
                             nupdates += 2
                             apflog( "Updated %s from %.4f to %.4f and %d in %s" % (v[0],pastdate,round(jd, 3),new_nobs,sheetn),echo=True)
                     except:
-                        apflog("Updated %s to %.4f and %d in %s" % (v[0],round(jd,3),1,sheetn),echo=True)
-                        ws.update_cell(i+1, col+1, round(jd,3) )
-                        ws.update_cell(i+1, nobscol+1, 1 )
-                        nupdates += 2
+                        if curowner == sheetn:
+                            apflog("Updated %s to %.4f and %d in %s" % (v[0],round(jd,3),1,sheetn),echo=True)
+                            ws.update_cell(i+1, col+1, round(jd,3) )
+                            ws.update_cell(i+1, nobscol+1, new_nobs )
+                            nupdates += 2
                     try:
                         have_temp = v[tempcol]
                         if taketemp == "Y" and have_temp == "N" and curowner == sheetn:
