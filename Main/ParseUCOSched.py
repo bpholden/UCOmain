@@ -785,10 +785,11 @@ def updateSheetLastobs(observed_file, sheetns=["Bstar"],ctime=None,certificate=D
                     except:
                         pastdate = 0.0
                     try:
-                        n = int(v[nobscol])
+                        nobs = int(v[nobscol])
                     except:
-                        n = 0
-                    new_nobs = n + n_appear + 1
+                        nobs = 0
+                        
+                    new_nobs = nobs + n_appear + 1
                     # update_cell(row, col, val) - col and row are 1 indexed
                     try:
                         if round(jd, 3) > pastdate and curowner == sheetn:
