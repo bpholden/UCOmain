@@ -101,18 +101,18 @@ def updateHourTable(hour_table,observed,dt,outfn='hour_table',outdir=None):
     # in reverse time order, so most recent target observed is first.
     nobj = len(observed.names)
     for i in range(0,nobj):
-            own = observed.owners[i]
-            if own not in list(hours.keys()):
-                    hours[own] = 0.0
+        own = observed.owners[i]
+        if own not in list(hours.keys()):
+            hours[own] = 0.0
 
     cur = dt
     for i in range(0,nobj):
-            hr, mn = observed.times[i]
-            prev = datetime(dt.year,dt.month,dt.day,hr,mn)
-            diff = cur - prev
-            hourdiff = (diff.days * 24 + diff.seconds / 3600.)
-            if hourdiff > 0:
-                hours[observed.owners[i]] += hourdiff
+        hr, mn = observed.times[i]
+        prev = datetime(dt.year,dt.month,dt.day,hr,mn)
+        diff = cur - prev
+        hourdiff = (diff.days * 24 + diff.seconds / 3600.)
+        if hourdiff > 0:
+            hours[observed.owners[i]] += hourdiff
             cur = prev
 
     for ky in list(hours.keys()):
