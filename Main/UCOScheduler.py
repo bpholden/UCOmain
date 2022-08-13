@@ -98,7 +98,10 @@ def updateHourTable(hour_table,observed,dt,outfn='hour_table',outdir=None):
     hours = dict()
 
     # observed objects have lists as attributes
-    # in reverse time order, so most recent target observed is first.
+    # reverse time order, so most recent target observed is first.
+
+    observed.reverse()
+    
     nobj = len(observed.names)
     for i in range(0,nobj):
         own = observed.owners[i]
@@ -125,6 +128,8 @@ def updateHourTable(hour_table,observed,dt,outfn='hour_table',outdir=None):
         hour_table.write(outfn,format='ascii',overwrite=True)
     except Exception as e:
         apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
+
+    observed.reverse()
 
     return hour_table
 
