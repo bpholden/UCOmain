@@ -94,56 +94,26 @@ class ObservedLog():
             
         return 
         
+    def reverse(self):
 
-def getObserved(filename):
-    """ getObserved parses a file to find the object names and times
-    names, times, temps = getObserved(filename)
-    names - list of names, must be first column of file called filename
-    times - times either as a timestamp in second column or a (hour,minute) tuple from a scriptobs line
-    temps - a list of template observations
-
-    """
-    names = []
-    times = []
-    temps = []
-    nobs = dict()
-    try:
-        f = open(filename, 'r')
-    except IOError:
-        apflog( "Couldn't open %s" % filename,level="warn",echo=True)
-        return names, times, temps
-    else: 
-        for line in f:
-            line = line.strip()
-            if len(line) > 0:
-                if line[0] == '#' or line == "":
-                    pass
-                else:
-                    ls = line.split()
-                    names.append(ls[0])
-                    if len(ls) > 15:
-                        times.append( (int(ls[14].split('=')[1]), int(ls[15].split('=')[1])) )
-                    else:
-                        times.append(float(ls[1]))
-                    length = len(ls)
-                    mtch = re.search("temp\=Y",ls[length-1])
-                    if mtch:
-                        temps.append("Y")
-                    else:
-                        temps.append("N")
-
-            
-    names.reverse()
-    times.reverse()
-    temps.reverse()
-    return names, times, temps
-	
+        self.names.reverse()
+        self.times.reverse()
+        self.temps.reverse()
+        self.owners.reverse()
+        self.sheetns.reverse()
 
 if __name__ == "__main__":
     fn = 'observed_targets.1'
     if os.path.exists(fn):
         ol = ObservedLog(filename=fn)
         print(ol)
+        print(ol.names)
+        print(ol.times)
+        print(ol.temps)
+        print(ol.owners)
+        print(ol.sheetns)
+
+        ol.reverse()
         print(ol.names)
         print(ol.times)
         print(ol.temps)
