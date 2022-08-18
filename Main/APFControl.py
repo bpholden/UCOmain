@@ -193,7 +193,11 @@ class APF:
 
     eosgcam    = ktl.Service('eosgcam')
     fits3pre   = eosgcam('FITS3PRE')
+    fits3dir   = eosgcam('FITS3DIR')    
     save3d     = eosgcam('SAVE3D')
+    fits2pre   = eosgcam('FITS2PRE')
+    fits2dir   = eosgcam('FITS2DIR')    
+    save2d     = eosgcam('SAVE2D')
     gexptime   = eosgcam('GEXPTIME')
     sumframe   = eosgcam('SUMFRAME')
 
