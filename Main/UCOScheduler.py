@@ -48,7 +48,8 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
 
     started_doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
     if np.any(started_doubles):
-        redo = started_doubles & (cadence_check > star_table['night_cad'])
+        redo = started_doubles & (cadence_check > (star_table['night_cad'] - 10 / (24*60)))
+        redo = redo & (cadence_check < (star_table['night_cad'] + 10 / (24*60)))
     else:
         redo = np.zeros(1,dtype=bool)
 
