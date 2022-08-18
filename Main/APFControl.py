@@ -1013,50 +1013,53 @@ class APF:
             APFTask.waitFor(self.task, True, timeout=10)
             apflog("Test Mode: Would be running focusinstr.")
             return True
-        else:
-            supplies = ('PS1_48V_ENA', 'PS2_48V_ENA')
-            for keyword in supplies:
-                try:
-                    value = self.motor[keyword].read(binary=True,timeout=2)
-                except Exception as e:
-                    apflog("Cannot read status of PS's:  %s"  % e,level='alert', echo=True)
+
+        supplies = ('PS1_48V_ENA', 'PS2_48V_ENA')
+        for keyword in supplies:
+            try:
+                value = self.motor[keyword].read(binary=True,timeout=2)
                 if value != 1:
                     self.motor[keyword].write('Enabled', wait=False)
+            except Exception as e:
+                apflog("Cannot read status of PS's:  %s"  % e,level='alert', echo=True)
 
-            apflog("Running focusinstr routine.",echo=True)
+        apflog("Running focusinstr routine.",echo=True)
 
-            execstr = " ".join(['focusinstr',flags])
-            cmd = os.path.join(SCRIPTDIR,execstr)
-            result, code = apftaskDo(cmd,cwd=os.getcwd())
-            if not result:
-                apflog("focusinstr failed with code %d" % code, echo=True)
-                try:
-                    resultd = APFTask.get('FOCUSINSTR',('LASTFOCUS','PHASE'))
-                    if resultd['PHASE'] == 'Cleanup':
-                        apflog('focusinstr failed in or after cleanup, proceeding with value %s' % (str(resultd['LASTFOCUS'])), echo=True)
-                        result = True
-                except:
-                    result = False
-
-            expression="($apftask.FOCUSINSTR_STATUS == 3)"
-            if not APFTask.waitFor(self.task,True,expression=expression,timeout=30):
-                try:
-                    resultd = APFTask.get('FOCUSINSTR',('LASTFOCUS','PHASE'))
-                    if resultd['PHASE'] == 'Cleanup':
-                        apflog('focusinstr failed in or after cleanup, proceeding with value %s' % (str(resultd['LASTFOCUS'])), echo=True)
-                        result = True
-                except:
-                    apflog("focusinstr failed, exited with Exited/Unknown", echo=True, level="error")
-                    result = False
-            expression="($apftask.FOCUSINSTR_LASTFOCUS > 0)"
-            if not APFTask.waitFor(self.task,True,expression=expression,timeout=1):
-                apflog("focusinstr failed to find an adequate focus", echo=True, level="error")
+        execstr = " ".join(['focusinstr',flags])
+        cmd = os.path.join(SCRIPTDIR,execstr)
+        result, code = apftaskDo(cmd,cwd=os.getcwd())
+        if not result:
+            apflog("focusinstr failed with code %d" % code, echo=True)
+            try:
+                resultd = APFTask.get('FOCUSINSTR',('LASTFOCUS','PHASE'))
+                if resultd['PHASE'] == 'Cleanup':
+                    apflog('focusinstr failed in or after cleanup, proceeding with value %s' % (str(resultd['LASTFOCUS'])), echo=True)
+                    result = True
+            except:
                 result = False
-            expression="($apftask.FOCUSINSTR_MEASURED == 1)"
-            if not APFTask.waitFor(self.task,True,expression=expression,timeout=1):
-                apflog("focusinstr fit to the data failed", echo=True, level="error")
+
+        expression="($apftask.FOCUSINSTR_STATUS == 3)"
+        if not APFTask.waitFor(self.task,True,expression=expression,timeout=30):
+            try:
+                resultd = APFTask.get('FOCUSINSTR',('LASTFOCUS','PHASE'))
+                if resultd['PHASE'] == 'Cleanup':
+                    apflog('focusinstr failed in or after cleanup, proceeding with value %s' % (str(resultd['LASTFOCUS'])), echo=True)
+                    result = True
+            except:
+                apflog("focusinstr failed, exited with Exited/Unknown", echo=True, level="error")
                 result = False
-            return result
+                
+        expression="($apftask.FOCUSINSTR_LASTFOCUS > 0)"
+        if not APFTask.waitFor(self.task,True,expression=expression,timeout=1):
+            apflog("focusinstr failed to find an adequate focus", echo=True, level="error")
+            result = False
+            
+        expression="($apftask.FOCUSINSTR_MEASURED == 1)"
+        if not APFTask.waitFor(self.task,True,expression=expression,timeout=1):
+            apflog("focusinstr fit to the data failed", echo=True, level="error")
+            result = False
+            
+        return result
 
 
     def findStar(self):
@@ -1081,8 +1084,8 @@ class APF:
             apflog(out,echo=True)
             apflog(err, level="warn",echo=True)
             return False
-        else:
-            return out.split()
+
+        return out.split()
 
     def slew(self,star):
 
@@ -1097,11 +1100,12 @@ class APF:
         cmd +=  ' %s %s %f %f %s %s %d ' % ("reference",star[0],ra, dec,star[4],star[5],210)
         if self.test:
             apflog("Would slew by executing %s" %(cmd), echo=True)
-        else:
-            apflog("Slewing by executing %s" %(cmd), echo=True)
-            result, code = apftaskDo(cmd,cwd=os.path.curdir,debug=True)
-            if not result:
-                apflog("Failed at slewlock - check logs could be a slew failure or a failure to acquire: %s" %(code), level="error", echo=True)
+            return True
+
+        apflog("Slewing by executing %s" %(cmd), echo=True)
+        result, code = apftaskDo(cmd,cwd=os.path.curdir,debug=True)
+        if not result:
+            apflog("Failed at slewlock - check logs could be a slew failure or a failure to acquire: %s" %(code), level="error", echo=True)
 
         return result
 
