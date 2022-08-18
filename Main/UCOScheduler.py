@@ -33,6 +33,9 @@ BLANK = 'B'
 FIRST = '1'
 LAST = 'L'
 
+BUFFERSEC = 600
+BUFFER = BUFFERSEC / (24.*60*60)
+
 def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table=None):
     # make this a function, have it return the current priorities, than change references to the star_table below into references to the current priority list
     new_pri = np.zeros_like(star_table['pri'])
@@ -48,8 +51,8 @@ def computePriorities(star_table,cur_dt,observed=None,hour_table=None,rank_table
 
     started_doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
     if np.any(started_doubles):
-        redo = started_doubles & (cadence_check > (star_table['night_cad'] - 10 / (24*60)))
-        redo = redo & (cadence_check < (star_table['night_cad'] + 10 / (24*60)))
+        redo = started_doubles & (cadence_check > (star_table['night_cad'] - BUFFER))
+        redo = redo & (cadence_check < (star_table['night_cad'] + BUFFER))
     else:
         redo = np.zeros(1,dtype=bool)
 
@@ -269,11 +272,11 @@ def timeCheck(star_table,totexptimes,dt,hour_table):
     started_doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
     if np.any(started_doubles):
         cadence_check = (ephem.julian_date(dt) - star_table['lastobs'])
-        waiting = cadence_check < (star_table['night_cad'] - 10 / (24*60))
+        waiting = cadence_check < (star_table['night_cad'] - BUFFER )
         if np.any(waiting):
             maxexptimes = (star_table['night_cad'] - cadence_check) * 86400
             try:
-                maxexptime = np.min(maxexptimes[waiting & started_doubles]) + 600
+                maxexptime = np.min(maxexptimes[waiting & started_doubles]) + BUFFERSEC
             except ValueError:
                 # this means we have double observations we are waiting for
                 # but they are in the selection window
