@@ -510,8 +510,8 @@ def genStars(star_table):
         for i in range(0,len(star_table['name'])):
             star = ephem.FixedBody()
             star.name = star_table['name'][i]
-            star._ra = ephem.hours(str(":".join([star_table["RA hr"][i], star_table["RA min"][i], star_table["RA sec"][i]])))
-            star._dec = ephem.degrees(str(":".join([star_table["Dec deg"][i], star_table["Dec min"][i], star_table["Dec sec"][i]])))
+            star._ra = ephem.hours(":".join([str(star_table["RA hr"][i]), str(star_table["RA min"][i]), str(star_table["RA sec"][i])]))
+            star._dec = ephem.degrees(":".join([str(star_table["Dec deg"][i]), str(star_table["Dec min"][i]), str(star_table["Dec sec"][i])]))
             stars.append(star)
 
     return stars
