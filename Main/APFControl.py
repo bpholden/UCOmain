@@ -1105,7 +1105,18 @@ class APF:
 
         return result
 
+    def saveMovie(self):
+        now = datetime.now()
+        self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day, tel['TARGNAME'].read()))
+        self.fits3dir.write('/data/apfguide')        
+        self.save3d.write(True)
+        return
 
+    def stopMovie(self):
+        self.save3d.write(False)
+        self.fits3dir.write('/tmp/')        
+        return
+        
     def runFocusTel(self):
         """Runs the telescope focus routine."""
         el = self.tel['EL'].read(binary=True)
