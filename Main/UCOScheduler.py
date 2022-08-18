@@ -266,6 +266,15 @@ def timeCheck(star_table,totexptimes,dt,hour_table):
         # necessary exposure times, relying on the
         # exposure meter
 
+    started_doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
+    if np.any(started_doubles):
+        cadence_check = (ephem.julian_date(dt) - star_table['lastobs'])
+        waiting = cadence_check < (star_table['night_cad'] - 10 / (24*60))
+        if np.any(waiting):
+            maxexptimes = (star_table['night_cad'] - cadence_check) * 86400
+            maxexptime = np.min(maxexptimes[waiting & started_doubles]) + 600
+            
+
     time_check = totexptimes <= maxexptime
 
     return time_check
