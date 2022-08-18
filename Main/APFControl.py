@@ -1131,22 +1131,28 @@ class APF:
             APFTask.waitFor(self.task, True, timeout=10)
             apflog("Test Mode: Would be running focus_telescope.",echo=True)
             return True
-        else:
-            apflog("Running focus_telescope routine.",echo=True)
-            cmd = os.path.join(SCRIPTDIR,'focus_telescope -c %.3f' % (float(self.predTelFocus())*1000.0))
-            result, code = apftaskDo(cmd,cwd=os.path.curdir)
-            try:
-                self.guide['MODE'].write('Guide')
-            except:
-                apflog('Cannot modify apfguide.MODE to Guide.',level='error',echo=True)
 
-            if not result:
-                apflog("focustel failed with code %d" % code, echo=True)
-                expression="($apftask.FOCUSINSTR_STATUS != 0) and ($apftask.FOCUSINSTR_STATUS != 1) "
-                if not APFTask.waitFor(self.task,True,expression=expression,timeout=30):
-                    apflog("focus_telescope failed to exit" ,echo=True)
-                return result
-            return True
+        self.saveMovie()
+        
+        apflog("Running focus_telescope routine.",echo=True)
+        cmd = os.path.join(SCRIPTDIR,'focus_telescope -c %.3f' % (float(self.predTelFocus())*1000.0))
+        result, code = apftaskDo(cmd,cwd=os.path.curdir)
+
+        self.stopMovie()
+        
+        try:
+            self.guide['MODE'].write('Guide')
+        except:
+            apflog('Cannot modify apfguide.MODE to Guide.',level='error',echo=True)
+
+        if not result:
+            apflog("focustel failed with code %d" % code, echo=True)
+            expression="($apftask.FOCUSINSTR_STATUS != 0) and ($apftask.FOCUSINSTR_STATUS != 1) "
+            if not APFTask.waitFor(self.task,True,expression=expression,timeout=30):
+                apflog("focus_telescope failed to exit" ,echo=True)
+            return result
+            
+        return True
 
     def runAutoexposure(self,ind=5):
 
