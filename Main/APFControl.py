@@ -1622,6 +1622,8 @@ class APF:
                 apflog("Prep-obs returned error code %d. Targeting object has failed." % (ret_code),level='error',echo=True)
                 return
 
+        self.decker.write('W',wait=False)
+        
         self.DMReset()
         apflog("Slewing to lower el",echo=True)
         result, ret_code = apftaskDo('slew -e 75')
