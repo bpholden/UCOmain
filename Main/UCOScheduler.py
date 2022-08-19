@@ -276,7 +276,7 @@ def timeCheck(star_table,totexptimes,dt,hour_table):
         if np.any(waiting):
             maxexptimes = (star_table['night_cad'] - cadence_check) * 86400
             try:
-                maxexptime = np.min(maxexptimes[waiting & started_doubles]) + BUFFERSEC
+                maxexptime = np.min(maxexptimes[waiting & started_doubles]) + BUFFERSEC - 180
             except ValueError:
                 # this means we have double observations we are waiting for
                 # but they are in the selection window
