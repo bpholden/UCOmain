@@ -1111,7 +1111,7 @@ class APF:
 
     def saveMovie(self):
         now = datetime.now()
-        self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day, tel['TARGNAME'].read()))
+        self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day, self.tel['TARGNAME'].read()))
         self.fits3dir.write('/data/apfguide')        
         self.save3d.write(True)
         return
