@@ -1038,22 +1038,17 @@ class APF:
             except:
                 result = False
 
-        expression="($apftask.FOCUSINSTR_STATUS == 3)"
-        if not APFTask.waitFor(self.task,True,expression=expression,timeout=30):
+        expression="($apftask.FOCUSINSTR_STATUS != 3)"
+        if APFTask.waitFor(self.task,True,expression=expression,timeout=.1):
             try:
                 resultd = APFTask.get('FOCUSINSTR',('LASTFOCUS','PHASE'))
                 if resultd['PHASE'] == 'Cleanup':
                     apflog('focusinstr failed in or after cleanup, proceeding with value %s' % (str(resultd['LASTFOCUS'])), echo=True)
                     result = True
             except:
-                apflog("focusinstr failed, exited with Exited/Unknown", echo=True, level="error")
+                apflog("focusinstr failed, exited with %s" % (self.robot['focusinstr_status'].read()), echo=True, level="error")
                 result = False
                 
-        expression="($apftask.FOCUSINSTR_LASTFOCUS > 0)"
-        if not APFTask.waitFor(self.task,True,expression=expression,timeout=1):
-            apflog("focusinstr failed to find an adequate focus", echo=True, level="error")
-            result = False
-            
         expression="($apftask.FOCUSINSTR_MEASURED == 1)"
         if not APFTask.waitFor(self.task,True,expression=expression,timeout=1):
             apflog("focusinstr fit to the data failed", echo=True, level="error")
