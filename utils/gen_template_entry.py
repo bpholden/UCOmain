@@ -7,44 +7,10 @@ import time
 
 import numpy as np
 
-import ParseGoogledex
 import ExposureCalculations
 import SchedulerConsts as sc
-import UCSCScheduler_V2 as ds
-
-def find_bstar(ras,decs,ra,dec):
-
-
-    distances = np.sqrt((ra - ras)**2 + (dec - decs)**2)
-
-    min_ind = distances.argmin()
-    
-    return min_ind
-
-def make_row(star_table,ind,bstar=False):
-
-    row = []
-
-    row.append(star_table[ind, sc.DS_RA])
-    row.append( star_table[ind, sc.DS_DEC])
-    row.append(star_table[ind, sc.DS_PMRA])
-    row.append(star_table[ind, sc.DS_PMDEC])
-    row.append(star_table[ind, sc.DS_VMAG])
-    row.append(1200)
-    row.append(1e9)
-    row.append( star_table[ind, sc.DS_APFPRI])
-    row.append(0)
-    if bstar:
-        row.append(2)
-    else:
-        if star_table[ind, sc.DS_VMAG] > 10:
-            row.append(9)
-        elif star_table[ind, ds.DS_VMAG] < 8:
-            row.append(5)
-        else:
-            row.append(7)                
-    return row
-
+import UCOScheduler as ds
+import ParseUCOSched
 
 if __name__ == "__main__":
 
@@ -55,23 +21,28 @@ if __name__ == "__main__":
         sys.exit()
 
     fp = open("tonight","a+")
-    allnames, star_table, flags, stars  = ParseGoogledex.parseGoogledex()
-    bstars = np.array([ True if 'HR' in n else False for n in allnames ], dtype=bool)
-    npallnames = np.asarray(allnames)
-    dt = datetime.utcfromtimestamp(int(time.time()))
-    bline = ""
-    for arg in args:
-        if arg in allnames:
-            i = allnames.index(arg)
-            row = make_row(star_table,i)
+    star_table, stars  = ParseUCOSched.parseUCOSched(outfn="googledex.dat")
+    bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
 
-            bstari = find_bstar(star_table[:,sc.DS_RA][bstars],star_table[:,sc.DS_DEC][bstars],star_table[i,sc.DS_RA],star_table[i,sc.DS_DEC])
-            bstarrow = make_row(star_table[bstars],bstari,bstar=True)
+    totexptimes = (star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1))
+
+    dt = datetime.utcfromtimestamp(int(time.time()))
+    apf_obs = ds.makeAPFObs(dt)
+
+    for arg in args:
+        if np.any(star_table['name'] == arg):
+            idx = np.where(star_table['name'] == arg)
+            idx = idx[0][0]
+            stars[idx].compute(apf_obs)
+            res =  ds.makeResult(stars,star_table,totexptimes,star_table['pri'],dt,idx,focval=2,bstar=False)
             
-            line = ds.makeScriptobsLine(allnames[i],row,flags['do'][i],dt,decker="N",I2="N",owner=flags['owner'][i])
-            bline = ds.makeScriptobsLine(npallnames[bstars][bstari],bstarrow,'Y',dt,decker="N",I2="Y",owner='public')            
+            bidx,bfinidx = ds.findBstars(star_table,idx,bstars)
+            bline = ds.makeScriptobsLine(star_table[bstars][bidx],dt,decker="N",I2="Y", owner=res['owner'],focval=2)
+            line  = ds.makeScriptobsLine(star_table[idx],dt,decker="N",I2="N", owner=res['owner'],temp=True)
+            bfinline = ds.makeScriptobsLine(star_table[bstars][bfinidx],dt,decker="N",I2="Y",owner=res['owner'],focval=0)
+
             fp.write(bline + "\n")
-            oline ="%s #  %s\n" % (line,"pri = %s" % (star_table[i, sc.DS_APFPRI])) 
+            oline ="%s #  %s\n" % (line,"pri = %s" % (star_table['pri'][idx])) 
             fp.write(oline)
 
     fp.write(bline + "\n")
