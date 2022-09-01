@@ -52,7 +52,10 @@ def readStarTable(table_filename):
     star_table = astropy.io.ascii.read(table_filename)
 
     for coln in ('mode','obsblock','raoff','decoff','sheetn','owner'):
-        star_table[coln][star_table[coln] == 'None'] = ''
+        try:
+            star_table[coln][star_table[coln] == 'None'] = ''
+        except:
+            pass
 
     return star_table
 
