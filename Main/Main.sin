@@ -442,7 +442,10 @@ if __name__ == '__main__':
                     if ktl.read("apftask","focusinstr_status",binary=True) > 3 or fstart < mstart:
                         # this means that the thread died, usually because of an uncaught exception
                         apflog("Calibrate thread has died!", level='Alert', echo=True)
-
+                        try:
+                            ktl.write("apftask","focusinstr_status",3,wait=False,binary=True)
+                        except:
+                            pass
 
             if debug:
                 print('Observe is running.')
