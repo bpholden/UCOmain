@@ -439,7 +439,7 @@ if __name__ == '__main__':
             if calibrate:
                 if calibrate.isAlive() is False and ktl.read("apftask","focusinstr_status",binary=True) != 3:
                     fstart = astropy.time.Time(ktl.read("apftask","focusinstr_last_start",binary=True),format='unix')
-                    if ktl.read("apftask","focusinstr_status",binary=True) > 3 or fstart < mstart:
+                    if (ktl.read("apftask","focusinstr_status",binary=True)) > 3 and (fstart < mstart):
                         # this means that the thread died, usually because of an uncaught exception
                         apflog("Calibrate thread has died!", level='Alert', echo=True)
                         try:
