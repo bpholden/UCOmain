@@ -301,7 +301,6 @@ class APF:
         self.focussta.monitor()
         
         self.lastopen.monitor()
-        self.lastopen.callback(self.timeSinceOpenMon)
         
         # Grab some initial values for the state of the telescope
 
@@ -605,20 +604,6 @@ class APF:
             self.restart(name,host)
         return
 
-    def timeSinceOpenMon(self,opentime):
-        if opentime['populated'] == False:
-            return
-        try:
-            ts = opentime.binary
-        except Exception as e:
-            self.msg = "%s %s" % (type(e),e)
-            return
-
-        self.delta_t = time.time() - ts
-        
-        return
-    
-        
     ## end of callbacks for monitoring stuff
 
 
