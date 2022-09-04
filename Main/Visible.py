@@ -12,7 +12,7 @@ import SchedulerConsts
 
 
 def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATION_HIGH_MIN, min_el=SchedulerConsts.TARGET_ELEVATION_MIN,
-                   max_el=SchedulerConsts.TARGET_ELEVATION_MAX,shiftwest=False):
+                   max_el=SchedulerConsts.TARGET_ELEVATION_MAX,shiftwest=False,delta_t=0):
     """ Args:
             stars: A list of pyephem bodies to evaluate visibility of
             observer: A pyephem observer to use a the visibility reference
@@ -39,9 +39,12 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
     sun_az = np.degrees(sun.az)
 
     bottom_angle = SchedulerConsts.SUNEL_STARTLIM-15 # typically -24 degrees
-    
+
     if sun_el > (bottom_angle) and sun_az > 180 and shiftwest:
         offset = 3*(sun_el - bottom_angle) # note, this is positive
+        preferred_angle = (90 - offset)
+    elif delta_t < 3600 and shiftwest:
+        offset = 45*(delta_t/3600.)
         preferred_angle = (90 - offset)
     else:
         offset = 0.0
