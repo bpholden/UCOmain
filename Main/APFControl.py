@@ -213,7 +213,6 @@ class APF:
         self.test = test
         self.task = task
         self.desired_outfile = None
-        self.delta_t = 0
         
         try:
             self.eosgcam['GENABLE'].write(True,binary=True)
@@ -325,7 +324,7 @@ class APF:
         s += "Wind = %3.1f mph (APF) %3.1f mph (Shane) \n" % (np.average(self.mon_lists['M5WIND']),np.average(self.mon_lists['M3WIND']))
         s += "Slowdown = %5.2f x\n" % self.slowdown
         s += "Last open time = %.2f sec\n" % (self.lastopen.binary)
-        s += "Time since opening = %6.2f sec\n" % self.delta_t
+        s += "Time since opening = %6.2f sec\n" % (time.time() - self.lastopen.binary)
         s += "Msg = %s\n" % self.msg
         s += "countrate = %5.2g cts/s\n" % self.countrate
         s += "kcountrate = %5.2g cts/s\n" % self.kcountrate
