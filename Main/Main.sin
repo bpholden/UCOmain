@@ -443,6 +443,7 @@ if __name__ == '__main__':
                         # this means that the thread died, usually because of an uncaught exception
                         apflog("Calibrate thread has died!", level='Alert', echo=True)
                         try:
+                            # this gets set to turn the alarm
                             ktl.write("apftask","focusinstr_status",3,wait=False,binary=True)
                         except:
                             pass
