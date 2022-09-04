@@ -163,7 +163,8 @@ class APF:
     focussta     = robot['FOCUSINSTR_STATUS']
     ucamcmd      = robot['UCAMLAUNCHER_UCAM_COMMAND']
     lastopen     = robot['OPENUP_LAST_SUCCESS']
-
+    msg = ""
+    
     ucam       = ktl.Service('apfucam')
     outfile    = ucam['OUTFILE']
     elapsed    = ucam['ELAPSED']
@@ -325,6 +326,7 @@ class APF:
         s += "Wind = %3.1f mph (APF) %3.1f mph (Shane) \n" % (np.average(self.mon_lists['M5WIND']),np.average(self.mon_lists['M3WIND']))
         s += "Slowdown = %5.2f x\n" % self.slowdown
         s += "Time since opening = %6.2f sec\n" % self.delta_t
+        s += "Msg = %s" % self.msg
         s += "countrate = %5.2g cts/s\n" % self.countrate
         s += "kcountrate = %5.2g cts/s\n" % self.kcountrate
         s += "ncountrate = %d frames \n" % self.ncountrate
@@ -606,8 +608,9 @@ class APF:
         if opentime['populated'] == False:
             return
         try:
-            ts = opentime['binary']
-        except:
+            ts = opentime.binary
+        except Exception as e:
+            self.msg = "%s %s" % (type(e),e)
             return
 
         self.delta_t = time.time() - ts
