@@ -325,8 +325,9 @@ class APF:
         s += "Front/Rear Shutter=%4.2f / %4.2f\n"%(self.fspos, self.rspos)
         s += "Wind = %3.1f mph (APF) %3.1f mph (Shane) \n" % (np.average(self.mon_lists['M5WIND']),np.average(self.mon_lists['M3WIND']))
         s += "Slowdown = %5.2f x\n" % self.slowdown
+        s += "Last open time = %.2f sec\n" % (self.lastopen)
         s += "Time since opening = %6.2f sec\n" % self.delta_t
-        s += "Msg = %s" % self.msg
+        s += "Msg = %s\n" % self.msg
         s += "countrate = %5.2g cts/s\n" % self.countrate
         s += "kcountrate = %5.2g cts/s\n" % self.kcountrate
         s += "ncountrate = %d frames \n" % self.ncountrate
