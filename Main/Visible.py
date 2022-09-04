@@ -43,7 +43,7 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
     if sun_el > (bottom_angle) and sun_az > 180 and shiftwest:
         offset = 3*(sun_el - bottom_angle) # note, this is positive
         preferred_angle = (90 - offset)
-    elif delta_t < 3600 and shiftwest:
+    elif delta_t < 3600 and shiftwest and delta_t > 0:
         offset = 45*(delta_t/3600.)
         preferred_angle = (90 - offset)
     else:
