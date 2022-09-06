@@ -376,7 +376,7 @@ class Observe(threading.Thread):
             self.focval = self.apf.setAutofocVal()
 
             self.checkFiles()
-            delta_t = time.time() - apf.lastopen.binary
+            delta_t = time.time() - self.apf.lastopen.binary
             self.target = ds.getNext(time.time(), seeing, slowdown, bstar=self.obsBstar, \
                                          sheetns=self.sheetn, owner=self.owner, template=self.doTemp, \
                                          focval=self.focval,rank_sheetn=self.rank_tablen,delta_t=delta_t)
