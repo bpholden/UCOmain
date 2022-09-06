@@ -895,21 +895,24 @@ if __name__ == '__main__':
     starttime = time.time()
     result = getNext(starttime, 7.99, 0.4, bstar=True,sheetns=sheet_list,rank_sheetn=rank_tablen)
     ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
-    starttime += 400
+    ot.close()
+    delta_t = 400
+    starttime += delta_t
     for i in range(5):
 
-        result = getNext(starttime, 7.99, 0.4, bstar=False,sheetns=sheet_list,template=True,rank_sheetn=rank_tablen)
+        result = getNext(starttime, 7.99, 0.4, bstar=False,sheetns=sheet_list,template=True,rank_sheetn=rank_tablen,delta_t=delta_t)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
         if result is None:
             print("Get None target")
-        else:
-            for k in result:
-                print(k, result[k])
+            
         while len(result["SCRIPTOBS"]) > 0:
+            ot = open(otfn,"a+")
             ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
-            starttime += result["EXP_TIME"]
-
+            ot.close()
+            starttime += result["TOTEXP_TIME"]
+            delta_t += result["TOTEXP_TIME"]
+            
     print("Done")
     ot.close()
     print("Testing templates")
