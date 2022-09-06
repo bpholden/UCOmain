@@ -775,9 +775,11 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
         # We just need a B star
         apflog("getNext(): Selecting B stars",echo=True)
         available = available & bstars
+        shiftwest = False
     else:
         apflog("getNext(): Culling B stars",echo=True)
         available = available & np.logical_not(bstars)
+        shiftwest = True
 
     # Is the exposure time too long?
     apflog("getNext(): Removing really long exposures",echo=True)
@@ -791,7 +793,7 @@ def getNext(ctime, seeing, slowdown, bstar=False,template=False,sheetns=["RECUR_
 
     apflog("getNext(): Computing star elevations",echo=True)
     fstars = [s for s,_ in zip(stars,available) if _ ]
-    vis,star_elevations,fin_star_elevations, scaled_els = Visible.visible(apf_obs, fstars, totexptimes[available],shiftwest=True)
+    vis,star_elevations,fin_star_elevations, scaled_els = Visible.visible(apf_obs, fstars, totexptimes[available],shiftwest=shiftwest)
     currently_available = available
     if len(star_elevations) > 0:
         currently_available[available] = currently_available[available] & vis
