@@ -1,23 +1,23 @@
 from __future__ import print_function
 
 from datetime import datetime, timedelta
+import time
+
 import ephem
 import numpy as np
-import os
-import sys
-import time
 
 import SchedulerConsts
 
 
 
-def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATION_HIGH_MIN, min_el=SchedulerConsts.TARGET_ELEVATION_MIN,
-                   max_el=SchedulerConsts.TARGET_ELEVATION_MAX,shiftwest=False,delta_t=0):
+def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATION_HIGH_MIN, \
+                min_el=SchedulerConsts.TARGET_ELEVATION_MIN, \
+                   max_el=SchedulerConsts.TARGET_ELEVATION_MAX, shiftwest=False, delta_t=0):
     """ Args:
             stars: A list of pyephem bodies to evaluate visibility of
             observer: A pyephem observer to use a the visibility reference
             obs_len: A list of observation lengths ( Seconds ). This is the time frame for which visibility is checked
-            pref_min_el: Preferred minimum body elevation to be visible ( degrees )            
+            pref_min_el: Preferred minimum body elevation to be visible ( degrees )
             min_el: The minimum body elevation to be visible ( degrees ) - only use this if star never goes above preferred limit
             max_el: The maximum body elevation to be visible ( degrees )
         Returns:
@@ -146,7 +146,7 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
 if __name__ == '__main__':
     # Generate a pyephem observer for the APF
     apf_obs = ephem.Observer()
-    apf_obs.lat  = '37:20:33.1'
+    apf_obs.lat = '37:20:33.1'
     apf_obs.long = '-121:38:17.7'
     apf_obs.elevation = 1274
     # Minimum observation to observe things at
@@ -154,16 +154,16 @@ if __name__ == '__main__':
     apf_obs.date = datetime.utcfromtimestamp(int(time.time()))
 
     star = ephem.FixedBody()
-    star._ra = ephem.hours(":".join(["1", "44", "4.083" ]))
+    star._ra = ephem.hours(":".join(["1", "44", "4.083"]))
     star._dec = ephem.degrees(":".join(["-15", "56", "14.93"]))
-    ret, se, fe, sce = visible(apf_obs,[star],[0.])
-    print (ret, se, fe)
-    ret, se, fe, sce = visible(apf_obs,[star],[400.])
-    print (ret, se, fe, sce)
+    ret, se, fe, sce = visible(apf_obs, [star], [0.])
+    print(ret, se, fe)
+    ret, se, fe, sce = visible(apf_obs, [star], [400.])
+    print(ret, se, fe, sce)
 
     
     star = ephem.FixedBody()
-    star._ra = ephem.hours(":".join(["1", "44", "4.083" ]))
+    star._ra = ephem.hours(":".join(["1", "44", "4.083"]))
     star._dec = ephem.degrees(":".join(["-15", "56", "14.93"]))
-    ret, se, fe, sce = visible(apf_obs,[star],[400.],)
-    print (ret, se, fe, sce)
+    ret, se, fe, sce = visible(apf_obs, [star], [400.],)
+    print(ret, se, fe, sce)
