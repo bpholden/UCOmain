@@ -693,9 +693,9 @@ class Observe(threading.Thread):
 
 
             # If scriptobs is running and waiting for input, give it a target
-            if (running == True) and (float(cursunel) < sunel_lim) and (self.apf.sop.read().strip() == "Input"):
+            if running and (float(cursunel) < sunel_lim) and (self.apf.sop.read().strip() == "Input"):
                 apflog("Entering target section", echo=True)
-                if self.fixedList is None or self.shouldStartList() == False:
+                if self.fixedList is None or not self.shouldStartList():
                     self.lastObsSuccess = self.checkObsSuccess()
                     self.checkStar(haveobserved)
 
@@ -705,7 +705,7 @@ class Observe(threading.Thread):
                     APFTask.waitfor(self.task, True, timeout=15)
 
                     haveobserved = True
-                elif self.starttime != None and self.shouldStartList():
+                elif self.starttime is not None and self.shouldStartList():
                     apflog("Observing a fixed list called %s" % (self.fixedList), echo=True)
                     tot = readStarlistFile()
                     if tot == 0:
@@ -722,7 +722,7 @@ class Observe(threading.Thread):
 
             # If the sun is rising and we are finishing an observation
             # Send scriptobs EOF. This will shut it down after the observation
-            if float(cursunel) >= sunel_lim and running == True:
+            if float(cursunel) >= sunel_lim and running:
                 APFTask.set(self.task, suffix="MESSAGE", value="Last call", wait=False)
                 if self.scriptobs is None:
                     apflog("Robot claims to be running, but no self.scriptobs instance can be found. Instead calling killRobot().", echo=True)
@@ -735,7 +735,7 @@ class Observe(threading.Thread):
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
 
             # If the sun is rising and scriptobs has stopped, run closeup
-            if float(cursunel) > sunel_lim and running == False and rising == True:
+            if float(cursunel) > sunel_lim and not running and rising:
                 apflog("Closing due to sun elevation. Sunel = % 4.2f" % float(cursunel), echo=True)
                 APFTask.set(self.task, suffix="MESSAGE", value="Closing, sun is rising", wait=False)
                 if self.apf.isOpen()[0]:
@@ -752,7 +752,7 @@ class Observe(threading.Thread):
 
             # Open
             if self.apf.openOK and self.canOpen and not self.badweather:
-                APFTask.phase(self.task, "Watching")
+                APFTask.phase(self.task, "Observing")
                 if not self.apf.isReadyForObserving()[0] and float(cursunel) < SchedulerConsts.SUNEL_HOR:
                     if float(cursunel) > sunel_lim and not rising:
                         APFTask.phase(self.task, "Watching")
@@ -829,11 +829,14 @@ class Observe(threading.Thread):
                         apflog("Error: Cannot clear emergency stop, sleeping for 600 seconds", level="error")
                         APFTask.waitFor(self.task, True, timeout=600)
 
-
+            else:
+                close_mesg = "open_ok = %s canOpen = %s dewTooClose = %s badweather = %s" \
+                  % (self.apf.openOK, self.canOpen, self.apf.dewTooClose, self.badweather)
+                apflog(close_mesg, echo=True)
 
 
             # Check for servo errors
-            if self.apf.slew_allowed.read(binary=True) is False and self.apf.isReadyForObserving()[0]:
+            if not self.apf.slew_allowed.read(binary=True) and self.apf.isReadyForObserving()[0]:
                 apflog("Likely amplifier failure, may power cycle telescope", echo=True, level='alert')
                 rv = self.checkServos()
 
