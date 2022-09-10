@@ -519,6 +519,7 @@ class APF:
                 else:
                     if curm2air - curdew < 2 or curm2 - curdew < 4:
                         self.dewTooClose = True
+                        apflog("M2 temperatures too close to dew point",echo=True,level='warning')
 
         return
 
