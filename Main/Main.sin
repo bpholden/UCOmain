@@ -132,7 +132,7 @@ def calcFocusStartTime():
         # the sun has already set
         start_time = -1.
     else:
-        start_time = time_to_sunset - 3.25*3600.
+        start_time = time_to_sunset - 2.5*3600.
     t_delta = timedelta(0,start_time)
     sun_delta = timedelta(0,time_to_sunset)
     start_dt = dt + t_delta
@@ -191,7 +191,7 @@ def args(apftask):
 
     elif opt.fixed != None and saved_time != '':
         opt.start = saved_time
-        
+
     if opt.name == None:
         now = datetime.now()
         oneday = timedelta(days=-1)
@@ -319,7 +319,7 @@ if __name__ == '__main__':
             apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
 
 
-    
+
     # All the phase options that this script uses. This allows us to check if we exited out of the script early.
     possible_phases = ["Init", "Focus", "Cal-Pre", "Watching", "Cal-Post", "Focus-Post"]
     phase_index = 0
@@ -380,7 +380,7 @@ if __name__ == '__main__':
         apf.desired_outfile = opt.name
 
     stime, start_dt, sun_dt, target_time = calcFocusStartTime()
-    
+
     if phase_index <= 1:
 
         waitstr = "Will now wait %.1f seconds before starting focusinstr" % (stime)
