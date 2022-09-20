@@ -830,10 +830,7 @@ class Observe(threading.Thread):
                         APFTask.waitFor(self.task, True, timeout=600)
 
             else:
-                close_mesg = "open_ok = %s canOpen = %s dewTooClose = %s badweather = %s" \
-                  % (self.apf.openOK, self.canOpen, self.apf.dewTooClose, self.badweather)
-                apflog(close_mesg, echo=True)
-
+                pass
 
             # Check for servo errors
             if not self.apf.slew_allowed.read(binary=True) and self.apf.isReadyForObserving()[0]:
