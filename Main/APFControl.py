@@ -162,8 +162,9 @@ class APF:
     calsta       = robot['CALIBRATE_STATUS']
     focussta     = robot['FOCUSINSTR_STATUS']
     ucamcmd      = robot['UCAMLAUNCHER_UCAM_COMMAND']
-
-
+    lastopen     = robot['OPENUP_LAST_SUCCESS']
+    msg = ""
+    
     ucam       = ktl.Service('apfucam')
     outfile    = ucam['OUTFILE']
     elapsed    = ucam['ELAPSED']
@@ -297,8 +298,9 @@ class APF:
 
         self.calsta.monitor()
         self.focussta.monitor()
-
-
+        
+        self.lastopen.monitor()
+        
         # Grab some initial values for the state of the telescope
 
         self.wx.read()
@@ -321,6 +323,9 @@ class APF:
         s += "Front/Rear Shutter=%4.2f / %4.2f\n"%(self.fspos, self.rspos)
         s += "Wind = %3.1f mph (APF) %3.1f mph (Shane) \n" % (np.average(self.mon_lists['M5WIND']),np.average(self.mon_lists['M3WIND']))
         s += "Slowdown = %5.2f x\n" % self.slowdown
+        s += "Last open time = %.2f sec\n" % (self.lastopen.binary)
+        s += "Time since opening = %6.2f sec\n" % (time.time() - self.lastopen.binary)
+        s += "Msg = %s\n" % self.msg
         s += "countrate = %5.2g cts/s\n" % self.countrate
         s += "kcountrate = %5.2g cts/s\n" % self.kcountrate
         s += "ncountrate = %d frames \n" % self.ncountrate
@@ -514,6 +519,7 @@ class APF:
                 else:
                     if curm2air - curdew < 2 or curm2 - curdew < 4:
                         self.dewTooClose = True
+                        apflog("M2 temperatures too close to dew point",echo=True,level='warning')
 
         return
 
@@ -924,21 +930,26 @@ class APF:
         if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
 
-        result = self.runFocusinstr()
+        result, msg = self.runFocusinstr()
+        if result:
+            apflog(msg,echo=True)
+        else:
+            if not self.instr_perm.read(binary=True):
+                msg += "Focusinstr has failed because of loss of instrument permission, waiting for return"
+                wait = True
+            else:
+                wait = False
+            # this complication is just to ensure the logging happens before waiting for permissions
+            apflog(msg,echo=True,level='Alert')
+            if wait:
+                self.instrPermit()
 
         dewarfocraw = self.dewarfoc.read(binary=True)
 
-        if not result or (dewarfocraw > DEWARMAX or dewarfocraw < DEWARMIN):
-            flags = "-b"
-            focusdict = APFTask.get("focusinstr", ["PHASE"])
-            if not self.instr_perm.read(binary=True):
-                self.instrPermit()
-                if len(focusdict['PHASE']) > 0:
-                    flags = " ".join(["-p", focusdict['phase']])
-            else:
-                apflog("Focusinstr has failed, result = %s, current focus is value = %d, and last value was %s." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
-                APFLib.write("apfmot.DEWARFOCRAW", lastfocus_dict["lastfocus"])
-                return False
+        if  (dewarfocraw > DEWARMAX or dewarfocraw < DEWARMIN):
+            apflog("Focusinstr has failed, result = %s, current focus is value = %d, and last value was %s." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
+            APFLib.write("apfmot.DEWARFOCRAW", lastfocus_dict["lastfocus"])
+            return False
 
         try:
             self.apfschedule('OWNRHINT').write(owner,timeout=10)
@@ -1009,10 +1020,11 @@ class APF:
     def runFocusinstr(self,flags="-b"):
         """Runs the focus routine appropriate for the user."""
 
+        msg = ""
         if self.test:
             APFTask.waitFor(self.task, True, timeout=10)
-            apflog("Test Mode: Would be running focusinstr.")
-            return True
+            msg = "Test Mode: Would be running focusinstr."
+            return True, msg
 
         supplies = ('PS1_48V_ENA', 'PS2_48V_ENA')
         for keyword in supplies:
@@ -1022,39 +1034,33 @@ class APF:
                     self.motor[keyword].write('Enabled', wait=False)
             except Exception as e:
                 apflog("Cannot read status of PS's:  %s"  % e,level='alert', echo=True)
+                return False, "Cannot read status of PS's:  %s" % (e)
 
         apflog("Running focusinstr routine.",echo=True)
 
         execstr = " ".join(['focusinstr',flags])
         cmd = os.path.join(SCRIPTDIR,execstr)
         result, code = apftaskDo(cmd,cwd=os.getcwd())
-        if not result:
-            apflog("focusinstr failed with code %d" % code, echo=True)
-            try:
-                resultd = APFTask.get('FOCUSINSTR',('LASTFOCUS','PHASE'))
-                if resultd['PHASE'] == 'Cleanup':
-                    apflog('focusinstr failed in or after cleanup, proceeding with value %s' % (str(resultd['LASTFOCUS'])), echo=True)
-                    result = True
-            except:
-                result = False
 
         expression="($apftask.FOCUSINSTR_STATUS != 3)"
         if APFTask.waitFor(self.task,True,expression=expression,timeout=.1):
             try:
                 resultd = APFTask.get('FOCUSINSTR',('LASTFOCUS','PHASE'))
                 if resultd['PHASE'] == 'Cleanup':
-                    apflog('focusinstr failed in or after cleanup, proceeding with value %s' % (str(resultd['LASTFOCUS'])), echo=True)
+                    msg += 'focusinstr failed in or after cleanup, proceeding with value %s ' % (str(resultd['LASTFOCUS']))
                     result = True
-            except:
-                apflog("focusinstr failed, exited with %s" % (self.robot['focusinstr_status'].read()), echo=True, level="error")
+                else:
+                    msg += 'focusinstr failed in %s, focusinstr needs to be rerun ' % (resultd['PHASE'])
+            except Exception as e:
+                msg += "focusinstr failed, exited with %s: %s %s" % (self.robot['focusinstr_status'].read(),type(e),e)
                 result = False
                 
         expression="($apftask.FOCUSINSTR_MEASURED == 1)"
         if not APFTask.waitFor(self.task,True,expression=expression,timeout=1):
-            apflog("focusinstr fit to the data failed", echo=True, level="error")
+            msg += "focusinstr fit to the data either failed or did not occur "
             result = False
             
-        return result
+        return result,msg 
 
 
     def findStar(self):
