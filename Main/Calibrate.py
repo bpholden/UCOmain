@@ -118,9 +118,9 @@ class Calibrate(threading.Thread):
                 return True
             apflog("Calibrate Pre has failed. Trying again",level='warn',echo=True)
             self.apf.instrPermit()
-            result = self.apf.calibrate(script = opt.calibrate, time = 'pre')
+            result = self.apf.calibrate(script = self.calfile, time = time)
             if not result:
-                apflog("Error: Calibrate Pre has failed twice. Observer is exiting.",level='error',echo=True)
+                apflog("Error: Calibrate Pre has failed twice. Calibrate is exiting.",level='error',echo=True)
                 self.apf.turnOffLamps()
 
         return result
