@@ -124,7 +124,7 @@ def getStartTime(hr,mn):
     return ts
 
 def calcFocusStartTime():
-    # computes time 3.25 hours before sunset
+    # computes time before sunset
     udt = datetime.utcnow()
     dt = datetime.now()
     time_to_sunset = ds.computeSunset(udt)
@@ -132,7 +132,7 @@ def calcFocusStartTime():
         # the sun has already set
         start_time = -1.
     else:
-        start_time = time_to_sunset - 2.5*3600.
+        start_time = time_to_sunset - 3.0*3600.
     t_delta = timedelta(0,start_time)
     sun_delta = timedelta(0,time_to_sunset)
     start_dt = dt + t_delta
@@ -158,7 +158,7 @@ def args(apftask):
     parser.add_argument('--raster', action='store_true', default=False, help="If a fixed starlist is given, use it for a raster scan.")
     parser.add_argument('--too', default=None, help="Download this sheet every 20 minutes for ToO targets")
 
-    parser.add_argument('--rank_table', default='2022A_ranks', help="Optional name for table of sheet ranks")
+    parser.add_argument('--rank_table', default='2022B_ranks', help="Optional name for table of sheet ranks")
     parser.add_argument('--sheet',default=None,help="Optional name for a Google spreadsheet")
     parser.add_argument('--owner',default='public',help="Optional name for file owners")
 
