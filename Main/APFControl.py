@@ -532,6 +532,10 @@ class APF:
         except:
             return
 
+        hosts = dict()
+        hosts['METSXFER'] = 'frankfurt.ucolick.org'
+        hosts['APFTEQ'] = 'hamburg.ucolick.org'        
+        
 
         if status_val > 2:
             # apftask status values are $(TASKNAME)_status
@@ -541,8 +545,8 @@ class APF:
             apflog("%s has status %s" % (taskname,status['ascii']),level='error',echo=True)
 
             # now we need the runhost
-            runhost_keyword = taskname.upper() + "_RUNHOST"
-            runhost = ktl.read('apftask',runhost_keyword)
+
+            runhost = hosts[taskname.upper()]
 
             master_runhost_keyword = 'MASTER_RUNHOST'
             current_host = ktl.read('apftask',master_runhost_keyword)
