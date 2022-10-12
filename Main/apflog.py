@@ -59,7 +59,6 @@ def apflog(msg, level='Notice', echo=True):
 
 
 def sendmail(subject, body, to=['holden@ucolick.org']):
-    APF.log("Sending error message to" + str(to))
     
     me = "APF <holden@ucolick.org>"
 
