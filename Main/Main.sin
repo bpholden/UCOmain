@@ -481,23 +481,13 @@ if __name__ == '__main__':
         try:
             apflog("Updating the online googledex with the observed times", level='Info', echo=True)
             ParseUCOSched.updateSheetLastobs(os.path.join(os.getcwd(),"observed_targets"),outfn="googledex.dat")
-
         except Exception as e:
             apflog("Error: Updating the online googledex has failed: %s" % (e), level="error")
         logpush(os.path.join(os.getcwd(),"observed_targets"))
 
-    if os.path.exists(os.path.join(os.getcwd(),"googledex.dat")):
-        logpush(os.path.join(os.getcwd(),"googledex.dat"))
-
-    if os.path.exists(os.path.join(os.getcwd(),"rank_table")):
-        logpush(os.path.join(os.getcwd(),"rank_table"))
-
-    if os.path.exists(os.path.join(os.getcwd(),"hour_table")):
-        logpush(os.path.join(os.getcwd(),"hour_table"))
-
-    if os.path.exists(os.path.join(os.getcwd(),"robot.log")):
-        logpush(os.path.join(os.getcwd(),"robot.log"))
-
+    for fn in ("googledex.dat", "rank_table", "hour_table", "robot.log", "selected_targets"):
+        if os.path.exists(os.path.join(os.getcwd(), fn)):
+            logpush(os.path.join(os.getcwd(), fn))
 
     apfmon = ktl.Service('apfmon')
     try:
