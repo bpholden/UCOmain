@@ -115,6 +115,11 @@ class Observe(threading.Thread):
         self.canOpen = True
         self.badWeather = False
 
+        try:
+            self.selected = open("selected_targets", "a+")
+        except:
+            self.selected = None
+
     def checkScriptobsMessages(self):
         message = self.apf.message.read()
         mtch = re.search("ERR/UCAM", message)
@@ -397,8 +402,11 @@ class Observe(threading.Thread):
 
             apflog("Observing target: %s" % self.target['NAME'], echo=True)
             APFTask.set(self.task, suffix="MESSAGE", value="Observing target: %s"  % self.target['NAME'], wait=False)
+            cur_line = self.target["SCRIPTOBS"].pop()
+            if self.selected:
+                self.selected.write(str(datetime.utcnow()) + " " + cur_line + "\n")
             try:
-                self.scriptobs.stdin.write(self.target["SCRIPTOBS"].pop() + '\n')
+                self.scriptobs.stdin.write(cur_line + '\n')
             except IOError as e:
                 apflog("Cannot observe target %s: IOError: %s" % (self.target['NAME'], e), echo=True, level='error')
                 return
@@ -476,6 +484,9 @@ class Observe(threading.Thread):
         def closing(force=False):
             if running:
                 self.apf.killRobot(now=True)
+
+            if self.selected:
+                self.selected.write(str(datetime.datetime.utcnow()) + " closing\n")
 
             APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
@@ -897,6 +908,7 @@ class Observe(threading.Thread):
 
 
     def stop(self):
+        self.selected.close()
         self.signal = False
         threading.Thread._Thread__stop(self)
 
