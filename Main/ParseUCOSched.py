@@ -310,7 +310,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
                     "cad", "pri", "nexp", "count",
                     "night_cad","night_obs", \
                     "Template", "Nobs", "Total Obs", "Bstar",\
-#                    "mode", "raoff", "decoff",  "obsblock",\
+                    "mode", "raoff", "decoff",  "obsblock",\
                     'sheetn' \
                     ]
 
@@ -389,12 +389,12 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         else:
             continue
 
-#        mode = checkFlag("mode",didx,ls,"\A(b|B|a|A|c|C)",config["mode"])
-#        if type(mode) == str:
-#            mode = mode.upper()
-#        star_table['mode'].append(mode)
-#        star_table['raoff'].append(checkFlag("raoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["raoff"]))
-#        star_table['decoff'].append(checkFlag("decoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["decoff"]))
+        mode = checkFlag("mode",didx,ls,"\A(b|B|a|A|c|C)",config["mode"])
+        if type(mode) == str:
+            mode = mode.upper()
+        star_table['mode'].append(mode)
+        star_table['raoff'].append(checkFlag("raoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["raoff"]))
+        star_table['decoff'].append(checkFlag("decoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["decoff"]))
 
         for coln in ("pmRA", "pmDEC"):
             star_table[coln].append(floatDefault(ls[didx[coln]]))
@@ -458,7 +458,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         star_table['Template'].append(tempselect.upper())
 
         star_table['owner'].append(checkFlag("owner", didx, ls, "\A(\w?\.?\w+)", config["owner"]))
-#        star_table['obsblock'].append(checkFlag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
+        star_table['obsblock'].append(checkFlag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
 #        star_table['inst'].append(checkFlag("inst",didx,ls,"(levy|darts)",config['inst']).lower())
 
 
