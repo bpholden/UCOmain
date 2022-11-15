@@ -1,24 +1,23 @@
 from __future__ import print_function
-from datetime import datetime, timedelta
+
+import json
 import os
 import re
 import sys
-import json
 import time
+from datetime import datetime, timedelta
 
-import ephem
-import numpy as np
 import astropy
-import astropy.table
 import astropy.io.ascii
-
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-
-import ObservedLog
+import astropy.table
 import Coords
-from SchedulerConsts import EXP_LIM, MAX_PRI
+import ephem
 import ExposureCalculations as ec
+import gspread
+import numpy as np
+import ObservedLog
+from oauth2client.service_account import ServiceAccountCredentials
+from SchedulerConsts import EXP_LIM, MAX_PRI
 
 try:
     from apflog import *
@@ -51,7 +50,8 @@ def checkFlag(key,didx,line,regexp,default):
 def readStarTable(table_filename):
     star_table = astropy.io.ascii.read(table_filename)
 
-    for coln in ('mode','obsblock','raoff','decoff','sheetn','owner'):
+#    for coln in ('mode','obsblock','raoff','decoff','sheetn','owner'):
+    for coln in ('sheetn','owner'):
         try:
             star_table[coln][star_table[coln] == 'None'] = ''
         except:
@@ -282,10 +282,7 @@ def initStarTable(col_list):
     star_table - a Astropy Table object that has the columns needed, most are in column_list
     forces certain columns to be added
 
-
     """
-
-# star_table = { "name" : [], "ra" : [], 'dec' : [], 'pmRA' : [], 'pmDEC' : [], 'Vmag' : [], 'texp' : [], 'expcount' : [], 'APFnshots' : [], 'APFpri' : [], 'APFcad' : [], 'lastobs' : [], 'BmV' : [], 'uth' : [], 'utm' : [], 'duration' : [], 'nobs' : [], 'totobs' : [], "do" : [], "decker" : [], "I2" : [], "owner" : [], "template" : [], "obsblock" : [], "mode" : [], "Bstar" : [],  "raoff" : [], "decoff" : [], 'sheetn' : [] }
 
     star_table = dict()
     for col in col_list:
@@ -308,12 +305,12 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
     # These are the columns we need for scheduling
     req_cols = ["Star Name", "RA hr", "RA min", "RA sec", \
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
-                    "texp", "I2", "expcount", "decker","Close Companion", "APFnshots", \
-                    "owner", "APFpri", "APFcad", "lastobs", "B-V", \
+                    "texp", "I2", "expcount", "decker","Close Companion", \
+                    "owner", "lastobs", "B-V", \
                     "cad", "pri", "nexp", "count",
                     "night_cad","night_obs", \
-                    "Template", "Nobs", "Total Obs", \
-                    "mode", "raoff", "decoff", "Bstar", "obsblock",\
+                    "Template", "Nobs", "Total Obs", "Bstar",\
+#                    "mode", "raoff", "decoff",  "obsblock",\
                     'sheetn' \
                     ]
 
@@ -353,16 +350,16 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         if apfpri > MAX_PRI: apfpri = MAX_PRI
 
 
-        name =parseStarname(ls[didx["Star Name"]])
+        name = parseStarname(ls[didx["Star Name"]])
         # Get the RA
-        raval,rahr,ramin,rasec = Coords.getRARad(ls[didx["RA hr"]], ls[didx["RA min"]], ls[didx["RA sec"]])
+        raval, rahr, ramin, rasec = Coords.getRARad(ls[didx["RA hr"]], ls[didx["RA min"]], ls[didx["RA sec"]])
         if raval is None:
             # alarm
             apflog("Error in RA coordinates for %s" %(name),level='warn',echo=True)
             continue
 
         # Get the DEC
-        decval,decdeg,decmin,decsec = Coords.getDECRad(ls[didx["Dec deg"]], ls[didx["Dec min"]], ls[didx["Dec sec"]])
+        decval, decdeg, decmin, decsec = Coords.getDECRad(ls[didx["Dec deg"]], ls[didx["Dec min"]], ls[didx["Dec sec"]])
         if decval is None:
             # alarm
             apflog("Error in Dec coordinates for %s" %(name),level='warn',echo=True)
@@ -392,47 +389,47 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         else:
             continue
 
-        mode = checkFlag("mode",didx,ls,"\A(b|B|a|A|c|C)",config["mode"])
-        if type(mode) == str:
-            mode = mode.upper()
-        star_table['mode'].append(mode)
-        star_table['raoff'].append(checkFlag("raoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["raoff"]))
-        star_table['decoff'].append(checkFlag("decoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["decoff"]))
+#        mode = checkFlag("mode",didx,ls,"\A(b|B|a|A|c|C)",config["mode"])
+#        if type(mode) == str:
+#            mode = mode.upper()
+#        star_table['mode'].append(mode)
+#        star_table['raoff'].append(checkFlag("raoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["raoff"]))
+#        star_table['decoff'].append(checkFlag("decoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["decoff"]))
 
         for coln in ("pmRA", "pmDEC"):
             star_table[coln].append(floatDefault(ls[didx[coln]]))
 
 
-        star_table['Vmag'].append(floatDefault(ls[didx["Vmag"]],default=15.0))
-        star_table['texp'].append(floatDefault(ls[didx["texp"]],default=1200))
+        star_table['Vmag'].append(floatDefault(ls[didx["Vmag"]], default=15.0))
+        star_table['texp'].append(floatDefault(ls[didx["texp"]], default=1200))
         expcount = floatDefault(ls[didx["expcount"]],default=1e9)
         if expcount > EXP_LIM:
             expcount = EXP_LIM
         star_table['expcount'].append(expcount)
         if "nexp" in didx and ls[didx["nexp"]] is not None:
-            star_table['nexp'].append(intDefault(ls[didx["nexp"]],default=1))
+            star_table['nexp'].append(intDefault(ls[didx["nexp"]], default=1))
         elif "count" in didx and ls[didx['count']] is not None:
-            star_table['nexp'].append(intDefault(ls[didx["count"]],default=1))
+            star_table['nexp'].append(intDefault(ls[didx["count"]], default=1))
         else:
-            star_table['nexp'].append(intDefault(ls[didx["APFnshots"]],default=1))
+            star_table['nexp'].append(intDefault(ls[didx["APFnshots"]], default=1))
 
 
         # scheduler specific
         if "cad" in didx and ls[didx['cad']] is not None:
-            star_table['cad'].append(floatDefault(ls[didx["cad"]],default=0.7))
+            star_table['cad'].append(floatDefault(ls[didx["cad"]], default=0.7))
         else:
-            star_table['cad'].append(floatDefault(ls[didx["APFcad"]],default=0.7))
+            star_table['cad'].append(floatDefault(ls[didx["APFcad"]], default=0.7))
 
-        night_cad = floatDefault(ls[didx["night_cad"]],default=-1.0)
+        night_cad = floatDefault(ls[didx["night_cad"]], default=-1.0)
         if night_cad > 0:
             night_cad /= 60*24
         star_table['night_cad'].append(night_cad)
         star_table['night_obs'].append(0)
 
         star_table['pri'].append(apfpri)
-        star_table["lastobs"].append(floatDefault(ls[didx["lastobs"]],default=0))
+        star_table["lastobs"].append(floatDefault(ls[didx["lastobs"]], default=0))
 
-        inval = floatDefault(ls[didx["B-V"]],default=0.7)
+        inval = floatDefault(ls[didx["B-V"]], default=0.7)
         if inval < 0:
             inval = 1.
         if coln is 'B-V' and inval > 2:
@@ -448,20 +445,20 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         else:
             star_table['totobs'].append(0)
 
-        check = checkFlag("Close Companion",didx,ls,"\A(y|Y)","")
+        check = checkFlag("Close Companion", didx, ls, "\A(y|Y)","")
         if check == "Y" or check == "y" :
             star_table['do'].append(check)
         else:
             star_table['do'].append("")
 
-        star_table['decker'].append(checkFlag("decker",didx,ls,"\A(W|N|T|S|O|K|L|M|B)",config["decker"]))
-        i2select = checkFlag("I2",didx,ls,"\A(n|N)",config["I2"])
+        star_table['decker'].append(checkFlag("decker", didx, ls, "\A(W|N|T|S|O|K|L|M|B)", config["decker"]))
+        i2select = checkFlag("I2", didx, ls, "\A(n|N)", config["I2"])
         star_table['I2'].append(i2select.upper())
         tempselect = checkFlag("Template",didx,ls,"\A(n|N)",'Y')
         star_table['Template'].append(tempselect.upper())
 
-        star_table['owner'].append(checkFlag("owner",didx,ls,"\A(\w?\.?\w+)",config["owner"]))
-        star_table['obsblock'].append(checkFlag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
+        star_table['owner'].append(checkFlag("owner", didx, ls, "\A(\w?\.?\w+)", config["owner"]))
+#        star_table['obsblock'].append(checkFlag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
 #        star_table['inst'].append(checkFlag("inst",didx,ls,"(levy|darts)",config['inst']).lower())
 
 
@@ -469,7 +466,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
 
 
         if 'Bstar' in didx:
-            star_table['Bstar'].append(checkFlag('Bstar',didx,ls,"(Y|y)",'N'))
+            star_table['Bstar'].append(checkFlag('Bstar', didx, ls, "(Y|y)", 'N'))
             star_table['sheetn'].append(csheetn)
         else:
             if 'RECUR_A100' in csheetn :
@@ -489,12 +486,12 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
     # This just reorders the columns
     # This way the ascii table has these columns in front to make finding targets by specific programs easier
     star_table_names = list(star_table.keys())
-    for n in  ('Dec sec','Dec min','Dec deg','RA sec','RA min','RA hr','APFpri','sheetn','name'):
+    for n in  ('Dec sec', 'Dec min', 'Dec deg', 'RA sec', 'RA min', 'RA hr', 'sheetn', 'name'):
         if n in star_table_names:
             star_table_names.remove(n)
             star_table_names = [n] + star_table_names
 
-    star_table = astropy.table.Table(star_table,names=star_table_names)
+    star_table = astropy.table.Table(star_table, names=star_table_names)
 
     return star_table
 
@@ -552,10 +549,10 @@ def parseUCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.d
         try:
             star_table = readStarTable(outfn)
         except:
-            star_table  = parseCodex(config,sheetns=sheetns,certificate=certificate,prilim=prilim,hour_constraints=hour_constraints)
+            star_table  = parseCodex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, hour_constraints=hour_constraints)
 
     else:
-        star_table = parseCodex(config,sheetns=sheetns,certificate=certificate,prilim=prilim,hour_constraints=hour_constraints)
+        star_table = parseCodex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, hour_constraints=hour_constraints)
 
     stars = genStars(star_table)
 
@@ -568,7 +565,7 @@ def parseUCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.d
     return (star_table, stars)
 
 
-def parseTOO(too_sheetns=None,outfn='googledex.dat',outdir=None,certificate=DEFAULT_CERT,prilim=0.5):
+def parseTOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=DEFAULT_CERT, prilim=0.5):
 
     if not outdir :
         outdir = os.getcwd()
@@ -586,7 +583,7 @@ def parseTOO(too_sheetns=None,outfn='googledex.dat',outdir=None,certificate=DEFA
         return
 
     config={'I2': 'Y', 'decker': 'W', 'owner' : '', 'mode' : '', 'obsblock' : '', 'Bstar' : 'N' , 'raoff' : None, 'decoff' : None }
-    too_table = parseCodex(config,sheetns=too_sheetns,certificate=certificate,prilim=prilim,sleep=False)
+    too_table = parseCodex(config, sheetns=too_sheetns, certificate=certificate, prilim=prilim, sleep=False)
 
     for n in too_sheetns:
         cur = (star_table['sheetn'] == n)
@@ -595,7 +592,7 @@ def parseTOO(too_sheetns=None,outfn='googledex.dat',outdir=None,certificate=DEFA
             # this ensures that all changes are propogated
             star_table.remove_rows(cur)
     # now just append new values
-    star_table = astropy.table.vstack([star_table,too_table])
+    star_table = astropy.table.vstack([star_table, too_table])
 
     # write to the googledex
     astropy.io.ascii.write(star_table,outfn, format='ecsv', overwrite=True)
@@ -603,7 +600,7 @@ def parseTOO(too_sheetns=None,outfn='googledex.dat',outdir=None,certificate=DEFA
 
 
 
-def updateLocalStarlist(intime, observed_file="observed_targets",outfn='parsesched.dat',toofn='too.dat',outdir=None):
+def updateLocalStarlist(intime, observed_file="observed_targets", outfn='parsesched.dat', toofn='too.dat', outdir=None):
     """
         Update the local copy of the googledex with the last observed star time.
         updateLocalStarlist(time,googledex_file="googledex.dat", observed_file="observed_targets")
@@ -615,15 +612,15 @@ def updateLocalStarlist(intime, observed_file="observed_targets",outfn='parsesch
     if not outdir :
         outdir = os.getcwd()
 
-    obslog = ObservedLog.ObservedLog(filename=os.path.join(outdir,observed_file))
+    obslog = ObservedLog.ObservedLog(filename=os.path.join(outdir, observed_file))
 
-    outfn = os.path.join(outdir,outfn)
+    outfn = os.path.join(outdir, outfn)
     if os.path.exists(outfn):
         star_table = readStarTable(outfn)
     else:
         return obslog, None
 
-    toofn = os.path.join(outdir,toofn)
+    toofn = os.path.join(outdir, toofn)
     if os.path.exists(toofn):
         too_table = readStarTable(toofn)
     else:
@@ -722,7 +719,7 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
     if not outdir :
         outdir = os.getcwd()
 
-    obslog = ObservedLog.ObservedLog(filename=os.path.join(outdir,observed_file))
+    obslog = ObservedLog.ObservedLog(filename=os.path.join(outdir, observed_file))
     if len(obslog.names) == 0:
         return
     if ctime is None:
@@ -742,7 +739,7 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
 
     nupdates = 0
     for sheetn in needed_sheetns:
-        ws = getSpreadsheet(sheetn=sheetn,certificate=certificate)
+        ws = getSpreadsheet(sheetn=sheetn, certificate=certificate)
 
         if ws:
             vals = ws.get_all_values()
