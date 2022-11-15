@@ -57,7 +57,7 @@ class ObservedLog():
         try:
             f = open(self.filename, 'r')
         except IOError:
-            apflog( "Couldn't open %s" % filename,level="warn",echo=True)
+            apflog( "Couldn't open %s" % self.filename, level="warn", echo=True)
             return 
         else: 
             for line in f:
