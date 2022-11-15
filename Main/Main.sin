@@ -1,43 +1,45 @@
 #! @KPYTHON@
 from __future__ import print_function
 
-# UCSC script for the task that runs everything
-# Monitors and operates the APF for an observing night
-
 import argparse
 import atexit
-from datetime import datetime, timedelta
+import functools
+import glob
 import math
 import os
 import os.path
-import signal
-from select import select
+import pickle
 import re
+import signal
 import sys
 import threading
 import time
-import pickle
-import functools
-import glob
+from datetime import datetime, timedelta
+from select import select
 
-import numpy as np
 import astropy.io.ascii
 import astropy.time
+import numpy as np
+
+# UCSC script for the task that runs everything
+# Monitors and operates the APF for an observing night
+
+
 
 try:
-    import ktl
     import APF as APFLib
     import APFTask
+    import ktl
 except:
     pass
 
 import APFControl
-from apflog import *
-import UCOScheduler as ds
 import ParseUCOSched
-from Observe import Observe
+import UCOScheduler as ds
+from apflog import *
 from Calibrate import Calibrate
 from getUCOTargets import getUCOTargets
+from Observe import Observe
 
 os.umask(0o007)
 
