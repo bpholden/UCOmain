@@ -486,7 +486,7 @@ class Observe(threading.Thread):
                 self.apf.killRobot(now=True)
 
             if self.selected:
-                self.selected.write(str(datetime.datetime.utcnow()) + " closing\n")
+                self.selected.write(str(datetime.utcnow()) + " closing\n")
 
             APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
