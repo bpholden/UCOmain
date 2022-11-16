@@ -3,6 +3,7 @@ from __future__ import print_function
 import getpass
 import os
 import smtplib
+import stat
 
 import ktl
 import APF
@@ -37,6 +38,13 @@ def logpush(filename, keep=4):
             os.rename(filename + '.' + str(i), filename + '.' + str(i+1))
         except OSError:
             pass
+
+    # change permissions
+    try:
+        os.chmod(filename, stat.S_IRUSR|stat.S_IRGRP|stat.S_IROTH|stat.S_IWUSR)
+    except OSError:
+        pass
+    
     # Rename the main file filename.1
     try:
         os.rename(filename, filename + '.1')
