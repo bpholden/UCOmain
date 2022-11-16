@@ -404,7 +404,9 @@ class Observe(threading.Thread):
             APFTask.set(self.task, suffix="MESSAGE", value="Observing target: %s"  % self.target['NAME'], wait=False)
             cur_line = self.target["SCRIPTOBS"].pop()
             if self.selected:
-                self.selected.write(str(datetime.utcnow()) + " " + cur_line + "\n")
+                out_line = "%s %s avgfwhm=%5.2f slowdown=%4.2f\n" % (str(datetime.utcnow()), cur_line, seeing, slowdown )
+                self.selected.write(out_line)
+
             try:
                 self.scriptobs.stdin.write(cur_line + '\n')
             except IOError as e:
