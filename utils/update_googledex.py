@@ -22,4 +22,4 @@ if __name__ == "__main__":
         else:
             sheetns = set(obslog.sheetns)
 
-        ParseUCOSched.updateSheetLastobs(fn,sheetns=sheetns,outfn=outfn)
+        ParseUCOSched.updateSheetLastobs(fn,outfn=outfn)
