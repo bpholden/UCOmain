@@ -353,16 +353,6 @@ class Observe(threading.Thread):
                     self.apf.killRobot()
                 return
 
-            # setup a B star observation if needed
-            # if not B star observation, look at current stack of observations and see if anything is left
-            if self.obsBstar:
-                self.apf.autofoc.write("robot_autofocus_enable")
-            else:
-                curstr = popNext()
-                if curstr:
-                    self.scriptobs.stdin.write(curstr)
-                    return
-
             # Calculate the slowdown factor.
             slowdown = calcSlowdown()
 
@@ -380,6 +370,21 @@ class Observe(threading.Thread):
             
             self.apf.initGuideCam()
             self.apf.updateWindshield(self.windshield_mode)
+
+
+            # setup a B star observation if needed
+            # if not B star observation, look at current stack of observations and see if anything is left
+            if self.obsBstar:
+                self.apf.autofoc.write("robot_autofocus_enable")
+            else:
+                curstr = popNext()
+                if curstr:
+                    if self.selected:
+                        out_line = "%s %s avgfwhm=%05.2f slowdown=%04.2f\n" % (str(datetime.utcnow()), curstr, seeing, slowdown )
+                        self.selected.write(out_line)
+                    self.scriptobs.stdin.write(curstr)
+                    return
+
             self.focval = self.apf.setAutofocVal()
 
             self.checkFiles()
@@ -404,7 +409,7 @@ class Observe(threading.Thread):
             APFTask.set(self.task, suffix="MESSAGE", value="Observing target: %s"  % self.target['NAME'], wait=False)
             cur_line = self.target["SCRIPTOBS"].pop()
             if self.selected:
-                out_line = "%s %s avgfwhm=%5.2f slowdown=%4.2f\n" % (str(datetime.utcnow()), cur_line, seeing, slowdown )
+                out_line = "%s %s avgfwhm=%05.2f slowdown=%04.2f\n" % (str(datetime.utcnow()), cur_line, seeing, slowdown )
                 self.selected.write(out_line)
 
             try:
