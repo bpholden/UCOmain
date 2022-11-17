@@ -750,7 +750,10 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
         nmcol = vals[0].index('Star Name')
         col = vals[0].index("lastobs")
         nobscol = vals[0].index("Nobs")
-        tempcol = vals[0].index("Template")
+        try:
+            tempcol = vals[0].index("Template")
+        except:
+            tempcol = -1
         try:
             nightobscol = vals[0].index('night_obs')
         except:
@@ -816,14 +819,15 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
                                 ws.update_cell(i+1, nightobscol+1, n_appear+1)
                                 nupdates += 1
 
-                    try:
-                        have_temp = v[tempcol]
-                        if taketemp == "Y" and have_temp == "N" and curowner == sheetn:
-                            ws.update_cell(i+1, tempcol+1, "Y")
-                            nupdates += 1
-                            apflog( "Updated %s to having a template in %s" % (v[0],sheetn),echo=True)
-                    except:
-                        apflog( "Error logging template obs for %s" % (v[0]),echo=True,level='error')
+                    if tempcol > 0:
+                        try:
+                            have_temp = v[tempcol]
+                            if taketemp == "Y" and have_temp == "N" and curowner == sheetn:
+                                ws.update_cell(i+1, tempcol+1, "Y")
+                                nupdates += 1
+                                apflog( "Updated %s to having a template in %s" % (v[0],sheetn),echo=True)
+                        except:
+                            apflog( "Error logging template obs for %s" % (v[0]),echo=True,level='error')
             else:
                 pass
                 # if nightobscol >= 0:
