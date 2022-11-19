@@ -408,6 +408,7 @@ class Observe(threading.Thread):
             apflog("Observing target: %s" % self.target['NAME'], echo=True)
             APFTask.set(self.task, suffix="MESSAGE", value="Observing target: %s"  % self.target['NAME'], wait=False)
             cur_line = self.target["SCRIPTOBS"].pop()
+            cur_line = cur_line.strip()
             if self.selected:
                 out_line = "%s %s avgfwhm=%05.2f slowdown=%04.2f\n" % (str(datetime.utcnow()), cur_line, seeing, slowdown )
                 self.selected.write(out_line)
