@@ -315,14 +315,14 @@ class Observe(threading.Thread):
                 tlist = self.target["SCRIPTOBS"]
                 if len(tlist) > 0:
                     apflog("getTarget(): Going through remaining target queue.", echo=True)
-                    curstr = tlist.pop() + '\n'
+                    curstr = tlist.pop() 
                     return curstr
 
             if self.fixedtarget is not None and 'SCRIPTOBS' in list(self.fixedtarget.keys()):
                 tlist = self.fixedtarget["SCRIPTOBS"]
                 if len(tlist) > 0:
                     apflog("getTarget(): Going through fixed starlist.", echo=True)
-                    curstr = tlist.pop() + '\n'
+                    curstr = tlist.pop() 
                 else:
                     apflog("getTarget(): Finished fixed starlist.", echo=True)
                     self.fixedtarget = None
@@ -382,7 +382,7 @@ class Observe(threading.Thread):
                     if self.selected:
                         out_line = "%s %s avgfwhm=%05.2f slowdown=%04.2f\n" % (str(datetime.utcnow()), curstr, seeing, slowdown )
                         self.selected.write(out_line)
-                    self.scriptobs.stdin.write(curstr)
+                    self.scriptobs.stdin.write(curstr + '\n')
                     return
 
             self.focval = self.apf.setAutofocVal()
