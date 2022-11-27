@@ -1,11 +1,12 @@
 #!/usr/bin/env  /opt/kroot/bin/kpython
 from __future__ import print_function
+
 import sys
 import time
 
 sys.path.append("../Main")
-import ParseUCOSched
 import ObservedLog
+import ParseUCOSched
 
 if __name__ == "__main__":
     if len(sys.argv) <= 2:
@@ -13,7 +14,6 @@ if __name__ == "__main__":
         sys.exit()
     fn = sys.argv[1]
     outfn = sys.argv[2]
-
     obslog = ObservedLog.ObservedLog(fn)
 
     if len(obslog.names) > 0:
