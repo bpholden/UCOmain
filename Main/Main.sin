@@ -487,7 +487,7 @@ if __name__ == '__main__':
             apflog("Error: Updating the online googledex has failed: %s" % (e), level="error")
         logpush(os.path.join(os.getcwd(),"observed_targets"))
 
-    for fn in ("googledex.dat", "rank_table", "hour_table", "robot.log", "selected_targets"):
+    for fn in ("googledex.dat", "rank_table", "hour_table", "robot.log"):
         if os.path.exists(os.path.join(os.getcwd(), fn)):
             logpush(os.path.join(os.getcwd(), fn))
 
