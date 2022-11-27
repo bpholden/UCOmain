@@ -73,7 +73,7 @@ def controlWatch(keyword,parent):
                 APFTask.set(parent, suffix='STATUS', value='Running')
                 paused = False
             except:
-                APF.log("Failure to set STATUS in APFTask", level=error)
+                APF.log("Failure to set STATUS in APFTask", level='error')
                 shutdown()
 
     except:
