@@ -80,7 +80,7 @@ def controlWatch(keyword,parent):
         return
 
 
-def signalShutdown(signal,frame):
+def signalShutdown(signal, frame):
     shutdown()
 
 def shutdown():
@@ -101,7 +101,7 @@ def shutdown():
         print(status)
         os._exit(0)
 
-def getStartTime(hr,mn):
+def getStartTime(hr, mn):
 
     lt = datetime.now()
     ct = datetime.utcnow()
@@ -173,7 +173,7 @@ def args(apftask):
         try:
             saved_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
         except Exception as e:
-            apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e),level='warn',echo=True)
+            apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
 
     if opt.start != None and opt.fixed != None and saved_time == '':
 
@@ -185,7 +185,7 @@ def args(apftask):
             try:
                 apftask.write("MASTER_UTSTARTLIST", opt.start,wait=False)
             except Exception as e:
-                apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e),level='warn',echo=True)
+                apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
 
         else:
             print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
@@ -205,7 +205,7 @@ def args(apftask):
         try:
             apftask.write('MASTER_SHEETLIST',opt.sheet,timeout=2)
         except Exception as e:
-            apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
+            apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn', echo=True)
         opt.sheet = opt.sheet.split(",")
 
     if opt.binning > 1:
@@ -214,7 +214,7 @@ def args(apftask):
         try:
             apfmon['BINNINGDIS'].write(d,binary=True,timeout=2)
         except:
-            apflog("cannot write apfmon7 keyword" % (e),level='Alert',echo=True)
+            apflog("cannot write apfmon7 keyword" % (e), level='Alert', echo=True)
 
 
     return opt
@@ -233,8 +233,8 @@ def findObsNum(last):
 def setObsDefaults(opt):
     opt.owner = 'public'
     if opt.obsnum == None:
-        apflog("Figuring out what the observation number should be.",echo=True)
-        opt.obsnum = findObsNum(int(ktl.read('apftask','MASTER_LAST_OBS_UCSC',binary=True)))
+        apflog("Figuring out what the observation number should be.", echo=True)
+        opt.obsnum = findObsNum(int(ktl.read('apftask','MASTER_LAST_OBS_UCSC', binary=True)))
     else:
         opt.obsnum = int(opt.obsnum)
 
