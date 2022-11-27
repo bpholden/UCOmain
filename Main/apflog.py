@@ -86,7 +86,7 @@ def sendmail(subject, body, to=['holden@ucolick.org']):
 
 def main():
     body = "This is a test message. Error messages from the APF observe script will be sent with this function."
-    subject = "[APF] Required Monthly Test"
+    subject = "[APF] Test"
     sendmail(subject, body, to=['holden@ucolick.org', '8314211210@txt.att.net'])
 
 if __name__ == '__main__':
