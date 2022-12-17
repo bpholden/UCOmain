@@ -416,9 +416,13 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
 
         # scheduler specific
         if "cad" in didx and ls[didx['cad']] is not None:
-            star_table['cad'].append(floatDefault(ls[didx["cad"]], default=0.7))
+            cad_value = floatDefault(ls[didx["cad"]], default=0.7)
         else:
-            star_table['cad'].append(floatDefault(ls[didx["APFcad"]], default=0.7))
+            cad_value = floatDefault(ls[didx["APFcad"]], default=0.7)
+        if cad_value > 0:
+            star_table['cad'].append(cad_value)
+        else:
+            star_table['cad'].append(0.7)
 
         night_cad = floatDefault(ls[didx["night_cad"]], default=-1.0)
         if night_cad > 0:
