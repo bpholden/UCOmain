@@ -115,10 +115,17 @@ class Observe(threading.Thread):
         self.canOpen = True
         self.badWeather = False
 
+    def append_selected(self, curstr):
         try:
             self.selected = open("selected_targets", "a+")
         except:
             self.selected = None
+        else:
+            out_line = "%s %s\n" % (str(datetime.utcnow()), curstr)
+            self.selected.write(out_line)
+            self.selected.close()
+            
+        return
 
     def checkScriptobsMessages(self):
         message = self.apf.message.read()
@@ -379,9 +386,7 @@ class Observe(threading.Thread):
             else:
                 curstr = popNext()
                 if curstr:
-                    if self.selected:
-                        out_line = "%s %s avgfwhm=%05.2f slowdown=%04.2f\n" % (str(datetime.utcnow()), curstr, seeing, slowdown )
-                        self.selected.write(out_line)
+                    self.append_selected("%s avgfwhm=%05.2f slowdown=%04.2f" % (curstr, seeing, slowdown))
                     self.scriptobs.stdin.write(curstr + '\n')
                     return
 
@@ -409,9 +414,8 @@ class Observe(threading.Thread):
             APFTask.set(self.task, suffix="MESSAGE", value="Observing target: %s"  % self.target['NAME'], wait=False)
             cur_line = self.target["SCRIPTOBS"].pop()
             cur_line = cur_line.strip()
-            if self.selected:
-                out_line = "%s %s avgfwhm=%05.2f slowdown=%04.2f\n" % (str(datetime.utcnow()), cur_line, seeing, slowdown )
-                self.selected.write(out_line)
+            out_line = "%s avgfwhm=%05.2f slowdown=%04.2f" % (cur_line, seeing, slowdown )
+            self.append_selected(out_line)
 
             try:
                 self.scriptobs.stdin.write(cur_line + '\n')
@@ -493,8 +497,7 @@ class Observe(threading.Thread):
             if running:
                 self.apf.killRobot(now=True)
 
-            if self.selected:
-                self.selected.write(str(datetime.utcnow()) + " closing\n")
+            self.append_selected("closing")
 
             APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
@@ -916,7 +919,6 @@ class Observe(threading.Thread):
 
 
     def stop(self):
-        self.selected.close()
         self.signal = False
         threading.Thread._Thread__stop(self)
 
