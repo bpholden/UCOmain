@@ -68,6 +68,8 @@ def computePriorities(star_table, cur_dt, observed=None, hour_table=None, rank_t
     bad_pri = np.floor(cadence_check * 100)
     bad_pri = np.int_(bad_pri)
 
+    done_all = star_table['nobs'] >= star_table['totobs']
+    new_pri[done_all] = 0
 
     if rank_table is not None:
         for sheetn in rank_table['sheetn']:
