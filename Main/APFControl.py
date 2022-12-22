@@ -1921,7 +1921,7 @@ class APF:
         self.obsnum.callback(self.updateLastObs)
 
         self.event.monitor()
-        self.event.callback(eventmon)
+        self.event.callback(self.eventmon)
 
 
     def ucamRestart(self,fake=False):
