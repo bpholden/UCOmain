@@ -104,6 +104,7 @@ class Observe(threading.Thread):
         self.lineresult.monitor()
         self.observed = self.apftask['SCRIPTOBS_OBSERVED']
         self.observed.monitor()
+        self.selected = None
 
         if opt.sheet is False:
             sheetlist = self.apftask['MASTER_SHEETLIST'].read().split(",")
@@ -124,7 +125,7 @@ class Observe(threading.Thread):
             out_line = "%s %s\n" % (str(datetime.utcnow()), curstr)
             self.selected.write(out_line)
             self.selected.close()
-            
+
         return
 
     def checkScriptobsMessages(self):
