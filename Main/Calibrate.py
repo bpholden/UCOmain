@@ -204,6 +204,6 @@ if __name__ == "__main__":
             calibrate.stop()
             sys.exit()
         except:
-            apflog("%s killed by unknown." % (calbrate.name), echo=True)
+            apflog("%s killed by unknown." % (calibrate.name), echo=True)
             calibrate.stop()
             sys.exit()
