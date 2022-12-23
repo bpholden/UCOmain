@@ -65,6 +65,20 @@ class Calibrate(threading.Thread):
 
         return result
 
+
+    def set_focus_defaults(self):
+
+        ktl.write('apftask', 'focusinstr_step_size', 100)
+        ktl.write('apftask', 'focusinstr_nominal', 8500)
+        ktl.write('apftask', 'focusinstr_step_count', 13)
+        ktl.write('apftask', 'focusinstr_iodinetime', 60)
+        ktl.write('apftask', 'focusinstr_widetime', 60)
+        ktl.write('apftask', 'focusinstr_narrowtime', 720)
+        ktl.write('apftask', 'focusinstr_useref', True)
+        ktl.write('apftask', 'focusinstr_refs', '/home/user/apf_analysis/data/20220913_11318.fits,/home/user/apf_analysis/data/20220913_11319.fits')
+
+        return
+
     def focusInstr(self,setup=True):
 
         if self.test:
