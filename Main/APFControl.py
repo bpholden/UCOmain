@@ -379,7 +379,7 @@ class APF:
 
         return
 
-    def countmon(self,counts):
+    def countmon(self, counts):
         if counts['populated'] == False:
             return
         try:
@@ -387,7 +387,7 @@ class APF:
         except:
             return
         try:
-            time = float(elapsed.read(binary=True,timeout=2))
+            time = float(self.elapsed.read(binary=True,timeout=2))
         except:
             return
 
@@ -397,7 +397,7 @@ class APF:
             return
 
 
-    def countratemon(self,kcountrate):
+    def countratemon(self, kcountrate):
         if kcountrate['populated'] == False:
             return
 
@@ -411,7 +411,7 @@ class APF:
         self.ncountrate += 1
         return
 
-    def eventmon(self,event):
+    def eventmon(self, event):
         if event['populated'] == False:
             return
 
@@ -1924,7 +1924,7 @@ class APF:
         self.event.callback(self.eventmon)
 
 
-    def ucamRestart(self,fake=False):
+    def ucamRestart(self, fake=False):
 
         # modify -s apftask UCAMLAUNCHER_UCAM_COMMAND=Stop
         if fake:
@@ -1953,7 +1953,7 @@ class APF:
 
 
 
-    def ucamStatus(self,fake=False):
+    def ucamStatus(self, fake=False):
 
         if self.ctalk.read(binary=True) > 0:
             rv = self.ucamPowercycle(fake=fake)
@@ -1976,7 +1976,7 @@ class APF:
                 # Things are still starting up
                 if ucamsta0 > 2:
                     # failure to connect
-                    rv = self.ucamRestart(comb,fake=fake)
+                    rv = self.ucamRestart(self.combo_ps, fake=fake)
                     return rv
                 else:
                     rv = APFTask.waitfor(self.task, True, expression="$apfucam.DISP0STA = 0 & $apfucam.DISP1STA = 0", timeout=600)
