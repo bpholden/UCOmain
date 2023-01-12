@@ -1,6 +1,2 @@
-<<<<<<< HEAD
 .vscode
 *pyc
-=======
-*.pyc
->>>>>>> 9db925a (add .gitignore)
