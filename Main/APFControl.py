@@ -1214,7 +1214,8 @@ class APF:
 
         predfocus  = self.predTelFocus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
-
+        self.robot['FOCUSTEL_LASTFOCUS'].write(predfocus)
+        self.focus.write(self.predTelFocus(), binary=True, wait=False)
         if self.slew(star):
             return self.runFocusTel()
         return False
