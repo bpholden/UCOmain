@@ -1047,7 +1047,7 @@ class APF:
         result, code = apftaskDo(cmd,cwd=os.getcwd())
 
         expression="($apftask.FOCUSINSTR_STATUS != 3)"
-        if APFTask.waitFor(self.task,True,expression=expression,timeout=.1):
+        if ktl.waitFor(expression=expression, timeout=.1):
             try:
                 resultd = APFTask.get('FOCUSINSTR',('LASTFOCUS','PHASE'))
                 if resultd['PHASE'] == 'Cleanup':
@@ -1060,11 +1060,11 @@ class APF:
                 result = False
                 
         expression="($apftask.FOCUSINSTR_MEASURED == 1)"
-        if not APFTask.waitFor(self.task,True,expression=expression,timeout=1):
+        if not ktl.waitFor(expression=expression, timeout=1):
             msg += "focusinstr fit to the data either failed or did not occur "
             result = False
             
-        return result,msg 
+        return result, msg 
 
 
     def findStar(self):
