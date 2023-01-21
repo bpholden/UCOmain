@@ -177,7 +177,7 @@ def makeHourTable(rank_table, dt, outfn='hour_table', outdir=None, hour_constrai
         apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
     return hour_table
 
-def timeLeft():
+def find_time_left():
     cmd = "/usr/local/lick/bin/timereport/time_left"
     if os.path.exists(cmd):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -204,6 +204,8 @@ def timeLeft():
 
         rv = astropy.table.Table([sheetns,left,alloc,used], names=["runname","left","alloc","used"])
 
+        return rv
+    
     else:
         return None
 
@@ -232,7 +234,7 @@ def makeRankTable(sheet_table_name, outfn='rank_table', outdir=None, hour_constr
         if hour_constraints:
             time_left = hour_constraints
         else:
-            time_left = timeLeft()
+            time_left = find_time_left()
 
         if time_left is not None:
             if 'runname' in list(hour_constraints.keys()) and 'left' in list(hour_constraints.keys()):
@@ -634,13 +636,13 @@ def makeResult(stars, star_table, totexptimes, final_priorities, dt, idx, focval
 
     return res
 
-def lastAttempted(observed):
+def last_attempted():
 
     failed_obs = None
 
     try:
-        lastresult = ktl.read("apftask", "SCRIPTOBS_LINE")
-        lastobj = lastresult.split()[0]
+        last_line = ktl.read("apftask", "SCRIPTOBS_LINE")
+        last_obj = last_line.split()[0]
     except:
         return None
 
@@ -651,7 +653,7 @@ def lastAttempted(observed):
     return failed_obs
 
 
-def behindMoon(moon,ras,decs):
+def behind_moon(moon,ras,decs):
     md = TARGET_MOON_DIST_MAX - TARGET_MOON_DIST_MIN
     minMoonDist = ((moon.phase / 100.) * md) + TARGET_MOON_DIST_MIN
     moonDist = np.degrees(np.sqrt((moon.ra - ras)**2 + (moon.dec - decs)**2))
@@ -730,9 +732,9 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     # List of targets already observed
 
-    lastfailure = lastAttempted(observed)
-    if lastfailure is not None:
-        last_objs_attempted.append(lastfailure)
+    last_failure = last_attempted()
+    if last_failure is not None:
+        last_objs_attempted.append(last_failure)
     if len(last_objs_attempted) == 5:
         apflog( "getNext(): 5 failed acquisition attempts", level="warn", echo=True)
 
@@ -767,7 +769,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     # Is the target behind the moon?
 
-    moon_check = behindMoon(moon,star_table['ra'], star_table['dec'])
+    moon_check = behind_moon(moon,star_table['ra'], star_table['dec'])
     available = available & moon_check
     apflog("getNext(): Moon visibility check - stars rejected = %s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)])), echo=True)
     
