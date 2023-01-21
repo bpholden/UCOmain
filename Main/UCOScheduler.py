@@ -903,6 +903,12 @@ if __name__ == '__main__':
 
     sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
+
+    try:
+        ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 3, binary=True)
+    except:
+        pass
+    
     # For some test input what would the best target be?
     otfn = "observed_targets"
     ot = open(otfn, "w")
@@ -929,6 +935,15 @@ if __name__ == '__main__':
             
     print("Done")
     ot.close()
+
+    print("Testing a failure")
+    try:
+        ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 2, binary=True)
+    except:
+        pass
+    result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=sheet_list, template=True, rank_sheetn=rank_tablen, delta_t=delta_t)
+
+    
     print("Testing templates")
 
     star_table, stars = ParseUCOSched.parseUCOSched(sheetns=sheet_list, outfn='googledex.dat', outdir=".", config=configDefaults('public'))
