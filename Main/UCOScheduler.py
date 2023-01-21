@@ -646,9 +646,16 @@ def last_attempted():
     except:
         return None
 
-    if lastobj not in observed.names:
-        apflog( "lastAttempted(): Last objects attempted %s" % (lastobj),echo=True)
-        failed_obs = lastobj
+
+    try:
+        last_result = ktl.read("apftask", "SCRIPTOBS_LINE_RESULT", binary=True)
+    except:
+        return None
+        
+    apflog( "last_attempted(): Last objects attempted %s" % (last_obj), echo=True)
+    # 3 is success
+    if last_result != 3:
+        failed_obs = last_obj
 
     return failed_obs
 
