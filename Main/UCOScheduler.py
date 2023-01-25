@@ -776,7 +776,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     # Is the target behind the moon?
 
-    moon_check = behind_moon(moon,star_table['ra'], star_table['dec'])
+    moon_check = behind_moon(moon, star_table['ra'], star_table['dec'])
     available = available & moon_check
     apflog("getNext(): Moon visibility check - stars rejected = %s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)])), echo=True)
     
