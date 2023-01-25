@@ -307,8 +307,8 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
                     "texp", "I2", "expcount", "decker","Close Companion", \
                     "owner", "lastobs", "B-V", \
-                    "cad", "pri", "nexp", "count", \
-                    "night_cad","night_obs", \
+                    "cad", "pri", "nexp", "count", "binning", \
+                    "night_cad","night_obs", "DaysNew", \
                     "Template", "Nobs", "Total Obs", "Bstar",\
                     "mode", "raoff", "decoff",  "obsblock",\
                     'sheetn' \
