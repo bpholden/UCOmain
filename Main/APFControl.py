@@ -373,7 +373,7 @@ class APF:
             if apfmon_stat == 4:
                 # modify -s apfucam DISP0DWIM="ksetMacval DISP0STA READY"
                 if self.disp0sta.read(binary=True,timeout=2) == 0:
-                    self.apfucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
+                    self.ucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
         except:
             return
 
@@ -563,7 +563,7 @@ class APF:
             except Exception as e:
                 apflog("Cannot restart %s on %s: %s" % (taskname,runhost,e),level='error',echo=True)
                 return
-            apflog("%s should be restarted" % (taskname_val),echo=True)
+            apflog("%s should be restarted" % (taskname),echo=True)
         return
 
 
@@ -1271,14 +1271,14 @@ class APF:
         rv, rc = apftaskDo(cmd)
         try:
             homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
-        except:
-            apflog("cannot read apfmon keyword" % (e),level='Alert',echo=True)
+        except Exception as e:
+            apflog("cannot read apfmon keyword ELHOMERIGHTSTA: %s" % (e),level='Alert',echo=True)
             return False
         else:
             if rc == 0 and homed == 2:
                 return True
             else:
-                apflog("cannot home telescope" % (e),level='Alert',echo=True)
+                apflog("cannot home telescope",level='Alert',echo=True)
                 return False
 
     def checkHome(self,home=True):
@@ -1969,7 +1969,7 @@ class APF:
             ucamsta0 = self.ucam['DISP0STA'].read(binary=True)
             ucamsta1 = self.ucam['DISP1STA'].read(binary=True)
         except Exception as e:
-            apflog('apfucam.DISP%STA failure, apfucam likely not running: %s' % (e),echo=True,level='Alert')
+            apflog('apfucam.DISPSTA failure, apfucam likely not running: %s' % (e),echo=True,level='Alert')
             rv = self.ucamRestart(fake=fake)
             return rv
         else:
@@ -1977,7 +1977,7 @@ class APF:
                 # Things are still starting up
                 if ucamsta0 > 2:
                     # failure to connect
-                    rv = self.ucamRestart(self.combo_ps, fake=fake)
+                    rv = self.ucamRestart(fake=fake)
                     return rv
                 else:
                     rv = APFTask.waitfor(self.task, True, expression="$apfucam.DISP0STA = 0 & $apfucam.DISP1STA = 0", timeout=600)
