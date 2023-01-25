@@ -782,7 +782,7 @@ class APF:
         else:
             return self.isReadyForObservingDirect()
 
-    def setObserverInfo(self, num=10000, name='Robot', owner='public', binning=1):
+    def setObserverInfo(self, num=10000, name='Robot', owner='public'):
         if self.test: return
         apflog("Setting science camera parameters.")
         self.ucam('OBSERVER').write(name)
@@ -793,7 +793,7 @@ class APF:
         self.obsnum.write(str(num))
         self.robot['UCAMLAUNCHER_UCAM_PCC'].write(0)
 
-        bstr = "%d,%d" % (binning,binning)
+        bstr = "%d,%d" % (1,1)
         self.ucam['BINNING'].write(bstr)
         
         apflog("Updated science camera parameters:")
