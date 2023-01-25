@@ -461,7 +461,7 @@ def conditionCuts(moon, seeing, slowdown, star_table):
         available = np.ones(len(star_table['ra'], dtype=bool))
 
     if 'moon' in star_table.colnames:
-        available = (star_table['moon'] > moon) & available
+        available = (star_table['moon'] < moon.moon_phase) & available
 
     if 'transparency' in star_table.colnames:
         ext = 2.5 * np.log10(slowdown)
