@@ -296,6 +296,7 @@ def initStarTable(col_list):
     star_table['nexp'] = []
     star_table['cad'] = []
     star_table['pri'] = []
+    star_table['moon'] = []
 
     return star_table
 
