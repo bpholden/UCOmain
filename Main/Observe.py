@@ -418,6 +418,9 @@ class Observe(threading.Thread):
             out_line = "%s avgfwhm=%05.2f slowdown=%04.2f" % (cur_line, seeing, slowdown )
             self.append_selected(out_line)
 
+            self.apf.ucam['BINNING'].write(self.target['BINNING'], timeout=0.1)
+            apflog("Binning = %s" % self.apf.ucam['BINNING'].read(),echo=True)
+            
             try:
                 self.scriptobs.stdin.write(cur_line + '\n')
             except IOError as e:
