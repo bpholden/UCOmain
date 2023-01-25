@@ -472,7 +472,7 @@ def conditionCuts(moon, seeing, slowdown, star_table):
 
 
 def templateConditions(moon, seeing, slowdown):
-    """ istrue = conditionCuts(moon, seeing, slowdown)
+    """ istrue = templateCondition(moon, seeing, slowdown)
 
     Checks to see if moon, seeing and slowdown factor are within template conditions
 
