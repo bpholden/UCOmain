@@ -779,6 +779,10 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     moon_check = behind_moon(moon, star_table['ra'], star_table['dec'])
     available = available & moon_check
     apflog("getNext(): Moon visibility check - stars rejected = %s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)])), echo=True)
+
+    # other condition cuts (seeing, transparency, moon phase)
+    cuts = conditionCuts(moon, seeing, slowdown, star_table))
+    available = available & cuts
     
     if len(last_objs_attempted)>0:
         for n in last_objs_attempted:
