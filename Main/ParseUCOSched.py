@@ -424,9 +424,9 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
 
         if "DaysNew" in didx and ls[didx["DaysNew"]] is not None:
             days_from_new = floatDefault(ls[didx['DaysNew']], default=15.0)
-            star_table['moon'] = days_from_new / 15.0
+            star_table['moon'].append(days_from_new / 15.0)
         else:
-            star_table['moon'] = 1.0
+            star_table['moon'].append(1.0)
 
 
             
