@@ -421,6 +421,14 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
             star_table['binning'].append(bin_str)
         else:
             star_table['binning'].append("1,1")
+
+        if "DaysNew" in didx and ls[didx["DaysNew"]] is not None:
+            days_from_new = floatDefault(ls[didx['DaysNew']], default=15.0)
+            star_table['moon'] = days_from_new / 15.0
+        else:
+            star_table['moon'] = 1.0
+
+
             
         # scheduler specific
         if "cad" in didx and ls[didx['cad']] is not None:
