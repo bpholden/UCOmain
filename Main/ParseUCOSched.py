@@ -413,7 +413,15 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         else:
             star_table['nexp'].append(intDefault(ls[didx["APFnshots"]], default=1))
 
-
+        if "binning" in didx and ls[didx["binning"]] is not None:
+            binp = intDefault(ls[didx["binning"]], default=1)
+            if binp != 1 and binp != 2 and binp != 4:
+                binp=1
+            bin_str = "%d,%d" % (binp, binp)
+            star_table['binning'].append(bin_str)
+        else:
+            star_table['binning'].append("1,1")
+            
         # scheduler specific
         if "cad" in didx and ls[didx['cad']] is not None:
             cad_value = floatDefault(ls[didx["cad"]], default=0.7)
