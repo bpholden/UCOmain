@@ -618,6 +618,7 @@ def makeResult(stars, star_table, totexptimes, final_priorities, dt, idx, focval
     res['PRI'] = final_priorities[idx]
     res['DECKER'] = star_table['decker'][idx]
     res['I2'] = star_table['I2'][idx]
+    res['BINNING'] = star_table['binning'][idx]
     res['isTemp'] = False
     res['isBstar'] = bstar
     res['mode'] = ''
