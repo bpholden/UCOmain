@@ -442,7 +442,7 @@ def computeSunrise(dt, horizon='0'):
     return sunrise
 
 
-def conditionCuts(moon,seeing, slowdown, star_table):
+def conditionCuts(moon, seeing, slowdown, star_table):
     """ available = conditionCuts(moon, seeing, slowdown, star_table)
 
     Checks if columns are in the star_table, then cuts on those, returns a boolean numpy array
