@@ -367,20 +367,20 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
     if coverid != '':
         ret += 'coverid=%s ' % str(coverid)
 
-    if star_table_row['mode'] != None:
-        if star_table_row['mode'] == BLANK:
-            ret += ' blank=Y'
-        elif star_table_row['mode'] == ACQUIRE:
-            ret += ' guide=Y'
-    else:
-        ret += ''
+#    if star_table_row['mode'] != None:
+#        if star_table_row['mode'] == BLANK:
+#            ret += ' blank=Y'
+#        elif star_table_row['mode'] == ACQUIRE:
+#            ret += ' guide=Y'
+#    else:
+#        ret += ''
 
-    raoff  = star_table_row['raoff']
-    decoff = star_table_row['decoff']
-    if raoff == 'None':
-        raoff = ''
-    if decoff == 'None':
-        decoff = ''
+#    raoff  = star_table_row['raoff']
+#    decoff = star_table_row['decoff']
+#    if raoff == 'None':
+#        raoff = ''
+#    if decoff == 'None':
+#        decoff = ''
 #    if raoff is not '' and decoff is not '':
 #        ret += ' raoff=' + str(raoff) + ' decoff=' + str(decoff)
 
