@@ -484,7 +484,6 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
 #        star_table['obsblock'].append(checkFlag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
 #        star_table['inst'].append(checkFlag("inst",didx,ls,"(levy|darts)",config['inst']).lower())
 
-
         # need to check raoff and decoff values and alarm on failure
 
 
