@@ -31,13 +31,8 @@ if __name__ == "__main__":
     config = dict()
     config['I2'] = 'Y'
     config['decker']='W'
-    config['mode']=''
-    config['obsblock']=''
     config['Bstar']='N'
-    config['owner']='public'
     config['inst']='levy'
-    config['raoff'] = None
-    config['decoff'] = None
 
     if opt.time_left is not None and os.path.exists(opt.time_left):
         try:
