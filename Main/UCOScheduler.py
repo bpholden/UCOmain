@@ -583,7 +583,7 @@ def make_obs_block(star_table, idx, dt, focval):
             rv.append(scriptobs_line)
 
     for idx in rest_idxs:
-        scriptobs_line = makeScriptobsLine(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
+        scriptobs_line = make_scriptobs_line(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
                                                owner=star_table['sheetn'][allinblock][idx], \
                                                I2=star_table['I2'][allinblock][idx], focval=focval)
         rv.append(scriptobs_line)
