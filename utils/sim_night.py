@@ -22,7 +22,7 @@ import ParseUCOSched
 parser = optparse.OptionParser()
 parser.add_option("-d","--date",dest="date",default="today")
 parser.add_option("-f","--fixed",dest="fixed",default="")
-parser.add_option("--rank_table",dest="rank_sheetn",default="2022B_ranks")
+parser.add_option("--rank_table",dest="rank_sheetn",default="2023A_ranks")
 parser.add_option("-i","--infile",dest="infile",default="googledex.dat")
 parser.add_option("-o","--outfile",dest="outfile",default=None)
 parser.add_option("-b","--bstar",dest="bstar",default=True,action="store_false")
