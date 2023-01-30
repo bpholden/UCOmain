@@ -310,11 +310,11 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
     req_cols = ["Star Name", "RA hr", "RA min", "RA sec", \
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
                     "texp", "I2", "expcount", "decker","Close Companion", \
-                    "owner", "lastobs", "B-V", \
+                    "lastobs", "B-V", \
                     "cad", "pri", "nexp", "count", "binning", \
                     "night_cad","night_obs", "DaysNew", \
                     "Template", "Nobs", "Total Obs", "Bstar",\
-                    "mode", "raoff", "decoff",  "obsblock",\
+#                    "mode", "raoff", "decoff",  "obsblock",\
                     'sheetn' \
                     ]
 
@@ -393,12 +393,12 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         else:
             continue
 
-        mode = checkFlag("mode",didx,ls,"\A(b|B|a|A|c|C)",config["mode"])
-        if type(mode) == str:
-            mode = mode.upper()
-        star_table['mode'].append(mode)
-        star_table['raoff'].append(checkFlag("raoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["raoff"]))
-        star_table['decoff'].append(checkFlag("decoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["decoff"]))
+#        mode = checkFlag("mode",didx,ls,"\A(b|B|a|A|c|C)",config["mode"])
+#        if type(mode) == str:
+#            mode = mode.upper()
+#        star_table['mode'].append(mode)
+#        star_table['raoff'].append(checkFlag("raoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["raoff"]))
+#        star_table['decoff'].append(checkFlag("decoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["decoff"]))
 
         for coln in ("pmRA", "pmDEC"):
             star_table[coln].append(floatDefault(ls[didx[coln]]))
@@ -481,8 +481,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         tempselect = checkFlag("Template",didx,ls,"\A(n|N)",'Y')
         star_table['Template'].append(tempselect.upper())
 
-        star_table['owner'].append(checkFlag("owner", didx, ls, "\A(\w?\.?\w+)", config["owner"]))
-        star_table['obsblock'].append(checkFlag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
+#        star_table['obsblock'].append(checkFlag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
 #        star_table['inst'].append(checkFlag("inst",didx,ls,"(levy|darts)",config['inst']).lower())
 
 
@@ -542,11 +541,11 @@ def genStars(star_table):
 
 
 
-def parseUCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W', 'owner' : '', 'mode' : '', 'obsblock' : '', 'Bstar' : 'N' , 'raoff' : None, 'decoff' : None },force_download=False,prilim=0.5,hour_constraints=None):
+def parseUCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W',  'Bstar' : 'N' },force_download=False,prilim=0.5,hour_constraints=None):
     """ parseUCOSched parses google sheets and returns the output as a tuple
     This routine downloads the data if needed and saves the output to a file. If the file exists, it just reads in the file.
 
-    star_table, stars = parseUCOSched(sheetns=["RECUR_A100"],certificate='cert.json',outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W', 'owner' : '', 'mode' : '', 'obsblock' : '', 'Bstar' : 'N' , 'raoff' : None, 'decoff' : None },force_download=False,prilim=0.5)
+    star_table, stars = parseUCOSched(sheetns=["RECUR_A100"],certificate='cert.json',outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W', 'Bstar' : 'N' },force_download=False,prilim=0.5)
 
     star_table - an astropy table
     stars - a list of pyEphem objects
@@ -606,7 +605,8 @@ def parseTOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=D
     except:
         return
 
-    config={'I2': 'Y', 'decker': 'W', 'owner' : '', 'mode' : '', 'obsblock' : '', 'Bstar' : 'N' , 'raoff' : None, 'decoff' : None }
+#    config={'I2': 'Y', 'decker': 'W', 'owner' : '', 'mode' : '', 'obsblock' : '', 'Bstar' : 'N' , 'raoff' : None, 'decoff' : None }
+    config={'I2': 'N', 'decker': 'W', 'owner' : '',  'Bstar' : 'N'  }
     too_table = parseCodex(config, sheetns=too_sheetns, certificate=certificate, prilim=prilim, sleep=False)
 
     for n in too_sheetns:
