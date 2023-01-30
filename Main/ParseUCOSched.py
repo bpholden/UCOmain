@@ -261,16 +261,19 @@ def parseRankTable(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
         if len(cur_codex) <= 0:
             apflog("Worksheet %s exists but is empty, skipping" % (sheet_table_name), level='error', echo=True)
             return None, None
+
+        req_cols = ["sheetn", "rank", "frac", "too"]
+        didx = findColumns(cur_codex[0], req_cols)
+        
         for row in cur_codex[1:]:
             if row[0] != "":
-                sheetns.append(row[0])
-                crank = floatDefault(row[1])
+                sheetns.append(row[didx['sheetn']])
+                crank = floatDefault(row[didx['rank']])
                 crank = int(round(crank))
                 rank.append(crank)
-                cfrac = floatDefault(row[2])
+                cfrac = floatDefault(row[didx['frac']])
                 frac.append(cfrac)
-                too.append(row[3].lower())
-
+                too.append(row[didx['too']].lower())
 
     return sheetns,rank,frac,too
 
