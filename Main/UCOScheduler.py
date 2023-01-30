@@ -294,9 +294,9 @@ def timeCheck(star_table, totexptimes, dt, hour_table):
     return time_check
 
 
-def makeScriptobsLine(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='', temp=False):
+def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='', temp=False):
     """ given a name, a row in a star table and a do_flag, will generate a scriptobs line as a string
-    line = makeScriptobsLine(star_table_row, t, decker="W",I2="Y")
+    line = make_scriptobs_line(star_table_row, t, decker="W",I2="Y")
     star_table_row -contains all of the data needed for the line except
 
     t - a datetime object, this is used to fill in the uth and utm fields,
@@ -547,7 +547,7 @@ def findBstars(star_table,idx, bstars):
     return near_idx,end_idx
 
 
-def makeObsBlock(star_table, idx, dt, focval):
+def make_obs_block(star_table, idx, dt, focval):
 
     rv = []
 
@@ -577,7 +577,7 @@ def makeObsBlock(star_table, idx, dt, focval):
     if np.any(first):
         first_idxs, = np.where(first)
         for idx in first_idxs:
-            scriptobs_line = makeScriptobsLine(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
+            scriptobs_line = make_scriptobs_line(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
                                                 owner=star_table['sheetn'][allinblock][idx], \
                                                 I2=star_table['I2'][allinblock][idx], focval=focval)
             rv.append(scriptobs_line)
@@ -591,7 +591,7 @@ def makeObsBlock(star_table, idx, dt, focval):
     if np.any(last):
         last_idxs, = np.where(last)
         for idx in last_idxs:
-            scriptobs_line = makeScriptobsLine(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
+            scriptobs_line = make_scriptobs_line(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
                                                 owner=star_table['sheetn'][allinblock][idx], \
                                                 I2=star_table['I2'][allinblock][idx], focval=focval)
             rv.append(scriptobs_line)
@@ -601,7 +601,7 @@ def makeObsBlock(star_table, idx, dt, focval):
     rv[0] += ' # obsblock=%s end' % (cur_obsblock)
     return(rv)
 
-def makeResult(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode=''):
+def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode=''):
     res = dict()
 
     res['RA'] = stars[idx].a_ra
@@ -628,12 +628,12 @@ def makeResult(stars, star_table, totexptimes, final_priorities, dt, idx, focval
 #        res['obsblock'] = ''
 
     res['SCRIPTOBS'] = []
-    scriptobs_line = makeScriptobsLine(star_table[idx], dt, decker=res['DECKER'], owner=res['owner'], I2=star_table['I2'][idx], focval=focval)
+    scriptobs_line = make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], owner=res['owner'], I2=star_table['I2'][idx], focval=focval)
     scriptobs_line = scriptobs_line + " # end"
     res['SCRIPTOBS'].append(scriptobs_line)
 #    else:
 #        res['obsblock'] = star_table['obsblock'][idx]
-#        res['SCRIPTOBS'] = makeObsBlock(star_table, idx, dt, focval)
+#        res['SCRIPTOBS'] = make_obs_block(star_table, idx, dt, focval)
 
     return res
 
@@ -873,14 +873,14 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     stars[idx].compute(apf_obs)
 
-    res =  makeResult(stars, star_table, totexptimes, final_priorities, dt, idx, focval=focval, bstar=bstar, mode=config['mode'])
+    res =  make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=focval, bstar=bstar, mode=config['mode'])
     if do_templates and star_table['Template'][idx] == 'N' and star_table['I2'][idx] == 'Y':
-        bidx,bfinidx = findBstars(star_table,idx,bstars)
+        bidx, bfinidx = findBstars(star_table, idx, bstars)
 
         if enoughTimeTemplates(star_table,stars,idx,apf_obs,dt):
-            bline = makeScriptobsLine(star_table[bstars][bidx], dt, decker="N", I2="Y", owner=res['owner'], focval=2)
-            line  = makeScriptobsLine(star_table[idx], dt, decker="N", I2="N", owner=res['owner'], temp=True)
-            bfinline = makeScriptobsLine(star_table[bstars][bfinidx], dt, decker="N", I2="Y", owner=res['owner'], focval=0)
+            bline = make_scriptobs_line(star_table[bstars][bidx], dt, decker="N", I2="Y", owner=res['owner'], focval=2)
+            line  = make_scriptobs_line(star_table[idx], dt, decker="N", I2="N", owner=res['owner'], temp=True)
+            bfinline = make_scriptobs_line(star_table[bstars][bfinidx], dt, decker="N", I2="Y", owner=res['owner'], focval=0)
             res['SCRIPTOBS'] = []
             res['SCRIPTOBS'].append(bfinline + " # temp=Y end")
             res['SCRIPTOBS'].append(line + " # temp=Y")
@@ -955,9 +955,9 @@ if __name__ == '__main__':
     idx = idx[0]
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
     bidx,bfinidx = findBstars(star_table, idx, bstars)
-    bline = makeScriptobsLine(star_table[bstars][bidx], dt, decker="N", I2="Y", owner='public', focval=2)
-    line  = makeScriptobsLine(star_table[idx], dt, decker="N", I2="N", owner='public', temp=True)
-    bfinline = makeScriptobsLine(star_table[bstars][bfinidx], dt, decker="N", I2="Y", owner='public', focval=0)
+    bline = make_scriptobs_line(star_table[bstars][bidx], dt, decker="N", I2="Y", owner='public', focval=2)
+    line  = make_scriptobs_line(star_table[idx], dt, decker="N", I2="N", owner='public', temp=True)
+    bfinline = make_scriptobs_line(star_table[bstars][bfinidx], dt, decker="N", I2="Y", owner='public', focval=0)
     res= []
     res.append(bfinline + " # temp=Y end")
     res.append(line + " # temp=Y")
