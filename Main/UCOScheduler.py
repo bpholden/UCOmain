@@ -239,7 +239,7 @@ def makeRankTable(sheet_table_name, outfn='rank_table', outdir=None, hour_constr
         if time_left is not None:
             if 'runname' in list(time_left.keys()) and 'left' in list(time_left.keys()):
                 for runname in time_left['runname']:
-                    if time_left['left'][time_left['runname']==runname] < 0:
+                    if float(time_left['left'][time_left['runname']==runname]) < 0:
                         rank_table['rank'][rank_table['sheetn']==runname] = -1000
 
         try:
