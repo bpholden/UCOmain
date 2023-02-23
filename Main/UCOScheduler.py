@@ -237,9 +237,9 @@ def makeRankTable(sheet_table_name, outfn='rank_table', outdir=None, hour_constr
             time_left = find_time_left()
 
         if time_left is not None:
-            if 'runname' in list(hour_constraints.keys()) and 'left' in list(hour_constraints.keys()):
-                for runname in hour_constraints['runname']:
-                    if hour_constraints['left'][hour_constraints['runname']==runname] < 0:
+            if 'runname' in list(time_left.keys()) and 'left' in list(time_left.keys()):
+                for runname in time_left['runname']:
+                    if time_left['left'][time_left['runname']==runname] < 0:
                         rank_table['rank'][rank_table['sheetn']==runname] = -1000
 
         try:
