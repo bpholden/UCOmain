@@ -66,18 +66,24 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
             ret.append(False)
             continue
 
+        dt_days = dt / 86400
         if dt > 0:
             # Is the target visible at the end of the observations?
-            observer.date = ephem.Date(cdate + dt/86400.)
+            observer.date = ephem.Date(cdate + dt_days)
             s.compute(observer)
             fin_el = np.degrees(s.alt)
-            fin_elevations.append(fin_el)
+
+            observer.date = ephem.Date(cdate + dt_days/2)
+            s.compute(observer)
+            mid_el = np.degrees(s.alt)
+
         else:
             fin_el = cur_el
+            mid_el = cur_el
         
         diff = np.abs(s.a_dec - observer.lat)
         transit_alt = 90.0 - np.degrees(diff)
-        se = 90.0 - (transit_alt - cur_el) 
+        se = 90.0 - (transit_alt - mid_el) 
 
         if offset > 0:
             if cur_az < 180:
@@ -153,14 +159,7 @@ if __name__ == '__main__':
     star = ephem.FixedBody()
     star._ra = ephem.hours(":".join(["1", "44", "4.083"]))
     star._dec = ephem.degrees(":".join(["-15", "56", "14.93"]))
-    ret, se, fe, sce = visible(apf_obs, [star], [0.])
-    print(ret, se, fe)
-    ret, se, fe, sce = visible(apf_obs, [star], [400.])
-    print(ret, se, fe, sce)
-
-    
-    star = ephem.FixedBody()
-    star._ra = ephem.hours(":".join(["1", "44", "4.083"]))
-    star._dec = ephem.degrees(":".join(["-15", "56", "14.93"]))
-    ret, se, fe, sce = visible(apf_obs, [star], [400.],)
-    print(ret, se, fe, sce)
+    ret, se, sce = visible(apf_obs, [star], [0.])
+    print(ret, se, sce)
+    ret, se, sce = visible(apf_obs, [star], [400.])
+    print(ret, se, sce)
