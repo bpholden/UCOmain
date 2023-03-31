@@ -523,7 +523,7 @@ def enoughTimeTemplates(star_table, stars, idx, apf_obs, dt):
     tot_time = count * 1200
 
     tot_time += 210 + (2*40 + 40*(star_table['nexp'][idx]-1)) + 2400 # two B star exposures + three 70 second acquisitions and the actual observation readout times
-    vis, star_elevations, fin_els, scaled_els = Visible.visible(apf_obs, [stars[idx]], [tot_time])
+    vis, star_elevations, scaled_els = Visible.visible(apf_obs, [stars[idx]], [tot_time])
     time_left_before_sunrise = computeSunrise(dt, horizon='-9')
 
     try:
@@ -811,7 +811,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     apflog("getNext(): Computing star elevations",echo=True)
     fstars = [s for s,_ in zip(stars,available) if _ ]
-    vis,star_elevations,fin_star_elevations, scaled_els = Visible.visible(apf_obs, fstars, totexptimes[available], shiftwest=shiftwest)
+    vis, star_elevations, scaled_els = Visible.visible(apf_obs, fstars, totexptimes[available], shiftwest=shiftwest)
     currently_available = available
     if len(star_elevations) > 0:
         currently_available[available] = currently_available[available] & vis

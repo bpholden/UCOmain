@@ -29,7 +29,6 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
     prev_horizon = observer.horizon
     cdate = observer.date
     ret = []
-    fin_elevations = []
     start_elevations = []
     scaled_elevations = []
     observer.horizon = str(min_el)
@@ -63,7 +62,6 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
         start_elevations.append(cur_el)
         
         if cur_el < min_el or cur_el > max_el:
-            fin_elevations.append(cur_el)
             scaled_elevations.append(cur_el)
             ret.append(False)
             continue
@@ -75,7 +73,6 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
             fin_el = np.degrees(s.alt)
             fin_elevations.append(fin_el)
         else:
-            fin_elevations.append(cur_el)
             fin_el = cur_el
         
         diff = np.abs(s.a_dec - observer.lat)
@@ -139,7 +136,7 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
         ret.append(True)
 #	apflog( "is_visible(): done searching targets", echo=True)
     observer.horizon = prev_horizon
-    return ret, np.array(start_elevations), np.array(fin_elevations), np.array(scaled_elevations)
+    return ret, np.array(start_elevations), np.array(scaled_elevations)
 
 
 
