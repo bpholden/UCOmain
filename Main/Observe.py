@@ -673,6 +673,7 @@ class Observe(threading.Thread):
         self.apf.DMZero()
         haveobserved = False
         failstart = 0
+        do_msg = 0
 
         self.apf.validateUCAMoutputs()
         
@@ -703,6 +704,19 @@ class Observe(threading.Thread):
                 apflog("CLOSE TO DEW POINT: %s" % (str(self.apf.dewTooClose)), echo=True)
                 closing()
 
+            self.apf.userkind.read(timeout=1)
+            if self.apf.userkind.binary != 3:
+                if do_msg == 0:
+                    msg = "checkapf.USERKIND is no longer Robotic, instead %s" % (self.apf.userkind.ascii)
+                    apflog(msg, echo=True, level='error')
+                    APFTASK.set(self.task, suffix="MESSAGE", value=msg, wait=False)
+                    do_msg += 1
+                APFTask.waitFor(self.task, True, timeout=60)
+                continue
+            elif self.apf.userkind.binary == 3:
+                do_msg = 0
+                
+                    
             # Check the slowdown factor to close for clouds
             if self.VMAG is not None and self.BV is not None and False:
                 slow = calcSlowdown()
@@ -915,6 +929,7 @@ class Observe(threading.Thread):
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
                 APFTask.waitFor(self.task, True, timeout=5)
+                
             if  self.apf.isOpen()[0] and float(cursunel) > sunel_lim and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
