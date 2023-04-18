@@ -542,7 +542,8 @@ def genStars(star_table):
 
 def parseUCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W',  'Bstar' : 'N' },force_download=False,prilim=0.5,hour_constraints=None):
     """ parseUCOSched parses google sheets and returns the output as a tuple
-    This routine downloads the data if needed and saves the output to a file. If the file exists, it just reads in the file.
+    This routine downloads the data if needed and saves the output to a file.
+    If the file exists, it just reads in the file.
 
     star_table, stars = parseUCOSched(sheetns=["RECUR_A100"],certificate='cert.json',outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W', 'Bstar' : 'N' },force_download=False,prilim=0.5)
 
@@ -552,7 +553,8 @@ def parseUCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.d
     Inputs:
     sheetns - list of google sheet names
     certificate - json file for authenticating to access google sheets
-    outfn - output file name, will read this in if it already exists instead of downloading sheets if force_download is False
+    outfn - output file name, will read this in if it already exists 
+            instead of downloading sheets if force_download is False
     outdir - output directory for outfn, defaults to ./
     config - default values for a number of flags
     force_download - force the google sheets to be downloaded even if outfn already exists
