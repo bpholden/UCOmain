@@ -900,7 +900,7 @@ if __name__ == '__main__':
     else:
         hour_constraints = None
 
-    rank_tablen='2022B_ranks'
+    rank_tablen='2023A_ranks'
     rank_table = makeRankTable(rank_tablen, hour_constraints=hour_constraints)
 
     hour_table = makeHourTable(rank_table, dt, hour_constraints=hour_constraints)
