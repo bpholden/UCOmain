@@ -419,7 +419,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
 
         if "binning" in didx and ls[didx["binning"]] is not None:
             binp = intDefault(ls[didx["binning"]], default=1)
-            if binp != 1 and binp != 2 and binp != 4:
+            if binp != 1 and binp != 2 and binp != 4 and binp != 8:
                 binp=1
             bin_str = "%d,%d" % (binp, binp)
             star_table['binning'].append(bin_str)

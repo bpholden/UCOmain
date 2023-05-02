@@ -365,6 +365,8 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
     if coverid != '':
         ret += 'coverid=%s ' % str(coverid)
 
+    ret += 'binning=%s ' % str(star_table_row['binning'])
+
 #    if star_table_row['mode'] != None:
 #        if star_table_row['mode'] == BLANK:
 #            ret += ' blank=Y'

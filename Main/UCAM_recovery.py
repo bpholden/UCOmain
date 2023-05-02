@@ -1,18 +1,8 @@
 from __future__ import print_function
-import os
-import sys
-import time
-import re
-from datetime import datetime, timedelta
 
-try:
-    from apflog import *
-    import ktl
-    import APFTask
-except:
-    from fake_apflog import *
-
-
+import apflog
+import ktl
+import APFTask
 
 class UCAM_recovery():
 
@@ -23,7 +13,7 @@ class UCAM_recovery():
         self.apfucam = ktl.Service('apfucam')
         self.apftask = ktl.Service('apftask')
         self.apfmot = ktl.Service('apfmot')
-        
+
         self.combo_ps = self.apfucam['combo_ps']
         self.combo_ps.monitor()
         self.ctalkto = self.apfucam['ctalkto']
@@ -37,13 +27,13 @@ class UCAM_recovery():
     def __repr__(self):
         rstr = "task=%s combops=%s ctalkto=%s command=%s status=%s " % (self.task,self.combo_ps,self.ctalkto,self.ucam_command,self.ucam_status)
         return rstr
-                
+
     def reboot_warsaw(self):
 
         if self.ucam_status.read(binary=True) == 1:
             rv = self.stop_ucam_software()
             if rv is False:
-                apflog("UCAM software did not stop running, rebooting anyway",level='Error',echo=True)
+                apflog.apflog("UCAM software did not stop running, rebooting anyway",level='Error',echo=True)
             
         self.ucam_command.write(2)
         rv = APFTask.waitfor(self.task, True, expression="$apftask.UCAMLAUNCHER_STATUS == Running", timeout=120)
@@ -54,7 +44,7 @@ class UCAM_recovery():
             return rv
         else:
             # this is bad
-            apflog("UCAM host not re-booted",level='Alert',echo=True)
+            apflog.apflog("UCAM host not re-booted",level='Alert',echo=True)
 
         return False
 
@@ -65,14 +55,14 @@ class UCAM_recovery():
         if rv:
             APFTask.wait(self.task,True,timeout=1)
         else:
-            apflog("Cannot power cycle FOUSB",level='error',echo=True)
+            apflog.apflog("Cannot power cycle FOUSB",level='error',echo=True)
             return False
         self.apfmot['FOUSB_POWER'].write(1)
         rv = APFTask.waitfor(self.task, True, expression="$apfmot.FOUSB_POWER == On",timeout=10)
         if rv:
             APFTask.wait(self.task,True,timeout=1)
         else:
-            apflog("Cannot power cycle FOUSB",level='error',echo=True)
+            apflog.apflog("Cannot power cycle FOUSB",level='error',echo=True)
             return False
         return rv
 

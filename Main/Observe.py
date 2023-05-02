@@ -339,10 +339,6 @@ class Observe(threading.Thread):
 
         # This is called when an observation finishes, and selects the next target
         def getTarget():
-            APFLib.write(self.apf.ucam["RECORD"], "Yes") # safe / sorry
-
-            if self.apf.nerase != 2:
-                self.apf.nerase.write(2, binary=True)
 
             if self.checkObsFinished():
                 apflog("getTarget(): Scriptobs phase is input, determining next target.", echo=True)
@@ -418,9 +414,8 @@ class Observe(threading.Thread):
             out_line = "%s avgfwhm=%05.2f slowdown=%04.2f" % (cur_line, seeing, slowdown )
             self.append_selected(out_line)
 
-            self.apf.ucam['BINNING'].write(self.target['BINNING'], timeout=0.1)
             apflog("Binning = %s" % self.apf.ucam['BINNING'].read(),echo=True)
-            
+
             try:
                 self.scriptobs.stdin.write(cur_line + '\n')
             except IOError as e:
