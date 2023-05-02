@@ -62,7 +62,8 @@ def computePriorities(star_table, cur_dt, observed=None, hour_table=None, rank_t
         done_sheets = []
 
     if done_sheets != []:
-        apflog("The following sheets are finished for the night: %s" % (" ".join(list(done_sheets))),echo=True)
+        done_sheets_str = " ".join(list(done_sheets))
+        apflog(f"The following sheets are finished for the night: {done_sheets_str}",echo=True)
 
     cadence_check /= star_table['cad']
     bad_pri = np.floor(cadence_check * 100)
@@ -106,7 +107,7 @@ def updateHourTable(hour_table, observed, dt, outfn='hour_table', outdir=None):
     # reverse time order, so most recent target observed is first.
 
     observed.reverse()
-    
+
     nobj = len(observed.names)
     for i in range(0,nobj):
         own = observed.owners[i]
@@ -118,7 +119,7 @@ def updateHourTable(hour_table, observed, dt, outfn='hour_table', outdir=None):
         hr, mn = observed.times[i]
         prev = datetime(dt.year, dt.month, dt.day, hr, mn)
         diff = cur - prev
-        hourdiff = (diff.days * 24 + diff.seconds / 3600.)
+        hourdiff = diff.days * 24 + diff.seconds / 3600.
         if hourdiff > 0:
             hours[observed.owners[i]] += hourdiff
             cur = prev
@@ -132,7 +133,7 @@ def updateHourTable(hour_table, observed, dt, outfn='hour_table', outdir=None):
     try:
         hour_table.write(outfn,format='ascii',overwrite=True)
     except Exception as e:
-        apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
+        apflog(f"Cannot write table {outfn}: {type(e)} {e}", level='error', echo=True)
 
     observed.reverse()
 
@@ -174,7 +175,7 @@ def makeHourTable(rank_table, dt, outfn='hour_table', outdir=None, hour_constrai
     try:
         hour_table.write(outfn,format='ascii')
     except Exception as e:
-        apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
+       apflog(f"Cannot write table {outfn}: {type(e)} {e}", level='error', echo=True)
     return hour_table
 
 def find_time_left():
@@ -205,7 +206,6 @@ def find_time_left():
         rv = astropy.table.Table([sheetns,left,alloc,used], names=["runname","left","alloc","used"])
 
         return rv
-    
     else:
         return None
 
@@ -245,7 +245,7 @@ def makeRankTable(sheet_table_name, outfn='rank_table', outdir=None, hour_constr
         try:
             rank_table.write(outfn,format='ascii')
         except Exception as e:
-            apflog("Cannot write table %s: %s" % (outfn,e),level='error',echo=True)
+            apflog(f"Cannot write table {outfn}: {type(e)} {e}", level='error', echo=True)
 
     return rank_table
 
@@ -257,7 +257,7 @@ def totExpTimes(star_table, targNum):
     nobs = np.ones(targNum)
     doubles = (star_table['night_cad'] > 0)  & (star_table['night_obs'] == 0)
     nobs[doubles] = 2
-    
+
     totexptimes = nobs*(star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)) + (nobs-1)*star_table['night_cad']*86400
 
     return totexptimes
@@ -274,7 +274,7 @@ def timeCheck(star_table, totexptimes, dt, hour_table):
 
     started_doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
     if np.any(started_doubles):
-        cadence_check = (ephem.julian_date(dt) - star_table['lastobs'])
+        cadence_check = ephem.julian_date(dt) - star_table['lastobs']
         waiting = cadence_check < (star_table['night_cad'] - BUFFER )
         if np.any(waiting):
             maxexptimes = (star_table['night_cad'] - cadence_check) * 86400
@@ -286,8 +286,6 @@ def timeCheck(star_table, totexptimes, dt, hour_table):
                 # they will be selected in the priorities method
                 # so we should use the usual maximum exposure time
                 pass
-
-            
 
     time_check = totexptimes <= maxexptime
 
