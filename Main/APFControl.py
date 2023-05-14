@@ -164,7 +164,7 @@ class APF:
     ucamcmd      = robot['UCAMLAUNCHER_UCAM_COMMAND']
     lastopen     = robot['OPENUP_LAST_SUCCESS']
     msg = ""
-    
+
     ucam       = ktl.Service('apfucam')
     outfile    = ucam['OUTFILE']
     elapsed    = ucam['ELAPSED']
@@ -1637,6 +1637,8 @@ class APF:
             try:
                 self.robot['SCRIPTOBS_LINE_RESULT'].write(3)
                 self.robot['SCRIPTOBS_OBSERVED'].write(True)
+                self.apfguide['CLEARSUMS'].write('now')
+                self.apfguide['CLEARSUMS'].write('gstate')
             except Exception as e:
                 apflog("Cannot write 3 to SCRIPTOBS_LINE_RESULT or True to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
             return True
@@ -1667,7 +1669,9 @@ class APF:
             apflog(ostr,level='error',echo=True)
 
     def findRobot(self):
-        """Trys to find a running instance of robot.csh. Returns the PID along with a boolean representing if the robot was succesfully found."""
+        """Trys to find a running instance of robot.csh. 
+            Returns the PID along with a boolean representing 
+            if the robot was succesfully found."""
         rpid = self.robot['SCRIPTOBS_PID'].read(binary=True)
         if rpid == '' or rpid == -1:
             return rpid, False
