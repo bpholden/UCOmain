@@ -133,7 +133,7 @@ def updateHourTable(hour_table, observed, dt, outfn='hour_table', outdir=None):
     try:
         hour_table.write(outfn,format='ascii',overwrite=True)
     except Exception as e:
-        apflog(f"Cannot write table {outfn}: {type(e)} {e}", level='error', echo=True)
+        apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
 
     observed.reverse()
 
@@ -175,7 +175,7 @@ def makeHourTable(rank_table, dt, outfn='hour_table', outdir=None, hour_constrai
     try:
         hour_table.write(outfn,format='ascii')
     except Exception as e:
-       apflog(f"Cannot write table {outfn}: {type(e)} {e}", level='error', echo=True)
+       apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
     return hour_table
 
 def find_time_left():
@@ -245,7 +245,7 @@ def makeRankTable(sheet_table_name, outfn='rank_table', outdir=None, hour_constr
         try:
             rank_table.write(outfn,format='ascii')
         except Exception as e:
-            apflog(f"Cannot write table {outfn}: {type(e)} {e}", level='error', echo=True)
+            apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
 
     return rank_table
 
@@ -258,7 +258,8 @@ def totExpTimes(star_table, targNum):
     doubles = (star_table['night_cad'] > 0)  & (star_table['night_obs'] == 0)
     nobs[doubles] = 2
 
-    totexptimes = nobs*(star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1)) + (nobs-1)*star_table['night_cad']*86400
+    totexptimes = nobs*(star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1))
+    totexptimes += (nobs-1)*star_table['night_cad']*86400
 
     return totexptimes
 
@@ -304,11 +305,15 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
     """
 
     # Add the RA as three elements, HR, MIN, SEC
-    rastr = "%s %s %s " % (star_table_row['RA hr'],star_table_row['RA min'],star_table_row['RA sec'])
+    rastr = "%s %s %s " % (star_table_row['RA hr'],
+                           star_table_row['RA min'],
+                           star_table_row['RA sec'])
 
     # Add the DEC as three elements, DEG, MIN, SEC
-    decstr = "%s %s %s " % (star_table_row['Dec deg'],star_table_row['Dec min'],star_table_row['Dec sec'])
-
+    decstr = "%s %s %s " % (star_table_row['Dec deg'],
+                            star_table_row['Dec min'],
+                            star_table_row['Dec sec'])
+    # Start with the target name
     ret = "%s %s %s 2000 " % (str(star_table_row['name']),rastr, decstr)
 
     # Proper motion RA and DEC
