@@ -303,9 +303,6 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
     temp - a boolean for whether or not this is a template observation
     """
 
-    """Takes a line from the star table and generates the appropriate line to pass to scriptobs. """
-    # Start with the target name
-
     # Add the RA as three elements, HR, MIN, SEC
     rastr = "%s %s %s " % (star_table_row['RA hr'],star_table_row['RA min'],star_table_row['RA sec'])
 
