@@ -63,7 +63,7 @@ def computePriorities(star_table, cur_dt, observed=None, hour_table=None, rank_t
 
     if done_sheets != []:
         done_sheets_str = " ".join(list(done_sheets))
-        apflog(f"The following sheets are finished for the night: {done_sheets_str}",echo=True)
+        apflog("The following sheets are finished for the night: %s " % (done_sheets_str), echo=True)
 
     cadence_check /= star_table['cad']
     bad_pri = np.floor(cadence_check * 100)
