@@ -843,11 +843,11 @@ class APF:
 
     def enableObsInst(self):
 
-        stagelist = ['CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
+        stagelist = ['CALMIRROR','CALSOURCE','IODINE','DECKER','GUIDEFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
         rv2 = self.writeStages(stagelist,'MOO','Off')
         rv3 = self.writeStages(stagelist,'MOD','Pos')
-        stagelist = ['ADC','DECKER','DEWARFOC']
+        stagelist = ['ADC','DEWARFOC']
         rv4 = self.writeStages(stagelist,'MOE','On')
         rv5 = self.writeStages(stagelist,'MOO','On')
         rv6 = self.writeStages(stagelist,'MOD','Pos')
@@ -859,11 +859,11 @@ class APF:
 
         retval = True
         
-        stagelist = ['ADC','CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
+        stagelist = ['ADC','CALMIRROR','CALSOURCE','IODINE','DECKER','GUIDEFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
         rv2 = self.writeStages(stagelist,'MOO','Off')
         rv3 = self.writeStages(stagelist,'MOD','Pos')
-        stagelist = ['DECKER','DEWARFOC']
+        stagelist = ['DEWARFOC']
         rv4 = self.writeStages(stagelist,'MOE','On')
         rv5 = self.writeStages(stagelist,'MOO','On')
         rv6 = self.writeStages(stagelist,'MOD','Pos')
@@ -874,10 +874,10 @@ class APF:
 
     def disableInst(self):
 
-        stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','IODINE']
+        stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','DECKER','IODINE']
         rv = self.writeStages(stagelist,'MOE','Off')
         rv = self.writeStages(stagelist,'MOO','Off')
-        rv = self.writeStages(['DECKER','DEWARFOC'],'MOE','On')
+        rv = self.writeStages(['DEWARFOC'],'MOE','On')
         return rv
 
     def turnOffInst(self):
