@@ -841,6 +841,8 @@ class APF:
             except:
                 rv = False
 
+        return rv
+
     def enableObsInst(self):
 
         stagelist = ['CALMIRROR','CALSOURCE','IODINE','DECKER','GUIDEFOC']
@@ -851,14 +853,14 @@ class APF:
         rv4 = self.writeStages(stagelist,'MOE','On')
         rv5 = self.writeStages(stagelist,'MOO','On')
         rv6 = self.writeStages(stagelist,'MOD','Pos')
-        
+
         retval = rv1 and rv2 and rv3 and rv4 and rv5 and rv6
         return retval
 
     def enableCalInst(self):
 
         retval = True
-        
+
         stagelist = ['ADC','CALMIRROR','CALSOURCE','IODINE','DECKER','GUIDEFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
         rv2 = self.writeStages(stagelist,'MOO','Off')
