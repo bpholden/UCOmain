@@ -922,7 +922,7 @@ class APF:
         try:
             curval = self.hatchpos.binary
         except Exception as e:
-            apflog(f"Exception in hatch_correct: {type(e)} {e}", level='error')
+            apflog("Exception in hatch_correct: %s %s" % (type(e), e), level='error')
             return
 
         if curval == 0:
