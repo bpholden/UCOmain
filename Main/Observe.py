@@ -368,7 +368,7 @@ class Observe(threading.Thread):
                 seeing = float(self.apf.avg_fwhm)
                 apflog("getTarget(): Current AVG_FWHM = %5.2f" % seeing)
 
-            if self.apf.hatchCorrect() == False:
+            if self.apf.hatch_correct() == False:
                 apflog("getTarget(): Error setting hatch position.", level='Alert')
                 return
             

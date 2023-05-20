@@ -843,46 +843,64 @@ class APF:
         return rv
 
     def enable_obs_inst(self):
-
-        stagelist = ['CALMIRROR','CALSOURCE','IODINE','DECKER','GUIDEFOC']
+        '''
+        enable_obs_inst(self)
+        This function enables the instrument for observing by setting certain
+        stages to be on at the end of moves, while leaving others off at
+        the end of moves.
+        '''
+        stagelist = ['CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
-        rv2 = self.writeStages(stagelist,'MOO','Off')
-        rv3 = self.writeStages(stagelist,'MOD','Pos')
-        stagelist = ['ADC','DEWARFOC']
-        rv4 = self.writeStages(stagelist,'MOE','On')
-        rv5 = self.writeStages(stagelist,'MOO','On')
-        rv6 = self.writeStages(stagelist,'MOD','Pos')
+        rv2 = self.writeStages(stagelist,'MOD','Pos')
 
-        retval = rv1 and rv2 and rv3 and rv4 and rv5 and rv6
+        stagelist = ['ADC','DECKER','DEWARFOC']
+        rv3 = self.writeStages(stagelist,'MOE','On')
+        rv4 = self.writeStages(stagelist,'MOD','Pos')
+
+        retval = rv1 and rv2 and rv3 and rv4
         return retval
 
     def enable_cal_inst(self):
-
+        '''
+        enable_cal_inst(self)
+        This function enables the instrument for calibrations by setting certain
+        stages to be on at the end of moves, while leaving others off at
+        the end of moves. The difference between enable_obs_inst and this
+        function is that the ADC is off. This is because the ADC is not
+        use for calibrations.
+        '''
         retval = True
 
-        stagelist = ['ADC','CALMIRROR','CALSOURCE','IODINE','DECKER','GUIDEFOC']
+        stagelist = ['ADC','CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
-        rv2 = self.writeStages(stagelist,'MOO','Off')
-        rv3 = self.writeStages(stagelist,'MOD','Pos')
-        stagelist = ['DEWARFOC']
-        rv4 = self.writeStages(stagelist,'MOE','On')
-        rv5 = self.writeStages(stagelist,'MOO','On')
-        rv6 = self.writeStages(stagelist,'MOD','Pos')
+        rv2 = self.writeStages(stagelist,'MOD','Pos')
 
-        retval = rv1 and rv2 and rv3 and rv4 and rv5 and rv6
+        stagelist = ['DECKER','DEWARFOC']
+        rv3 = self.writeStages(stagelist,'MOE','On')
+        rv4 = self.writeStages(stagelist,'MOD','Pos')
+
+        retval = rv1 and rv2 and rv3 and rv4
         return retval
 
 
     def disable_inst(self):
-
+        '''
+        disable_inst(self)
+        This disables the instrument, turning off all stages except the
+        dewar focus stage. That stage is under a gravity load and
+        needs to be on to prevent the stage from sliding.
+        '''
         stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','DECKER','IODINE']
-        rv = self.writeStages(stagelist,'MOE','Off')
-        rv = self.writeStages(stagelist,'MOO','Off')
-        rv = self.writeStages(['DEWARFOC'],'MOE','On')
-        return rv
+        rv1 = self.writeStages(stagelist,'MOE','Off')
+        rv2 = self.writeStages(stagelist,'MOO','Off')
+        rv3 = self.writeStages(['DEWARFOC'],'MOE','On')
+        return rv1 and rv2 and rv3
 
     def turn_off_inst(self):
-
+        '''
+        turn_off_inst(self)
+        Turns off all motor stages.
+        '''
         stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','IODINE','DECKER','DEWARFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
         rv2 = self.writeStages(stagelist,'MOO','Off')
@@ -890,15 +908,21 @@ class APF:
         return rv1 and rv2
 
 
-    def hatchCorrect(self):
+    def hatch_correct(self):
+        '''
+        hatch_correct(self)
 
+        The hatch occasionally fails to open, leaving it in an unknown state. 
+        This function tries to fix that by closing the hatch and then 
+        opening the hatch again.
+        '''
         if self.hatchpos['populated'] == False:
             return
 
         try:
             curval = self.hatchpos.binary
         except Exception as e:
-            apflog("Exception in hatchCorrect: %s" % (e), level='error')
+            apflog(f"Exception in hatch_correct: {type(e)} {e}", level='error')
             return
 
         if curval == 0:
@@ -911,7 +935,7 @@ class APF:
 
         return True
 
-    def focusinstr(self,obsnum=None):
+    def focusinstr(self, obsnum=None):
         self.instrPermit()
         rv = self.enable_cal_inst()
         if rv is False:
@@ -927,7 +951,6 @@ class APF:
             apflog("Cannot communicate with apfschedule %s" % (e), level='alert',echo=True)
         else:
             self.apfschedule('OWNRHINT').write('public')
-
 
         self.validateUCAMoutputs()
 
