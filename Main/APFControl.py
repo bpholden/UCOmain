@@ -1638,8 +1638,8 @@ class APF:
             try:
                 self.robot['SCRIPTOBS_LINE_RESULT'].write(3)
                 self.robot['SCRIPTOBS_OBSERVED'].write(True)
-                self.apfguide['CLEARSUMS'].write('now')
-                self.apfguide['CLEARSUMS'].write('gstate')
+                self.guide['CLEARSUMS'].write('now')
+                self.guide['CLEARSUMS'].write('gstate')
             except Exception as e:
                 apflog("Cannot write 3 to SCRIPTOBS_LINE_RESULT or True to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
             return True
