@@ -500,7 +500,7 @@ class Observe(threading.Thread):
 
             APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
-            rv = self.apf.disableInst()
+            rv = self.apf.disable_inst()
             rv = self.apf.close(force=force)
             if rv:
                 return
@@ -880,10 +880,10 @@ class Observe(threading.Thread):
 
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
                 
-                result = self.apf.enableObsInst()
+                result = self.apf.enable_obs_inst()
                 if result == False:
                     apflog("Cannot enable instrument", level='warn', echo=True)
-                    result = self.apf.enableObsInst()
+                    result = self.apf.enable_obs_inst()
                     if not result:
                         apflog("Error: cannot enable instrument twice.", level='alert', echo=True)
                         return result

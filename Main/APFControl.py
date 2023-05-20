@@ -840,8 +840,9 @@ class APF:
                     rv = False
             except:
                 rv = False
+        return rv
 
-    def enableObsInst(self):
+    def enable_obs_inst(self):
 
         stagelist = ['CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
@@ -851,14 +852,14 @@ class APF:
         rv4 = self.writeStages(stagelist,'MOE','On')
         rv5 = self.writeStages(stagelist,'MOO','On')
         rv6 = self.writeStages(stagelist,'MOD','Pos')
-        
+
         retval = rv1 and rv2 and rv3 and rv4 and rv5 and rv6
         return retval
 
-    def enableCalInst(self):
+    def enable_cal_inst(self):
 
         retval = True
-        
+
         stagelist = ['ADC','CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
         rv2 = self.writeStages(stagelist,'MOO','Off')
@@ -867,12 +868,12 @@ class APF:
         rv4 = self.writeStages(stagelist,'MOE','On')
         rv5 = self.writeStages(stagelist,'MOO','On')
         rv6 = self.writeStages(stagelist,'MOD','Pos')
-        
+
         retval = rv1 and rv2 and rv3 and rv4 and rv5 and rv6
         return retval
 
 
-    def disableInst(self):
+    def disable_inst(self):
 
         stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','IODINE']
         rv = self.writeStages(stagelist,'MOE','Off')
@@ -880,17 +881,17 @@ class APF:
         rv = self.writeStages(['DECKER','DEWARFOC'],'MOE','On')
         return rv
 
-    def turnOffInst(self):
+    def turn_off_inst(self):
 
         stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','IODINE','DECKER','DEWARFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
         rv2 = self.writeStages(stagelist,'MOO','Off')
-        
+
         return rv1 and rv2
 
 
     def hatchCorrect(self):
-        
+
         if self.hatchpos['populated'] == False:
             return
 
@@ -909,10 +910,10 @@ class APF:
                 return False
 
         return True
-    
+
     def focusinstr(self,obsnum=None):
         self.instrPermit()
-        rv = self.enableCalInst()
+        rv = self.enable_cal_inst()
         if rv is False:
             try:
                 ip = self.checkapf['INSTR_PERM'].read(timeout=2)
@@ -929,7 +930,7 @@ class APF:
 
 
         self.validateUCAMoutputs()
-        
+
         lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal"])
         if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
@@ -970,7 +971,7 @@ class APF:
     def calibrate(self, script, time):
 
         self.validateUCAMoutputs()
-        
+
         s_calibrate = os.path.join(SCRIPTDIR,"calibrate")
         if self.test:
             apflog("Test Mode: calibrate %s %s." % (script, time))
@@ -981,7 +982,7 @@ class APF:
             apflog("Couldn't understand argument %s, nothing was done." % time)
             return False
 
-        rv = self.enableCalInst()
+        rv = self.enable_cal_inst()
         if rv is False:
             try:
                 ip = self.instr_perm.read()

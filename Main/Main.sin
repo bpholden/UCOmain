@@ -540,7 +540,7 @@ if __name__ == '__main__':
         apftask('MASTER_STARLIST').write('')
         apftask('MASTER_UTSTARTLIST').write('')
 
-    rv = apf.turnOffInst()
+    rv = apf.turn_off_inst()
     APFTask.set(parent, suffix="MESSAGE",value="Turning off the motors",wait=False)
 
     # All Done!
