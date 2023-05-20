@@ -194,17 +194,17 @@ class APF:
 
     eosgcam    = ktl.Service('eosgcam')
     fits3pre   = eosgcam('FITS3PRE')
-    fits3dir   = eosgcam('FITS3DIR')    
+    fits3dir   = eosgcam('FITS3DIR')
     save3d     = eosgcam('SAVE3D')
     fits2pre   = eosgcam('FITS2PRE')
-    fits2dir   = eosgcam('FITS2DIR')    
+    fits2dir   = eosgcam('FITS2DIR')
     save2d     = eosgcam('SAVE2D')
     gexptime   = eosgcam('GEXPTIME')
     sumframe   = eosgcam('SUMFRAME')
 
     apfmon     = ktl.Service('apfmon')
     ucamd0sta  = apfmon['UCAMDSTA0STA']
-    
+
     apfminimon = ktl.Service('apfminimon')
 
     def __init__(self, task="example", test=False):
@@ -213,7 +213,7 @@ class APF:
         self.test = test
         self.task = task
         self.desired_outfile = None
-        
+
         try:
             self.eosgcam['GENABLE'].write(True,binary=True)
         except:
@@ -258,7 +258,7 @@ class APF:
 
         self.mon_lists = dict()
         self.avg_lists = dict()
-            
+
         for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,self.t045kw,self.t135kw,self.t225kw,self.t315kw,self.temp3now,self.temp4now,self.wx,self.altwx,self.airtemp):
             self.mon_lists[kw['name']] = []
             self.avg_lists[kw['name']] = None
@@ -298,9 +298,9 @@ class APF:
 
         self.calsta.monitor()
         self.focussta.monitor()
-        
+
         self.lastopen.monitor()
-        
+
         # Grab some initial values for the state of the telescope
 
         self.wx.read()
@@ -534,8 +534,8 @@ class APF:
 
         hosts = dict()
         hosts['METSXFER'] = 'frankfurt.ucolick.org'
-        hosts['APFTEQ'] = 'hamburg.ucolick.org'        
-        
+        hosts['APFTEQ'] = 'hamburg.ucolick.org'
+
 
         if status_val > 2:
             # apftask status values are $(TASKNAME)_status
@@ -613,7 +613,7 @@ class APF:
 
     ## these are various methods, there are a LOT of them
     ##
-    
+
     def sunRising(self):
         # the sun also rises
         now = datetime.now()
@@ -651,7 +651,7 @@ class APF:
             self.obsnum.write(self.robot["MASTER_LAST_OBS_UCSC"])
 
         return
-    
+
     def avgTelTemps(self):
         """
         self.avgTelTemp()
@@ -677,11 +677,11 @@ class APF:
         self.avgtemps = []
         self.avgtemps.append(self.m1tempkw.read(binary=True))
         self.avgtemps.append(self.m2tempkw.read(binary=True))
-        self.avgtemps.append(self.taveragekw.read(binary=True))                
+        self.avgtemps.append(self.taveragekw.read(binary=True))
         self.avgtemps.append(self.m2airkw.read(binary=True))
         self.avgtemps.append(self.temp3now.read(binary=True))
-        self.avgtemps.append(self.temp4now.read(binary=True))        
-        
+        self.avgtemps.append(self.temp4now.read(binary=True))
+
         # TAVERAGE is the average of the four trusses
         # temp_names = ["TTRUS135","TTRUS225","TTRUS045","TTRUS315"]
         # offsets = dict()
@@ -713,8 +713,8 @@ class APF:
         # Final_focus_temp_fits.ipynb which (along with the data) should get checked in
         slopes = np.asarray([-0.007930, 0.021897, 0.011436, -0.008821, 0.001830, -0.017760])
         zeropoint_temps = np.asarray([15.549, 14.195, 14.610, 13.285, 15.716, 15.797])
-        
-        predfoc = np.sum(slopes*(self.avgtemps-zeropoint_temps)) + TELFOCUSTYP 
+
+        predfoc = np.sum(slopes*(self.avgtemps-zeropoint_temps)) + TELFOCUSTYP
         predfoc /= 1000.0 # convert to meters
         return predfoc
 
@@ -795,7 +795,7 @@ class APF:
 
         bstr = "%d,%d" % (1,1)
         self.ucam['BINNING'].write(bstr)
-        
+
         apflog("Updated science camera parameters:")
         apflog("Observer = %s" % self.ucam('OBSERVER').read(),echo=True)
         apflog("Ownrhint = %s" % self.apfschedule('OWNRHINT').read(),echo=True)
@@ -844,11 +844,11 @@ class APF:
 
     def enable_obs_inst(self):
 
-        stagelist = ['CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
+        stagelist = ['CALMIRROR','CALSOURCE','IODINE','DECKER','GUIDEFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
         rv2 = self.writeStages(stagelist,'MOO','Off')
         rv3 = self.writeStages(stagelist,'MOD','Pos')
-        stagelist = ['ADC','DECKER','DEWARFOC']
+        stagelist = ['ADC','DEWARFOC']
         rv4 = self.writeStages(stagelist,'MOE','On')
         rv5 = self.writeStages(stagelist,'MOO','On')
         rv6 = self.writeStages(stagelist,'MOD','Pos')
@@ -860,11 +860,11 @@ class APF:
 
         retval = True
 
-        stagelist = ['ADC','CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
+        stagelist = ['ADC','CALMIRROR','CALSOURCE','IODINE','DECKER','GUIDEFOC']
         rv1 = self.writeStages(stagelist,'MOE','Off')
         rv2 = self.writeStages(stagelist,'MOO','Off')
         rv3 = self.writeStages(stagelist,'MOD','Pos')
-        stagelist = ['DECKER','DEWARFOC']
+        stagelist = ['DEWARFOC']
         rv4 = self.writeStages(stagelist,'MOE','On')
         rv5 = self.writeStages(stagelist,'MOO','On')
         rv6 = self.writeStages(stagelist,'MOD','Pos')
@@ -875,10 +875,10 @@ class APF:
 
     def disable_inst(self):
 
-        stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','IODINE']
+        stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','DECKER','IODINE']
         rv = self.writeStages(stagelist,'MOE','Off')
         rv = self.writeStages(stagelist,'MOO','Off')
-        rv = self.writeStages(['DECKER','DEWARFOC'],'MOE','On')
+        rv = self.writeStages(['DEWARFOC'],'MOE','On')
         return rv
 
     def turn_off_inst(self):
@@ -1059,13 +1059,13 @@ class APF:
             except Exception as e:
                 msg += "focusinstr failed, exited with %s: %s %s" % (self.robot['focusinstr_status'].read(),type(e),e)
                 result = False
-                
+
         expression="($apftask.FOCUSINSTR_MEASURED == 1)"
         if not ktl.waitFor(expression=expression, timeout=1):
             msg += "focusinstr fit to the data either failed or did not occur "
             result = False
-            
-        return result, msg 
+
+        return result, msg
 
 
     def findStar(self):
@@ -1118,15 +1118,15 @@ class APF:
     def saveMovie(self):
         now = datetime.now()
         self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day, self.tel['TARGNAME'].read()))
-        self.fits3dir.write('/data/apfguide')        
+        self.fits3dir.write('/data/apfguide')
         self.save3d.write(True)
         return
 
     def stopMovie(self):
         self.save3d.write(False)
-        self.fits3dir.write('/tmp/')        
+        self.fits3dir.write('/tmp/')
         return
-        
+
     def runFocusTel(self):
         """Runs the telescope focus routine."""
         el = self.tel['EL'].read(binary=True)
@@ -1143,13 +1143,13 @@ class APF:
             return True
 
         self.saveMovie()
-        
+
         apflog("Running focus_telescope routine.",echo=True)
         cmd = os.path.join(SCRIPTDIR,'focus_telescope -c %.3f' % (float(self.predTelFocus())*1000.0))
         result, code = apftaskDo(cmd,cwd=os.path.curdir)
 
         self.stopMovie()
-        
+
         try:
             self.guide['MODE'].write('Guide')
         except:
@@ -1161,7 +1161,7 @@ class APF:
             if not APFTask.waitFor(self.task,True,expression=expression,timeout=30):
                 apflog("focus_telescope failed to exit" ,echo=True)
             return result
-            
+
         return True
 
     def runAutoexposure(self,ind=5):
@@ -1382,7 +1382,7 @@ class APF:
         if result:
             return True
         else:
-            apflog("power_down_telescope has failed. Human intervention likely required.", level='alert', echo=True)            
+            apflog("power_down_telescope has failed. Human intervention likely required.", level='alert', echo=True)
             return False
 
 
@@ -1578,7 +1578,7 @@ class APF:
         """
         If the dome is open the FCs should be off. Sometimes they are commanded off but do not turn off.
         This will attempt to fix that by checking if the dome is open, checking if the FCs are on, and
-        then turning them on, then off. Which is the only way to turn them off. 
+        then turning them on, then off. Which is the only way to turn them off.
         """
 
         for fc in ('FC2','FC3'):
@@ -1594,9 +1594,9 @@ class APF:
                     self.dome[fc + 'CMD'].write(False)
                     time.sleep(.1)
                     self.dome[fc + 'CMD'].write(True)
-                
+
         return
-    
+
     def eveningStar(self):
         """Aim the APF at the desired target. This calls prep-obs, slewlock, and focus-telescope."""
         if self.isOpen()[0] == False:
@@ -1624,7 +1624,7 @@ class APF:
                 return
 
         self.decker.write('W',wait=False)
-        
+
         self.DMReset()
         apflog("Slewing to lower el",echo=True)
         result, ret_code = apftaskDo('slew -e 75')
@@ -1670,8 +1670,8 @@ class APF:
             apflog(ostr,level='error',echo=True)
 
     def findRobot(self):
-        """Trys to find a running instance of robot.csh. 
-            Returns the PID along with a boolean representing 
+        """Trys to find a running instance of robot.csh.
+            Returns the PID along with a boolean representing
             if the robot was succesfully found."""
         rpid = self.robot['SCRIPTOBS_PID'].read(binary=True)
         if rpid == '' or rpid == -1:
@@ -1760,31 +1760,31 @@ class APF:
     def testBias(self):
 
         apftask = ktl.Service('apftask')
-        
+
         if self.ucampower == False:
             self.ucampower.write('On',wait=False)
             rv = self.ucampower.waitFor('== On',timeout=30)
-            APFTask.wait(self.task, True, timeout=5)            
+            APFTask.wait(self.task, True, timeout=5)
             if rv == False:
                 apflog('Cannot power on UCam',level='Alert',echo=True)
                 return False
-            
+
             ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
-            APFTask.wait(self.task, True, timeout=1)                        
+            APFTask.wait(self.task, True, timeout=1)
             ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
-            APFTask.wait(self.task, True, timeout=1)                        
+            APFTask.wait(self.task, True, timeout=1)
             rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
             if rv == 0:
                 apflog("UCAM software did not start, trying again",echo=True,level='Warn')
                 ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
-                APFTask.wait(self.task, True, timeout=1)                        
+                APFTask.wait(self.task, True, timeout=1)
                 ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
-                APFTask.wait(self.task, True, timeout=1)                        
+                APFTask.wait(self.task, True, timeout=1)
                 rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
                 if rv == 0:
                     apflog("UCAM software did not start",echo=True,level='Alert')
                     return False
-                
+
         apfschedule = ktl.Service('apfschedule')
         # check if the focusinstr or calibrate tasks are already running
         if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0 or ktl.read('apftask','CALIBRATE_PID',binary=True) > 0 or ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0 :
