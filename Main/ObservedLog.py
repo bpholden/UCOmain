@@ -26,7 +26,6 @@ class ObservedLog():
     def __repr__(self):
         return "< ObservedLog %s >" % self.filename
 
-            
     def parse_key_vals(self,line):
         keyvals = dict()
         ovals = []
@@ -39,8 +38,7 @@ class ObservedLog():
                 ovals.append(split_vals[0])
 
         return ovals, keyvals
-        
-        
+
     def read_observed_log(self):
         """ read_observed_log parses a file to find the object names and times
         ObservedLog.read_observed_log(filename)
@@ -48,7 +46,8 @@ class ObservedLog():
         The following attributes in the object are filled:
 
         names - list of names, must be first column of file called filename
-        times - times either as a timestamp in second column or a (hour,minute) tuple from a scriptobs line
+        times - times either as a timestamp in second column or 
+            a (hour,minute) tuple from a scriptobs line
         temps - a list of template observations
         owners - a list of owners
         sheetns - a list of names for the sheets
@@ -58,42 +57,40 @@ class ObservedLog():
             f = open(self.filename, 'r')
         except IOError:
             apflog( "Couldn't open %s" % self.filename, level="warn", echo=True)
-            return 
-        else: 
-            for line in f:
-                line = line.strip()
-                if len(line) > 0:
-                    if line[0] == '#' or line == "":
-                        pass
-                    else:
-                        ovals, keyvals = self.parse_key_vals(line)
-                        self.names.append(ovals[0])
-                        if 'uth' in list(keyvals.keys()):
-                            self.times.append( ( int(keyvals['uth']), int(keyvals['utm']) ) )
-                        else:
-                            self.times.append(float(ovals[1]))
+            return
 
-                        
-                        if 'temp' in list(keyvals.keys()):
-                            self.temps.append("Y")
-                        else:
-                            self.temps.append("N")
-                            
-                        if 'owner' in list(keyvals.keys()):
-                            self.owners.append(keyvals['owner'])
-                        else:
-                            self.owners.append(None)
+        for line in f:
+            line = line.strip()
+            if len(line) == 0 or line[0] == "#":
+                continue
 
-                        if 'coverid' in list(keyvals.keys()):
-                            self.sheetns.append(keyvals['coversheetid'])
-                        else:
-                            if 'owner' in list(keyvals.keys()):
-                                self.sheetns.append(keyvals['owner'])
-                            else:
-                                self.sheetns.append(None)
-            
-        return 
-        
+            ovals, keyvals = self.parse_key_vals(line)
+            self.names.append(ovals[0])
+            if 'uth' in list(keyvals.keys()):
+                self.times.append( ( int(keyvals['uth']), int(keyvals['utm']) ) )
+            else:
+                self.times.append(float(ovals[1]))
+
+            if 'temp' in list(keyvals.keys()):
+                self.temps.append("Y")
+            else:
+                self.temps.append("N")
+
+            if 'owner' in list(keyvals.keys()):
+                self.owners.append(keyvals['owner'])
+            else:
+                self.owners.append(None)
+
+            if 'coverid' in list(keyvals.keys()):
+                self.sheetns.append(keyvals['coversheetid'])
+            else:
+                if 'owner' in list(keyvals.keys()):
+                    self.sheetns.append(keyvals['owner'])
+                else:
+                    self.sheetns.append(None)
+
+        return
+
     def reverse(self):
 
         self.names.reverse()
