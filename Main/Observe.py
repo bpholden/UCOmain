@@ -889,7 +889,7 @@ class Observe(threading.Thread):
                         return result
                 else:
                     apflog("Instrument OK", echo=True)
-                    
+
                 rv = checkTelState()
                 if rv is False:
                     # this means that the telescope is not slewing and is not tracking
@@ -900,7 +900,8 @@ class Observe(threading.Thread):
                         closing(force=True)
 
                 startScriptobs()
-                if not APFTask.waitFor(self.task, True, expression="$apftask.SCRIPTOBS_STATUS == 'Running'", timeout=10):
+                expr = "$apftask.SCRIPTOBS_STATUS == 'Running'"
+                if not APFTask.waitFor(self.task, True, expression=expr, timeout=10):
                     failstart += 1
                     if failstart % 11 == 0 and failstart > 0:
                         lvl = "Alert"
@@ -934,7 +935,7 @@ class Observe(threading.Thread):
 
     def stop(self):
         self.signal = False
-        threading.Thread._Thread__stop(self)
+        threading.Thread._Thread_stop(self)
 
 
 if __name__ == "__main__":

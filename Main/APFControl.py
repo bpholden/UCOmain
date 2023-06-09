@@ -604,7 +604,9 @@ class APF:
         if sta_val > 3:
             # warning or higher
             nmsta = sta['name'].lower()
-            name = "apf" + nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is
+            name = "apf" + nmsta[0:7] 
+            # this relies on the fact that all of the STA 
+            # variables are serviceSTA and service is
             self.restart(name,host)
         return
 
