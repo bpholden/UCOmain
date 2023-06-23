@@ -371,13 +371,14 @@ class Observe(threading.Thread):
             if self.apf.hatch_correct() == False:
                 apflog("getTarget(): Error setting hatch position.", level='Alert')
                 return
-            
+
             self.apf.initGuideCam()
             self.apf.updateWindshield(self.windshield_mode)
 
 
             # setup a B star observation if needed
-            # if not B star observation, look at current stack of observations and see if anything is left
+            # if not B star observation, look at current stack of
+            # observations and see if anything is left
             if self.obsBstar:
                 self.apf.autofoc.write("robot_autofocus_enable")
             else:
