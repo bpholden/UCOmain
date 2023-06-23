@@ -251,7 +251,12 @@ def makeRankTable(sheet_table_name, outfn='rank_table', outdir=None, hour_constr
 
 
 def totExpTimes(star_table, targNum):
-    
+    '''
+    totexptimes = totExpTimes(star_table, targNum)
+    star_table - astropy table of targets
+    targNum - number of targets
+    totexptimes - numpy array of total exposure times
+    '''
     totexptimes = np.zeros(targNum, dtype=float)
 
     nobs = np.ones(targNum)
@@ -264,7 +269,14 @@ def totExpTimes(star_table, targNum):
     return totexptimes
 
 def timeCheck(star_table, totexptimes, dt, hour_table):
-
+    """ time_check = timeCheck(star_table, totexptimes, dt, hour_table)
+    star_table - astropy table of targets
+    totexptimes - numpy array of total exposure times
+    dt - datetime object
+    hour_table - astropy table of hours left for each sheet
+    time_check - numpy array of booleans
+    values are determined by whether or not the target can be observed in the time left
+    """
     maxexptime = computeSunrise(dt,horizon='-9')
     if maxexptime < TARGET_EXPOSURE_TIME_MIN:
         maxexptime = TARGET_EXPOSURE_TIME_MIN
@@ -389,6 +401,12 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
     return str(ret)
 
 def calc_elevations(stars, observer):
+    '''
+    els = calc_elevations(stars, observer)
+    stars - list of ephem.FixedBody objects
+    observer - ephem.Observer object
+    els - numpy array of elevations in degrees of stars for observer
+    '''
     els = []
     for s in stars:
         observer.date = ephem.Date(observer.date)
@@ -398,6 +416,11 @@ def calc_elevations(stars, observer):
     return np.array(els)
 
 def computeDatetime(ctime):
+    '''
+    dt = computeDatetime(ctime)
+    ctime - can be a float, datetime, or ephem.Date, else UT now is used
+    dt - datetime object
+    '''
     if type(ctime) == float:
         dt = datetime.utcfromtimestamp(int(ctime))
     elif type(ctime) == datetime:
@@ -411,6 +434,12 @@ def computeDatetime(ctime):
 
 
 def makeAPFObs(dt, horizon=str(TARGET_ELEVATION_MIN)):
+    '''
+    apf_obs = makeAPFObs(dt, horizon=str(TARGET_ELEVATION_MIN))
+    dt - datetime object
+    horizon - string of horizon in degrees
+    apf_obs - ephem.Observer object for the time dt with the horizon set to horizon
+    '''
     # Generate a pyephem observer for the APF
     apf_obs = ephem.Observer()
     apf_obs.lat  = '37:20:33.1'
@@ -423,7 +452,10 @@ def makeAPFObs(dt, horizon=str(TARGET_ELEVATION_MIN)):
     return apf_obs
 
 def computeSunsetRise(dt, horizon='0'):
-    # computes time in seconds before sunset
+    '''
+    sunset, sunrise = computeSunsetRise(dt, horizon='0')
+    computes time in seconds before sunset
+    '''
     apf_obs = makeAPFObs(dt, horizon=horizon)
     sunset = apf_obs.next_setting(ephem.Sun())
     sunset -= ephem.Date(dt)
@@ -435,12 +467,19 @@ def computeSunsetRise(dt, horizon='0'):
     return sunset, sunrise
 
 def computeSunset(dt, horizon='0'):
-
-    sunset, sunrise = computeSunsetRise(dt, horizon=horizon)
+    ''' 
+    sunset = computeSunset(dt, horizon='0')
+    helper to compute just sunset, calls computeSunsetRise
+    '''
+    sunset, _ = computeSunsetRise(dt, horizon=horizon)
     return sunset
 
 def computeSunrise(dt, horizon='0'):
-    sunset, sunrise = computeSunsetRise(dt, horizon=horizon)
+    '''
+    sunrise = computeSunrise(dt, horizon='0')
+    helper to compute just sunrise, calls computeSunsetRise
+    '''
+    _, sunrise = computeSunsetRise(dt, horizon=horizon)
     return sunrise
 
 
@@ -458,7 +497,7 @@ def conditionCuts(moon, seeing, slowdown, star_table):
     """
 
     available = np.ones(len(star_table['ra']), dtype=bool)
-    
+
     if 'seeing' in star_table.colnames:
         available = (star_table['seeing']/0.109 > seeing) & available
 
