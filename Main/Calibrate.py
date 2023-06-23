@@ -2,13 +2,13 @@ from __future__ import print_function
 from datetime import datetime, timedelta
 import os
 import os.path
-import signal
 from select import select
 import re
 import subprocess
 import sys
+import thread
 import threading
-import time
+
 
 import numpy as np
 
@@ -192,7 +192,7 @@ class Calibrate(threading.Thread):
 
     def stop(self):
         self.signal = False
-        threading.Thread._Thread__stop(self)
+        thread.exit()
 
 
 if __name__ == "__main__":
