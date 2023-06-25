@@ -1,11 +1,9 @@
 from __future__ import print_function
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 import os.path
-import signal
-from select import select
 import threading
-import time
+import shutil
 
 import astropy.io.ascii
 import numpy as np
