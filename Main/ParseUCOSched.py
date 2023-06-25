@@ -339,7 +339,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
                     "lastobs", "B-V", \
                     "cad", "pri", "nexp", "count", "binning", \
                     "night_cad","night_obs", "DaysNew", \
-                    "Template", "Nobs", "Total Obs", "Bstar", "Only Template"\
+                    "Template", "Nobs", "Total Obs", "Bstar", "Only Template", \
 #                    "mode", "raoff", "decoff",  "obsblock",\
                     'sheetn' \
                     ]
