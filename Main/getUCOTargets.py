@@ -82,14 +82,14 @@ class getUCOTargets(threading.Thread):
                     hour_constraints = None
 
             try:
-                rank_table = ds.makeRankTable(self.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+                rank_table = ds.make_rank_table(self.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
             except Exception as e:
                 apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
                 # goto backup
                 if os.path.exists("rank_table.1"):
                     shutil.copyfile("rank_table.1","rank_table")
                     try:
-                        rank_table = ds.makeRankTable(sheet_table_name=opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+                        rank_table = ds.make_rank_table(sheet_table_name=opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
                     except Exception as e:
                         apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
                         rank_table = None
@@ -116,7 +116,7 @@ class getUCOTargets(threading.Thread):
                 if self.signal is False:
                     return
                 try:
-                    star_table,stars = ParseUCOSched.parseUCOSched(sheetns=self.sheets,outfn='googledex.dat',
+                    star_table,stars = ParseUCOSched.parse_UCOSched(sheetns=self.sheets,outfn='googledex.dat',
                                                                    outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
                 except Exception as e:
                     apflog("Error: Cannot download googledex?! %s" % (e),level="error")
@@ -128,7 +128,7 @@ class getUCOTargets(threading.Thread):
                 print("Would have made hour table")
             else:
                 try:
-                    hour_table = ds.makeHourTable(rank_table,datetime.now(),hour_constraints=hour_constraints)
+                    hour_table = ds.make_hour_table(rank_table,datetime.now(),hour_constraints=hour_constraints)
                 except Exception as e:
                     hour_table = None
                     apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
@@ -139,7 +139,7 @@ class getUCOTargets(threading.Thread):
 
                 self.reading = True
                 try:
-                    ParseUCOSched.parseTOO(too_sheetns=self.too,outfn='googledex.dat',outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
+                    ParseUCOSched.parse_TOO(too_sheetns=self.too,outfn='googledex.dat',outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
                 except Exception as e:
                     apflog("Error: Cannot download %s: %s" % (self.too,e),level="error")
                 self.reading = False
@@ -160,6 +160,6 @@ if __name__ == "__main__":
     opt = Opt()
     opt.test = True
     opt.time_left = "/home/holden/time_left.csv"
-    opt.rank_table = '2022A_ranks'
+    opt.rank_table = '2023A_ranks'
 
     get_targs = getUCOTargets(opt, task=task)

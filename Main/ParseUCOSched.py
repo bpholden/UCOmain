@@ -26,8 +26,8 @@ except:
 
 DEFAULT_CERT = 'ucoscheduler-f1055d671564.json'
 
-def checkFlag(key,didx,line,regexp,default):
-    """ checkFlag(key, dict_ind, line, regexp, default)
+def check_flag(key,didx,line,regexp,default):
+    """ check_flag(key, dict_ind, line, regexp, default)
 
     - key : the key in the dictionary indices, which key from the input list you want to check
     - didx : dictionary of indices so that keys can be used instead of indices for the line
@@ -47,7 +47,14 @@ def checkFlag(key,didx,line,regexp,default):
         return default
 
 
-def readStarTable(table_filename):
+def read_star_table(table_filename):
+    '''
+    star_table = read_star_table(table_filename)
+    
+    table_filename - name of the file to read in
+    returns an astropy table object
+    sets the sheetn and owner columns to empty strings if they are None
+    '''
     star_table = astropy.io.ascii.read(table_filename)
 
 #    for coln in ('mode','obsblock','raoff','decoff','sheetn','owner'):
@@ -61,8 +68,8 @@ def readStarTable(table_filename):
 
 
 
-def parseStarname(starname):
-    """parseStarname(starname)
+def parse_starname(starname):
+    """parse_starname(starname)
 
     starname - input value which should be the name of the a star, duh
     returns the starname value, doing some clean up to meet requirements (no spaces, trim trialing spaces, etc.)
@@ -83,9 +90,9 @@ def parseStarname(starname):
     return ostarname
 
 
-def intDefault(value,default=0):
+def int_default(value,default=0):
     """
-    intDefault(value,default=0)
+    int_default(value,default=0)
     returns the input value as an integer, and a failure to cast returns default
     """
     try:
@@ -94,9 +101,9 @@ def intDefault(value,default=0):
         attr = default
     return attr
 
-def floatDefault(value,default=0.0):
+def float_default(value,default=0.0):
     """
-    floatDefault(value,default=0.0)
+    float_default(value,default=0.0)
     returns the input value as an float, and a failure to cast returns default
     """
     try:
@@ -106,10 +113,10 @@ def floatDefault(value,default=0.0):
     return rv
 
 
-def getSpreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT):
+def get_spreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT):
     """ Get the spreadsheet from google
 
-    worksheet = getSpreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT)
+    worksheet = get_spreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT)
     worksheet - the worksheet object returned by the gspread module
 
     sheetn - name of the google sheet, defaults to "The Googledex"
@@ -157,8 +164,8 @@ def getSpreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT):
         apflog(errlog,echo=True,level='error')
     return worksheet
 
-def retrieveCodex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,sleep=True):
-    """retrieveCodex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT)
+def retrieve_codex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,sleep=True):
+    """retrieve_codex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT)
 
     returns the "codex", a list of lists containing all of the columns
     in the req_cols list, source of the data are the Google sheets named
@@ -175,7 +182,7 @@ def retrieveCodex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,sl
     failed = []
     for sheetn in sheetns:
         wait_time = 0
-        worksheet = getSpreadsheet(sheetn=sheetn,certificate=certificate)
+        worksheet = get_spreadsheet(sheetn=sheetn,certificate=certificate)
         if worksheet:
             cur_codex = None
             more_sleeping=10.
@@ -191,7 +198,7 @@ def retrieveCodex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,sl
                 apflog("Worksheet %s exists but is empty, skipping" % (sheetn), level='error', echo=True)
 
                 continue
-            didx = findColumns(cur_codex[0],req_cols)
+            didx = find_columns(cur_codex[0],req_cols)
 
             for row in cur_codex[1:]:
                 nrow = []
@@ -214,10 +221,10 @@ def retrieveCodex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,sl
     return full_codex
 
 
-def findColumns(col_names,req_cols,opt_cols=[]):
-    """findColumns finds the indices for the column names in the list of
+def find_columns(col_names,req_cols,opt_cols=[]):
+    """find_columns finds the indices for the column names in the list of
 
-    required columns indices = findColumns(col_names, req_cols)
+    required columns indices = find_columns(col_names, req_cols)
 
     indices - a dictionary of indices, each index maps to where in
     col_names the column is found
@@ -246,8 +253,15 @@ def findColumns(col_names,req_cols,opt_cols=[]):
     return didx
 
 
-def parseRankTable(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
-
+def parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
+    '''
+    rank_table = parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT)
+    
+    sheet_table_name - name of the google sheet to download containing the rank table
+    certificate - json file for authenticating to access google sheets
+    
+    returns an astropy table object of the rank table
+    '''
     apflog( "Starting parse of %s" % (sheet_table_name),echo=True)
 
     sheetns = []
@@ -255,7 +269,7 @@ def parseRankTable(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
     frac = []
     too = []
 
-    worksheet = getSpreadsheet(sheetn=sheet_table_name,certificate=certificate)
+    worksheet = get_spreadsheet(sheetn=sheet_table_name,certificate=certificate)
     if worksheet:
         cur_codex = worksheet.get_all_values()
         if len(cur_codex) <= 0:
@@ -263,25 +277,25 @@ def parseRankTable(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
             return None, None
 
         req_cols = ["sheetn", "rank", "frac", "too"]
-        didx = findColumns(cur_codex[0], req_cols)
+        didx = find_columns(cur_codex[0], req_cols)
         
         for row in cur_codex[1:]:
             if row[0] != "":
                 sheetns.append(row[didx['sheetn']])
-                crank = floatDefault(row[didx['rank']])
+                crank = float_default(row[didx['rank']])
                 crank = int(round(crank))
                 rank.append(crank)
-                cfrac = floatDefault(row[didx['frac']])
+                cfrac = float_default(row[didx['frac']])
                 frac.append(cfrac)
                 too.append(row[didx['too']].lower())
 
     return sheetns,rank,frac,too
 
 
-def initStarTable(col_list):
+def init_star_table(col_list):
 
     """
-    star_table = initStarTable(column_list)
+    star_table = init_star_table(column_list)
     star_table - a Astropy Table object that has the columns needed, most are in column_list
     forces certain columns to be added
 
@@ -305,7 +319,17 @@ def initStarTable(col_list):
 
 
 
-def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,sleep=True,hour_constraints=None):
+def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,sleep=True,hour_constraints=None):
+    '''
+    star_table = parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,sleep=True,hour_constraints=None)
+    
+    config - dictionary of default values for a number of flags
+    sheetns - list of google sheet names
+    certificate - json file for authenticating to access google sheets
+    prilim - limit on priority values, values below this are tossed
+    sleep - sleep between downloading sheets
+    hour_constraints - astropy table of hour constraints, if None, no constraints are applied
+    '''
     # These are the columns we need for scheduling
     req_cols = ["Star Name", "RA hr", "RA min", "RA sec", \
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
@@ -318,35 +342,32 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
                     'sheetn' \
                     ]
 
-    negsearch = re.compile("\-(\d+\.*\d*)")
-
-    full_codex = retrieveCodex(req_cols,sheetns=sheetns,certificate=DEFAULT_CERT,sleep=sleep)
+    full_codex = retrieve_codex(req_cols, sheetns=sheetns, certificate=certificate, sleep=sleep)
 
     col_names = full_codex[0]
     codex = full_codex[1:]
 
-    didx = findColumns(col_names,req_cols)
-    star_table = initStarTable(req_cols)
+    didx = find_columns(col_names,req_cols)
+    star_table = init_star_table(req_cols)
 
     if hour_constraints is not None:
         done_names = hour_constraints['runname'][hour_constraints['left'] < 0]
     else:
         done_names = []
 
-    stars = []
     # Build the star table to return to
     for ls in codex:
         row = []
         if ls[0] == '':
             continue
         if "pri" in didx and ls[didx["pri"]] is not None:
-            apfpri = intDefault(ls[didx["pri"]],default=-1)
+            apfpri = int_default(ls[didx["pri"]],default=-1)
         else:
-            apfpri = intDefault(ls[didx["APFpri"]],default=-1)
+            apfpri = int_default(ls[didx["APFpri"]],default=-1)
 
-        nobs = intDefault(ls[didx["Nobs"]])
-        totobs = intDefault(ls[didx["Total Obs"]],default=-1)
-        csheetn = checkFlag("sheetn",didx,ls,"\A(.*)",'public')
+        nobs = int_default(ls[didx["Nobs"]])
+        totobs = int_default(ls[didx["Total Obs"]],default=-1)
+        csheetn = check_flag("sheetn",didx,ls,"\A(.*)",'public')
 
         if totobs > 0 and nobs >= totobs: continue
         if apfpri < prilim: continue
@@ -354,7 +375,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         if apfpri > MAX_PRI: apfpri = MAX_PRI
 
 
-        name = parseStarname(ls[didx["Star Name"]])
+        name = parse_starname(ls[didx["Star Name"]])
         # Get the RA
         raval, rahr, ramin, rasec = Coords.getRARad(ls[didx["RA hr"]], ls[didx["RA min"]], ls[didx["RA sec"]])
         if raval is None:
@@ -393,32 +414,32 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         else:
             continue
 
-#        mode = checkFlag("mode",didx,ls,"\A(b|B|a|A|c|C)",config["mode"])
+#        mode = check_flag("mode",didx,ls,"\A(b|B|a|A|c|C)",config["mode"])
 #        if type(mode) == str:
 #            mode = mode.upper()
 #        star_table['mode'].append(mode)
-#        star_table['raoff'].append(checkFlag("raoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["raoff"]))
-#        star_table['decoff'].append(checkFlag("decoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["decoff"]))
+#        star_table['raoff'].append(check_flag("raoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["raoff"]))
+#        star_table['decoff'].append(check_flag("decoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["decoff"]))
 
         for coln in ("pmRA", "pmDEC"):
-            star_table[coln].append(floatDefault(ls[didx[coln]]))
+            star_table[coln].append(float_default(ls[didx[coln]]))
 
 
-        star_table['Vmag'].append(floatDefault(ls[didx["Vmag"]], default=15.0))
-        star_table['texp'].append(floatDefault(ls[didx["texp"]], default=1200))
-        expcount = floatDefault(ls[didx["expcount"]],default=1e9)
+        star_table['Vmag'].append(float_default(ls[didx["Vmag"]], default=15.0))
+        star_table['texp'].append(float_default(ls[didx["texp"]], default=1200))
+        expcount = float_default(ls[didx["expcount"]],default=1e9)
         if expcount > EXP_LIM:
             expcount = EXP_LIM
         star_table['expcount'].append(expcount)
         if "nexp" in didx and ls[didx["nexp"]] is not None:
-            star_table['nexp'].append(intDefault(ls[didx["nexp"]], default=1))
+            star_table['nexp'].append(int_default(ls[didx["nexp"]], default=1))
         elif "count" in didx and ls[didx['count']] is not None:
-            star_table['nexp'].append(intDefault(ls[didx["count"]], default=1))
+            star_table['nexp'].append(int_default(ls[didx["count"]], default=1))
         else:
-            star_table['nexp'].append(intDefault(ls[didx["APFnshots"]], default=1))
+            star_table['nexp'].append(int_default(ls[didx["APFnshots"]], default=1))
 
         if "binning" in didx and ls[didx["binning"]] is not None:
-            binp = intDefault(ls[didx["binning"]], default=1)
+            binp = int_default(ls[didx["binning"]], default=1)
             if binp != 1 and binp != 2 and binp != 4 and binp != 8:
                 binp=1
             bin_str = "%d,%d" % (binp, binp)
@@ -427,7 +448,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
             star_table['binning'].append("1,1")
 
         if "DaysNew" in didx and ls[didx["DaysNew"]] is not None:
-            days_from_new = floatDefault(ls[didx['DaysNew']], default=15.0)
+            days_from_new = float_default(ls[didx['DaysNew']], default=15.0)
             star_table['moon'].append(days_from_new / 15.0)
         else:
             star_table['moon'].append(1.0)
@@ -436,24 +457,24 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
             
         # scheduler specific
         if "cad" in didx and ls[didx['cad']] is not None:
-            cad_value = floatDefault(ls[didx["cad"]], default=0.7)
+            cad_value = float_default(ls[didx["cad"]], default=0.7)
         else:
-            cad_value = floatDefault(ls[didx["APFcad"]], default=0.7)
+            cad_value = float_default(ls[didx["APFcad"]], default=0.7)
         if cad_value > 0:
             star_table['cad'].append(cad_value)
         else:
             star_table['cad'].append(0.7)
 
-        night_cad = floatDefault(ls[didx["night_cad"]], default=-1.0)
+        night_cad = float_default(ls[didx["night_cad"]], default=-1.0)
         if night_cad > 0:
             night_cad /= 60*24
         star_table['night_cad'].append(night_cad)
         star_table['night_obs'].append(0)
 
         star_table['pri'].append(apfpri)
-        star_table["lastobs"].append(floatDefault(ls[didx["lastobs"]], default=0))
+        star_table["lastobs"].append(float_default(ls[didx["lastobs"]], default=0))
 
-        inval = floatDefault(ls[didx["B-V"]], default=0.7)
+        inval = float_default(ls[didx["B-V"]], default=0.7)
         if inval < 0:
             inval = 1.
         if coln is 'B-V' and inval > 2:
@@ -469,16 +490,16 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
         else:
             star_table['totobs'].append(0)
 
-        check = checkFlag("Close Companion", didx, ls, "\A(y|Y)","")
+        check = check_flag("Close Companion", didx, ls, "\A(y|Y)","")
         if check == "Y" or check == "y" :
             star_table['do'].append(check)
         else:
             star_table['do'].append("")
 
-        star_table['decker'].append(checkFlag("decker", didx, ls, "\A(W|N|T|S|O|K|L|M|B)", config["decker"]))
-        i2select = checkFlag("I2", didx, ls, "\A(n|N)", config["I2"])
+        star_table['decker'].append(check_flag("decker", didx, ls, "\A(W|N|T|S|O|K|L|M|B)", config["decker"]))
+        i2select = check_flag("I2", didx, ls, "\A(n|N)", config["I2"])
         star_table['I2'].append(i2select.upper())
-        tempselect = checkFlag("Template",didx,ls,"\A(n|N)",'Y')
+        tempselect = check_flag("Template",didx,ls,"\A(n|N)",'Y')
         star_table['Template'].append(tempselect.upper())
 
 #        star_table['obsblock'].append(checkFlag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
@@ -488,7 +509,7 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
 
 
         if 'Bstar' in didx:
-            star_table['Bstar'].append(checkFlag('Bstar', didx, ls, "(Y|y)", 'N'))
+            star_table['Bstar'].append(check_flag('Bstar', didx, ls, "(Y|y)", 'N'))
             star_table['sheetn'].append(csheetn)
         else:
             if 'RECUR_A100' in csheetn :
@@ -517,10 +538,10 @@ def parseCodex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,s
 
     return star_table
 
-def genStars(star_table):
-    """pyephem_objs = genStars(star_table)
+def gen_stars(star_table):
+    """pyephem_objs = gen_stars(star_table)
 
-    given a star_table returned by parseCodex (or initStarTable) returns
+    given a star_table returned by parse_codex (or init_star_table) returns
     a list of pyephem objects for every object in the table
 
     Inputs star_table - astropy Table that must have the RA and Dec in
@@ -540,12 +561,12 @@ def genStars(star_table):
 
 
 
-def parseUCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W',  'Bstar' : 'N' },force_download=False,prilim=0.5,hour_constraints=None):
-    """ parseUCOSched parses google sheets and returns the output as a tuple
+def parse_UCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W',  'Bstar' : 'N' },force_download=False,prilim=0.5,hour_constraints=None):
+    """ parse_UCOSched parses google sheets and returns the output as a tuple
     This routine downloads the data if needed and saves the output to a file.
     If the file exists, it just reads in the file.
 
-    star_table, stars = parseUCOSched(sheetns=["RECUR_A100"],certificate='cert.json',outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W', 'Bstar' : 'N' },force_download=False,prilim=0.5)
+    star_table, stars = parse_UCOSched(sheetns=["RECUR_A100"],certificate='cert.json',outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W', 'Bstar' : 'N' },force_download=False,prilim=0.5)
 
     star_table - an astropy table
     stars - a list of pyEphem objects
@@ -571,14 +592,14 @@ def parseUCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.d
     outfn = os.path.join(outdir,outfn)
     if os.path.exists(outfn) and force_download is False:
         try:
-            star_table = readStarTable(outfn)
+            star_table = read_star_table(outfn)
         except:
-            star_table  = parseCodex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, hour_constraints=hour_constraints)
+            star_table  = parse_codex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, hour_constraints=hour_constraints)
 
     else:
-        star_table = parseCodex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, hour_constraints=hour_constraints)
+        star_table = parse_codex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, hour_constraints=hour_constraints)
 
-    stars = genStars(star_table)
+    stars = gen_stars(star_table)
 
     if len(stars) > 0:
         astropy.io.ascii.write(star_table,outfn, format='ecsv', overwrite=True)
@@ -589,7 +610,7 @@ def parseUCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.d
     return (star_table, stars)
 
 
-def parseTOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=DEFAULT_CERT, prilim=0.5):
+def parse_TOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=DEFAULT_CERT, prilim=0.5):
 
     if not outdir :
         outdir = os.getcwd()
@@ -602,13 +623,13 @@ def parseTOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=D
         return
 
     try:
-        star_table = readStarTable(outfn)
+        star_table = read_star_table(outfn)
     except:
         return
 
 #    config={'I2': 'Y', 'decker': 'W', 'owner' : '', 'mode' : '', 'obsblock' : '', 'Bstar' : 'N' , 'raoff' : None, 'decoff' : None }
     config={'I2': 'N', 'decker': 'W', 'owner' : '',  'Bstar' : 'N'  }
-    too_table = parseCodex(config, sheetns=too_sheetns, certificate=certificate, prilim=prilim, sleep=False)
+    too_table = parse_codex(config, sheetns=too_sheetns, certificate=certificate, prilim=prilim, sleep=False)
 
     for n in too_sheetns:
         cur = (star_table['sheetn'] == n)
@@ -641,13 +662,13 @@ def updateLocalStarlist(intime, observed_file="observed_targets", outfn='parsesc
 
     outfn = os.path.join(outdir, outfn)
     if os.path.exists(outfn):
-        star_table = readStarTable(outfn)
+        star_table = read_star_table(outfn)
     else:
         return obslog, None
 
     toofn = os.path.join(outdir, toofn)
     if os.path.exists(toofn):
-        too_table = readStarTable(toofn)
+        too_table = read_star_table(toofn)
     else:
         too_table = None
 
@@ -656,7 +677,7 @@ def updateLocalStarlist(intime, observed_file="observed_targets", outfn='parsesc
         prev = 0
         for n_appear in range(0,obslog.names.count(name)):
 
-            obstime, taketemp, owner, prev = logValues(name, obslog, prev)
+            obstime, taketemp, owner, prev = log_values(name, obslog, prev)
 
             if owner == 'public':
                 owner = 'RECUR_A100'
@@ -692,15 +713,24 @@ def updateLocalStarlist(intime, observed_file="observed_targets", outfn='parsesc
 
     return obslog, star_table
 
-def observedJD(star_table_row,otime,ctime):
-    jd = None
+def observed_JD(star_table_row,otime,ctime):
+    '''
+    observed_JD(star_table_row,otime,ctime)
     
+    star_table_row - row from the googledex
+    otime - observation time as a time stamp
+    ctime - current time as a time stamp
+    
+    returns the julian date of the last observation
+    '''
+    jd = None
+
     # ideally get JD from the local table -
     # this will always be the value of the last observation
     if  star_table_row is not None:
         if len(star_table_row['lastobs']) > 0:
             jd = float(star_table_row['lastobs'][0])
-            
+
     # if the above fails, we should be able to use the observing log
     # but this is JUST the UT hour and minute, not the day so we have to use the otime
     # value to calculate the full JD
@@ -714,8 +744,17 @@ def observedJD(star_table_row,otime,ctime):
 
     return jd
 
-def logValues(local_name, obslog, prev):
+def log_values(local_name, obslog, prev):
+    '''
+    log_values(local_name, obslog, prev)
 
+    local_name - name of the target in the local googledex
+    obslog - ObservedLog object
+    prev - previous index in the ObservedLog object
+
+    returns the observation time, temperature, owner, 
+        and the index of the next observation matching local_name
+    '''
     nameidx = obslog.names.index(local_name,prev)
         
     prev = nameidx+1
@@ -751,7 +790,7 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
         ctime = datetime.utcfromtimestamp(int(time.time()))
 
     outfn = os.path.join(outdir,outfn)
-    star_table = readStarTable(outfn)
+    star_table = read_star_table(outfn)
 
     # OK the following code is going to rely on the fact that owner
     # is the sheet name
@@ -764,7 +803,7 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
 
     nupdates = 0
     for sheetn in needed_sheetns:
-        ws = getSpreadsheet(sheetn=sheetn, certificate=certificate)
+        ws = get_spreadsheet(sheetn=sheetn, certificate=certificate)
 
         if ws:
             vals = ws.get_all_values()
@@ -796,7 +835,7 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
 
 
             # Did we observe this target tonight?
-            local_name = parseStarname(v[nmcol])
+            local_name = parse_starname(v[nmcol])
 
             if local_name in obslog.names:
                 # We observed this target, so update the cell in the worksheet
@@ -804,15 +843,15 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
                 for n_appear in range(0,obslog.names.count(local_name)):
                     # a target can be observed more than once a night
 
-                    otime, taketemp, curowner, prev = logValues(local_name, obslog, prev)
-                    
+                    otime, taketemp, curowner, prev = log_values(local_name, obslog, prev)
+
                     try:
                         star_table_row = star_table[(star_table['name'] == local_name)&(star_table['sheetn'] == sheetn)]
                     except:
                         star_table_row = None
-                        
-                    jd = observedJD(star_table_row,otime,ctime)
-                    
+
+                    jd = observed_JD(star_table_row,otime,ctime)
+
                     try:
                         pastdate = float(v[col])
                     except:
@@ -821,7 +860,7 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
                         nobs = int(v[nobscol])
                     except:
                         nobs = 0
-                        
+
                     new_nobs = nobs + n_appear + 1
                     # update_cell(row, col, val) - col and row are 1 indexed
                     try:
@@ -831,7 +870,7 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
                             if nightobscol >= 0:
                                 ws.update_cell(i+1, nightobscol+1, n_appear+1)
                                 nupdates += 1
-                            
+
                             nupdates += 2
                             apflog( "Updated %s from %.4f to %.4f and %d in %s" % (v[0],pastdate,round(jd, 3),new_nobs,sheetn),echo=True)
                     except:
@@ -858,7 +897,8 @@ def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='
                 # if nightobscol >= 0:
                 #     if i > 0:
                 #         ws.update_cell(i+1, nightobscol+1, 0)
-                #         apflog( "Updated %s (in columnd %d) to have %d" % (v[0],nightobscol+1,0),echo=True)
+                #         apflog( "Updated %s (in columnd %d) to have %d" % \
+                #             (v[0],nightobscol+1,0),echo=True)
                 #         nupdates += 1
             # bottom of loop
 

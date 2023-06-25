@@ -138,7 +138,7 @@ def updateHourTable(hour_table, observed, dt, outfn='hour_table', outdir=None):
     return hour_table
 
 
-def makeHourTable(rank_table, dt, outfn='hour_table', outdir=None, hour_constraints=None):
+def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constraints=None):
 
     if not outdir :
         outdir = os.getcwd()
@@ -208,7 +208,7 @@ def find_time_left():
         return None
 
 
-def makeRankTable(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None):
+def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None):
 
     if not outdir :
         outdir = os.getcwd()
@@ -220,7 +220,7 @@ def makeRankTable(sheet_table_name, outfn='rank_table', outdir=None, hour_constr
         bs = [ True if sb == 'True' else False for sb in rank_table['too'] ]
         rank_table['too'] = bs
     else:
-        sheetns, ranks, fracs, asciitoos = ParseUCOSched.parseRankTable(sheet_table_name=sheet_table_name)
+        sheetns, ranks, fracs, asciitoos = ParseUCOSched.parse_rank_table(sheet_table_name=sheet_table_name)
         if sheetns is None or len(sheetns) == 0:
             return None
             # this should result in this function being called again but with the 
@@ -771,8 +771,8 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     apflog("getNext(): Updating star list with previous observations", echo=True)
     observed, star_table = ParseUCOSched.updateLocalStarlist(ptime, outfn=outfn, toofn=toofn, observed_file="observed_targets")
 
-    rank_table = makeRankTable(rank_sheetn)
-    hour_table = makeHourTable(rank_table, ptime)
+    rank_table = make_rank_table(rank_sheetn)
+    hour_table = make_hour_table(rank_table, ptime)
 
     if hour_table is not None:
         hour_table = updateHourTable(hour_table, observed, ptime)
@@ -784,7 +784,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
         apflog("getNext(): Parsing the star list", echo=True)
         star_table, stars = ParseUCOSched.parseUCOSched(sheetns=sheetns, outfn=outfn, outdir=outdir, config=config)
     else:
-        stars = ParseUCOSched.genStars(star_table)
+        stars = ParseUCOSched.gen_stars(star_table)
     targNum = len(stars)
 
     # List of targets already observed
@@ -949,9 +949,9 @@ if __name__ == '__main__':
         hour_constraints = None
 
     rank_tablen='2023A_ranks'
-    rank_table = makeRankTable(rank_tablen, hour_constraints=hour_constraints)
+    rank_table = make_rank_table(rank_tablen, hour_constraints=hour_constraints)
 
-    hour_table = makeHourTable(rank_table, dt, hour_constraints=hour_constraints)
+    hour_table = make_hour_table(rank_table, dt, hour_constraints=hour_constraints)
 
     sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
