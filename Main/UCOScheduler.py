@@ -33,7 +33,7 @@ LAST = 'L'
 BUFFERSEC = 600
 BUFFER = BUFFERSEC / (24.*60*60)
 
-def computePriorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None):
+def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None):
     # make this a function, have it return the current priorities, than change references to the star_table below into references to the current priority list
     new_pri = np.zeros_like(star_table['pri'])
 
@@ -879,7 +879,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
         apflog( "getNext(): Couldn't find any suitable targets!", level="error", echo=True)
         return None
 
-    final_priorities = computePriorities(star_table,dt,
+    final_priorities = compute_priorities(star_table,dt,
                                              rank_table=rank_table,
                                              hour_table=hour_table,
                                              observed=observed)
