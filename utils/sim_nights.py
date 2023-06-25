@@ -1,18 +1,17 @@
 from __future__ import print_function
-import sys
-sys.path.insert(1,"../Main")
 
-import pickle
 import optparse
 from datetime import datetime, timedelta
 import random
-import re
 import os
 import shutil
+import sys
 
 import ephem
 import numpy as np
 import astropy
+
+sys.path.insert(1,"../Main")
 
 import NightSim
 import UCOScheduler as ds
@@ -57,7 +56,7 @@ def gen_datelist(startstr,endstr):
         if cur < end and (cur < breakbeg or cur > breakend):
             datestr = "%d/%02d/%02d" % (cur.year,cur.month,cur.day)
             datelist.append(datestr)
-                        
+
     return datelist
 
 
@@ -75,7 +74,7 @@ def write_sim_file_results(star_strs,outdir="../SimFiles"):
             outstr = "%s %s %s\n" % (mjd,i2cnts,actel)
             ofp.write(outstr)
         ofp.close()
-    
+
 
 def sim_results(outstr,star_strs,star_dates):
     (name,date,time,mjd,expt,i2cnts,actel,actaz,fwhm,slow,owner) = outstr.split()
@@ -105,11 +104,11 @@ def prep_master(outdir,mastername):
         except Exception as e:
             print ("Cannot open file %s for output, %s,  exiting" % (mastername, e))
             sys.exit()
-        
+
         for ln in masterfp:
             sim_results(ln,star_strs,star_dates)
         masterfp.close()
-    
+
     try:
         masterfp = open(mastername,"a+")
     except Exception as e:
@@ -159,7 +158,7 @@ def parse_args():
         except Exception as e:
             print ("cannot copy %s to %s: %s" % (options.infile,options.outdir,e))
             sys.exit()
-            
+
     return options, datelist
 
 
@@ -168,7 +167,7 @@ def updateConstraints(googledex):
     star_table = astropy.io.ascii.read(googledex)
     star_table['night_obs'] = 0
     astropy.io.ascii.write(googledex,format='ecsv',overwrite=True)
-    
+
     return
 
 def updateHourConstraints(tleftfn):
@@ -181,7 +180,7 @@ def updateHourConstraints(tleftfn):
             runname = 'public'
         else:
             runname = sheetn
-            
+
         used = hour_table['cur'][hour_table['sheetn'] == sheetn]
         time_left['used'][time_left['runname'] == runname] += used
         if runname != 'public':
@@ -200,24 +199,24 @@ if __name__ == "__main__":
 
     rank_table = ds.makeRankTable(options.rank_sheetn)
     sheetns = list(rank_table['sheetn'][rank_table['rank'] > 0])
-    
+
     for datestr in datelist:
 
         if os.path.exists('hour_table'):
             os.remove('hour_table')
-            
+
         tleftfn = 'time_left.csv'
         if os.path.exists(tleftfn):
             hour_constraints = astropy.io.ascii.read(tleftfn)
         else:
             hour_constraints = None
-             
+
         curtime, endtime, apf_obs = NightSim.sun_times(datestr)
-        
+
         hour_table = ds.makeHourTable(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
-        
-        star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=options.infile,outdir=options.outdir)
-    
+
+        star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns,outfn=options.infile,outdir=options.outdir)
+
         fwhms = NightSim.gen_seeing()
         slowdowns = NightSim.gen_clouds()
 
@@ -235,7 +234,7 @@ if __name__ == "__main__":
             if result:
                 if bstar:
                     bstar = False
-                
+
                 curtime += 70./86400 # acquisition time
                 (idx,) = np.where(star_table['name'] == result['NAME'])
                 idx = idx[0]
@@ -244,7 +243,7 @@ if __name__ == "__main__":
                     (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
                     sim_results(outstr,star_strs,star_dates)
                     masterfp.write("%s\n" % (outstr))
-                    
+
                 ot = open(otfn,"a+")
                 ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
                 ot.close()

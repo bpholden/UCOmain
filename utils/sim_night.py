@@ -1,7 +1,6 @@
 from __future__ import print_function
 import sys
-sys.path.append("../Main")
-#from ExposureCalc import *
+
 import optparse
 from datetime import datetime
 import re
@@ -11,6 +10,7 @@ import numpy as np
 import ephem
 import astropy.io.ascii
 
+sys.path.append("../Main")
 import UCOScheduler as ds
 
 import NightSim 
@@ -66,13 +66,13 @@ else:
     hour_constraints = None
    
 
-rank_table = ds.makeRankTable(options.rank_sheetn)
+rank_table = ds.make_rank_table(options.rank_sheetn)
 sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
     
 hdrstr = "#starname date time mjd exptime i2counts elevation azimuth fwhm slowdown owner\n"
 outfp.write(hdrstr)
         
-star_table, stars  = ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
+star_table, stars  = ParseUCOSched.parse_UCOSched(sheetns=sheet_list,outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
 
 fwhms = NightSim.gen_seeing(val=1.0) # good conditions
 slowdowns = NightSim.gen_clouds(val=.6) # typical conditions
@@ -88,7 +88,7 @@ bstar = options.bstar
 doTemp = True
 tempcount = 0
 
-hour_table = ds.makeHourTable(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
+hour_table = ds.make_hour_table(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
 
 while observing:
     curtime = ephem.Date(curtime)
