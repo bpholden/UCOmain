@@ -314,6 +314,7 @@ def init_star_table(col_list):
     star_table['cad'] = []
     star_table['pri'] = []
     star_table['moon'] = []
+    star_table['sheetn'] = []
     star_table['only_template'] = []
 
     return star_table
