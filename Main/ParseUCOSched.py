@@ -314,6 +314,7 @@ def init_star_table(col_list):
     star_table['cad'] = []
     star_table['pri'] = []
     star_table['moon'] = []
+    star_table['only_template'] = []
 
     return star_table
 
@@ -337,7 +338,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
                     "lastobs", "B-V", \
                     "cad", "pri", "nexp", "count", "binning", \
                     "night_cad","night_obs", "DaysNew", \
-                    "Template", "Nobs", "Total Obs", "Bstar",\
+                    "Template", "Nobs", "Total Obs", "Bstar", "Only Template"\
 #                    "mode", "raoff", "decoff",  "obsblock",\
                     'sheetn' \
                     ]
@@ -501,9 +502,10 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         star_table['I2'].append(i2select.upper())
         tempselect = check_flag("Template",didx,ls,"\A(n|N)",'Y')
         star_table['Template'].append(tempselect.upper())
-
-#        star_table['obsblock'].append(checkFlag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
-#        star_table['inst'].append(checkFlag("inst",didx,ls,"(levy|darts)",config['inst']).lower())
+        tempselect = check_flag("Only Template",didx,ls,"\A(y|Y)",'N')
+        star_table['only_template'].append(tempselect.upper())
+#        star_table['obsblock'].append(check_flag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
+#        star_table['inst'].append(check_flag("inst",didx,ls,"(levy|darts)",config['inst']).lower())
 
         # need to check raoff and decoff values and alarm on failure
 
