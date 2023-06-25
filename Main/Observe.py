@@ -1,12 +1,9 @@
 from __future__ import print_function
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 import os.path
 import shutil
-import signal
-from select import select
 import re
-import subprocess
 import sys
 import threading
 import time
@@ -112,7 +109,7 @@ class Observe(threading.Thread):
                 self.sheetn = sheetlist
             else:
                 self.sheetn = ["RECUR_A100",]
-                
+
         self.canOpen = True
         self.badWeather = False
 
@@ -176,7 +173,8 @@ class Observe(threading.Thread):
 
     def checkStar(self, haveobserved):
         """ Observe.obsBstar(haveobserved)
-            if observing has begun, and the last observation was a success, set Observe.obsBstar to false, writes master_obsbstar to
+            if observing has begun, and the last observation was a success,
+            set Observe.obsBstar to false, writes master_obsbstar to
             the current value of obsBstar
             The variable OBSBSTAR still overrides
         """
@@ -192,7 +190,9 @@ class Observe(threading.Thread):
         else:
             self.starFailures += 1
             if self.starFailures%3 == 0:
-                apflog("%d failures of observing a star in a row - suggesting homing telescope or closing for the night" % (self.starFailures), echo=True, level='Alert')
+                log_str = "%d failures of observing a star in a row " % (self.starFailures)
+                log_str += "- suggesting homing telescope or closing for the night"
+                apflog(log_str echo=True, level='Alert')
 
     def checkServos(self):
 
