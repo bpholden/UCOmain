@@ -797,7 +797,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     if last_failure is not None:
         last_objs_attempted.append(last_failure)
     if len(last_objs_attempted) == 5:
-        apflog( "getNext(): 5 failed acquisition attempts", level="warn", echo=True)
+        apflog( "getNext(): 5 failed acquisition attempts", level="error", echo=True)
 
 
     ###
