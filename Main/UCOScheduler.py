@@ -11,10 +11,8 @@ import astropy
 import astropy.io
 import astropy.table
 import ephem
-from ExposureCalculations import getI2_M, getI2_K, getEXPMeter, getEXPMeter_Rate, getEXPTime
 import ParseUCOSched
-import Coords
-from SchedulerConsts import * # I know
+import SchedulerConsts # I know
 
 try:
     from apflog import *
@@ -278,8 +276,8 @@ def timeCheck(star_table, totexptimes, dt, hour_table):
     values are determined by whether or not the target can be observed in the time left
     """
     maxexptime = computeSunrise(dt,horizon='-9')
-    if maxexptime < TARGET_EXPOSURE_TIME_MIN:
-        maxexptime = TARGET_EXPOSURE_TIME_MIN
+    if maxexptime < SchedulerConsts.TARGET_EXPOSURE_TIME_MIN:
+        maxexptime = SchedulerConsts.TARGET_EXPOSURE_TIME_MIN
         # this will try a target in case we get lucky
         # bright stars often have longer than
         # necessary exposure times, relying on the
@@ -348,8 +346,8 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
     ret += 'uth=%02d utm=%02d ' % (int(t.hour),int(t.minute))
 
     # Exp Count
-    if star_table_row['expcount'] > EXP_LIM:
-        ret += 'expcount=%.3g ' % (EXP_LIM)
+    if star_table_row['expcount'] > SchedulerConsts.EXP_LIM:
+        ret += 'expcount=%.3g ' % (SchedulerConsts.EXP_LIM)
     elif temp:
         ret += 'expcount=%.3g ' % (1e9)
     else:
@@ -433,7 +431,7 @@ def computeDatetime(ctime):
     return dt
 
 
-def makeAPFObs(dt, horizon=str(TARGET_ELEVATION_MIN)):
+def makeAPFObs(dt, horizon=str(SchedulerConsts.TARGET_ELEVATION_MIN)):
     '''
     apf_obs = makeAPFObs(dt, horizon=str(TARGET_ELEVATION_MIN))
     dt - datetime object
@@ -525,7 +523,7 @@ def templateConditions(moon, seeing, slowdown):
 
     """
 
-    if seeing < SEEING_TEMP and slowdown < SLOWDOWN_TEMP:
+    if seeing < SchedulerConsts.SEEING_TEMP and slowdown < SchedulerConsts.SLOWDOWN_TEMP:
         apflog("moon.phase=%.2f moon.alt=%.2f" % (moon.phase,moon.alt),echo=True,level='debug')
         if moon.phase < 50 and float(moon.alt) < 0:
             return True
@@ -711,8 +709,8 @@ def behind_moon(moon,ras,decs):
     decs - numpy array of declinations in radians
     moon_check - numpy array of booleans, True if the target is too close to the moon
     '''
-    md = TARGET_MOON_DIST_MAX - TARGET_MOON_DIST_MIN
-    minMoonDist = ((moon.phase / 100.) * md) + TARGET_MOON_DIST_MIN
+    md = SchedulerConsts.TARGET_MOON_DIST_MAX - SchedulerConsts.TARGET_MOON_DIST_MIN
+    minMoonDist = ((moon.phase / 100.) * md) + SchedulerConsts.TARGET_MOON_DIST_MIN
     moonDist = np.degrees(np.sqrt((moon.ra - ras)**2 + (moon.dec - decs)**2))
 
     moon_check = moonDist > minMoonDist
@@ -754,8 +752,10 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     apflog( "getNext(): Finding target for time %s" % (dt), echo=True)
 
-    if slowdown > SLOWDOWN_MAX:
-        apflog( "getNext(): Slowndown value of %f exceeds maximum of %f at time %s" % (slowdown, SLOWDOWN_MAX, dt), echo=True)
+    if slowdown > SchedulerConsts.SLOWDOWN_MAX:
+        log_str = "getNext(): Slowndown value of %f " % (slowdown)
+        log_str += "exceeds maximum of %f at time %s" % (SchedulerConsts.SLOWDOWN_MAX, dt)
+        apflog(log_str , echo=True)
         return None
 
     try:
