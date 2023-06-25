@@ -926,9 +926,12 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
         bidx, bfinidx = findBstars(star_table, idx, bstars)
 
         if enoughTimeTemplates(star_table,stars,idx,apf_obs,dt):
-            bline = make_scriptobs_line(star_table[bstars][bidx], dt, decker="N", I2="Y", owner=res['owner'], focval=2)
-            line  = make_scriptobs_line(star_table[idx], dt, decker="N", I2="N", owner=res['owner'], temp=True)
-            bfinline = make_scriptobs_line(star_table[bstars][bfinidx], dt, decker="N", I2="Y", owner=res['owner'], focval=0)
+            bline = make_scriptobs_line(star_table[bstars][bidx], dt, \
+                                        decker="N", I2="Y", owner=res['owner'], focval=2)
+            line  = make_scriptobs_line(star_table[idx], \
+                                        dt, decker="N", I2="N", owner=res['owner'], temp=True)
+            bfinline = make_scriptobs_line(star_table[bstars][bfinidx], dt,\
+                                            decker="N", I2="Y", owner=res['owner'], focval=0)
             res['SCRIPTOBS'] = []
             res['SCRIPTOBS'].append(bfinline + " # temp=Y end")
             res['SCRIPTOBS'].append(line + " # temp=Y")
@@ -1007,12 +1010,15 @@ if __name__ == '__main__':
     idx = idx[0]
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
     bidx,bfinidx = findBstars(star_table, idx, bstars)
-    bline = make_scriptobs_line(star_table[bstars][bidx], dt, decker="N", I2="Y", owner='public', focval=2)
-    line  = make_scriptobs_line(star_table[idx], dt, decker="N", I2="N", owner='public', temp=True)
-    bfinline = make_scriptobs_line(star_table[bstars][bfinidx], dt, decker="N", I2="Y", owner='public', focval=0)
-    res= []
-    res.append(bfinline + " # temp=Y end")
-    res.append(line + " # temp=Y")
-    res.append(bline + " # temp=Y")
-    [print(r) for r in res]
+    bline = make_scriptobs_line(star_table[bstars][bidx], dt, \
+                                decker="N", I2="Y", owner='public', focval=2)
+    line  = make_scriptobs_line(star_table[idx], dt, \
+                                decker="N", I2="N", owner='public', temp=True)
+    bfinline = make_scriptobs_line(star_table[bstars][bfinidx], dt, \
+                                   decker="N", I2="Y", owner='public', focval=0)
+    temp_res= []
+    temp_res.append(bfinline + " # temp=Y end")
+    temp_res.append(line + " # temp=Y")
+    temp_res.append(bline + " # temp=Y")
+    [print(r) for r in temp_res]
 
