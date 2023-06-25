@@ -2,8 +2,6 @@
 from __future__ import print_function
 
 import sys
-import time
-
 sys.path.append("../Main")
 import ObservedLog
 import ParseUCOSched
@@ -22,4 +20,4 @@ if __name__ == "__main__":
         else:
             sheetns = set(obslog.sheetns)
 
-        ParseUCOSched.updateSheetLastobs(fn,outfn=outfn)
+        ParseUCOSched.update_sheet_lastobs(fn,outfn=outfn)

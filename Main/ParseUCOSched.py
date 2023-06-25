@@ -769,10 +769,10 @@ def log_values(local_name, obslog, prev):
 
     return otime, taketemp, curowner, prev
 
-def updateSheetLastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='parsesched.dat',outdir=None):
+def update_sheet_lastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='parsesched.dat',outdir=None):
     """
         Update the online googledex lastobs column assuming things in filename have been observed.
-        updateSheetLastobs(filename, sheetn="The Googledex",time=None,certificate=DEFAULT_CERT)
+        update_sheet_lastobs(filename, sheetn="The Googledex",time=None,certificate=DEFAULT_CERT)
 
         filename - where the observations are logged
         ctime - current time as a time stamp
