@@ -648,10 +648,10 @@ def parse_TOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=
 
 
 
-def updateLocalStarlist(intime, observed_file="observed_targets", outfn='parsesched.dat', toofn='too.dat', outdir=None):
+def update_local_starlist(intime, observed_file="observed_targets", outfn='parsesched.dat', toofn='too.dat', outdir=None):
     """
         Update the local copy of the googledex with the last observed star time.
-        updateLocalStarlist(time,googledex_file="googledex.dat", observed_file="observed_targets")
+        update_local_starlist(time,googledex_file="googledex.dat", observed_file="observed_targets")
 
     opens googledex_file and inputs date of last observation from observed_file
         in principle can use timestamps as well as scriptobs uth and utm values

@@ -16,4 +16,4 @@ if __name__ == "__main__":
     gdfn = sys.argv[2]
 
     dt = datetime.datetime.now()
-    ParseUCOSched.updateLocalStarlist(dt,outfn=gdfn,observed_file=obfn)
+    ParseUCOSched.update_local_starlist(dt,outfn=gdfn,observed_file=obfn)

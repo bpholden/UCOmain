@@ -769,7 +769,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
             ptime = datetime.utcfromtimestamp(int(time.time()))
 
     apflog("getNext(): Updating star list with previous observations", echo=True)
-    observed, star_table = ParseUCOSched.updateLocalStarlist(ptime, outfn=outfn, toofn=toofn, observed_file="observed_targets")
+    observed, star_table = ParseUCOSched.update_local_starlist(ptime, outfn=outfn, toofn=toofn, observed_file="observed_targets")
 
     rank_table = make_rank_table(rank_sheetn)
     hour_table = make_hour_table(rank_table, ptime)
@@ -782,7 +782,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     if star_table is None:
         apflog("getNext(): Parsing the star list", echo=True)
-        star_table, stars = ParseUCOSched.parseUCOSched(sheetns=sheetns, outfn=outfn, outdir=outdir, config=config)
+        star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns, outfn=outfn, outdir=outdir, config=config)
     else:
         stars = ParseUCOSched.gen_stars(star_table)
     targNum = len(stars)
@@ -998,7 +998,9 @@ if __name__ == '__main__':
     
     print("Testing templates")
 
-    star_table, stars = ParseUCOSched.parseUCOSched(sheetns=sheet_list, outfn='googledex.dat', outdir=".", config=configDefaults('public'))
+    star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheet_list, \
+                                                     outfn='googledex.dat', outdir=".", \
+                                                        config=configDefaults('public'))
     idx, = np.asarray(star_table['name'] == '185144').nonzero()
     idx = idx[0]
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
