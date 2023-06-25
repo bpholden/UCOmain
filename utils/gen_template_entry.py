@@ -27,7 +27,7 @@ if __name__ == "__main__":
     totexptimes = (star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1))
 
     dt = datetime.utcfromtimestamp(int(time.time()))
-    apf_obs = ds.makeAPFObs(dt)
+    apf_obs = ds.make_APF_obs(dt)
 
     for arg in args:
         if np.any(star_table['name'] == arg):

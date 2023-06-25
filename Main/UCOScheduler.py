@@ -431,9 +431,9 @@ def computeDatetime(ctime):
     return dt
 
 
-def makeAPFObs(dt, horizon=str(SchedulerConsts.TARGET_ELEVATION_MIN)):
+def make_APF_obs(dt, horizon=str(SchedulerConsts.TARGET_ELEVATION_MIN)):
     '''
-    apf_obs = makeAPFObs(dt, horizon=str(TARGET_ELEVATION_MIN))
+    apf_obs = make_APF_obs(dt, horizon=str(TARGET_ELEVATION_MIN))
     dt - datetime object
     horizon - string of horizon in degrees
     apf_obs - ephem.Observer object for the time dt with the horizon set to horizon
@@ -454,7 +454,7 @@ def computeSunsetRise(dt, horizon='0'):
     sunset, sunrise = computeSunsetRise(dt, horizon='0')
     computes time in seconds before sunset
     '''
-    apf_obs = makeAPFObs(dt, horizon=horizon)
+    apf_obs = make_APF_obs(dt, horizon=horizon)
     sunset = apf_obs.next_setting(ephem.Sun())
     sunset -= ephem.Date(dt)
     sunset *= 86400.0 # convert to seconds
@@ -807,7 +807,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     # timedelta = now - uth,utm : minus current JD?
     ###
 
-    apf_obs = makeAPFObs(dt)
+    apf_obs = make_APF_obs(dt)
 
     # Calculate the moon's location
     moon = ephem.Moon()
