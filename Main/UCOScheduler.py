@@ -769,7 +769,9 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
             ptime = datetime.utcfromtimestamp(int(time.time()))
 
     apflog("getNext(): Updating star list with previous observations", echo=True)
-    observed, star_table = ParseUCOSched.update_local_starlist(ptime, outfn=outfn, toofn=toofn, observed_file="observed_targets")
+    observed, star_table = ParseUCOSched.update_local_starlist(ptime,\
+                                                               outfn=outfn, toofn=toofn, \
+                                                                observed_file="observed_targets")
 
     rank_table = make_rank_table(rank_sheetn)
     hour_table = make_hour_table(rank_table, ptime)
@@ -782,7 +784,9 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     if star_table is None:
         apflog("getNext(): Parsing the star list", echo=True)
-        star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns, outfn=outfn, outdir=outdir, config=config)
+        star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns, \
+                                                         outfn=outfn, outdir=outdir, \
+                                                            config=config)
     else:
         stars = ParseUCOSched.gen_stars(star_table)
     targNum = len(stars)
@@ -826,7 +830,9 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     moon_check = behind_moon(moon, star_table['ra'], star_table['dec'])
     available = available & moon_check
-    apflog("getNext(): Moon visibility check - stars rejected = %s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)])), echo=True)
+    log_str = "getNext(): Moon visibility check - stars rejected = "
+    log_str += "%s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)]))
+    apflog(log_str, echo=True)
 
     # other condition cuts (seeing, transparency, moon phase)
     cuts = conditionCuts(moon, seeing, slowdown, star_table)
@@ -859,7 +865,8 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     apflog("getNext(): Computing star elevations",echo=True)
     fstars = [s for s,_ in zip(stars,available) if _ ]
-    vis, star_elevations, scaled_els = Visible.visible(apf_obs, fstars, totexptimes[available], shiftwest=shiftwest)
+    vis, star_elevations, scaled_els = Visible.visible(apf_obs, fstars, \
+                                                       totexptimes[available], shiftwest=shiftwest)
     currently_available = available
     if len(star_elevations) > 0:
         currently_available[available] = currently_available[available] & vis
