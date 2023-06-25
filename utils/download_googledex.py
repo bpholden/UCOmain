@@ -44,12 +44,12 @@ if __name__ == "__main__":
         hour_constraints = None
 
     if opt.rank_sheet is not None:
-        rank_table = ds.makeRankTable(opt.rank_sheet,hour_constraints=hour_constraints)
-        hour_table = ds.makeHourTable(rank_table,datetime.datetime.now(),hour_constraints=hour_constraints)
+        rank_table = ds.make_rank_table(opt.rank_sheet,hour_constraints=hour_constraints)
+        hour_table = ds.make_hour_able(rank_table,datetime.datetime.now(),hour_constraints=hour_constraints)
         sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
     if opt.sheetn is not None:
         sheet_list = opt.sheetn.split(",")
 
     if sheet_list:
-        ParseUCOSched.parseUCOSched(sheetns=sheet_list,outfn=outfn,outdir=outdir,config=config)
+        ParseUCOSched.parse_UCOSched(sheetns=sheet_list,outfn=outfn,outdir=outdir,config=config)
