@@ -613,7 +613,21 @@ def parse_UCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.
 
 
 def parse_TOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=DEFAULT_CERT, prilim=0.5):
-
+    '''
+    star_table = parse_TOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=DEFAULT_CERT, prilim=0.5)
+    
+    too_sheetns - list of google sheet names
+    outfn - output file name, will read this in if it already exists
+    outdir - output directory for outfn, defaults to ./
+    certificate - json file for authenticating to access google sheets
+    prilim - limit on priority values, values below this are tossed
+    
+    writes the output to outfn
+    
+    this is a wrapper for parse_codex that updates the googledex with the ToO targets
+    the too_sheetns are the names of the google sheets that contain the ToO targets, 
+    should not be all sheet lists as that will take too long to download
+    '''
     if not outdir :
         outdir = os.getcwd()
 
