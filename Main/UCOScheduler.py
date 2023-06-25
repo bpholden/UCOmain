@@ -870,8 +870,8 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     cur_elevations[available] += star_elevations[vis]
     scaled_elevations[available] += scaled_els[vis]
 
-    if slowdown > SLOWDOWN_THRESH or seeing > SEEING_THRESH:
-        bright_enough = star_table['Vmag'] < SLOWDOWN_VMAG_LIM
+    if slowdown > SchedulerConsts.SLOWDOWN_THRESH or seeing > SchedulerConsts.SEEING_THRESH:
+        bright_enough = star_table['Vmag'] < SchedulerConsts.SLOWDOWN_VMAG_LIM
         available = available & bright_enough
 
     # Now just sort by priority, then cadence. Return top target
