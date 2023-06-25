@@ -640,7 +640,7 @@ def make_obs_block(star_table, idx, dt, focval):
 
     rv.reverse()
     rv[0] += ' # obsblock=%s end' % (cur_obsblock)
-    return(rv)
+    return rv
 
 def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode=''):
     res = dict()
@@ -704,6 +704,13 @@ def last_attempted():
 
 
 def behind_moon(moon,ras,decs):
+    '''
+    moon_check = behind_moon(moon,ras,decs)
+    moon - pyephem moon object
+    ras - numpy array of right ascensions in radians
+    decs - numpy array of declinations in radians
+    moon_check - numpy array of booleans, True if the target is too close to the moon
+    '''
     md = TARGET_MOON_DIST_MAX - TARGET_MOON_DIST_MIN
     minMoonDist = ((moon.phase / 100.) * md) + TARGET_MOON_DIST_MIN
     moonDist = np.degrees(np.sqrt((moon.ra - ras)**2 + (moon.dec - decs)**2))
@@ -731,7 +738,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
                 outfn="googledex.dat", toofn="too.dat", \
                 outdir=None, focval=0, inst='', \
                 rank_sheetn='rank_table', delta_t=0):
-    """ Determine the best target for UCSC team to observe for the given input.
+    """ Determine the best target to observe for the given input.
         Takes the time, seeing, and slowdown factor.
         Returns a dict with target RA, DEC, Total Exposure time, and scritobs line
     """
