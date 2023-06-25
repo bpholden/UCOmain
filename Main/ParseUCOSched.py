@@ -647,7 +647,8 @@ def parse_TOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=
 
 #    config={'I2': 'Y', 'decker': 'W', 'owner' : '', 'mode' : '', 'obsblock' : '', 'Bstar' : 'N' , 'raoff' : None, 'decoff' : None }
     config={'I2': 'N', 'decker': 'W', 'owner' : '',  'Bstar' : 'N'  }
-    too_table = parse_codex(config, sheetns=too_sheetns, certificate=certificate, prilim=prilim, sleep=False)
+    too_table = parse_codex(config, sheetns=too_sheetns, certificate=certificate, \
+                            prilim=prilim, sleep=False)
 
     for n in too_sheetns:
         cur = (star_table['sheetn'] == n)
@@ -716,11 +717,15 @@ def update_local_starlist(intime, observed_file="observed_targets", outfn='parse
                     star_table['lastobs'][selection] = jd
                     star_table['nobs'][selection] += 1
                     star_table['night_obs'][selection] += 1
-                    apflog( "Updating local googledex star %s in program %s to %.4f" % (name,owner, jd),echo=True)
+                    log_str = "Updating local googledex star %s " % (name)
+                    log_str += "in program %s to %.4f" % (owner, jd)
+                    apflog(log_str, echo=True)
             elif too_table is not None:
                 selection = (too_table['name'] == name) & (too_table['sheetn'] == owner)
                 if any(selection) and jd > too_table['lastobs'][selection]:
-                    apflog( "Updating ToO target %s from time %.4f to %.4f" % (name, too_table['lastobs'][selection], jd),echo=True)
+                    log_str =  "Updating ToO target %s " % (name)
+                    log_str += "from time %.4f to %.4f" % (too_table['lastobs'][selection], jd)
+                    apflog(log_str, echo=True)
                     too_table['lastobs'][selection] = jd
                     too_table['nobs'][selection] += 1
 
