@@ -831,7 +831,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     # other condition cuts (seeing, transparency, moon phase)
     cuts = conditionCuts(moon, seeing, slowdown, star_table)
     available = available & cuts
-    
+
     if len(last_objs_attempted)>0:
         for n in last_objs_attempted:
             attempted = (star_table['name'] == n)
@@ -921,8 +921,14 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     stars[idx].compute(apf_obs)
 
-    res =  make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=focval, bstar=bstar, mode=config['mode'])
-    if do_templates and star_table['Template'][idx] == 'N' and star_table['I2'][idx] == 'Y':
+    take_template = do_templates and star_table['Template'][idx] == 'N' \
+        and star_table['I2'][idx] == 'Y'
+    if star_table['onlyTemplate'][idx] == 'Y' and do_templates:
+        take_template = True
+
+    res =  make_result(stars, star_table, totexptimes, final_priorities, dt, \
+                       idx, focval=focval, bstar=bstar, mode=config['mode'])
+    if take_template:
         bidx, bfinidx = findBstars(star_table, idx, bstars)
 
         if enoughTimeTemplates(star_table,stars,idx,apf_obs,dt):
