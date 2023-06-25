@@ -960,7 +960,7 @@ if __name__ == '__main__':
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 3, binary=True)
     except:
         pass
-    
+
     # For some test input what would the best target be?
     otfn = "observed_targets"
     ot = open(otfn, "w")
@@ -972,19 +972,20 @@ if __name__ == '__main__':
     starttime += delta_t
     for i in range(5):
 
-        result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=sheet_list, template=True, rank_sheetn=rank_tablen, delta_t=delta_t)
+        result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=sheet_list, \
+                         template=True, rank_sheetn=rank_tablen, delta_t=delta_t)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
         if result is None:
             print("Get None target")
-            
+
         while len(result["SCRIPTOBS"]) > 0:
             ot = open(otfn, "a+")
             ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
             ot.close()
             starttime += result["TOTEXP_TIME"]
             delta_t += result["TOTEXP_TIME"]
-            
+
     print("Done")
     ot.close()
 
@@ -993,9 +994,10 @@ if __name__ == '__main__':
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 2, binary=True)
     except:
         pass
-    result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=sheet_list, template=True, rank_sheetn=rank_tablen, delta_t=delta_t)
+    result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=sheet_list, \
+                     template=True, rank_sheetn=rank_tablen, delta_t=delta_t)
 
-    
+
     print("Testing templates")
 
     star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheet_list, \
