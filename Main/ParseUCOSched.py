@@ -542,7 +542,8 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
     return star_table
 
 def gen_stars(star_table):
-    """pyephem_objs = gen_stars(star_table)
+    """
+    pyephem_objs = gen_stars(star_table)
 
     given a star_table returned by parse_codex (or init_star_table) returns
     a list of pyephem objects for every object in the table
