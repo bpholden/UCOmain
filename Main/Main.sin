@@ -50,7 +50,7 @@ parent = 'master'
 # global
 paused = False
 
-def controlWatch(keyword,parent):
+def control_watch(keyword,parent):
     if keyword['populated'] == False:
         return
     try:
@@ -101,8 +101,12 @@ def shutdown():
         print(status)
         os._exit(0)
 
-def getStartTime(hr, mn):
+def get_start_time(hr, mn):
+    '''
+    get_start_time(hr, mn)
 
+    Returns a UNIX time stamp for the start time
+    '''
     lt = datetime.now()
     ct = datetime.utcnow()
 
@@ -125,7 +129,20 @@ def getStartTime(hr, mn):
 
     return ts
 
-def calcFocusStartTime():
+def calc_focus_start_time():
+    '''
+    calc_focus_start_time()
+
+    computes the time before sunset to begin the instrument
+    focus
+
+    This returns a number of values including
+    start_time - a UNIX time stamp to begin
+    start_dt - a delta time in seconds
+    sun_dt - a delta time in seconds to sunset
+    time_to_sunset + 1200 - 20 minutes after sunset
+
+    '''
     # computes time before sunset
     udt = datetime.utcnow()
     dt = datetime.now()
@@ -181,7 +198,7 @@ def args(apftask):
         if mtch:
             hr = int(mtch.group(1))
             mn = int(mtch.group(2))
-            opt.start = getStartTime(hr,mn)
+            opt.start = get_start_time(hr,mn)
             try:
                 apftask.write("MASTER_UTSTARTLIST", opt.start,wait=False)
             except Exception as e:
@@ -292,13 +309,14 @@ if __name__ == '__main__':
     APFTask.set(parent, "TRIPWIRE", "TASK_ABORT")
 
     control = apftask[parent + '_CONTROL']
-    cw = functools.partial(controlWatch, parent=parent)
+    cw = functools.partial(control_watch, parent=parent)
     control.callback(cw)
     control.monitor(wait=False)
 
     apflog("Initiallizing APF monitors.", echo=True)
 
-    # Aquire an instance of the APF class, which holds wrapper functions for controlling the telescope
+    # Aquire an instance of the APF class, which holds 
+    # wrapper functions for controlling the telescope
     apf = APFControl.APF(task=parent, test=debug)
     APFTask.waitFor(parent, True, timeout=5)
     apf.initGuideCam()
@@ -322,7 +340,8 @@ if __name__ == '__main__':
 
 
 
-    # All the phase options that this script uses. This allows us to check if we exited out of the script early.
+    # All the phase options that this script uses. 
+    # This allows us to check if we exited out of the script early.
     possible_phases = ["Init", "Focus", "Cal-Pre", "Watching", "Cal-Post", "Focus-Post"]
     phase_index = 0
     # If a command line phase was specified, use that.
@@ -345,7 +364,8 @@ if __name__ == '__main__':
 
 
     # Make sure that the command line arguments are respected.
-    # Regardless of phase, if a name, obsnum, or reset was commanded, make sure we perform these operations.
+    # Regardless of phase, if a name, obsnum, or reset was commanded,
+    #  make sure we perform these operations.
 
     APFLib.write(apf.robot["SCRIPTOBS_MESSAGE"], "Setting defaults for observing.")
     if opt.fixed:
@@ -381,7 +401,7 @@ if __name__ == '__main__':
     if apf.desired_outfile is None and opt.name is not None:
         apf.desired_outfile = opt.name
 
-    stime, start_dt, sun_dt, target_time = calcFocusStartTime()
+    stime, start_dt, sun_dt, target_time = calc_focus_start_time()
 
     if phase_index <= 1:
 
@@ -425,13 +445,16 @@ if __name__ == '__main__':
                 # Its 8 AM. Lets closeup
                 observe.stop()
                 observe.signal=False
-                apflog("Observe was still running at 8AM. It was stopped and post calibrations will be attempted.", level='warn')
+                err_str = "Observe was still running at 8AM."
+                err_str += " It was stopped and post calibrations will be attempted."
+                apflog(err_str, level='warn')
                 break
             if observe.isAlive() is False:
                 # this means that the thread died, usually because of an uncaught exception
                 # observe.signal will still be True
                 # overwrite observe with a new instance and restart the thread
-                apflog("Observe thread has died. Will attempt to restart.", level='error', echo=True)
+                err_str = "Observe thread has died. Will attempt to restart."
+                apflog(err_str, level='error', echo=True)
 
                 observe = Observe(apf,opt)
                 observe.task = parent
@@ -515,8 +538,8 @@ if __name__ == '__main__':
     if not debug:
         APFTask.set(parent, suffix="LAST_OBS_UCSC", value=apf.ucam["OBSNUM"].read())
 
-    bstr = "%d,%d" % (1,1)
-    apf.ucam['BINNING'].write(bstr)
+    bin_str = "%d,%d" % (1,1)
+    apf.ucam['BINNING'].write(bin_str)
 
     # Focus the instrument once more
     phase_index += 1
