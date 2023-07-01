@@ -10,13 +10,14 @@ from datetime import datetime, timedelta
 import astropy
 import astropy.io.ascii
 import astropy.table
-import Coords
-import ephem
-import ExposureCalculations as ec
-import gspread
 import numpy as np
-import ObservedLog
+import ephem
+import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+
+import Coords
+import ObservedLog
+
 from SchedulerConsts import EXP_LIM, MAX_PRI
 
 try:
@@ -72,7 +73,8 @@ def parse_starname(starname):
     """parse_starname(starname)
 
     starname - input value which should be the name of the a star, duh
-    returns the starname value, doing some clean up to meet requirements (no spaces, trim trialing spaces, etc.)
+    returns the starname value, doing some clean up to meet 
+    requirements (no spaces, trim trialing spaces, etc.)
     """
     ostarname = starname.strip()
     m= re.search("HD\s+\d+",starname)
@@ -278,7 +280,7 @@ def parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
 
         req_cols = ["sheetn", "rank", "frac", "too"]
         didx = find_columns(cur_codex[0], req_cols)
-        
+
         for row in cur_codex[1:]:
             if row[0] != "":
                 sheetns.append(row[didx['sheetn']])
@@ -492,19 +494,19 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         else:
             star_table['totobs'].append(0)
 
-        check = check_flag("Close Companion", didx, ls, "\A(y|Y)","")
+        check = check_flag("Close Companion", didx, ls, r"\A(y|Y)","")
         if check == "Y" or check == "y" :
             star_table['do'].append(check)
         else:
             star_table['do'].append("")
 
-        decker_name = check_flag("decker", didx, ls, "\A(W|N|T|S|O|K|L|M|B)", config["decker"])
+        decker_name = check_flag("decker", didx, ls, r"\A(W|N|T|S|O|K|L|M|B)", config["decker"])
         star_table['decker'].append(decker_name)
-        i2select = check_flag("I2", didx, ls, "\A(n|N)", config["I2"])
+        i2select = check_flag("I2", didx, ls, r"\A(n|N)", config["I2"])
         star_table['I2'].append(i2select.upper())
-        tempselect = check_flag("Template",didx,ls,"\A(n|N)",'Y')
+        tempselect = check_flag("Template",didx,ls,r"\A(n|N)",'Y')
         star_table['Template'].append(tempselect.upper())
-        tempselect = check_flag("Only Template",didx,ls,"\A(y|Y)",'N')
+        tempselect = check_flag("Only Template",didx,ls,r"\A(y|Y)",'N')
         star_table['only_template'].append(tempselect.upper())
 #        star_table['obsblock'].append(check_flag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
 #        star_table['inst'].append(check_flag("inst",didx,ls,"(levy|darts)",config['inst']).lower())
@@ -780,7 +782,7 @@ def log_values(local_name, obslog, prev):
         and the index of the next observation matching local_name
     '''
     nameidx = obslog.names.index(local_name,prev)
-        
+
     prev = nameidx+1
     # observation details
     otime = obslog.times[nameidx]
