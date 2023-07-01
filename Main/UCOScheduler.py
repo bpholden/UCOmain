@@ -858,7 +858,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     time_check = timeCheck(star_table, totexptimes, dt, hour_table)
 
     available = available & time_check
-    if np.any(available) == False:
+    if np.any(available) is False:
         apflog( "getNext(): Not enough time left to observe any targets", level="error", echo=True)
         return None
 
