@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     if opt.rank_sheet is not None:
         rank_table = ds.make_rank_table(opt.rank_sheet,hour_constraints=hour_constraints)
-        hour_table = ds.make_hour_able(rank_table,datetime.datetime.now(),hour_constraints=hour_constraints)
+        hour_table = ds.make_hour_table(rank_table,datetime.datetime.now(),hour_constraints=hour_constraints)
         sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
     if opt.sheetn is not None:
