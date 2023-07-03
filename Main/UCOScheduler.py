@@ -667,7 +667,17 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
 #        res['obsblock'] = ''
 
     res['SCRIPTOBS'] = []
-    scriptobs_line = make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], owner=res['owner'], I2=star_table['I2'][idx], focval=focval)
+    if bstar:
+        scriptobs_line = make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], \
+                                         owner=res['owner'], I2='N', \
+                                            focval=focval)
+        scriptobs_line = scriptobs_line + " # end"
+        res['SCRIPTOBS'].append(scriptobs_line)
+
+    scriptobs_line = make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], \
+                                         owner=res['owner'], I2=star_table['I2'][idx], \
+                                            focval=focval)
+
     scriptobs_line = scriptobs_line + " # end"
     res['SCRIPTOBS'].append(scriptobs_line)
 #    else:
@@ -930,7 +940,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     take_template = do_templates and star_table['Template'][idx] == 'N' \
         and star_table['I2'][idx] == 'Y'
-    if star_table['onlyTemplate'][idx] == 'Y' and do_templates:
+    if star_table['only_template'][idx] == 'Y' and do_templates:
         take_template = True
 
     res =  make_result(stars, star_table, totexptimes, final_priorities, dt, \
@@ -982,7 +992,8 @@ if __name__ == '__main__':
     ot = open(otfn, "w")
     starttime = time.time()
     result = getNext(starttime, 7.99, 0.4, bstar=True, sheetns=sheet_list, rank_sheetn=rank_tablen)
-    ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
+    while len(result['SCRIPTOBS']) > 0:
+        ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
     delta_t = 400
     starttime += delta_t
@@ -997,7 +1008,8 @@ if __name__ == '__main__':
 
         while len(result["SCRIPTOBS"]) > 0:
             ot = open(otfn, "a+")
-            ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
+            while len(result['SCRIPTOBS']) > 0:
+                ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
             ot.close()
             starttime += result["TOTEXP_TIME"]
             delta_t += result["TOTEXP_TIME"]
