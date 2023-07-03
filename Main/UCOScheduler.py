@@ -840,7 +840,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     if len(last_objs_attempted)>0:
         for n in last_objs_attempted:
-            attempted = (star_table['name'] == n)
+            attempted = star_table['name'] == n
             available = available & np.logical_not(attempted) # Available and not observed
 
     if bstar:
