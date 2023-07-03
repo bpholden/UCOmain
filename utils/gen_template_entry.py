@@ -36,7 +36,7 @@ if __name__ == "__main__":
             stars[idx].compute(apf_obs)
             res =  ds.makeResult(stars,star_table,totexptimes,star_table['pri'],dt,idx,focval=2,bstar=False)
             
-            bidx,bfinidx = ds.findBstars(star_table,idx,bstars)
+            bidx,bfinidx = ds.find_Bstars(star_table,idx,bstars)
             bline = ds.makeScriptobsLine(star_table[bstars][bidx],dt,decker="N",I2="Y", owner=res['owner'],focval=2)
             line  = ds.makeScriptobsLine(star_table[idx],dt,decker="N",I2="N", owner=res['owner'],temp=True)
             bfinline = ds.makeScriptobsLine(star_table[bstars][bfinidx],dt,decker="N",I2="Y",owner=res['owner'],focval=0)

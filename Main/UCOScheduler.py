@@ -361,7 +361,7 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
         ret += 'do= '
     # Count
     if temp:
-        count = numTemplateExp(star_table_row['Vmag'])
+        count = num_template_exp(star_table_row['Vmag'])
     else:
         count = int(star_table_row['nexp'])
 
@@ -534,7 +534,7 @@ def templateConditions(moon, seeing, slowdown):
     else:
         return False
 
-def findClosest(ras, decs, ra, dec):
+def find_closest(ras, decs, ra, dec):
 
     distances = np.sqrt((ra - ras)**2 + (dec - decs)**2)
 
@@ -542,7 +542,7 @@ def findClosest(ras, decs, ra, dec):
 
     return min_ind
 
-def numTemplateExp(vmag):
+def num_template_exp(vmag):
 
     count = 7
 
@@ -557,7 +557,7 @@ def numTemplateExp(vmag):
 
 def enoughTimeTemplates(star_table, stars, idx, apf_obs, dt):
 
-    count = numTemplateExp(star_table['Vmag'][idx])
+    count = num_template_exp(star_table['Vmag'][idx])
 
     tot_time = count * 1200
 
@@ -576,11 +576,11 @@ def enoughTimeTemplates(star_table, stars, idx, apf_obs, dt):
         return False
 
 
-def findBstars(star_table,idx, bstars):
+def find_Bstars(star_table,idx, bstars):
 
-    near_idx = findClosest(star_table['ra'][bstars], star_table['dec'][bstars],star_table['ra'][idx], star_table['dec'][idx])
+    near_idx = find_closest(star_table['ra'][bstars], star_table['dec'][bstars],star_table['ra'][idx], star_table['dec'][idx])
 
-    end_idx = findClosest(star_table['ra'][bstars], star_table['dec'][bstars], (star_table['ra'][idx]+15*np.pi/180.), star_table['dec'][idx])
+    end_idx = find_closest(star_table['ra'][bstars], star_table['dec'][bstars], (star_table['ra'][idx]+15*np.pi/180.), star_table['dec'][idx])
 
 
     return near_idx,end_idx
@@ -936,7 +936,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     res =  make_result(stars, star_table, totexptimes, final_priorities, dt, \
                        idx, focval=focval, bstar=bstar, mode=config['mode'])
     if take_template:
-        bidx, bfinidx = findBstars(star_table, idx, bstars)
+        bidx, bfinidx = find_Bstars(star_table, idx, bstars)
 
         if enoughTimeTemplates(star_table,stars,idx,apf_obs,dt):
             bline = make_scriptobs_line(star_table[bstars][bidx], dt, \
@@ -1022,7 +1022,7 @@ if __name__ == '__main__':
     idx, = np.asarray(star_table['name'] == '185144').nonzero()
     idx = idx[0]
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
-    bidx,bfinidx = findBstars(star_table, idx, bstars)
+    bidx,bfinidx = find_Bstars(star_table, idx, bstars)
     bline = make_scriptobs_line(star_table[bstars][bidx], dt, \
                                 decker="N", I2="Y", owner='public', focval=2)
     line  = make_scriptobs_line(star_table[idx], dt, \
