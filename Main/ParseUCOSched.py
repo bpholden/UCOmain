@@ -208,7 +208,7 @@ def retrieve_codex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,s
                     if c in list(didx.keys()):
                         nrow.append(row[didx[c]])
                     else:
-                        if c is 'sheetn':
+                        if c == 'sheetn':
                             nrow.append(sheetn)
                         else:
                             nrow.append(None)
@@ -481,7 +481,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         inval = float_default(ls[didx["B-V"]], default=0.7)
         if inval < 0:
             inval = 1.
-        if coln is 'B-V' and inval > 2:
+        if coln == 'B-V' and inval > 2:
             inval = 1
         star_table['B-V'].append(inval)
 
