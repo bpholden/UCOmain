@@ -946,7 +946,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     res =  make_result(stars, star_table, totexptimes, final_priorities, dt, \
                        idx, focval=focval, bstar=bstar, mode=config['mode'])
-    if take_template:
+    if take_template and bstar is False:
         bidx, bfinidx = find_Bstars(star_table, idx, bstars)
 
         if enough_time_templates(star_table,stars,idx,apf_obs,dt):
