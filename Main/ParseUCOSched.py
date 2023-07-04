@@ -291,7 +291,7 @@ def parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
                 frac.append(cfrac)
                 too.append(row[didx['too']].lower())
 
-    return sheetns,rank,frac,too
+    return sheetns, rank, frac, too
 
 
 def init_star_table(col_list):

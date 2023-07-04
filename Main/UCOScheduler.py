@@ -42,7 +42,7 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
     new_pri[star_table['pri'] == 2] -= 20
     new_pri[star_table['pri'] == 3] -= 40
 
-    cadence_check = (ephem.julian_date(cur_dt) - star_table['lastobs'])
+    cadence_check = ephem.julian_date(cur_dt) - star_table['lastobs']
     good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
 
@@ -173,7 +173,7 @@ def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constr
     try:
         hour_table.write(outfn,format='ascii')
     except Exception as e:
-       apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
+        apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
     return hour_table
 
 def find_time_left():
@@ -204,8 +204,8 @@ def find_time_left():
         rv = astropy.table.Table([sheetns,left,alloc,used], names=["runname","left","alloc","used"])
 
         return rv
-    else:
-        return None
+
+    return None
 
 
 def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None):
