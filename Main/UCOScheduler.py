@@ -248,11 +248,12 @@ def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_cons
     return rank_table
 
 
-def totExpTimes(star_table, targNum):
+def tot_exp_times(star_table, targNum):
     '''
-    totexptimes = totExpTimes(star_table, targNum)
+    totexptimes = tot_exp_times(star_table, targNum)
     star_table - astropy table of targets
     targNum - number of targets
+    
     totexptimes - numpy array of total exposure times
     '''
     totexptimes = np.zeros(targNum, dtype=float)
@@ -266,8 +267,8 @@ def totExpTimes(star_table, targNum):
 
     return totexptimes
 
-def timeCheck(star_table, totexptimes, dt, hour_table):
-    """ time_check = timeCheck(star_table, totexptimes, dt, hour_table)
+def time_check(star_table, totexptimes, dt, hour_table):
+    """ time_check = time_check(star_table, totexptimes, dt, hour_table)
     star_table - astropy table of targets
     totexptimes - numpy array of total exposure times
     dt - datetime object
@@ -510,7 +511,7 @@ def conditionCuts(moon, seeing, slowdown, star_table):
     return available
 
 
-def templateConditions(moon, seeing, slowdown):
+def template_conditions(moon, seeing, slowdown):
     """ istrue = templateCondition(moon, seeing, slowdown)
 
     Checks to see if moon, seeing and slowdown factor are within template conditions
@@ -555,7 +556,7 @@ def num_template_exp(vmag):
 
     return count
 
-def enoughTimeTemplates(star_table, stars, idx, apf_obs, dt):
+def enough_time_templates(star_table, stars, idx, apf_obs, dt):
 
     count = num_template_exp(star_table['Vmag'][idx])
 
@@ -566,9 +567,9 @@ def enoughTimeTemplates(star_table, stars, idx, apf_obs, dt):
     time_left_before_sunrise = computeSunrise(dt, horizon='-9')
 
     try:
-        apflog("enoughTimeTemplates(): time for obs= %.1f  time until sunrise= %.1f " % (tot_time, time_left_before_sunrise),echo=True)
+        apflog("enough_time_templates(): time for obs= %.1f  time until sunrise= %.1f " % (tot_time, time_left_before_sunrise),echo=True)
     except:
-        apflog("enoughTimeTemplates(): cannot log times!?!",echo=True)
+        apflog("enough_time_templates(): cannot log times!?!",echo=True)
 
     if tot_time < time_left_before_sunrise  and vis and time_left_before_sunrise < 14*3600.:
         return True
@@ -670,7 +671,7 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
     if bstar:
         scriptobs_line = make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], \
                                          owner=res['owner'], I2='N', \
-                                            focval=focval)
+                                            focval=0)
         scriptobs_line = scriptobs_line + " # end"
         res['SCRIPTOBS'].append(scriptobs_line)
 
@@ -727,7 +728,7 @@ def behind_moon(moon,ras,decs):
 
     return moon_check
 
-def configDefaults(owner):
+def config_defaults(owner):
     config = dict()
     config['I2'] = 'Y'
     config['decker'] = 'W'
@@ -758,7 +759,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     dt = computeDatetime(ctime)
 
-    config = configDefaults(owner)
+    config = config_defaults(owner)
 
     apflog( "getNext(): Finding target for time %s" % (dt), echo=True)
 
@@ -823,14 +824,14 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     moon = ephem.Moon()
     moon.compute(apf_obs)
 
-    do_templates = template and templateConditions(moon, seeing, slowdown)
+    do_templates = template and template_conditions(moon, seeing, slowdown)
 
     apflog("getNext(): Will attempt templates = %s" % str(do_templates) ,echo=True)
     # Note which of these are B-Stars for later.
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
 
     apflog("getNext(): Computing exposure times", echo=True)
-    totexptimes = totExpTimes(star_table, targNum)
+    totexptimes = tot_exp_times(star_table, targNum)
 
     available = np.ones(targNum, dtype=bool)
     cur_elevations = np.zeros(targNum, dtype=float)
@@ -865,9 +866,9 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     # Is the exposure time too long?
     apflog("getNext(): Removing really long exposures", echo=True)
-    time_check = timeCheck(star_table, totexptimes, dt, hour_table)
+    time_good = time_check(star_table, totexptimes, dt, hour_table)
 
-    available = available & time_check
+    available = available & time_good
     if np.any(available) is False:
         apflog( "getNext(): Not enough time left to observe any targets", level="error", echo=True)
         return None
@@ -948,7 +949,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     if take_template:
         bidx, bfinidx = find_Bstars(star_table, idx, bstars)
 
-        if enoughTimeTemplates(star_table,stars,idx,apf_obs,dt):
+        if enough_time_templates(star_table,stars,idx,apf_obs,dt):
             bline = make_scriptobs_line(star_table[bstars][bidx], dt, \
                                         decker="N", I2="Y", owner=res['owner'], focval=2)
             line  = make_scriptobs_line(star_table[idx], \
@@ -966,7 +967,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
 if __name__ == '__main__':
 
-    dt = datetime.now()
+    t_dt = datetime.now()
 
     cfn = os.path.join('.','time_left.csv')
     if os.path.exists(cfn):
@@ -974,12 +975,12 @@ if __name__ == '__main__':
     else:
         hour_constraints = None
 
-    rank_tablen='2023A_ranks'
-    rank_table = make_rank_table(rank_tablen, hour_constraints=hour_constraints)
+    RANK_TABLEN='2023A_ranks'
+    trank_table = make_rank_table(RANK_TABLEN, hour_constraints=hour_constraints)
 
-    hour_table = make_hour_table(rank_table, dt, hour_constraints=hour_constraints)
+    thour_table = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
 
-    sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
+    tsheet_list = list(trank_table['sheetn'][trank_table['rank'] > 0])
 
 
     try:
@@ -988,10 +989,10 @@ if __name__ == '__main__':
         pass
 
     # For some test input what would the best target be?
-    otfn = "observed_targets"
-    ot = open(otfn, "w")
+    OTFN = "observed_targets"
+    ot = open(OTFN, "w")
     starttime = time.time()
-    result = getNext(starttime, 7.99, 0.4, bstar=True, sheetns=sheet_list, rank_sheetn=rank_tablen)
+    result = getNext(starttime, 7.99, 0.4, bstar=True, sheetns=tsheet_list, rank_sheetn=RANK_TABLEN)
     while len(result['SCRIPTOBS']) > 0:
         ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
@@ -999,15 +1000,15 @@ if __name__ == '__main__':
     starttime += delta_t
     for i in range(5):
 
-        result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=sheet_list, \
-                         template=True, rank_sheetn=rank_tablen, delta_t=delta_t)
+        result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
+                         template=True, rank_sheetn=RANK_TABLEN, delta_t=delta_t)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
         if result is None:
             print("Get None target")
 
         while len(result["SCRIPTOBS"]) > 0:
-            ot = open(otfn, "a+")
+            ot = open(OTFN, "a+")
             while len(result['SCRIPTOBS']) > 0:
                 ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
             ot.close()
@@ -1022,28 +1023,27 @@ if __name__ == '__main__':
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 2, binary=True)
     except:
         pass
-    result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=sheet_list, \
-                     template=True, rank_sheetn=rank_tablen, delta_t=delta_t)
+    result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
+                     template=True, rank_sheetn=RANK_TABLEN, delta_t=delta_t)
 
 
     print("Testing templates")
 
-    star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheet_list, \
+    tstar_table, tstars = ParseUCOSched.parse_UCOSched(sheetns=tsheet_list, \
                                                      outfn='googledex.dat', outdir=".", \
-                                                        config=configDefaults('public'))
-    idx, = np.asarray(star_table['name'] == '185144').nonzero()
-    idx = idx[0]
-    bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
-    bidx,bfinidx = find_Bstars(star_table, idx, bstars)
-    bline = make_scriptobs_line(star_table[bstars][bidx], dt, \
+                                                        config=config_defaults('public'))
+    tidx, = np.asarray(tstar_table['name'] == '185144').nonzero()
+    tidx = tidx[0]
+    tbstars = (tstar_table['Bstar'] == 'Y')|(tstar_table['Bstar'] == 'y')
+    tbidx,tbfinidx = find_Bstars(tstar_table, tidx, tbstars)
+    tbline = make_scriptobs_line(tstar_table[tbstars][tbidx], t_dt, \
                                 decker="N", I2="Y", owner='public', focval=2)
-    line  = make_scriptobs_line(star_table[idx], dt, \
+    tline  = make_scriptobs_line(tstar_table[tidx], t_dt, \
                                 decker="N", I2="N", owner='public', temp=True)
-    bfinline = make_scriptobs_line(star_table[bstars][bfinidx], dt, \
+    tbfinline = make_scriptobs_line(tstar_table[tbstars][tbfinidx], t_dt, \
                                    decker="N", I2="Y", owner='public', focval=0)
     temp_res= []
-    temp_res.append(bfinline + " # temp=Y end")
-    temp_res.append(line + " # temp=Y")
-    temp_res.append(bline + " # temp=Y")
-    [print(r) for r in temp_res]
-
+    temp_res.append(tbfinline + " # temp=Y end")
+    temp_res.append(tline + " # temp=Y")
+    temp_res.append(tbline + " # temp=Y")
+    out_r = [print(r) for r in temp_res]

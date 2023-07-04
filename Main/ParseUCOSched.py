@@ -234,7 +234,7 @@ def find_columns(col_names,req_cols,opt_cols=[]):
     col_names - list of column names to be searched
     req_cols - list of names that should be in the first list
     """
-    idx = []
+
     didx = dict()
 
     for r in req_cols:
@@ -381,14 +381,14 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
 
         name = parse_starname(ls[didx["Star Name"]])
         # Get the RA
-        raval, rahr, ramin, rasec = Coords.getRARad(ls[didx["RA hr"]], ls[didx["RA min"]], ls[didx["RA sec"]])
+        raval, rahr, ramin, rasec = Coords.get_RA_rad(ls[didx["RA hr"]], ls[didx["RA min"]], ls[didx["RA sec"]])
         if raval is None:
             # alarm
             apflog("Error in RA coordinates for %s" %(name),level='warn',echo=True)
             continue
 
         # Get the DEC
-        decval, decdeg, decmin, decsec = Coords.getDECRad(ls[didx["Dec deg"]], ls[didx["Dec min"]], ls[didx["Dec sec"]])
+        decval, decdeg, decmin, decsec = Coords.get_dec_rad(ls[didx["Dec deg"]], ls[didx["Dec min"]], ls[didx["Dec sec"]])
         if decval is None:
             # alarm
             apflog("Error in Dec coordinates for %s" %(name),level='warn',echo=True)
@@ -458,7 +458,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
             star_table['moon'].append(1.0)
 
 
-            
+
         # scheduler specific
         if "cad" in didx and ls[didx['cad']] is not None:
             cad_value = float_default(ls[didx["cad"]], default=0.7)

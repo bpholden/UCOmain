@@ -1,6 +1,6 @@
 import numpy as np
 
-def makeStrs(deg,mn,sec,neg=False):
+def make_strs(deg,mn,sec,neg=False):
 
         
     sdeg = "%d" % (deg)
@@ -10,7 +10,7 @@ def makeStrs(deg,mn,sec,neg=False):
         sdeg = "-" + sdeg
     return sdeg, smn, ssec
 
-def getRARad(hr, mn, sec):
+def get_RA_rad(hr, mn, sec):
     rv = None, "-1", "0", "0"
     try:
         hr = float(hr)
@@ -25,13 +25,13 @@ def getRARad(hr, mn, sec):
         ra_hours = hr + mn/60. + sec/3600.
         ra_hours *= 15 * np.pi/180.0
 
-        shr, smn, ssec = makeStrs(hr,mn,sec)
+        shr, smn, ssec = make_strs(hr,mn,sec)
         
         return ra_hours, shr, smn, ssec
     except:
         return rv
 
-def getDECRad(deg, mn, sec, neg=False):
+def get_dec_rad(deg, mn, sec, neg=False):
     rv = (None, "-90", "0", "0")
     try:
         deg = float(deg)
@@ -59,12 +59,12 @@ def getDECRad(deg, mn, sec, neg=False):
     if neg:
         dec *= -1
 
-    sdeg, smn, ssec = makeStrs(abs(deg),abs(mn),abs(sec),neg=neg)
-    
+    sdeg, smn, ssec = make_strs(abs(deg),abs(mn),abs(sec),neg=neg)
+
     return dec, sdeg, smn, ssec
 
-        
-def getCoordStr(floatval,isRA=False):
+
+def get_coord_str(floatval,isRA=False):
 
     neg = False
     nround = 2
@@ -93,7 +93,7 @@ def getCoordStr(floatval,isRA=False):
     return ret
 
 
-def getLST(date, longitude):
+def get_LST(date, longitude):
     """Take a datetime and longitude and calculate the Local Sidereal Time."""
     # Assumes date is a datetime object, and that the longitude is formatted as in PyEphem 
 
@@ -110,15 +110,14 @@ def getLST(date, longitude):
 
 
         
-def getElAz(ra, dec, lat, lng, time):
+def get_ElAz(ra, dec, lat, lng, time):
     """Given RA, DEC, Latitude, and a time, returns the corresponding elevation and azimuth angles
        Works with single values, or numpy arrays
        """
-    lst = getLST(time, lng)
+    lst = get_LST(time, lng)
     ha = ((lst- np.degrees(ra)) % 360.) * np.pi/180.
     el = np.arcsin(np.sin(dec) * np.sin(lat) + \
                    np.cos(dec) * np.cos(lat) * np.cos(ha))
     az = np.arccos( (np.sin(dec) - np.sin(el)*np.sin(lat)) / \
                          (np.cos(el) * np.cos(lat)))
     return (np.degrees(el), np.degrees(az))
-
