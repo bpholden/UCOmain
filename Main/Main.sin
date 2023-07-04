@@ -374,7 +374,7 @@ if __name__ == '__main__':
             apflog(errmsg, level="error", echo=True)
             shutdown()
         if not debug:
-                APFTask.set(parent, "STARLIST", opt.fixed)
+            APFTask.set(parent, "STARLIST", opt.fixed)
     else:
         if not debug:
             APFTask.set(parent, "STARLIST", "")
@@ -423,7 +423,7 @@ if __name__ == '__main__':
 
     # Start the main watcher thread
     observe = Observe(apf,opt)
-    getUCOTargets = getUCOTargets(opt, task=parent,wait_time=target_time)
+    getUCOTargets = getUCOTargets(opt, task=parent, wait_time=target_time)
 
     apf.instrPermit()
     apflog("Starting the main watcher." ,echo=True)
@@ -503,7 +503,7 @@ if __name__ == '__main__':
     if os.path.exists(os.path.join(os.getcwd(),"observed_targets")):
         try:
             apflog("Updating the online googledex with the observed times", level='Info', echo=True)
-            ParseUCOSched.updateSheetLastobs(os.path.join(os.getcwd(),"observed_targets"),outfn="googledex.dat")
+            ParseUCOSched.update_sheet_lastobs(os.path.join(os.getcwd(),"observed_targets"),outfn="googledex.dat")
         except Exception as e:
             apflog("Error: Updating the online googledex has failed: %s" % (e), level="error")
         logpush(os.path.join(os.getcwd(),"observed_targets"))
