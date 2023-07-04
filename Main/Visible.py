@@ -93,7 +93,7 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
 
         diff = np.abs(star.a_dec - observer.lat)
         transit_alt = 90.0 - np.degrees(diff)
-        se = 90.0 - (transit_alt - mid_el) 
+        se = 90.0 - (transit_alt - mid_el)
 
         if offset > 0:
             if cur_az < 180:
@@ -112,7 +112,7 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
         # The next setting/rising functions throw an exception if the body never sets or rises
         # ex. circumpolar 
         try:
-            next_set = observer.next_setting(s)
+            next_set = observer.next_setting(star)
         except:
             # If it never sets, no need to worry.
             pass
@@ -127,7 +127,7 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
         star.compute(observer)
 
         try:
-            next_rise = observer.next_rising(s)
+            next_rise = observer.next_rising(star)
         except:
             # If the body never rises above the max limit no problem
             pass
