@@ -8,7 +8,28 @@ import numpy as np
 
 import SchedulerConsts
 
+def calc_preferred_angle(shiftwest, sun_el, sun_az, delta_t):
+    """ 
+    calc_preferred_angle: Calculate the preferred elevation angle for the telescope
+    Args:
+        shiftwest: Boolean, True if the telescope is shifted west
+        sun_el: The current elevation of the sun ( degrees )
+        sun_az: The current azimuth of the sun ( degrees )
+        delta_t: The time from the sunset ( seconds )
+    """
+    bottom_angle = SchedulerConsts.SUNEL_STARTLIM-15 # typically -24 degrees
+    offset = 0.0
+    preferred_angle = 90
 
+    if shiftwest:
+        if sun_el > (bottom_angle) and sun_az > 180:
+            offset = 3*(sun_el - bottom_angle) # note, this is positive
+            preferred_angle = 90 - offset
+        elif delta_t < 3600. and delta_t > 0:
+            offset = 45*(1. - delta_t/3600)
+            preferred_angle = 90 - offset
+
+    return preferred_angle, offset
 
 def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATION_HIGH_MIN, \
                 min_el=SchedulerConsts.TARGET_ELEVATION_MIN, \
@@ -37,51 +58,40 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
     sun_el = np.degrees(sun.alt)
     sun_az = np.degrees(sun.az)
 
-    bottom_angle = SchedulerConsts.SUNEL_STARTLIM-15 # typically -24 degrees
+    preferred_angle, offset = calc_preferred_angle(shiftwest, sun_el, sun_az, delta_t)
 
-    if sun_el > (bottom_angle) and sun_az > 180 and shiftwest:
-        offset = 3*(sun_el - bottom_angle) # note, this is positive
-        preferred_angle = (90 - offset)
-    elif delta_t < 3600. and shiftwest and delta_t > 0:
-        offset = 45*(1. - delta_t/3600)
-        preferred_angle = (90 - offset)
-    else:
-        offset = 0.0
-        preferred_angle = 90 
-
-    
     # Now loop over each body to check visibility
-    for s, dt in zip(stars, obs_len):
+    for star, obs_time in zip(stars, obs_len):
 
         # Is the target visible now?
 
         observer.date = ephem.Date(cdate)
-        s.compute(observer)
-        cur_el = np.degrees(s.alt)
-        cur_az = np.degrees(s.az)
+        star.compute(observer)
+        cur_el = np.degrees(star.alt)
+        cur_az = np.degrees(star.az)
         start_elevations.append(cur_el)
-        
+
         if cur_el < min_el or cur_el > max_el:
             scaled_elevations.append(cur_el)
             ret.append(False)
             continue
 
-        dt_days = dt / 86400
-        if dt > 0:
+        obs_time_days = obs_time / 86400
+        if obs_time > 0:
             # Is the target visible at the end of the observations?
-            observer.date = ephem.Date(cdate + dt_days)
-            s.compute(observer)
-            fin_el = np.degrees(s.alt)
+            observer.date = ephem.Date(cdate + obs_time_days)
+            star.compute(observer)
+            fin_el = np.degrees(star.alt)
 
-            observer.date = ephem.Date(cdate + dt_days/2)
-            s.compute(observer)
-            mid_el = np.degrees(s.alt)
+            observer.date = ephem.Date(cdate + obs_time_days/2)
+            star.compute(observer)
+            mid_el = np.degrees(star.alt)
 
         else:
             fin_el = cur_el
             mid_el = cur_el
-        
-        diff = np.abs(s.a_dec - observer.lat)
+
+        diff = np.abs(star.a_dec - observer.lat)
         transit_alt = 90.0 - np.degrees(diff)
         se = 90.0 - (transit_alt - mid_el) 
 
@@ -90,13 +100,13 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
                 se -= offset
             else:
                 se = 90 - np.abs(preferred_angle - se)
-        
+
         scaled_elevations.append(se)
-        
+
         if fin_el < min_el or fin_el > max_el:
             ret.append(False)
             continue
-            
+
 
         # Does the target remain visible through the observation?
         # The next setting/rising functions throw an exception if the body never sets or rises
@@ -108,13 +118,13 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
             pass
         else:
             # Making the assumption that next_set is a datetime object. Might not be the case
-            if next_set < dt:
+            if next_set < obs_time:
                 # The object will set before the observation finishes
                 ret.append(False)
                 continue
-        #  apflog( "is_visible(): Does the target remain visible through the observation?", echo=True)
+
         observer.horizon = max_el
-        s.compute(observer)
+        star.compute(observer)
 
         try:
             next_rise = observer.next_rising(s)
@@ -122,18 +132,22 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
             # If the body never rises above the max limit no problem
             pass
         else:
-            if next_rise < dt:
+            if next_rise < obs_time:
                 # The object rises above the max el before the observation finishes
                 ret.append(False)
                 continue
-        #   apflog( "is_visible(): If the body never rises above the max limit no problem", echo=True)
+
         observer.horizon = str(pref_min_el)
-        s.compute(observer)
-        if not s.neverup:
+        star.compute(observer)
+        if not star.neverup:
             # will transit above preferred elevation and still rising
             try:
-                if ((s.set_time-s.rise_time) > dt/86400.) and cur_el < pref_min_el and np.degrees(s.az) < 180:
-                    # this star is currently low on the horizon but will not be above the preferred elevation for the requested exposure time
+                if ((star.set_time-star.rise_time) > obs_time_days) \
+                    and cur_el < pref_min_el \
+                        and np.degrees(star.az) < 180:
+                    # this star is currently low on the horizon 
+                    # but will not be above the preferred elevation 
+                    # for the requested exposure time
                     ret.append(False)
                     continue
             except:
@@ -156,10 +170,10 @@ if __name__ == '__main__':
     apf_obs.horizon = str(SchedulerConsts.TARGET_ELEVATION_MIN)
     apf_obs.date = datetime.utcfromtimestamp(int(time.time()))
 
-    star = ephem.FixedBody()
-    star._ra = ephem.hours(":".join(["1", "44", "4.083"]))
-    star._dec = ephem.degrees(":".join(["-15", "56", "14.93"]))
-    ret, se, sce = visible(apf_obs, [star], [0.])
-    print(ret, se, sce)
-    ret, se, sce = visible(apf_obs, [star], [400.])
-    print(ret, se, sce)
+    test_star = ephem.FixedBody()
+    test_star._ra = ephem.hours(":".join(["1", "44", "4.083"]))
+    test_star._dec = ephem.degrees(":".join(["-15", "56", "14.93"]))
+    tret, tse, tsce = visible(apf_obs, [test_star], [0.])
+    print(tret, tse, tsce)
+    tret, tse, tsce = visible(apf_obs, [test_star], [400.])
+    print(tret, tse, tsce)
