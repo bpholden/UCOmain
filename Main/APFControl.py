@@ -1542,9 +1542,12 @@ class APF:
 
         # check last telescope focus
         lastfoc = self.robot['FOCUSTEL_LAST_SUCCESS'].read(binary=True)
-        current_val = self.autofoc.read()
 
         if self.sunRising() and (self.sunel.read(binary=True) > -20):
+            self.autofoc.write("robot_autofocus_disable")
+            return 0
+        
+        if time.time() - lastfoc < 3600:
             self.autofoc.write("robot_autofocus_disable")
             return 0
 
@@ -1695,7 +1698,7 @@ class APF:
             apflog(ostr,level='error',echo=True)
 
     def findRobot(self):
-        """Trys to find a running instance of robot.csh.
+        """Trys to find a running instance of scriptobs.
             Returns the PID along with a boolean representing
             if the robot was succesfully found."""
         rpid = self.robot['SCRIPTOBS_PID'].read(binary=True)
@@ -1764,9 +1767,9 @@ class APF:
 
     def killRobot(self, now=False):
         """ In case during an exposure there is a need to stop the robot and close up."""
-        apflog("Terminating Robot.csh")
+        apflog("Terminating scriptobs")
         if now:
-            apflog("Abort exposure, terminating robot now.")
+            apflog("Abort exposure, terminating scriptobs now.")
         else:
             if not self.ucam['EVENT_STR'].read() == "ControllerReady":
                 apflog("Waiting for current exposure to finish.")
@@ -1774,7 +1777,7 @@ class APF:
 
         ripd, running = self.findRobot()
         if running:
-            apflog("Killing Robot %s" % (str(ripd)))
+            apflog("Killing scriptobs %s" % (str(ripd)))
             try:
                 APFLib.write(self.robot['SCRIPTOBS_CONTROL'], "abort")
             except Exception as e:
