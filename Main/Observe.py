@@ -214,9 +214,10 @@ class Observe(threading.Thread):
                     apflog("Failure power cycling telescope", echo=True, level="alert")
 
                 return rv
-            
+
             apflog("No current servo faults", echo=True)
-            
+            return True
+
         elif result is False and "DomeShutter" in self.apf.isOpen()[1]:
             apflog("Error: After 10 min move permission did not return, and the dome is still open.", level='error', echo=True)
             self.apf.close(force=True)
@@ -227,7 +228,7 @@ class Observe(threading.Thread):
         fullpath = os.path.join(outdir, outfn)
         if os.path.isfile(fullpath):
             return
-        
+
         # make it so
         backup = fullpath + ".1"
         try:
@@ -237,7 +238,7 @@ class Observe(threading.Thread):
             apflog(err_str, echo=True, level='error')
 
         return
-        
+
     def shouldStartList(self):
         """ Observe.shouldStartList()
             should we start a fixed observing list or not? true if start time is None or if w/in + 1 hour - 0.5 hours of start time
@@ -375,7 +376,8 @@ class Observe(threading.Thread):
             self.apf.initGuideCam()
             self.apf.updateWindshield(self.windshield_mode)
 
-
+            self.focval = self.apf.setAutofocVal()
+            
             # setup a B star observation if needed
             # if not B star observation, look at current stack of
             # observations and see if anything is left
@@ -387,8 +389,6 @@ class Observe(threading.Thread):
                     self.append_selected("%s avgfwhm=%05.2f slowdown=%04.2f" % (curstr, seeing, slowdown))
                     self.scriptobs.stdin.write(curstr + '\n')
                     return
-
-            self.focval = self.apf.setAutofocVal()
 
             self.checkFiles()
             delta_t = time.time() - self.apf.lastopen.binary
