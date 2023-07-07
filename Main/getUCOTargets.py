@@ -117,7 +117,7 @@ class getUCOTargets(threading.Thread):
                     star_table,stars = ParseUCOSched.parse_UCOSched(sheetns=self.sheets,outfn='googledex.dat',
                                                                    outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
                 except Exception as e:
-                    apflog("Error: Cannot download googledex?! %s" % (e),level="error")
+                    apflog("Error: Cannot download googledex?! %s %s" % (type(e), e),level="error")
                     # goto backup
                     if os.path.exists("googledex.dat.1"):
                         shutil.copyfile("googledex.dat.1","googledex.dat")
