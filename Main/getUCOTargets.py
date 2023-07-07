@@ -80,7 +80,8 @@ class getUCOTargets(threading.Thread):
                     hour_constraints = None
 
             try:
-                rank_table = ds.make_rank_table(self.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
+                rank_table = ds.make_rank_table(self.rank_table,outdir=os.getcwd(),\
+                                                hour_constraints=hour_constraints)
             except Exception as e:
                 apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
                 # goto backup
@@ -107,29 +108,22 @@ class getUCOTargets(threading.Thread):
                 if np.any(rank_table['too']):
                     self.too = list(rank_table['sheetn'][rank_table['too']])
 
-            if self.debug:
-                print("Would have downloaded %s" % (" ".join(self.sheets)))
-                print("TOO sheets found are: %s" % (" ".join(self.too)))
-            else:
-                if self.signal is False:
-                    return
-                try:
-                    star_table,stars = ParseUCOSched.parse_UCOSched(sheetns=self.sheets,outfn='googledex.dat',
-                                                                   outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
-                except Exception as e:
-                    apflog("Error: Cannot download googledex?! %s %s" % (type(e), e),level="error")
-                    # goto backup
-                    if os.path.exists("googledex.dat.1"):
-                        shutil.copyfile("googledex.dat.1","googledex.dat")
+            if self.signal is False:
+                return
+            try:
+                star_table,stars = ParseUCOSched.parse_UCOSched(sheetns=self.sheets,outfn='googledex.dat',
+                                                                outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
+            except Exception as e:
+                apflog("Error: Cannot download googledex?! %s %s" % (type(e), e),level="error")
+                # goto backup
+                if os.path.exists("googledex.dat.1"):
+                    shutil.copyfile("googledex.dat.1","googledex.dat")
 
-            if self.debug:
-                print("Would have made hour table")
-            else:
-                try:
-                    hour_table = ds.make_hour_table(rank_table,datetime.now(),hour_constraints=hour_constraints)
-                except Exception as e:
-                    hour_table = None
-                    apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
+            try:
+                hour_table = ds.make_hour_table(rank_table,datetime.now(),hour_constraints=hour_constraints)
+            except Exception as e:
+                hour_table = None
+                apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
 
         while self.signal and self.too is not None:
 
