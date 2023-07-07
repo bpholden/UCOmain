@@ -147,22 +147,22 @@ def get_spreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT):
         apflog("Successfully logged in.", echo=True)
     except Exception as e:
         apflog("Cannot log into Google API.", echo=True,level='error')
-        apflog(e,echo=True,level='error')
+        apflog("%s %s" % (type(e), e),echo=True,level='error')
         return None
     worksheet = None
     tries = 0
+    errlog = None
     while worksheet is None and tries < 3:
         tries = tries + 1
         try:
             spreadsheet = gs.open(sheetn)
-            apflog("Loaded Main %s" % (sheetn),echo=True)
+            apflog("Loaded %s" % (sheetn),echo=True)
             worksheet = spreadsheet.sheet1
-            apflog("Got spreadsheet", echo=True)
-            errlog = None
+            apflog("Got spreadsheet.sheet1", echo=True)
         except Exception as e:
             errlog = "Cannot Read %s: %s %s" % (sheetn, type(e), e)
             time.sleep(1)
-    if worksheet is None and errlog is not None:
+    if worksheet is None:
         apflog(errlog,echo=True,level='error')
     return worksheet
 
