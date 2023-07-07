@@ -160,7 +160,7 @@ def get_spreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT):
             apflog("Got spreadsheet", echo=True)
             errlog = None
         except Exception as e:
-            errlog = "Cannot Read %s: %s" % (sheetn, e)
+            errlog = "Cannot Read %s: %s %s" % (sheetn, type(e), e)
             time.sleep(1)
     if worksheet is None and errlog is not None:
         apflog(errlog,echo=True,level='error')
