@@ -14,11 +14,11 @@ import APFTask
 from apflog import apflog
 import ParseUCOSched
 import UCOScheduler as ds
-
+import SchedulerConsts
 
 class getUCOTargets(threading.Thread):
 
-    def __init__(self, opt, task='master',prilim=0.5,certificate='UCSC_Dynamic_Scheduler-4f4f8d64827e.json',wait_time=0):
+    def __init__(self, opt, task='master',prilim=0.5,certificate=SchedulerConsts.DEFAULT_CERT,wait_time=0):
         threading.Thread.__init__(self)
 
         self.task = task

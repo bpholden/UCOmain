@@ -18,14 +18,12 @@ from oauth2client.service_account import ServiceAccountCredentials
 import Coords
 import ObservedLog
 
-from SchedulerConsts import EXP_LIM, MAX_PRI
+from SchedulerConsts import EXP_LIM, MAX_PRI, DEFAULT_CERT
 
 try:
     from apflog import *
 except:
     from fake_apflog import *
-
-DEFAULT_CERT = 'ucoscheduler-f1055d671564.json'
 
 def check_flag(key,didx,line,regexp,default):
     """ check_flag(key, dict_ind, line, regexp, default)
@@ -654,7 +652,7 @@ def parse_TOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=
                             prilim=prilim, sleep=False)
 
     for n in too_sheetns:
-        cur = (star_table['sheetn'] == n)
+        cur = star_table['sheetn'] == n
         if np.any(cur):
             # entries already exist, we will delete them
             # this ensures that all changes are propogated

@@ -25,3 +25,5 @@ PRI_DELTA = 20
 EXP_LIM = 3e9
 MAX_PRI = 3
 #MAX_PRI = 2
+
+DEFAULT_CERT = 'ucoscheduler-f1055d671564.json'

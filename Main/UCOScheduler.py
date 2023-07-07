@@ -12,7 +12,7 @@ import astropy.io
 import astropy.table
 import ephem
 import ParseUCOSched
-import SchedulerConsts # I know
+import SchedulerConsts
 
 try:
     from apflog import *
