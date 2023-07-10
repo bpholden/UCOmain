@@ -433,8 +433,8 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         star_table['Vmag'].append(float_default(ls[didx["Vmag"]], default=15.0))
         star_table['texp'].append(float_default(ls[didx["texp"]], default=1200))
         expcount = float_default(ls[didx["expcount"]],default=1e9)
-        if expcount > EXP_LIM:
-            expcount = EXP_LIM
+        expcount = min(expcount,EXP_LIM)
+
         star_table['expcount'].append(expcount)
         if "nexp" in didx and ls[didx["nexp"]] is not None:
             star_table['nexp'].append(int_default(ls[didx["nexp"]], default=1))
@@ -457,8 +457,6 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
             star_table['moon'].append(days_from_new / 15.0)
         else:
             star_table['moon'].append(1.0)
-
-
 
         # scheduler specific
         if "cad" in didx and ls[didx['cad']] is not None:
