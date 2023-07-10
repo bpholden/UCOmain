@@ -136,7 +136,7 @@ def get_spreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT):
         certificate_path = os.path.dirname(__file__)
     finpath = os.path.join(certificate_path, certificate)
 
-    json_key = json.load(open(finpath))
+    _ = json.load(open(finpath))
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 
     credentials = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(certificate_path, certificate), scope)
@@ -179,7 +179,6 @@ def retrieve_codex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,s
     full_codex = []
     # These are the columns we need for scheduling
     full_codex.append(req_cols)
-    failed = []
     for sheetn in sheetns:
         wait_time = 0
         worksheet = get_spreadsheet(sheetn=sheetn,certificate=certificate)
@@ -195,7 +194,8 @@ def retrieve_codex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,s
                     cur_codex = None
 
             if len(cur_codex) <= 0:
-                apflog("Worksheet %s exists but is empty, skipping" % (sheetn), level='error', echo=True)
+                apflog("Worksheet %s exists but is empty, skipping" % (sheetn), \
+                       level='error', echo=True)
 
                 continue
             didx = find_columns(cur_codex[0],req_cols)
@@ -214,7 +214,8 @@ def retrieve_codex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,s
                 full_codex.append(nrow)
                 wait_time += .3
             if sleep and ((sheetns.index(sheetn)+1) < len(sheetns)):
-                apflog("Sleeping %.1f seconds to keep Google happy" % (wait_time), level="info",echo=True)
+                apflog("Sleeping %.1f seconds to keep Google happy" % (wait_time), \
+                       level="info",echo=True)
                 time.sleep(wait_time)
 
 
@@ -239,7 +240,8 @@ def find_columns(col_names,req_cols,opt_cols=[]):
         if r in col_names:
             didx[r] = col_names.index(r)
         else:
-            apflog("%s Not found in column names from google spreadsheet" % (r) , level="Warn",echo=True)
+            apflog("%s Not found in column names from google spreadsheet" % (r) ,\
+                   level="Warn",echo=True)
 
     for r in opt_cols:
         if r in col_names:
@@ -273,7 +275,8 @@ def parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
     if worksheet:
         cur_codex = worksheet.get_all_values()
         if len(cur_codex) <= 0:
-            apflog("Worksheet %s exists but is empty, skipping" % (sheet_table_name), level='error', echo=True)
+            apflog("Worksheet %s exists but is empty, skipping" % (sheet_table_name),\
+                   level='error', echo=True)
             return None, None
 
         req_cols = ["sheetn", "rank", "frac", "too"]
@@ -323,7 +326,8 @@ def init_star_table(col_list):
 
 def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,sleep=True,hour_constraints=None):
     '''
-    star_table = parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,sleep=True,hour_constraints=None)
+    star_table = parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,
+                             prilim=1,sleep=True,hour_constraints=None)
     
     config - dictionary of default values for a number of flags
     sheetns - list of google sheet names
@@ -359,7 +363,6 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
 
     # Build the star table to return to
     for ls in codex:
-        row = []
         if ls[0] == '':
             continue
         if "pri" in didx and ls[didx["pri"]] is not None:
