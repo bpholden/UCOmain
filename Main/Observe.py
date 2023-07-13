@@ -377,7 +377,7 @@ class Observe(threading.Thread):
             self.apf.updateWindshield(self.windshield_mode)
 
             self.focval = self.apf.setAutofocVal()
-            
+
             # setup a B star observation if needed
             # if not B star observation, look at current stack of
             # observations and see if anything is left
