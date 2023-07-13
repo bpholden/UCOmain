@@ -694,7 +694,7 @@ class Observe(threading.Thread):
             calibrating = (self.apf.calsta['binary'] < 3)
 
             # Check and close for weather
-            self.badweather = self.apf.dewTooClose or not self.apf.openOK
+            self.badweather = self.apf.dewTooClose or not self.apf.openOK or not self.apf.is_gcam_power
 
             if self.apf.isOpen()[0] and self.badweather:
                 closetime = datetime.now()
@@ -704,6 +704,8 @@ class Observe(threading.Thread):
                 apflog("OPREASON: " + self.apf.checkapf["OPREASON"].read(), echo=True)
                 apflog("WEATHER: " + self.apf.checkapf['WEATHER'].read(), echo=True)
                 apflog("CLOSE TO DEW POINT: %s" % (str(self.apf.dewTooClose)), echo=True)
+                apflog("Guider camera power: %s" % ("ON" if self.apf.is_gcam_power else "OFF"), \
+                       echo=True)
                 closing()
 
             self.apf.userkind.read(timeout=1)
