@@ -644,6 +644,11 @@ class APF:
             return False
 
     def initGuideCam(self):
+
+        if self.is_gcam_power is False:
+            return False
+
+        ret_val = True
         self.save3d.write(False,binary=True)
         self.fits3pre.write('')
         if self.gexptime.read(binary=True) >= 1:
@@ -652,14 +657,16 @@ class APF:
                 self.gexptime.write(1,wait=True)
             except:
                 apflog("Cannot write eosgcam.SUMFRAME or eosgcam.GEXPTIME",level='warn',echo=True)
+                ret_val = False
         else:
             try:
                 self.gexptime.write(1,wait=True)
                 self.sumframe.write(1,wait=True)
             except:
                 apflog("Cannot write eosgcam.SUMFRAME or eosgcam.GEXPTIME",level='warn',echo=True)
+                ret_val = False
 
-        return
+        return ret_val
 
     def validateUCAMoutputs(self):
 
