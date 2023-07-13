@@ -191,6 +191,7 @@ class APF:
     dewarfoc   = motor["DEWARFOCRAW"]
     hatchpos   = motor["HATCHPOS"]
     ucampower  = motor['UCAMPOWER']
+    gcam_power = motor['GCAMPOWER']
 
     eosgcam    = ktl.Service('eosgcam')
     fits3pre   = eosgcam('FITS3PRE')
@@ -252,6 +253,9 @@ class APF:
         self.hatchpos.monitor()
         self.ucampower.monitor()
         self.nerase.monitor()
+        self.is_gcam_power = False
+        self.gcam_power.monitor()
+        self.gcam_power.callback(self.guider_power_mon)
 
         self.down.monitor()
         self.whatsopn.monitor()
@@ -259,7 +263,9 @@ class APF:
         self.mon_lists = dict()
         self.avg_lists = dict()
 
-        for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,self.t045kw,self.t135kw,self.t225kw,self.t315kw,self.temp3now,self.temp4now,self.wx,self.altwx,self.airtemp):
+        for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,\
+                   self.t045kw,self.t135kw,self.t225kw,self.t315kw,self.temp3now,\
+                    self.temp4now,self.wx,self.altwx,self.airtemp):
             self.mon_lists[kw['name']] = []
             self.avg_lists[kw['name']] = None
             kw.monitor()
@@ -308,7 +314,9 @@ class APF:
         self.dewpt.read()
         self.counts.read()
         self.ok2open.read()
-        self.avgtemps = np.asarray([self.avg_lists[nm] for nm in ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')])
+        self.avgtemps = np.asarray([self.avg_lists[nm] for nm in \
+                                     ('TM1S210','TM2CSUR','TAVERAGE',\
+                                      'TM2CAIR','TEMPNOW3','TEMPNOW4')])
 
 
 
@@ -333,6 +341,7 @@ class APF:
         s += "M1 = %5.2f deg C M2 = %5.2f deg C Tel Avg = %5.2f deg C M2 Air = %5.2f deg C FCU3 = %5.2f deg C FCU4 = %5.2f deg C\n" % tuple(self.avgtemps)
         s += "Dewpt = %5.2f deg C Teq Mode - %s\n" % (np.average(self.dewlist),self.teqmode)
         s += "Too close to the dewpoint? = %s\n" % self.dewTooClose
+        s += "Guider camera power is %s\n" % ("ON" if self.is_gcam_power else "OFF")
         s += "M2 Focus Value = % 4.3f\n" % (float(self.aafocus['binary'])*1000.0)
         s += "M2 Focus Value = % 4.3f (focus kwd)\n" % (float(self.focus['binary'])*1000.0)
         s += "Preferred M2 Focus Value =  % 4.3f\n" % (float(self.predTelFocus())*1000.0)
@@ -346,7 +355,7 @@ class APF:
             s += "Not currently open\n"
         ripd, rr = self.findRobot()
         if rr:
-            s += "Robot is running\n"
+            s += "Robot is running as %s\n" % (ripd)
         else:
             s += "Robot is not running\n"
         focval = self.setAutofocVal()
@@ -491,6 +500,16 @@ class APF:
             self.dmtime = dmtime
         except Exception as e:
             apflog("Exception in dmtimemon: %s" % (e), level='error')
+
+    def guider_power_mon(self, gcam_power):
+        if gcam_power['populated'] == False:
+            return  
+        try:
+            self.is_gcam_power = gcam_power['binary']
+        except Exception as e:
+            return
+        
+        return
 
     def dewPtMon(self,dew):
         if dew['populated'] == False:
