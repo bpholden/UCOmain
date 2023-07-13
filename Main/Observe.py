@@ -687,7 +687,7 @@ class Observe(threading.Thread):
                 rising = False
                 sunel_lim = SchedulerConsts.SUNEL_STARTLIM
 
-            ripd, running = self.apf.findRobot()
+            _, running = self.apf.findRobot()
             cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
             focusing = (self.apf.focussta['binary'] < 3)
