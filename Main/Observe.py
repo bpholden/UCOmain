@@ -373,7 +373,12 @@ class Observe(threading.Thread):
                 apflog("getTarget(): Error setting hatch position.", level='Alert')
                 return
 
-            self.apf.initGuideCam()
+            if self.apf.initGuideCam() == False:
+                apflog("getTarget(): Error initializing guide camera.", echo=True, level='Alert')
+                self.scriptobs.stdin.close()
+                self.apf.close()
+                return
+
             self.apf.updateWindshield(self.windshield_mode)
 
             self.focval = self.apf.setAutofocVal()
