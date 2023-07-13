@@ -677,7 +677,7 @@ class Observe(threading.Thread):
         do_msg = 0
 
         self.apf.validateUCAMoutputs()
-        
+
         while self.signal:
             # Check on everything
             if self.apf.sunRising():
@@ -698,8 +698,9 @@ class Observe(threading.Thread):
 
             if self.apf.isOpen()[0] and self.badweather:
                 closetime = datetime.now()
-                APFTask.set(self.task, suffix="MESSAGE", value="Closing for weather", wait=False)
-                apflog("No longer ok to open.", echo=True)
+                APFTask.set(self.task, suffix="MESSAGE", \
+                            value="Closing for weather or instrument issues", wait=False)
+                apflog("No longer ok to open: %s." % (closetime), echo=True)
                 apflog("OPREASON: " + self.apf.checkapf["OPREASON"].read(), echo=True)
                 apflog("WEATHER: " + self.apf.checkapf['WEATHER'].read(), echo=True)
                 apflog("CLOSE TO DEW POINT: %s" % (str(self.apf.dewTooClose)), echo=True)
@@ -716,8 +717,8 @@ class Observe(threading.Thread):
                 continue
             elif self.apf.userkind.binary == 3:
                 do_msg = 0
-                
-                    
+
+
             # Check the slowdown factor to close for clouds
             if self.VMAG is not None and self.BV is not None and False:
                 slow = calcSlowdown()
