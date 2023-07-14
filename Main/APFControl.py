@@ -666,7 +666,7 @@ class APF:
         return success
 
     def init_gexptime(self):
-        ret_val = self.init_keyword(self.gexptime, 1, timeout=self.gexptime.value)
+        ret_val = self.init_keyword(self.gexptime, 1, timeout=self.gexptime.binary)
         return ret_val
 
     def init_sumframe(self):
