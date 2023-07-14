@@ -655,18 +655,26 @@ class APF:
         if self.gexptime.read(binary=True) >= 1:
             try:
                 self.sumframe.write(1,wait=True)
+            except:
+                apflog("Cannot write eosgcam.SUMFRAME",level='warn',echo=True)
+                ret_val = False
+
+            try:
                 self.gexptime.write(1,wait=True)
             except:
-                apflog("Cannot write eosgcam.SUMFRAME or eosgcam.GEXPTIME",level='warn',echo=True)
+                apflog("Cannot write eosgcam.GEXPTIME",level='warn',echo=True)
                 ret_val = False
         else:
             try:
                 self.gexptime.write(1,wait=True)
+            except:
+                apflog("Cannot write eosgcam.GEXPTIME",level='warn',echo=True)
+                ret_val = False
+            try:
                 self.sumframe.write(1,wait=True)
             except:
-                apflog("Cannot write eosgcam.SUMFRAME or eosgcam.GEXPTIME",level='warn',echo=True)
+                apflog("Cannot write eosgcam.SUMFRAME",level='warn',echo=True)
                 ret_val = False
-
         return ret_val
 
     def validateUCAMoutputs(self):
