@@ -707,7 +707,7 @@ def last_attempted():
     # 3 is success
     if last_result != 3:
         failed_obs = last_obj
-    apflog( "last_attempted(): Failed to observe %s" % (last_obj), echo=True)
+        apflog( "last_attempted(): Failed to observe %s" % (last_obj), echo=True)
 
     return failed_obs
 
