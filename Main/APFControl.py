@@ -643,6 +643,31 @@ class APF:
         else:
             return False
 
+
+    def init_keyword(self, keyword, value):
+        success = False
+        trials = 0
+        while not success and trials < 5:
+            # set the sumframe to 1
+            try:
+                keyword.write(value,wait=True)
+            except Exception as e:
+                apflog("Cannot write %s: %s %s" % (keyword.full_name, type(e), e),\
+                       level='warn',echo=True)
+                trials += 1
+            else:
+                success = True
+        return success
+
+    def init_gexptime(self):
+        ret_val = self.init_keyword(self.gexptime, 1)
+        return ret_val
+
+    def init_sumframe(self):
+        ret_val = self.init_keyword(self.sumframe, 1)
+        return ret_val
+
+
     def initGuideCam(self):
 
         if self.is_gcam_power is False:
@@ -652,28 +677,15 @@ class APF:
         self.save3d.write(False,binary=True)
         self.fits3pre.write('')
         if self.gexptime.read(binary=True) >= 1:
-            try:
-                self.sumframe.write(1,wait=True)
-            except:
-                apflog("Cannot write eosgcam.SUMFRAME",level='warn',echo=True)
-                ret_val = False
+            ret_val = self.init_sumframe()
+            if ret_val:
+                ret_val = self.init_gexptime()
 
-            try:
-                self.gexptime.write(1,wait=True)
-            except:
-                apflog("Cannot write eosgcam.GEXPTIME",level='warn',echo=True)
-                ret_val = False
         else:
-            try:
-                self.gexptime.write(1,wait=True)
-            except:
-                apflog("Cannot write eosgcam.GEXPTIME",level='warn',echo=True)
-                ret_val = False
-            try:
-                self.sumframe.write(1,wait=True)
-            except:
-                apflog("Cannot write eosgcam.SUMFRAME",level='warn',echo=True)
-                ret_val = False
+            ret_val = self.init_gexptime()
+            if ret_val:
+                ret_val = self.init_sumframe()
+
         return ret_val
 
     def validateUCAMoutputs(self):
