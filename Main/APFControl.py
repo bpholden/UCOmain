@@ -644,13 +644,19 @@ class APF:
             return False
 
 
-    def init_keyword(self, keyword, value):
+    def init_keyword(self, keyword, value, timeout=None):
         success = False
         trials = 0
         while not success and trials < 5:
-            # set the sumframe to 1
+            # this is aimed at the guider
+            # the keyword for the exposure time
+            # cannot be set during an exposure
+            # so we try a few times
             try:
-                keyword.write(value,wait=True)
+                if timeout:
+                    keyword.write(value,wait=True,timeout=timeout)
+                else:
+                    keyword.write(value,wait=True)
             except Exception as e:
                 apflog("Cannot write %s: %s %s" % (keyword.full_name, type(e), e),\
                        level='warn',echo=True)
@@ -660,7 +666,7 @@ class APF:
         return success
 
     def init_gexptime(self):
-        ret_val = self.init_keyword(self.gexptime, 1)
+        ret_val = self.init_keyword(self.gexptime, 1, timeout=self.gexptime.value)
         return ret_val
 
     def init_sumframe(self):
