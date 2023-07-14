@@ -95,6 +95,7 @@ class Observe(threading.Thread):
 
         self.target = None
         self.fixedtarget = None
+        self.bad_weather = False
 
         self.apftask = ktl.Service('apftask')
         self.lineresult = self.apftask['SCRIPTOBS_LINE_RESULT']
@@ -111,7 +112,6 @@ class Observe(threading.Thread):
                 self.sheetn = ["RECUR_A100",]
 
         self.canOpen = True
-        self.badWeather = False
 
     def append_selected(self, curstr):
         try:
@@ -375,6 +375,8 @@ class Observe(threading.Thread):
 
             if self.apf.initGuideCam() == False:
                 apflog("getTarget(): Error initializing guide camera.", echo=True, level='warn')
+                if not self.apf.guider_power_mon(self.apf.gcam_power):
+                    return
             self.apf.updateWindshield(self.windshield_mode)
             self.focval = self.apf.setAutofocVal()
 
@@ -689,9 +691,11 @@ class Observe(threading.Thread):
             calibrating = (self.apf.calsta['binary'] < 3)
 
             # Check and close for weather
-            self.badweather = self.apf.dewTooClose or not self.apf.openOK or not self.apf.is_gcam_power
+            self.apf.guider_power_mon(self.apf.gcam_power)
+            self.bad_weather = self.apf.dewTooClose or not self.apf.openOK \
+                or not self.apf.is_gcam_power
 
-            if self.apf.isOpen()[0] and self.badweather:
+            if self.apf.isOpen()[0] and self.bad_weather:
                 closetime = datetime.now()
                 APFTask.set(self.task, suffix="MESSAGE", \
                             value="Closing for weather or instrument issues", wait=False)
@@ -790,7 +794,7 @@ class Observe(threading.Thread):
                 self.stop()
 
             # Open
-            if self.apf.openOK and self.canOpen and not self.badweather:
+            if self.apf.openOK and self.canOpen and not self.bad_weather:
                 APFTask.phase(self.task, "Observing")
                 if not self.apf.isReadyForObserving()[0] and float(cursunel) < SchedulerConsts.SUNEL_HOR:
                     if float(cursunel) > sunel_lim and not rising:
@@ -825,7 +829,7 @@ class Observe(threading.Thread):
                                     break
 
 
-                    elif not rising or (rising and float(cursunel) < (sunel_lim - 5)) and self.canOpen and not self.badweather:
+                    elif not rising or (rising and float(cursunel) < (sunel_lim - 5)) and self.canOpen and not self.bad_weather:
                         success = opening(cursunel)
                         omsg = "Opening at %s" % (cursunel)
                         APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
