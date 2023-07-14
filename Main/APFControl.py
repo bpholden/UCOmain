@@ -683,7 +683,7 @@ class APF:
 
         else:
             ret_val = self.init_gexptime()
-            time.sleep(0.1)
+            time.sleep(0.2)
             # the guider is not very smart
             if ret_val:
                 ret_val = self.init_sumframe()
