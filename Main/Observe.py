@@ -375,8 +375,9 @@ class Observe(threading.Thread):
 
             if self.apf.initGuideCam() == False:
                 apflog("getTarget(): Error initializing guide camera.", echo=True, level='Alert')
-                self.scriptobs.stdin.close()
-                self.apf.close()
+                if not apf.is_gcam_power:
+                    self.scriptobs.stdin.close()
+                    self.apf.close()
                 return
 
             self.apf.updateWindshield(self.windshield_mode)
