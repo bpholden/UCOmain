@@ -374,7 +374,7 @@ class Observe(threading.Thread):
                 return
 
             if self.apf.initGuideCam() == False:
-                apflog("getTarget(): Error initializing guide camera.", echo=True, level='Alert')
+                apflog("getTarget(): Error initializing guide camera.", echo=True, level='warn')
             self.apf.updateWindshield(self.windshield_mode)
             self.focval = self.apf.setAutofocVal()
 
