@@ -1672,15 +1672,21 @@ class APF:
             if 'Vents' in self.whatsopn['ascii'] or 'DomeShutter' in self.whatsopn['ascii']:
                 # fcs should be off
                 if self.dome[fc].read(binary=True):
-                    self.dome[fc + 'CMD'].write(True)
-                    time.sleep(.1)
-                    self.dome[fc + 'CMD'].write(False)
+                    try:
+                        self.dome[fc + 'CMD'].write(True)
+                        time.sleep(.1)
+                        self.dome[fc + 'CMD'].write(False)
+                    except:
+                        pass
             else:
                 # fcs should be on
                 if self.dome[fc].read(binary=False):
-                    self.dome[fc + 'CMD'].write(False)
-                    time.sleep(.1)
-                    self.dome[fc + 'CMD'].write(True)
+                    try:
+                        self.dome[fc + 'CMD'].write(False)
+                        time.sleep(.1)
+                        self.dome[fc + 'CMD'].write(True)
+                    except:
+                        pass
 
         return
 
