@@ -255,7 +255,6 @@ class APF:
         self.nerase.monitor()
         self.is_gcam_power = False
         self.gcam_power.monitor()
-        self.gcam_power.callback(self.guider_power_mon)
         self.guider_power_mon(self.gcam_power)
 
         self.down.monitor()
