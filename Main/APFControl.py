@@ -434,8 +434,8 @@ class APF:
         #    self.setTelFoc()
 
         try:
-            cnts = float(counts.read(binary=True,timeout=2))
-            time = float(elapsed.read(binary=True,timeout=2))
+            cnts = float(self.counts.read(binary=True,timeout=2))
+            time = float(self.elapsed.read(binary=True,timeout=2))
         except:
             return
         try:
