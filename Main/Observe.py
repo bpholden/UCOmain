@@ -375,7 +375,7 @@ class Observe(threading.Thread):
 
             if self.apf.initGuideCam() == False:
                 apflog("getTarget(): Error initializing guide camera.", echo=True, level='warn')
-                if not self.apf.guider_power_mon(self.apf.gcam_power):
+                if not self.apf.gcam_power.binary:
                     return
             self.apf.updateWindshield(self.windshield_mode)
             self.focval = self.apf.setAutofocVal()
@@ -691,9 +691,9 @@ class Observe(threading.Thread):
             calibrating = (self.apf.calsta['binary'] < 3)
 
             # Check and close for weather
-            self.apf.guider_power_mon(self.apf.gcam_power)
+            
             self.bad_weather = self.apf.dewTooClose or not self.apf.openOK \
-                or not self.apf.is_gcam_power
+                or not self.apf.gcam_power.binary
 
             if self.apf.isOpen()[0] and self.bad_weather:
                 closetime = datetime.now()

@@ -253,9 +253,7 @@ class APF:
         self.hatchpos.monitor()
         self.ucampower.monitor()
         self.nerase.monitor()
-        self.is_gcam_power = False
         self.gcam_power.monitor()
-        self.guider_power_mon(self.gcam_power)
 
         self.down.monitor()
         self.whatsopn.monitor()
@@ -499,16 +497,8 @@ class APF:
         try:
             self.dmtime = dmtime
         except Exception as e:
-            apflog("Exception in dmtimemon: %s" % (e), level='error')
+            apflog("Exception in dmtimemon: %s %s" % (type(e), e), level='error')
 
-    def guider_power_mon(self, gcam_power):
-        if gcam_power['populated'] == False:
-            return  
-        try:
-            self.is_gcam_power = gcam_power['binary']
-        except Exception as e:
-            return
-        
         return
 
     def dewPtMon(self,dew):
