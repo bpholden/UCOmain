@@ -339,7 +339,7 @@ class APF:
         s += "M1 = %5.2f deg C M2 = %5.2f deg C Tel Avg = %5.2f deg C M2 Air = %5.2f deg C FCU3 = %5.2f deg C FCU4 = %5.2f deg C\n" % tuple(self.avgtemps)
         s += "Dewpt = %5.2f deg C Teq Mode - %s\n" % (np.average(self.dewlist),self.teqmode)
         s += "Too close to the dewpoint? = %s\n" % self.dewTooClose
-        s += "Guider camera power is %s\n" % ("ON" if self.is_gcam_power else "OFF")
+        s += "Guider camera power is %s\n" % ("ON" if self.gcam_power.binary else "OFF")
         s += "M2 Focus Value = % 4.3f\n" % (float(self.aafocus['binary'])*1000.0)
         s += "M2 Focus Value = % 4.3f (focus kwd)\n" % (float(self.focus['binary'])*1000.0)
         s += "Preferred M2 Focus Value =  % 4.3f\n" % (float(self.predTelFocus())*1000.0)
@@ -671,7 +671,7 @@ class APF:
 
     def initGuideCam(self):
 
-        if self.is_gcam_power is False:
+        if self.gcam_power.binary is False:
             return False
 
         ret_val = True

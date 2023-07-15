@@ -703,7 +703,7 @@ class Observe(threading.Thread):
                 apflog("OPREASON: " + self.apf.checkapf["OPREASON"].read(), echo=True)
                 apflog("WEATHER: " + self.apf.checkapf['WEATHER'].read(), echo=True)
                 apflog("CLOSE TO DEW POINT: %s" % (str(self.apf.dewTooClose)), echo=True)
-                apflog("Guider camera power: %s" % ("ON" if self.apf.is_gcam_power else "OFF"), \
+                apflog("Guider camera power: %s" % ("ON" if self.apf.gcam_power.binary else "OFF"), \
                        echo=True)
                 closing()
 
