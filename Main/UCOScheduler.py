@@ -892,6 +892,9 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
         bright_enough = star_table['Vmag'] < SchedulerConsts.SLOWDOWN_VMAG_LIM
         available = available & bright_enough
 
+    if not do_templates:
+        available = available & (star_table['only_template'] == 'N')
+
     # Now just sort by priority, then cadence. Return top target
     if len(star_table['name'][available]) < 1:
         apflog( "getNext(): Couldn't find any suitable targets!", level="error", echo=True)
