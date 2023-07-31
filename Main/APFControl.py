@@ -648,8 +648,6 @@ class APF:
                 else:
                     keyword.write(value,wait=True)
             except Exception as e:
-                apflog("Cannot write %s: %s %s" % (keyword.full_name, type(e), e),\
-                       level='warn',echo=True)
                 trials += 1
             else:
                 success = True
