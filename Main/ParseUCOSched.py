@@ -345,7 +345,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
                     "night_cad","night_obs", "DaysNew", \
                     "Template", "Nobs", "Total Obs", "Bstar", "Only Template", \
 #                    "mode", "raoff", "decoff",  "obsblock",\
-                    'sheetn' \
+                    'sheetn', 'owner' \
                     ]
 
     full_codex = retrieve_codex(req_cols, sheetns=sheetns, certificate=certificate, sleep=sleep)
@@ -372,8 +372,9 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
 
         nobs = int_default(ls[didx["Nobs"]])
         totobs = int_default(ls[didx["Total Obs"]],default=-1)
-        csheetn = check_flag("sheetn",didx,ls,"\A(.*)",'public')
-
+        csheetn = check_flag("sheetn",didx,ls,"\A(.*)",'RECUR_A100')
+        if 'owner' in didx:
+            owner = check_flag("owner",didx,ls,"\A(.*)",csheetn)
         if totobs > 0 and nobs >= totobs: continue
         if apfpri < prilim: continue
         if csheetn in done_names: continue
@@ -512,6 +513,8 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
 
         # need to check raoff and decoff values and alarm on failure
 
+        if 'owner' in didx and owner is not None:
+            csheetn = owner
 
         if 'Bstar' in didx:
             star_table['Bstar'].append(check_flag('Bstar', didx, ls, "(Y|y)", 'N'))
