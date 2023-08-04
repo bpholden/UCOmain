@@ -1,7 +1,0 @@
-HR3067 7 53 29.8100  26 45 56.8000  2000 pmra=-34.6900 pmdec=-30.1000 vmag=4.98 texp=1200 I2=Y lamp=none uth=19 utm=06 expcount=3e+09 decker=W do= count=2 foc=2 owner=public binning=1,1  # end
-HR3067 7 53 29.8100  26 45 56.8000  2000 pmra=-34.6900 pmdec=-30.1000 vmag=4.98 texp=1200 I2=N lamp=none uth=19 utm=06 expcount=3e+09 decker=W do= count=2 foc=0 owner=public binning=1,1  # end
-HD26965 4 15 16.3196  -7 39 10.3310  2000 pmra=-2240.0850 pmdec=-3421.8090 vmag=4.43 texp=40 I2=Y lamp=none uth=19 utm=12 expcount=1e+09 decker=W do= count=5 foc=0 owner=2023A_A007 binning=1,1  # end
-EPIC211797637 8 42 55.4600  17 16 58.0900  2000 pmra=-44.0446 pmdec=-9.9404 vmag=13.97 texp=1200 I2=N lamp=none uth=19 utm=07 expcount=1e+09 decker=M do= count=3 foc=0 owner=2023A_A015 binning=1,1  # end
-115587 13 17 1.1500  57 16 59.4800  2000 pmra=-109.8000 pmdec=124.0620 vmag=9.20 texp=1800 I2=Y lamp=none uth=19 utm=07 expcount=1e+09 decker=W do= count=1 foc=0 owner=2023A_A014 binning=1,1  # end
-HIP64761 13 16 19.9000  27 44 3.8000  2000 pmra=73.4415 pmdec=-365.7500 vmag=8.24 texp=1500 I2=Y lamp=none uth=19 utm=07 expcount=1e+09 decker=W do= count=1 foc=0 owner=2023A_A014 binning=1,1  # end
-TIC330867484 13 23 27.2000  30 32 20.9000  2000 pmra=-33.8324 pmdec=-48.5827 vmag=9.10 texp=1800 I2=Y lamp=none uth=19 utm=07 expcount=1e+09 decker=W do= count=1 foc=0 owner=2023A_A014 binning=1,1  # end
