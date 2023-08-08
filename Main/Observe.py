@@ -517,7 +517,7 @@ class Observe(threading.Thread):
                     apflog("Failure power cycling telescope", echo=True, level="alert")
 
             self.apf.checkFCs()
-
+            ds.zero_last_objs_attempted()
             return
 
 
