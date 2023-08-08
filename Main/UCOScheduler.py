@@ -33,6 +33,11 @@ LAST = 'L'
 BUFFERSEC = 600
 BUFFER = BUFFERSEC / (24.*60*60)
 
+def zero_last_objs_attempted():
+    global last_objs_attempted
+    last_objs_attempted = []
+    return
+
 def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None):
     # make this a function, have it return the current priorities, than change references to the star_table below into references to the current priority list
     new_pri = np.zeros_like(star_table['pri'])
