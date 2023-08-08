@@ -712,7 +712,7 @@ class Observe(threading.Thread):
                 if do_msg == 0:
                     msg = "checkapf.USERKIND is no longer Robotic, instead %s" % (self.apf.userkind.ascii)
                     apflog(msg, echo=True, level='error')
-                    APFTASK.set(self.task, suffix="MESSAGE", value=msg, wait=False)
+                    APFTask.set(self.task, suffix="MESSAGE", value=msg, wait=False)
                     do_msg += 1
                 APFTask.waitFor(self.task, True, timeout=60)
                 continue
@@ -859,7 +859,7 @@ class Observe(threading.Thread):
                         result = APFTask.waitfor(self.task, True, expression=vent_open, timeout=180)
                         if result:
                             try:
-                                Apflib.write(self.apf.dome['AZENABLE'], 'disable', timeout=10)
+                                APFLib.write(self.apf.dome['AZENABLE'], 'disable', timeout=10)
                             except:
                                 apflog("Error: Cannot disable AZ drive", level="warn", echo=True)
 
