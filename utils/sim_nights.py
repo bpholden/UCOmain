@@ -197,7 +197,7 @@ if __name__ == "__main__":
     bstar = options.bstar
     masterfp,star_strs,star_dates = prep_master(options.outdir,options.master)
 
-    rank_table = ds.make_rank_rable(options.rank_sheetn)
+    rank_table = ds.make_rank_table(options.rank_sheetn)
     sheetns = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
     for datestr in datelist:
