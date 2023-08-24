@@ -162,11 +162,11 @@ def parse_args():
     return options, datelist
 
 
-def updateConstraints(googledex):
+def updateConstraints(googledex_fn):
 
-    star_table = astropy.io.ascii.read(googledex)
+    star_table = astropy.io.ascii.read(googledex_fn)
     star_table['night_obs'] = 0
-    astropy.io.ascii.write(googledex,format='ecsv',overwrite=True)
+    astropy.io.ascii.write(star_table, googledex_fn, format='ecsv', overwrite=True)
 
     return
 
