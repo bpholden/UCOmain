@@ -114,7 +114,7 @@ def updateHourTable(hour_table, observed, dt, outfn='hour_table', outdir=None):
     nobj = len(observed.names)
     for i in range(0,nobj):
         own = observed.owners[i]
-        if own not in list(hours.keys()):
+        if own not in list(hours):
             hours[own] = 0.0
 
     cur = dt
