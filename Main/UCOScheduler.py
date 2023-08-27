@@ -813,9 +813,6 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     last_failure = last_attempted()
     if last_failure is not None:
         last_objs_attempted.append(last_failure)
-    if len(last_objs_attempted) == 5:
-        apflog( "getNext(): 5 failures of scriptobs", level="error", echo=True)
-
 
     ###
     # Need to update the googledex with the lastObserved date for observed targets
