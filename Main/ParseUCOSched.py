@@ -513,9 +513,6 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
 
         # need to check raoff and decoff values and alarm on failure
 
-        if 'owner' in didx and owner is not None:
-            csheetn = owner
-
         if 'Bstar' in didx:
             star_table['Bstar'].append(check_flag('Bstar', didx, ls, "(Y|y)", 'N'))
             star_table['sheetn'].append(csheetn)
