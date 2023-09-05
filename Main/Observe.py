@@ -103,6 +103,7 @@ class Observe(threading.Thread):
         self.observed = self.apftask['SCRIPTOBS_OBSERVED']
         self.observed.monitor()
         self.selected = None
+        self.notify_focus_failure = True
 
         if opt.sheet is False:
             sheetlist = self.apftask['MASTER_SHEETLIST'].read().split(",")
@@ -154,8 +155,13 @@ class Observe(threading.Thread):
         """
         retval = False
 
-        if self.observed.read(binary=True) == True:
+        if self.observed.read(binary=True) is True:
             retval = True
+        else:
+            r_v = self.apf.robot["FOCUSTEL_STATUS"].read(binary=True)
+            if r_v > 3 and self.notify_focus_failure:
+                apflog("Telescope focus has failed", level="error", echo=True)
+                self.notify_focus_failure = False
         return retval
 
     def checkObsFinished(self):
