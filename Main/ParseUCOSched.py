@@ -3,7 +3,6 @@ from __future__ import print_function
 import json
 import os
 import re
-import sys
 import time
 from datetime import datetime, timedelta
 
