@@ -839,7 +839,8 @@ class APF:
         self.outfile.write(name)
         self.desired_outfile = name
         self.ucam('OUTDIR').write('/data/apf/')
-        self.obsnum.write(str(num))
+        if num:
+            self.obsnum.write(str(num))
         self.robot['UCAMLAUNCHER_UCAM_PCC'].write(0)
 
         bstr = "%d,%d" % (1,1)
