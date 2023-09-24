@@ -74,7 +74,7 @@ class Calibrate(threading.Thread):
             if self.test:
                 apflog("Would set default keyword values for focusinstr", echo=True)
                 return
-                
+
             apflog("Setting default keyword values for focusinstr", echo=True)
             ktl.write('apftask', 'focusinstr_step_size', 100)
             ktl.write('apftask', 'focusinstr_nominal', 8500)
@@ -95,7 +95,7 @@ class Calibrate(threading.Thread):
             apflog("Would have set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
             apflog("Would have run APFControl.focusinstr",echo=True)
             return True
-        
+
         if setup:
             apflog("Will set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
             self.apf.setObserverInfo(num=self.obsnum, name=self.outfile, owner=self.owner)
@@ -125,9 +125,9 @@ class Calibrate(threading.Thread):
             apflog("Would have run APFControl.ucamStatus() for phase %s" % (phase),echo=True)
             apflog("Would have run APFControl.calibrate for time %s" % (time),echo=True)
             return True
-            
+
         self.apf.instrPermit()
-        
+
         result = self.apf.ucamStatus()
         if result is False:
             apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
