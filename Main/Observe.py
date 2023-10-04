@@ -147,6 +147,7 @@ class Observe(threading.Thread):
             rv = self.checkServos()
             if rv is False:
                 return False
+            self.apf.message.write("")
         return True
 
     def checkObsSuccess(self):
