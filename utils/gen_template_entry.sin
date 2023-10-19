@@ -1,0 +1,51 @@
+#! @KPYTHON@
+from __future__ import print_function
+from optparse import OptionParser
+from datetime import datetime
+import os
+import time
+import sys
+
+import numpy as np
+
+import ParseUCOSched
+import ExposureCalculations
+import SchedulerConsts as sc
+import UCOScheduler as ds
+
+
+if __name__ == "__main__":
+
+    parser = OptionParser()
+    (options, args) = parser.parse_args()    
+    if len(args) < 1:
+        print("%s needs a target name in the googledex.dat file" % (sys.argv[0]))
+        sys.exit()
+
+    outdir = "."
+    outfn = "googledex.dat"
+    if os.path.exists(os.path.join(outdir,outfn)) is False:
+        print("No %s, no worky" % (outfn))
+        sys.exit()
+
+
+    fp = open("tonight.lst","a+")
+    star_table, stars  = ParseUCOSched.parse_UCOSched(outfn=outfn,outdir=outdir)
+    bstars = star_table['Bstar'] == "Y"
+
+    dt = datetime.utcfromtimestamp(int(time.time()))
+    bline = ""
+    for arg in args:
+        if arg in star_table['name']:
+            a_idx, = np.where(star_table['name'] == arg)
+            idx = a_idx[0]
+            owner = star_table['sheetn'][idx]
+            bidx, bfinidx = ds.find_Bstars(star_table, idx, bstars)
+
+            bline = ds.make_scriptobs_line(star_table[bstars][bidx], dt,  decker="N", I2="Y", owner=owner, focval=2)
+            line = ds.make_scriptobs_line(star_table[idx], dt, decker="N", I2="Y", owner=owner, temp=True)
+            bfinline = ds.make_scriptobs_line(star_table[bstars][bfinidx], dt, decker="N", I2="Y", owner=owner, focval=2)
+            
+            fp.write(bline + " # temp=Y\n")
+            fp.write(line + " # temp=Y\n")
+            fp.write(bfinline + " # temp=Y end\n")
