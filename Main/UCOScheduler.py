@@ -310,11 +310,12 @@ def time_check(star_table, totexptimes, dt):
 
 
 def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='', temp=False):
-    """ given a name, a row in a star table and a do_flag, will generate a scriptobs line as a string
+    """ given a name, a row in a star table and a do_flag, will generate 
+    a scriptobs line as a string:
     line = make_scriptobs_line(star_table_row, t, decker="W",I2="Y")
-    star_table_row -contains all of the data needed for the line except
 
-    t - a datetime object, this is used to fill in the uth and utm fields,
+    star_table_row -contains all of the data needed for the line except
+    t - a datetime object, this is used to fill in the uth and utm fields
     decker - one character field for the decker, defaults to "W"
     I2 - one character field for whether or not the Iodine cell is in, must be "Y" or "N"
     temp - a boolean for whether or not this is a template observation
