@@ -273,12 +273,11 @@ def tot_exp_times(star_table, targNum):
 
     return totexptimes
 
-def time_check(star_table, totexptimes, dt, hour_table):
+def time_check(star_table, totexptimes, dt):
     """ time_check = time_check(star_table, totexptimes, dt, hour_table)
     star_table - astropy table of targets
     totexptimes - numpy array of total exposure times
     dt - datetime object
-    hour_table - astropy table of hours left for each sheet
     time_check - numpy array of booleans
     values are determined by whether or not the target can be observed in the time left
     """
@@ -869,7 +868,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     # Is the exposure time too long?
     apflog("getNext(): Removing really long exposures", echo=True)
-    time_good = time_check(star_table, totexptimes, dt, hour_table)
+    time_good = time_check(star_table, totexptimes, dt)
 
     available = available & time_good
     if np.any(available) is False:
