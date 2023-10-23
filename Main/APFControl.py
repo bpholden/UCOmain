@@ -985,7 +985,7 @@ class APF:
 
         return True
 
-    def focusinstr(self, obsnum=None):
+    def focusinstr(self, obsnum=None, log_error_level='Alert'):
         self.instrPermit()
         rv = self.enable_cal_inst()
         if rv is False:
@@ -1018,7 +1018,7 @@ class APF:
             else:
                 wait = False
             # this complication is just to ensure the logging happens before waiting for permissions
-            apflog(msg,echo=True,level='Alert')
+            apflog(msg,echo=True,level=log_error_level)
             if wait:
                 self.instrPermit()
 
