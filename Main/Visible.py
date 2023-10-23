@@ -37,9 +37,11 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
     """ Args:
             stars: A list of pyephem bodies to evaluate visibility of
             observer: A pyephem observer to use a the visibility reference
-            obs_len: A list of observation lengths ( Seconds ). This is the time frame for which visibility is checked
+            obs_len: A list of observation lengths ( Seconds ). 
+              This is the time frame for which visibility is checked
             pref_min_el: Preferred minimum body elevation to be visible ( degrees )
-            min_el: The minimum body elevation to be visible ( degrees ) - only use this if star never goes above preferred limit
+            min_el: The minimum body elevation to be visible ( degrees ) 
+              - only use this if star never goes above preferred limit
             max_el: The maximum body elevation to be visible ( degrees )
         Returns:
             Boolean list representing if body[i] is visible
@@ -109,7 +111,7 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
 
         # Does the target remain visible through the observation?
         # The next setting/rising functions throw an exception if the body never sets or rises
-        # ex. circumpolar 
+        # ex. circumpolar
         try:
             next_set = observer.next_setting(star)
         except:
@@ -144,8 +146,8 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
                 if ((star.set_time-star.rise_time) > obs_time_days) \
                     and cur_el < pref_min_el \
                         and np.degrees(star.az) < 180:
-                    # this star is currently low on the horizon 
-                    # but will not be above the preferred elevation 
+                    # this star is currently low on the horizon
+                    # but will not be above the preferred elevation
                     # for the requested exposure time
                     ret.append(False)
                     continue
