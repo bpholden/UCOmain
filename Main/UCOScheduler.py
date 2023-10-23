@@ -288,7 +288,7 @@ def time_check(star_table, totexptimes, dt):
         # this will try a target in case we get lucky
         # bright stars often have longer than
         # necessary exposure times, relying on the
-        # exposure meter
+        # exposure meter, we will not make this modification for faint stars
 
     started_doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
     if np.any(started_doubles):
