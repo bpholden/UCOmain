@@ -569,7 +569,7 @@ def enough_time_templates(star_table, stars, idx, apf_obs, dt):
 
     tot_time += 210 + (2*40 + 40*(star_table['nexp'][idx]-1)) + 2400 # two B star exposures + three 70 second acquisitions and the actual observation readout times
     vis, star_elevations, scaled_els = Visible.visible(apf_obs, [stars[idx]], [tot_time])
-    time_left_before_sunrise = computeSunrise(dt, horizon='-9')
+    time_left_before_sunrise = computeSunrise(dt, horizon='-18')
 
     try:
         apflog("enough_time_templates(): time for obs= %.1f  time until sunrise= %.1f " % (tot_time, time_left_before_sunrise),echo=True)
