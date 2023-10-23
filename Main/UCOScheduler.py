@@ -282,6 +282,7 @@ def time_check(star_table, totexptimes, dt):
     values are determined by whether or not the target can be observed in the time left
     """
     maxexptime = computeSunrise(dt,horizon='-9')
+    maxfaintexptime = computeSunrise(dt,horizon='-18')
     if maxexptime < SchedulerConsts.TARGET_EXPOSURE_TIME_MIN:
         maxexptime = SchedulerConsts.TARGET_EXPOSURE_TIME_MIN
         # this will try a target in case we get lucky
@@ -295,6 +296,7 @@ def time_check(star_table, totexptimes, dt):
         waiting = cadence_check < (star_table['night_cad'] - BUFFER )
         if np.any(waiting):
             maxexptimes = (star_table['night_cad'] - cadence_check) * 86400
+            maxfaintexptime = (star_table['night_cad'] - cadence_check) * 86400
             try:
                 maxexptime = np.min(maxexptimes[waiting & started_doubles]) + BUFFERSEC - 180
             except ValueError:
@@ -303,11 +305,16 @@ def time_check(star_table, totexptimes, dt):
                 # they will be selected in the priorities method
                 # so we should use the usual maximum exposure time
                 pass
+            try:
+                maxfaintexptime = np.min(maxexptimes[waiting & started_doubles]) + BUFFERSEC - 180
+            except ValueError:
+                pass
 
-    time_check = totexptimes <= maxexptime
+    faint = star_table['Vmag'] < SchedulerConsts.SLOWDOWN_VMAG_LIM
+    time_good = totexptimes <= maxexptime
+    time_good[faint] = totexptimes[faint] <= maxfaintexptime
 
-    return time_check
-
+    return time_good
 
 def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='', temp=False):
     """ given a name, a row in a star table and a do_flag, will generate 
