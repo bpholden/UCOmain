@@ -56,7 +56,6 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
 
     sun = ephem.Sun(observer)
     sun_el = np.degrees(sun.alt)
-    sun_az = np.degrees(sun.az)
 
     preferred_angle, offset = calc_preferred_angle(shiftwest, sun_el, delta_t)
 
