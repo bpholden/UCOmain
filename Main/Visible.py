@@ -8,7 +8,7 @@ import numpy as np
 
 import SchedulerConsts
 
-def calc_preferred_angle(shiftwest, sun_el, sun_az, delta_t):
+def calc_preferred_angle(shiftwest, sun_el, delta_t):
     """ 
     calc_preferred_angle: Calculate the preferred elevation angle for the telescope
     Args:
@@ -22,7 +22,7 @@ def calc_preferred_angle(shiftwest, sun_el, sun_az, delta_t):
     preferred_angle = 90
 
     if shiftwest:
-        if sun_el > (bottom_angle) and sun_az > 180:
+        if sun_el > (bottom_angle):
             offset = 3*(sun_el - bottom_angle) # note, this is positive
             preferred_angle = 90 - offset
         elif delta_t < 3600. and delta_t > 0:
@@ -58,7 +58,7 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
     sun_el = np.degrees(sun.alt)
     sun_az = np.degrees(sun.az)
 
-    preferred_angle, offset = calc_preferred_angle(shiftwest, sun_el, sun_az, delta_t)
+    preferred_angle, offset = calc_preferred_angle(shiftwest, sun_el, delta_t)
 
     # Now loop over each body to check visibility
     for star, obs_time in zip(stars, obs_len):
