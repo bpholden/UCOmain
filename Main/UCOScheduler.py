@@ -34,12 +34,26 @@ BUFFERSEC = 600
 BUFFER = BUFFERSEC / (24.*60*60)
 
 def zero_last_objs_attempted():
+    """
+    zero_last_objs_attempted()
+
+    Sets the global last_objs_attempted to an empty list.
+    """
     global last_objs_attempted
     last_objs_attempted = []
     return
 
 def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None):
-    # make this a function, have it return the current priorities, than change references to the star_table below into references to the current priority list
+    """
+    new_pri = compute_priorities(star_table, cur_dt, observed=None, 
+                                    hour_table=None, rank_table=None)
+
+    Computes the priorities for the targets in star_table.
+    This is a function of the current time, the last time the target was observed,
+    the cadence of the target, the current hour table and the rank table.
+    """
+    # make this a function, have it return the current priorities, than change 
+    # references to the star_table below into references to the current priority list
     new_pri = np.zeros_like(star_table['pri'])
 
     # new priorities will be
@@ -66,7 +80,8 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
 
     if done_sheets != []:
         done_sheets_str = " ".join(list(done_sheets))
-        apflog("The following sheets are finished for the night: %s " % (done_sheets_str), echo=True)
+        apflog("The following sheets are finished for the night: %s " % 
+               (done_sheets_str), echo=True)
 
     cadence_check /= star_table['cad']
     bad_pri = np.floor(cadence_check * 100)
@@ -91,11 +106,15 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
 
     return new_pri
 
-def updateHourTable(hour_table, observed, dt, outfn='hour_table', outdir=None):
+def update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None):
     '''
-    updateHourTableobserved_logs,outfn='hour_table')
+    update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None)
 
     Updates hour_table with history of observations.
+    observed is the observed log
+    dt is the current datetime
+    outfn is the output filename, defaults to hour_table
+    outdir is the output directory, defaults to current working directory
 
     '''
 
@@ -254,17 +273,17 @@ def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_cons
     return rank_table
 
 
-def tot_exp_times(star_table, targNum):
+def tot_exp_times(star_table, targ_num):
     '''
-    totexptimes = tot_exp_times(star_table, targNum)
+    totexptimes = tot_exp_times(star_table, targ_num)
     star_table - astropy table of targets
-    targNum - number of targets
+    targ_num - number of targets
     
     totexptimes - numpy array of total exposure times
     '''
-    totexptimes = np.zeros(targNum, dtype=float)
+    totexptimes = np.zeros(targ_num, dtype=float)
 
-    nobs = np.ones(targNum)
+    nobs = np.ones(targ_num)
     doubles = (star_table['night_cad'] > 0)  & (star_table['night_obs'] == 0)
     nobs[doubles] = 2
 
@@ -429,9 +448,9 @@ def calc_elevations(stars, observer):
         els.append(cur_el)
     return np.array(els)
 
-def computeDatetime(ctime):
+def compute_datetime(ctime):
     '''
-    dt = computeDatetime(ctime)
+    dt = compute_datetime(ctime)
     ctime - can be a float, datetime, or ephem.Date, else UT now is used
     dt - datetime object
     '''
@@ -772,7 +791,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     if not outdir:
         outdir = os.getcwd()
 
-    dt = computeDatetime(ctime)
+    dt = compute_datetime(ctime)
 
     config = config_defaults(owner)
 
@@ -803,7 +822,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     hour_table = make_hour_table(rank_table, ptime)
 
     if hour_table is not None:
-        hour_table = updateHourTable(hour_table, observed, ptime)
+        hour_table = update_hour_table(hour_table, observed, ptime)
 
     # Parse the Googledex
     # Note -- RA and Dec are returned in Radians
@@ -815,7 +834,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
                                                             config=config)
     else:
         stars = ParseUCOSched.gen_stars(star_table)
-    targNum = len(stars)
+    targ_num = len(stars)
 
     # List of targets already observed
 
@@ -843,11 +862,11 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
 
     apflog("getNext(): Computing exposure times", echo=True)
-    totexptimes = tot_exp_times(star_table, targNum)
+    totexptimes = tot_exp_times(star_table, targ_num)
 
-    available = np.ones(targNum, dtype=bool)
-    cur_elevations = np.zeros(targNum, dtype=float)
-    scaled_elevations = np.zeros(targNum, dtype=float)
+    available = np.ones(targ_num, dtype=bool)
+    cur_elevations = np.zeros(targ_num, dtype=float)
+    scaled_elevations = np.zeros(targ_num, dtype=float)
 
     # Is the target behind the moon?
 
