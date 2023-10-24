@@ -296,7 +296,7 @@ def time_check(star_table, totexptimes, dt):
         waiting = cadence_check < (star_table['night_cad'] - BUFFER )
         if np.any(waiting):
             maxexptimes = (star_table['night_cad'] - cadence_check) * 86400
-            maxfaintexptime = (star_table['night_cad'] - cadence_check) * 86400
+            maxfaintexptimes = (star_table['night_cad'] - cadence_check) * 86400
             try:
                 maxexptime = np.min(maxexptimes[waiting & started_doubles]) + BUFFERSEC - 180
             except ValueError:
@@ -306,7 +306,7 @@ def time_check(star_table, totexptimes, dt):
                 # so we should use the usual maximum exposure time
                 pass
             try:
-                maxfaintexptime = np.min(maxexptimes[waiting & started_doubles]) + BUFFERSEC - 180
+                maxfaintexptime = np.min(maxfaintexptimes[waiting & started_doubles]) + BUFFERSEC - 180
             except ValueError:
                 pass
 
