@@ -331,9 +331,9 @@ def time_check(star_table, totexptimes, dt):
 
     faint = star_table['Vmag'] < SchedulerConsts.SLOWDOWN_VMAG_LIM
     time_good = totexptimes <= maxexptime
-    time_good_faint = faint & (totexptimes <= maxfaintexptime)
+    time_good_faint = totexptimes <= maxfaintexptime
 
-    time_good = time_good & time_good_faint
+    time_good[faint] = time_good_faint[faint]
 
     return time_good
 
