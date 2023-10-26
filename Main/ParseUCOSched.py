@@ -344,6 +344,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
                     "night_cad","night_obs", "DaysNew", \
                     "Template", "Nobs", "Total Obs", "Bstar", "Only Template", \
 #                    "mode", "raoff", "decoff",  "obsblock",\
+                    "need_cal", "cal_star",
                     'sheetn', 'owner' \
                     ]
 
@@ -473,6 +474,11 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
             night_cad /= 60*24
         star_table['night_cad'].append(night_cad)
         star_table['night_obs'].append(0)
+
+        cal_star_val = check_flag("cal_star",didx,ls,"\A(y|Y)","N")
+        need_cal_val = check_flag("need_cal",didx,ls,"\A(y|Y)","N")
+        star_table['cal_star'].append(cal_star_val.upper())
+        star_table['need_cal'].append(need_cal_val.upper())
 
         star_table['pri'].append(apfpri)
         star_table["lastobs"].append(float_default(ls[didx["lastobs"]], default=0))

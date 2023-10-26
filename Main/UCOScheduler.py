@@ -43,9 +43,21 @@ def zero_last_objs_attempted():
     last_objs_attempted = []
     return
 
-def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None):
+def need_cal_star(star_table, priorities):
     """
-    new_pri = compute_priorities(star_table, cur_dt, observed=None, 
+    need_cal_star(star_table, priorities)
+
+    Returns True if there is a calibration star in the star_table.
+    """
+    if np.any(star_table['need_cal'] == "Y"):
+        cal_stars = star_table['cal_star'] == "Y"
+        priorities[cal_stars] = np.max(priorities)
+
+    return priorities
+
+def compute_priorities(star_table, cur_dt, hour_table=None, rank_table=None):
+    """
+    new_pri = compute_priorities(star_table, cur_dt, 
                                     hour_table=None, rank_table=None)
 
     Computes the priorities for the targets in star_table.
