@@ -43,19 +43,24 @@ def zero_last_objs_attempted():
     last_objs_attempted = []
     return
 
-def need_cal_star(star_table, priorities):
+def need_cal_star(star_table, observed, priorities):
     """
     need_cal_star(star_table, priorities)
 
     Returns True if there is a calibration star in the star_table.
     """
-    if np.any(star_table['need_cal'] == "Y"):
-        cal_stars = star_table['cal_star'] == "Y"
-        priorities[cal_stars] = np.max(priorities)
+
+    # this is kind of clunky
+    for sheetn in observed.sheetns:
+        if np.any(star_table['need_cal'][star_table['sheetn'] == sheetn] == "Y"):
+            # need to check if we need a cal, ie. the program that needs cals had targets
+            # observed
+            cal_stars = star_table['cal_star'] == "Y"
+            priorities[cal_stars] = np.max(priorities)
 
     return priorities
 
-def compute_priorities(star_table, cur_dt, hour_table=None, rank_table=None):
+def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None):
     """
     new_pri = compute_priorities(star_table, cur_dt, 
                                     hour_table=None, rank_table=None)
@@ -115,6 +120,8 @@ def compute_priorities(star_table, cur_dt, hour_table=None, rank_table=None):
 
     if np.any(redo):
         new_pri[redo] = np.max(rank_table['rank'])
+
+    new_pri = need_cal_star(star_table, observed, new_pri)
 
     return new_pri
 
