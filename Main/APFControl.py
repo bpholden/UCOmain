@@ -689,7 +689,7 @@ class APF:
 
         return ret_val
 
-    def validateUCAMoutputs(self):
+    def validate_UCAM_outputs(self):
 
         if self.outfile.read() != self.desired_outfile:
             apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
@@ -880,7 +880,7 @@ class APF:
         return rv
 
 
-    def writeStages(self,stagelist,component,state):
+    def write_stages(self,stagelist,component,state):
         rv = True
         for stage in stagelist:
             curkwd = stage + component
@@ -900,12 +900,12 @@ class APF:
         the end of moves.
         '''
         stagelist = ['CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
-        rv1 = self.writeStages(stagelist,'MOE','Off')
-        rv2 = self.writeStages(stagelist,'MOD','Pos')
+        rv1 = self.write_stages(stagelist,'MOE','Off')
+        rv2 = self.write_stages(stagelist,'MOD','Pos')
 
         stagelist = ['ADC','DECKER','DEWARFOC']
-        rv3 = self.writeStages(stagelist,'MOE','On')
-        rv4 = self.writeStages(stagelist,'MOD','Pos')
+        rv3 = self.write_stages(stagelist,'MOE','On')
+        rv4 = self.write_stages(stagelist,'MOD','Pos')
 
         retval = rv1 and rv2 and rv3 and rv4
         return retval
@@ -922,12 +922,12 @@ class APF:
         retval = True
 
         stagelist = ['ADC','CALMIRROR','CALSOURCE','IODINE','GUIDEFOC']
-        rv1 = self.writeStages(stagelist,'MOE','Off')
-        rv2 = self.writeStages(stagelist,'MOD','Pos')
+        rv1 = self.write_stages(stagelist,'MOE','Off')
+        rv2 = self.write_stages(stagelist,'MOD','Pos')
 
         stagelist = ['DECKER','DEWARFOC']
-        rv3 = self.writeStages(stagelist,'MOE','On')
-        rv4 = self.writeStages(stagelist,'MOD','Pos')
+        rv3 = self.write_stages(stagelist,'MOE','On')
+        rv4 = self.write_stages(stagelist,'MOD','Pos')
 
         retval = rv1 and rv2 and rv3 and rv4
         return retval
@@ -941,9 +941,9 @@ class APF:
         needs to be on to prevent the stage from sliding.
         '''
         stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','DECKER','IODINE']
-        rv1 = self.writeStages(stagelist,'MOE','Off')
-        rv2 = self.writeStages(stagelist,'MOO','Off')
-        rv3 = self.writeStages(['DEWARFOC'],'MOE','On')
+        rv1 = self.write_stages(stagelist,'MOE','Off')
+        rv2 = self.write_stages(stagelist,'MOO','Off')
+        rv3 = self.write_stages(['DEWARFOC'],'MOE','On')
         return rv1 and rv2 and rv3
 
     def turn_off_inst(self):
@@ -952,8 +952,8 @@ class APF:
         Turns off all motor stages.
         '''
         stagelist = ['ADC','GUIDEFOC','CALMIRROR','CALSOURCE','IODINE','DECKER','DEWARFOC']
-        rv1 = self.writeStages(stagelist,'MOE','Off')
-        rv2 = self.writeStages(stagelist,'MOO','Off')
+        rv1 = self.write_stages(stagelist,'MOE','Off')
+        rv2 = self.write_stages(stagelist,'MOO','Off')
 
         return rv1 and rv2
 
@@ -1002,7 +1002,7 @@ class APF:
         else:
             self.apfschedule('OWNRHINT').write('public')
 
-        self.validateUCAMoutputs()
+        self.validate_UCAM_outputs()
 
         lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal"])
         if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
@@ -1043,7 +1043,7 @@ class APF:
 
     def calibrate(self, script, time):
 
-        self.validateUCAMoutputs()
+        self.validate_UCAM_outputs()
 
         s_calibrate = os.path.join(SCRIPTDIR,"calibrate")
         if self.test:
@@ -1237,7 +1237,7 @@ class APF:
 
         return True
 
-    def runAutoexposure(self,ind=5):
+    def run_autoexposure(self,ind=5):
 
         cmd = os.path.join(SCRIPTDIR,'autoexposure')
         istr = "%d" % (ind)
@@ -1249,7 +1249,7 @@ class APF:
             apflog("autoexposure failed with code %d" % code, echo=True)
         return result
 
-    def runCenterup(self):
+    def run_centerup(self):
 
         cmd = os.path.join(SCRIPTDIR,'centerup')
         result, code = apftaskDo(cmd,cwd=os.path.curdir)
@@ -1257,7 +1257,7 @@ class APF:
             apflog("centerup failed with code %d" % code, echo=True)
         return result
 
-    def findStarfocusTel(self):
+    def find_star_focustel(self):
         """ This finds a star in the catalog of pointing reference stars close
         to the current position of the telescope.
         It then runs slewlock to slew to the star, set up the guider, and center
@@ -1440,7 +1440,7 @@ class APF:
         """Checks that we have the proper permission and dome is closed, then resets telescope power."""
         if self.test: return True
         cmd = os.path.join(SCRIPTDIR,"power_down_telescope")
-        self.DMReset()
+        self.dm_reset()
         if self.mv_perm.binary == False:
                 apflog("Waiting for permission to move")
         chk_mv = '$checkapf.MOVE_PERM == true'
@@ -1689,7 +1689,7 @@ class APF:
         if self.isOpen()[0] == False:
             apflog("APF is not open. Can't target a star while closed.",level='error',echo=True)
             return
-        self.DMReset()
+        self.dm_reset()
 
         if self.calsta['binary'] < 3 or self.focussta['binary'] < 3:
             apflog('Focusinstr and/or Calibrate are running, will skip evening star observation. focusinstr=%s calibrate=%s' % (self.calsta,self.focussta),echo=True)
@@ -1704,7 +1704,7 @@ class APF:
         result, ret_code = apftaskDo(prepobs)
         if result == False:
             # try again
-            self.DMReset()
+            self.dm_reset()
             result, ret_code = apftaskDo(prepobs)
             if result is False:
                 apflog("Prep-obs returned error code %d. Targeting object has failed." % (ret_code),level='error',echo=True)
@@ -1712,7 +1712,7 @@ class APF:
 
         self.decker.write('W',wait=False)
 
-        self.DMReset()
+        self.dm_reset()
         apflog("Slewing to lower el",echo=True)
         result, ret_code = apftaskDo('slew -e 75')
         if result == False:
@@ -1720,8 +1720,8 @@ class APF:
             return
         # Slew to the specified RA and DEC, set guide camera settings, and centerup( Slewlock )
         # Focus the telescope - all of this, including finding the star, is done in focusTel
-        self.DMReset()
-        if self.findStarfocusTel():
+        self.dm_reset()
+        if self.find_star_focustel():
             try:
                 self.robot['SCRIPTOBS_LINE_RESULT'].write(3)
                 self.robot['SCRIPTOBS_OBSERVED'].write(True)
@@ -1737,7 +1737,7 @@ class APF:
                 apflog("Cannot write 2 to SCRIPTOBS_LINE_RESULT: %s" % (e), level='warn', echo=True)
             return False
 
-    def DMReset(self):
+    def dm_reset(self):
         try:
             APFLib.write(self.checkapf['ROBOSTATE'], "master operating",timeout=10)
         except Exception as e:
@@ -1748,7 +1748,7 @@ class APF:
             ostr = "Error: Cannot write to ROBOSTATE, USERKIND = %s, reason: %s" % (ukind,e)
             apflog(ostr,level='error',echo=True)
 
-    def DMZero(self):
+    def dm_zero(self):
         try:
             if self.checkapf['DMTIME'].read(binary=True) < 1:
                 APFLib.write(self.dmtimer, -1,timeout=10)

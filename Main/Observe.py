@@ -475,9 +475,9 @@ class Observe(threading.Thread):
             apflog("Running open at %s as sunel = %4.2f" % (when, float(sunel)), echo=True)
             apfopen, what = self.apf.isOpen()
             if apfopen:
-                self.apf.DMReset()
+                self.apf.dm_reset()
             else:
-                self.apf.DMZero()
+                self.apf.dm_zero()
 
             result = self.apf.openat(sunset=sunset)
             apflog("opening completed with result %s" % (result), echo=True)
@@ -496,7 +496,7 @@ class Observe(threading.Thread):
                 setting = True
             else:
                 setting = False
-            self.apf.DMReset()
+            self.apf.dm_reset()
 
             return result
 
@@ -675,12 +675,12 @@ class Observe(threading.Thread):
 
         # Actual Watching loop
         apflog("Beginning observing process....", echo=True)
-        self.apf.DMZero()
+        self.apf.dm_zero()
         haveobserved = False
         failstart = 0
         do_msg = 0
 
-        self.apf.validateUCAMoutputs()
+        self.apf.validate_UCAM_outputs()
 
         while self.signal:
             # Check on everything
@@ -825,7 +825,7 @@ class Observe(threading.Thread):
                                 outstr = "Sun is setting and sun at elevation of %.3f" % (float(cursunel))
                                 apflog(outstr, level='info', echo=True)
                                 result = APFTask.waitFor(self.task, True, expression=chk_done, timeout=60)
-                                self.apf.DMReset()
+                                self.apf.dm_reset()
                                 if self.apf.openOK['binary'] is False:
                                     closetime = datetime.now()
                                     APFTask.set(self.task, suffix="MESSAGE", value="Closing for weather", wait=False)
@@ -932,7 +932,7 @@ class Observe(threading.Thread):
             # Keep an eye on the deadman timer if we are open
             if self.apf.isOpen()[0] and self.apf.dmtime <= DMLIM:
                 APFTask.set(self.task, suffix="MESSAGE", value="Reseting DM timer", wait=False)
-                self.apf.DMReset()
+                self.apf.dm_reset()
 #                apflog("The APF is open, the DM timer is clicking down, and scriptobs is %s." % ( str(running)), level="debug")
 
             if not self.apf.isOpen()[0] and not rising:
