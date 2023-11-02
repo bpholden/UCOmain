@@ -1464,6 +1464,11 @@ class APF:
         Checks all seven moving components.
         """
         servo_failed = False
+
+        estopstate = self.dome.read('ESTOPST',binary=True)
+        if estopstate:
+            return False
+
         prefixs = ["AZ","EL","FA","FB","FC","TR" ]
         for pr in prefixs:
             nm = pr + "AMPFLT"
