@@ -319,7 +319,7 @@ if __name__ == '__main__':
     # wrapper functions for controlling the telescope
     apf = APFControl.APF(task=parent, test=debug)
     APFTask.waitFor(parent, True, timeout=5)
-    apf.initGuideCam()
+    apf.init_guide_cam()
 
     possible_list = ''
     try:

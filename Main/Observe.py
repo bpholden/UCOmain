@@ -380,12 +380,12 @@ class Observe(threading.Thread):
                 apflog("getTarget(): Error setting hatch position.", level='Alert')
                 return
 
-            if self.apf.initGuideCam() == False:
+            if self.apf.init_guide_cam() == False:
                 apflog("getTarget(): Error initializing guide camera.", echo=True, level='warn')
                 if not self.apf.gcam_power.binary:
                     return
             self.apf.updateWindshield(self.windshield_mode)
-            self.focval = self.apf.setAutofocVal()
+            self.focval = self.apf.set_autofoc_val()
 
             # setup a B star observation if needed
             # if not B star observation, look at current stack of
@@ -684,7 +684,7 @@ class Observe(threading.Thread):
 
         while self.signal:
             # Check on everything
-            if self.apf.sunRising():
+            if self.apf.sun_rising():
                 rising = True
                 sunel_lim = SchedulerConsts.SUNEL_ENDLIM
             else:

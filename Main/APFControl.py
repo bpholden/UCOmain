@@ -324,7 +324,7 @@ class APF:
         self.avgTelTemps()
         s = ''
         s += "At %s state of telescope is:\n" % str(now)
-        s += "Sun elevation = %4.2f %s\n" % (self.sunel, "Rising" if self.sunRising() else "Setting")
+        s += "Sun elevation = %4.2f %s\n" % (self.sunel, "Rising" if self.sun_rising() else "Setting")
         s += "Telescope -- AZ=%4.2f  EL=%4.2f \n" % (self.aaz, self.ael)
         s += "Front/Rear Shutter=%4.2f / %4.2f\n"%(self.fspos, self.rspos)
         s += "Wind = %3.1f mph (APF) %3.1f mph (Shane) \n" % (np.average(self.mon_lists['M5WIND']),np.average(self.mon_lists['M3WIND']))
@@ -356,7 +356,7 @@ class APF:
             s += "Robot is running as %s\n" % (ripd)
         else:
             s += "Robot is not running\n"
-        focval = self.setAutofocVal()
+        focval = self.set_autofoc_val()
         s += "Focus value for scriptobs = %d\n" % focval
         windshield = self.updateWindshield("auto")
         s += "Windshield state = %s\n" % windshield
@@ -431,7 +431,7 @@ class APF:
             self.ncountrate = 0
 
         #if eventval == 4:
-        #    self.setTelFoc()
+        #    self.set_tel_foc()
 
         try:
             cnts = float(self.counts.read(binary=True,timeout=2))
@@ -625,7 +625,7 @@ class APF:
     ## these are various methods, there are a LOT of them
     ##
 
-    def sunRising(self):
+    def sun_rising(self):
         # the sun also rises
         now = datetime.now()
         if now.strftime("%p") == 'AM':
@@ -667,7 +667,7 @@ class APF:
         return ret_val
 
 
-    def initGuideCam(self):
+    def init_guide_cam(self):
 
         if self.gcam_power.binary is False:
             return False
@@ -1572,7 +1572,7 @@ class APF:
         return
 
 
-    def setTelFoc(self):
+    def set_tel_foc(self):
         """
         Sets the telescope focus to the predicted value returned by
         predTelFocus()
@@ -1588,15 +1588,15 @@ class APF:
             except Exception as e:
                 apflog("Cannot write eostele.FOCUS: %s" % (e), level="error", echo=True)
 
-    def setAutofocVal(self):
-        """ APFControl.setAutofocVal()
+    def set_autofoc_val(self):
+        """ APFControl.set_autofoc_val()
             tests when the last time the telescope was focused, if more than FOCUSTIME enable focus check
         """
 
         # check last telescope focus
         lastfoc = self.robot['FOCUSTEL_LAST_SUCCESS'].read(binary=True)
 
-        if self.sunRising() and (self.sunel.read(binary=True) > -20):
+        if self.sun_rising() and (self.sunel.read(binary=True) > -20):
             self.autofoc.write("robot_autofocus_disable")
             return 0
         
