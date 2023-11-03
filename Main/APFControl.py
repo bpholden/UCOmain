@@ -626,6 +626,12 @@ class APF:
     ##
 
     def sun_rising(self):
+        """
+        sun_rising()
+
+        Is the sun rising, ie., is it after midnight.
+
+        """
         # the sun also rises
         now = datetime.now()
         if now.strftime("%p") == 'AM':
@@ -635,6 +641,14 @@ class APF:
 
 
     def init_keyword(self, keyword, value, timeout=None):
+        """
+
+        init_keyword(keyword, value, timeout=None)
+        
+        Writes the keyword to the value given a timeout.
+        
+        """
+
         success = False
         trials = 0
         while not success and trials < 5:
@@ -654,6 +668,12 @@ class APF:
         return success
 
     def init_gexptime(self):
+        """
+        init_gexptime()
+
+        Sets guider exposure time to 1 second.
+        
+        """
 
         timeout = None
         if self.gexptime.binary > 1:
@@ -663,11 +683,23 @@ class APF:
         return ret_val
 
     def init_sumframe(self):
+        """
+        init_sumframe()
+
+        Sets sumframe to 1.
+        
+        """
         ret_val = self.init_keyword(self.sumframe, 1)
         return ret_val
 
 
     def init_guide_cam(self):
+        """
+        init_guide_cam()
+
+        Sets the guider camera to sensible defaults.
+        
+        """
 
         if self.gcam_power.binary is False:
             return False
@@ -690,7 +722,13 @@ class APF:
         return ret_val
 
     def validate_UCAM_outputs(self):
+        """
+        validate_UCAM_outputs()
 
+        Checks the output file from the UCAM to make sure it matches
+        the values it should have.
+        
+        """
         if self.outfile.read() != self.desired_outfile:
             apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
             self.outfile.write(self.desired_outfile)
@@ -754,7 +792,12 @@ class APF:
         return
 
     def pred_tel_focus(self):
+        """
+        pred_tel_focus()
 
+        Predicts the telescope focus based on the values of
+        various telescope temperatures.
+        """
         self.avg_tel_temps()
         # m1 m2 tavg m2air tf3 tf4
 
@@ -770,7 +813,11 @@ class APF:
 
     # Function for checking what is currently open on the telescope
     def is_open(self):
-        """Returns the state of checkapf.WHATSOPN as a tuple (bool, str)."""
+        """
+        is_open()
+
+        Returns the state of checkapf.WHATSOPN as a tuple (bool, str).
+        """
         try:
             whatstr = str(self.whatsopn)
             what = whatstr.split()
@@ -814,7 +861,11 @@ class APF:
         return rv, what
 
     def is_ready_observing(self):
-        """Returns the state of checkapf.WHATSOPN as a tuple (bool, str)."""
+        """
+        is_ready_observing()
+
+        Returns the state of checkapf.WHATSOPN as a tuple (bool, str).
+        """
         try:
             whatstr = str(self.whatsopn)
             what = whatstr.split()
@@ -832,6 +883,16 @@ class APF:
             return self.is_ready_observing_direct()
 
     def set_observer_info(self, num=10000, name='Robot', owner='public'):
+        """
+        set_observer_info(num=10000, name='Robot', owner='public')
+
+        This sets the apfucam.OBSERVER keyword, 
+        the apfucam.OBSNUM keyword, 
+        and the checkapf.OWNRHINT keyword.
+        Also sets up other items just to be safe, such as
+        the output directory, binning, and the file prefix.
+        
+        """
         if self.test: return
         apflog("Setting science camera parameters.")
         self.ucam('OBSERVER').write(name)
@@ -857,6 +918,11 @@ class APF:
         return
 
     def instr_permit(self):
+        """
+        instr_permit()
+
+        Do we have instrument permission and is the user kind correct?
+        """
         try:
             while not self.instr_perm.read(binary=True,timeout=2) or self.userkind.read(binary=True,timeout=2) != 3:
                 apflog("Waiting for instrument permission to be true and userkind to be robotic")
@@ -869,6 +935,11 @@ class APF:
             return True
 
     def turn_off_lamps(self):
+        """
+        turn_off_lamps()
+
+        Does what it says on the tine. All lamps, even the ones not used.
+        """
         for lamp in ("HALOGEN2","HALOGEN1","THORIUM1","THORIUM2"):
             try:
                 rv = ktl.write("apfmot",lamp,"Off",wait=False)
@@ -881,6 +952,15 @@ class APF:
 
 
     def write_stages(self,stagelist,component,state):
+        """
+        write_stages(stagelist, component, state)
+
+        For every stage in stagelist, write the 
+        component to the value state. 
+        The timeout is 10 seconds.
+        Returns True on success, False otherwise.
+        
+        """
         rv = True
         for stage in stagelist:
             curkwd = stage + component
@@ -985,7 +1065,16 @@ class APF:
 
         return True
 
-    def focusinstr(self, obsnum=None, log_error_level='Alert'):
+    def focusinstr(self, log_error_level='Alert'):
+        """
+        focusinstr()
+
+        A wrapper for the instrument focus method. 
+        This ensures that the permissions are available, 
+        turns on various stages, makes sure that the UCAM is configured,
+        and checks the output of the focus.
+        
+        """
         self.instr_permit()
         rv = self.enable_cal_inst()
         if rv is False:
@@ -1042,7 +1131,15 @@ class APF:
         return result
 
     def calibrate(self, script, time):
+        """
+        calibrate(script, time)
+        
+        Runs the calibrate shell script with the specified script as
+        the option. 
+        The time variable must be "pre" or "post" which is also passed
+        to the calibrate script. 
 
+        """
         self.validate_UCAM_outputs()
 
         s_calibrate = os.path.join(SCRIPTDIR,"calibrate")
@@ -1096,7 +1193,17 @@ class APF:
         return result
 
     def run_focusinstr(self,flags="-b"):
-        """Runs the focus routine appropriate for the user."""
+        """
+        run_focusinstr(flags="-b")
+
+        Runs the instrument focus routine with flags option.
+        Flags for the instrument focus script as passed to the
+        script, and are not checked. The default starts the focus
+        from the beginning, ignoring if the script failed in the
+        previous attempt.
+
+        This is called by the method focusinstr()
+        """
 
         msg = ""
         if self.test:
@@ -1142,6 +1249,11 @@ class APF:
 
 
     def find_star(self):
+        """
+        find_star()
+
+        Given the telescopes current position, find the closest bright star.
+        """
         ra = self.tel['RA'].read()
         dec = self.tel['DEC'].read()
         rah,ram,ras = ra.split(":")
@@ -1167,6 +1279,14 @@ class APF:
         return out.split()
 
     def slew(self,star):
+        """
+        slew(star)
+
+        Executes the slewlock script to a star (not the slew).
+        A star object is list and these are assumed to be in the format
+        of the bright star list used for pointing model acquisition.
+        So the name is the first element, the RA in radians is second,
+        the Dec in radians is third, and so forth.
 
         cmd = os.path.join(SCRIPTDIR,'slewlock')
         try:
@@ -1188,20 +1308,35 @@ class APF:
 
         return result
 
-    def saveMovie(self):
+    def save_movie(self):
+        """
+        save_movie()
+
+        Starts the recording of a guider move.
+        
+        """
         now = datetime.now()
         self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day, self.tel['TARGNAME'].read()))
         self.fits3dir.write('/data/apfguide')
         self.save3d.write(True)
         return
 
-    def stopMovie(self):
+    def stop_movie(self):
+        """
+        stop_movie()
+
+        Stops recording a guider movie.
+        
+        """
         self.save3d.write(False)
         self.fits3dir.write('/tmp/')
         return
 
     def run_focustel(self):
-        """Runs the telescope focus routine."""
+        """
+        Runs the telescope focus routine.
+        
+        """
         el = self.tel['EL'].read(binary=True)
         cfspos = self.fspos.read(binary=True)
         crspos = self.rspos.read(binary=True)
@@ -1215,13 +1350,13 @@ class APF:
             apflog("Test Mode: Would be running focus_telescope.",echo=True)
             return True
 
-        self.saveMovie()
+        self.save_movie()
 
         apflog("Running focus_telescope routine.",echo=True)
         cmd = os.path.join(SCRIPTDIR,'focus_telescope -c %.3f' % (float(self.pred_tel_focus())*1000.0))
         result, code = apftaskDo(cmd,cwd=os.path.curdir)
 
-        self.stopMovie()
+        self.stop_movie()
 
         try:
             self.guide['MODE'].write('Guide')
@@ -1238,7 +1373,10 @@ class APF:
         return True
 
     def run_autoexposure(self,ind=5):
-
+        """
+        runs the autoexposure script to configure the guider
+        exposure time for the target.
+        """
         cmd = os.path.join(SCRIPTDIR,'autoexposure')
         istr = "%d" % (ind)
         cmdargs = cmd
@@ -1250,7 +1388,12 @@ class APF:
         return result
 
     def run_centerup(self):
+        """
+        run_centerup()
 
+        Runs the centerup script to center up the telescope on the 
+        target in the guider.
+        """
         cmd = os.path.join(SCRIPTDIR,'centerup')
         result, code = apftaskDo(cmd,cwd=os.path.curdir)
         if not result:
@@ -1296,6 +1439,15 @@ class APF:
 
 
     def set_apfteq_mode(self, mode):
+        """
+        set_apfteq_mode()
+
+        Sets the mode for APFTEQ to the commanded value.
+        Does not check if value is allowed, but does if the switch was
+        successful.
+        
+        """
+
         apflog("Setting TEQMode to %s" % mode)
         if self.test:
             apflog("Would be setting TEQMode to %s" % mode)
@@ -1307,7 +1459,14 @@ class APF:
             raise RuntimeError("Couldn't set TEQ mode")
 
 
-    def clearestop(self):
+    def clear_estop(self):
+        """
+        clear_estop()
+
+        Clears the Estop state by running the clear_estop script.
+        
+        """
+
         if self.test: return True
         if self.mv_perm.binary == False:
             apflog("Waiting for permission to move...", echo=True)
@@ -1332,7 +1491,15 @@ class APF:
             return False
 
     def state_set(self):
-        # there are three states - but we do not care about ESTOPST, that is will be cleared in openatsunset/openatnight
+        """
+        state_set()
+
+        This checks if certain emergency stop states are set.
+        
+        """
+
+        # there are three states - but we do not care about ESTOPST, 
+        # that is will be cleared in openatsunset/openatnight
         if self.dome['ECLOSEST']:
             return True
         if self.dome['ESECURST']:
@@ -1341,6 +1508,13 @@ class APF:
 
 
     def home_telescope(self):
+        """
+        home_telescope()
+
+        Homes the telescope using the slew script.
+        Then verifies homing occurred.
+        
+        """
         cmd = os.path.join(SCRIPTDIR,"slew") + " --home"
         rv, rc = apftaskDo(cmd)
         try:
@@ -1356,6 +1530,13 @@ class APF:
                 return False
 
     def check_home(self,home=True):
+        """
+        check_home(home=True)
+
+        Checks if the telescope has been homed.
+        If not, homes if the variable home=True.
+        
+        """
         try:
             homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
         except Exception as e:
@@ -1377,10 +1558,12 @@ class APF:
         return False
 
     def openat(self, sunset=False):
-        """Function to ready the APF for observing. Calls either openatsunset or openatnight.
+        """
+        Function to ready the APF for observing. Calls either openatsunset or openatnight.
            This function will attempt to open successfully twice. If both attempts
            fail, then it will return false, allowing the master to register the error
-           and behave accodingly. Otherwise it will return True. """
+           and behave accodingly. Otherwise it will return True. 
+        """
         # If this is a test run, just return True
         if self.test: return True
 
@@ -1437,7 +1620,10 @@ class APF:
         return True
 
     def power_down_telescope(self):
-        """Checks that we have the proper permission and dome is closed, then resets telescope power."""
+        """
+        Checks that we have the proper permission and dome is closed, then resets telescope power.
+        This core is a separate script.
+        """
         if self.test: return True
         cmd = os.path.join(SCRIPTDIR,"power_down_telescope")
         self.dm_reset()
@@ -1590,7 +1776,8 @@ class APF:
 
     def set_autofoc_val(self):
         """ APFControl.set_autofoc_val()
-            tests when the last time the telescope was focused, if more than FOCUSTIME enable focus check
+            tests when the last time the telescope was focused, 
+            if more than FOCUSTIME enable focus check
         """
 
         # check last telescope focus
@@ -1599,7 +1786,7 @@ class APF:
         if self.sun_rising() and (self.sunel.read(binary=True) > -20):
             self.autofoc.write("robot_autofocus_disable")
             return 0
-        
+
         if time.time() - lastfoc < 3600:
             self.autofoc.write("robot_autofocus_disable")
             return 0
@@ -1738,6 +1925,12 @@ class APF:
             return False
 
     def dm_reset(self):
+        """
+        dm_reset()
+
+        Writes to ROBOSTATE keyword, effecitively tapping the deadman switch.
+        
+        """
         try:
             APFLib.write(self.checkapf['ROBOSTATE'], "master operating",timeout=10)
         except Exception as e:
@@ -1749,6 +1942,12 @@ class APF:
             apflog(ostr,level='error',echo=True)
 
     def dm_zero(self):
+        """
+        dm_zero()
+
+        Sets deadman timer to 0 (-1).
+        If the telescope or dome is open, checkapf will force it closed.
+        """
         try:
             if self.checkapf['DMTIME'].read(binary=True) < 1:
                 APFLib.write(self.dmtimer, -1,timeout=10)
@@ -1844,9 +2043,15 @@ class APF:
                 apflog(errstr,level="Warn",echo=True)
 
 
-    def testBias(self):
+    def test_bias(self):
+        """
+        test_bias()
 
-        apftask = ktl.Service('apftask')
+        Takes a single test bias exposure. 
+        The function will turn on the UCAM and start the UCAM software if needed.
+        The output will be test_#.fits, where # is an integer that increments to 
+        not overwrite the previous bias if it exists.
+        """
 
         if self.ucampower == False:
             self.ucampower.write('On',wait=False)
@@ -1941,8 +2146,11 @@ class APF:
 
 
 
-    def ucamPowercycle(self, fake=False):
-
+    def ucam_power_cycle(self, fake=False):
+        """
+        Power cycles the UCAM power supply.
+        This forks a script execution.
+        """
         if fake:
             apflog("would have executed %s" % (os.path.join(SCRIPTDIR,"robot_power_cycle_ucam")))
             return True
@@ -1959,6 +2167,12 @@ class APF:
 
 
     def ucam_reboot(self,fake=False):
+        """
+        ucam_reboot 
+
+        Reboots the UCAM host using the UCAMLAUNCHER
+
+        """
         if fake:
             apflog("Would have rebooted UCAM host ",echo=True)
             return True
@@ -2012,7 +2226,10 @@ class APF:
 
 
     def ucam_restart(self, fake=False):
-
+        """
+        Restarts the UCAM software using the ucamlauncher.
+        If it is fails, reboots UCAM host.
+        """
         # modify -s apftask UCAMLAUNCHER_UCAM_COMMAND=Stop
         if fake:
             # would have restarted software
@@ -2040,8 +2257,14 @@ class APF:
 
 
 
-    def ucamStatus(self, fake=False):
+    def ucam_status(self, fake=False):
+        """
+        Checks the status of the UCAM software.
 
+        If needed, it will power cycle the UCAM controller or
+        reboot the UCAM host.
+
+        """
         if self.ctalk.read(binary=True) > 0:
             rv = self.ucamPowercycle(fake=fake)
             return rv
