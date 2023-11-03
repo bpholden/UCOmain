@@ -496,7 +496,7 @@ if __name__ == '__main__':
         apflog(msg, level='Info', echo=True)
 
     # We have finished taking data, and presumably it is the morning.
-    apf.setTeqMode('Morning')
+    apf.set_apfteq_mode('Morning')
     apf.close(force=True)
 
     # Keep a copy of observed_targets around for a bit just in case
@@ -553,7 +553,7 @@ if __name__ == '__main__':
 
     # We have done everything we needed to, so leave
     # the telescope in day mode to allow it to start thermalizing to the next night.
-    apf.setTeqMode('Day')
+    apf.set_apfteq_mode('Day')
 
     # Update the last observation number to account for the morning calibration shots.
 

@@ -861,7 +861,7 @@ class Observe(threading.Thread):
                         except:
                             apflog("Error: Cannot enable AZ drive", level="error")
 
-                        self.apf.setTeqMode('Evening')
+                        self.apf.set_apfteq_mode('Evening')
                         vent_open = "$eosdome.VD4STATE = VENT_OPENED"
                         result = APFTask.waitfor(self.task, True, expression=vent_open, timeout=180)
                         if result:

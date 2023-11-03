@@ -342,7 +342,7 @@ class APF:
         s += "Guider camera power is %s\n" % ("ON" if self.gcam_power.binary else "OFF")
         s += "M2 Focus Value = % 4.3f\n" % (float(self.aafocus['binary'])*1000.0)
         s += "M2 Focus Value = % 4.3f (focus kwd)\n" % (float(self.focus['binary'])*1000.0)
-        s += "Preferred M2 Focus Value =  % 4.3f\n" % (float(self.predTelFocus())*1000.0)
+        s += "Preferred M2 Focus Value =  % 4.3f\n" % (float(self.pred_tel_focus())*1000.0)
         s += "Okay to open = %s -- %s\n" % (self.openOK['ascii'], self.checkapf['OPREASON'].read() )
         s += "Current Weather = %s\n" % self.checkapf['WEATHER'].read()
 
@@ -753,7 +753,7 @@ class APF:
         self.avgtemps = np.asarray(self.avgtemps)
         return
 
-    def predTelFocus(self):
+    def pred_tel_focus(self):
 
         self.avgTelTemps()
         # m1 m2 tavg m2air tf3 tf4
@@ -1008,7 +1008,7 @@ class APF:
         if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
 
-        result, msg = self.runFocusinstr()
+        result, msg = self.run_focusinstr()
         if result:
             apflog(msg,echo=True)
         else:
@@ -1095,7 +1095,7 @@ class APF:
 
         return result
 
-    def runFocusinstr(self,flags="-b"):
+    def run_focusinstr(self,flags="-b"):
         """Runs the focus routine appropriate for the user."""
 
         msg = ""
@@ -1200,7 +1200,7 @@ class APF:
         self.fits3dir.write('/tmp/')
         return
 
-    def runFocusTel(self):
+    def run_focustel(self):
         """Runs the telescope focus routine."""
         el = self.tel['EL'].read(binary=True)
         cfspos = self.fspos.read(binary=True)
@@ -1218,7 +1218,7 @@ class APF:
         self.saveMovie()
 
         apflog("Running focus_telescope routine.",echo=True)
-        cmd = os.path.join(SCRIPTDIR,'focus_telescope -c %.3f' % (float(self.predTelFocus())*1000.0))
+        cmd = os.path.join(SCRIPTDIR,'focus_telescope -c %.3f' % (float(self.pred_tel_focus())*1000.0))
         result, code = apftaskDo(cmd,cwd=os.path.curdir)
 
         self.stopMovie()
@@ -1286,16 +1286,16 @@ class APF:
             apflog("Cannot write 0 to SCRIPTOBS_LINE_RESULT or False to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
 
 
-        predfocus  = self.predTelFocus()
+        predfocus  = self.pred_tel_focus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         self.robot['FOCUSTEL_LASTFOCUS'].write(predfocus)
-        self.focus.write(self.predTelFocus(), binary=True, wait=False)
+        self.focus.write(self.pred_tel_focus(), binary=True, wait=False)
         if self.slew(star):
-            return self.runFocusTel()
+            return self.run_focustel()
         return False
 
 
-    def setTeqMode(self, mode):
+    def set_apfteq_mode(self, mode):
         apflog("Setting TEQMode to %s" % mode)
         if self.test:
             apflog("Would be setting TEQMode to %s" % mode)
@@ -1575,10 +1575,10 @@ class APF:
     def set_tel_foc(self):
         """
         Sets the telescope focus to the predicted value returned by
-        predTelFocus()
+        pred_tel_focus()
         """
 
-        predfocus  = self.predTelFocus()
+        predfocus  = self.pred_tel_focus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
 
         if self.mv_perm and self.faenable['binary'] == 1:
@@ -1604,7 +1604,7 @@ class APF:
             self.autofoc.write("robot_autofocus_disable")
             return 0
 
-        predfocus  = self.predTelFocus()
+        predfocus  = self.pred_tel_focus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         focus_diff = math.fabs(predfocus - self.focus['binary'])
 
@@ -1786,7 +1786,7 @@ class APF:
 
         # Make sure APFTEQ is in night mode for observations
         if self.teqmode.read() != 'Night':
-            self.setTeqMode('Night')
+            self.set_apfteq_mode('Night')
 
             # Check the instrument focus for a reasonable value
         if self.dewarfoc > DEWARMAX or self.dewarfoc < DEWARMIN:
@@ -2095,4 +2095,4 @@ if __name__ == '__main__':
     while True:
         APFTask.wait(task,True,timeout=10)
         print(str(apf))
-        apf.robot['FOCUSTEL_STARTFOCUS'].write(apf.predTelFocus())
+        apf.robot['FOCUSTEL_STARTFOCUS'].write(apf.pred_tel_focus())
