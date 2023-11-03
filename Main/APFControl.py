@@ -351,14 +351,14 @@ class APF:
             s += "Currently open: %s\n" % what
         else:
             s += "Not currently open\n"
-        ripd, rr = self.findRobot()
+        ripd, rr = self.find_robot()
         if rr:
             s += "Robot is running as %s\n" % (ripd)
         else:
             s += "Robot is not running\n"
         focval = self.set_autofoc_val()
         s += "Focus value for scriptobs = %d\n" % focval
-        windshield = self.updateWindshield("auto")
+        windshield = self.update_windshield("auto")
         s += "Windshield state = %s\n" % windshield
 
         stasum = ''
@@ -1288,6 +1288,7 @@ class APF:
         So the name is the first element, the RA in radians is second,
         the Dec in radians is third, and so forth.
 
+        """
         cmd = os.path.join(SCRIPTDIR,'slewlock')
         try:
             ra = float(star[1])
@@ -1628,7 +1629,7 @@ class APF:
         cmd = os.path.join(SCRIPTDIR,"power_down_telescope")
         self.dm_reset()
         if self.mv_perm.binary == False:
-                apflog("Waiting for permission to move")
+            apflog("Waiting for permission to move")
         chk_mv = '$checkapf.MOVE_PERM == true'
         result = APFTask.waitFor(self.task, False, chk_mv, timeout=300)
         if not result:
@@ -1637,15 +1638,15 @@ class APF:
         # one last check
 
         apflog("Running power_down_telescope script")
-        result, code = apftaskDo(cmd)
+        result, _ = apftaskDo(cmd)
         if result:
             return True
-        else:
-            apflog("power_down_telescope has failed. Human intervention likely required.", level='alert', echo=True)
-            return False
+
+        apflog("power_down_telescope has failed. Human intervention likely required.", level='alert', echo=True)
+        return False
 
 
-    def servoFailure(self):
+    def servo_failure(self):
         """checks for amplifier faults
         Checks all seven moving components.
         """
@@ -1715,7 +1716,7 @@ class APF:
             result, code = apftaskDo(cmd)
             if not result:
                 apflog("Closeup failed with exit code %d" % code, echo=True)
-                if self.servoFailure() or self.slew_allowed.read(binary=True) is False:
+                if self.servo_failure() or self.slew_allowed.read(binary=True) is False:
                     apflog("Likely Servo amplifier failure, may power cycle telescope",echo=True,level='alert')
                     rv = self.power_down_telescope()
                     if rv:
@@ -1794,15 +1795,19 @@ class APF:
         predfocus  = self.pred_tel_focus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         focus_diff = math.fabs(predfocus - self.focus['binary'])
+        focus_diff *= 1e6
 
         #self.focus.write(predfocus,binary=True,wait=False)
+        predfocus *= 1e6
         self.autofoc.write("robot_autofocus_enable")
         focval = 1
-        APFTask.set(self.task, suffix="MESSAGE", value="Current telescope focus more than %6.3f microns from predicted, setting to %.3f." % (focus_diff*1e6,predfocus*1000), wait=False)
+
+        ostr = "Current telescope focus more than %6.3f microns from predicted, setting to %.3f." % (focus_diff, predfocus)
+        APFTask.set(self.task, suffix="MESSAGE", value=ostr, wait=False)
 
         return focval
 
-    def updateWindshield(self, state):
+    def update_windshield(self, state):
         """Checks the current windshielding mode.
         If the input state is auto, makes sure the mode is set properly based on wind speed and temperature.
         Otherwise, the input state defines the mode.
@@ -1955,7 +1960,7 @@ class APF:
             ostr = "Error: cannot touch DM Timer: %s " %( e)
             apflog(ostr,level='error',echo=True)
 
-    def findRobot(self):
+    def find_robot(self):
         """Trys to find a running instance of scriptobs.
             Returns the PID along with a boolean representing
             if the robot was succesfully found."""
@@ -1965,7 +1970,7 @@ class APF:
         else:
             return rpid, True
 
-    def startRobot(self,observation=None,skip=False,raster=False):
+    def start_robot(self,observation=None,skip=False,raster=False):
         """Start an instance of scriptobs. Returns the result from subprocess.Popen()."""
         # For running in test mode
         if self.test:
@@ -2023,7 +2028,7 @@ class APF:
         return p
 
 
-    def killRobot(self, now=False):
+    def kill_robot(self, now=False):
         """ In case during an exposure there is a need to stop the robot and close up."""
         apflog("Terminating scriptobs")
         if now:
@@ -2033,7 +2038,7 @@ class APF:
                 apflog("Waiting for current exposure to finish.")
                 self.ucam['EVENT_STR'].waitfor(" = ReadoutBegin", timeout=1200)
 
-        ripd, running = self.findRobot()
+        ripd, running = self.find_robot()
         if running:
             apflog("Killing scriptobs %s" % (str(ripd)))
             try:
@@ -2266,7 +2271,7 @@ class APF:
 
         """
         if self.ctalk.read(binary=True) > 0:
-            rv = self.ucamPowercycle(fake=fake)
+            rv = self.ucam_power_cycle(fake=fake)
             return rv
 
         if self.combo_ps.read(binary=True) > 0:

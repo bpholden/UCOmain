@@ -45,12 +45,12 @@ class Calibrate(threading.Thread):
         self.start()
 
 
-    def testBias(self):
+    def test_bias(self):
 
         if self.test:
-            apflog("Would have taken a single bias frame using APFControl.testBias()",echo=True)
+            apflog("Would have taken a single bias frame using APFControl.test_bias()",echo=True)
         else:
-            result = self.apf.testBias()
+            result = self.apf.test_bias()
             if result == None:
                 apflog("Focusinstr or calibrate or scriptobs are running?!", level='Error', echo=True)
             if result == False:
@@ -169,7 +169,7 @@ class Calibrate(threading.Thread):
             apflog("Phase now %s %d" % (cur_phase,pi),echo=True)
 
             if pi == 0:
-                result = self.testBias()
+                result = self.test_bias()
                 if result is False:
                     self.stop()
                     return

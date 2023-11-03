@@ -203,15 +203,15 @@ class Observe(threading.Thread):
 
     def checkServos(self):
 
-        _, running = self.apf.findRobot()
+        _, running = self.apf.find_robot()
         if running:
-            self.apf.killRobot(now=True)
+            self.apf.kill_robot(now=True)
 
         chk_done = "$checkapf.MOVE_PERM == true"
         result = APFTask.waitFor(self.task, True, expression=chk_done, timeout=600)
         if result:
 
-            rv = self.apf.servoFailure()
+            rv = self.apf.servo_failure()
             if rv:
 
                 rv = self.apf.power_down_telescope()
@@ -359,10 +359,10 @@ class Observe(threading.Thread):
 
             if self.scriptobs is None:
                 apflog("Called getTarget, but there is not instance of scriptobs associated with %s. This is an error condition." % (self.name), level='error', echo=True)
-                ripd, running = self.apf.findRobot()
+                ripd, running = self.apf.find_robot()
                 if running:
                     apflog("Attempting to kill the existing robot, %d" % (ripd), level='error', echo=True)
-                    self.apf.killRobot()
+                    self.apf.kill_robot()
                 return
 
             # Calculate the slowdown factor.
@@ -384,7 +384,7 @@ class Observe(threading.Thread):
                 apflog("getTarget(): Error initializing guide camera.", echo=True, level='warn')
                 if not self.apf.gcam_power.binary:
                     return
-            self.apf.updateWindshield(self.windshield_mode)
+            self.apf.update_windshield(self.windshield_mode)
             self.focval = self.apf.set_autofoc_val()
 
             # setup a B star observation if needed
@@ -504,7 +504,7 @@ class Observe(threading.Thread):
         # closing
         def closing(force=False):
             if running:
-                self.apf.killRobot(now=True)
+                self.apf.kill_robot(now=True)
 
             self.append_selected("closing")
 
@@ -514,7 +514,7 @@ class Observe(threading.Thread):
             rv = self.apf.close(force=force)
             if rv:
                 return
-            rv = self.apf.servoFailure()
+            rv = self.apf.servo_failure()
             if rv:
                 apflog("Servo Failure, cannot close and power off telescope ", level="alert", echo=True)
                 rv = self.apf.power_down_telescope()
@@ -605,8 +605,8 @@ class Observe(threading.Thread):
 
             APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
-            self.apf.updateWindshield(self.windshield_mode)
-            ripd, running = self.apf.findRobot()
+            self.apf.update_windshield(self.windshield_mode)
+            ripd, running = self.apf.find_robot()
             if running:
                 apflog("Scriptobs is already running yet startScriptobs was called", level="warn", echo=True)
                 return
@@ -656,10 +656,10 @@ class Observe(threading.Thread):
                     apflog("No VMag value at the moment", echo=True)
                     #self.VMAG = None
                 # We wish to observe with the dynamic scheduler
-            _, running = self.apf.findRobot()
+            _, running = self.apf.find_robot()
             if running is False:
                 apflog("Starting an instance of scriptobs for dynamic observing.", echo=True)
-                self.scriptobs = self.apf.startRobot()
+                self.scriptobs = self.apf.start_robot()
                 # Don't let the watcher run over the robot starting up
                 APFTask.waitFor(self.task, True, timeout=10)
 
@@ -691,7 +691,7 @@ class Observe(threading.Thread):
                 rising = False
                 sunel_lim = SchedulerConsts.SUNEL_STARTLIM
 
-            _, running = self.apf.findRobot()
+            _, running = self.apf.find_robot()
             cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
             focusing = (self.apf.focussta['binary'] < 3)
@@ -775,11 +775,11 @@ class Observe(threading.Thread):
             if float(cursunel) >= sunel_lim and running:
                 APFTask.set(self.task, suffix="MESSAGE", value="Last call", wait=False)
                 if self.scriptobs is None:
-                    apflog("Robot claims to be running, but no self.scriptobs instance can be found. Instead calling killRobot().", echo=True)
-                    self.apf.killRobot()
+                    apflog("Robot claims to be running, but no self.scriptobs instance can be found. Instead calling kill_robot().", echo=True)
+                    self.apf.kill_robot()
                 else:
                     self.scriptobs.stdin.close()
-                    self.apf.killRobot()
+                    self.apf.kill_robot()
                 omsg = "Stopping scriptobs"
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
@@ -855,7 +855,7 @@ class Observe(threading.Thread):
                     APFTask.set(self.task, suffix="MESSAGE", value="Powering up for APFTeq", wait=False)
                     APFTask.phase(self.task, "Watching")
                     
-                    if self.apf.clearestop():
+                    if self.apf.clear_estop():
                         try:
                             APFLib.write(self.apf.dome['AZENABLE'], 'enable', timeout=10)
                         except:
