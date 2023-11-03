@@ -856,7 +856,7 @@ class APF:
 
         return
 
-    def instrPermit(self):
+    def instr_permit(self):
         try:
             while not self.instr_perm.read(binary=True,timeout=2) or self.userkind.read(binary=True,timeout=2) != 3:
                 apflog("Waiting for instrument permission to be true and userkind to be robotic")
@@ -868,7 +868,7 @@ class APF:
         else:
             return True
 
-    def turnOffLamps(self):
+    def turn_off_lamps(self):
         for lamp in ("HALOGEN2","HALOGEN1","THORIUM1","THORIUM2"):
             try:
                 rv = ktl.write("apfmot",lamp,"Off",wait=False)
@@ -986,7 +986,7 @@ class APF:
         return True
 
     def focusinstr(self, obsnum=None, log_error_level='Alert'):
-        self.instrPermit()
+        self.instr_permit()
         rv = self.enable_cal_inst()
         if rv is False:
             try:
@@ -1020,7 +1020,7 @@ class APF:
             # this complication is just to ensure the logging happens before waiting for permissions
             apflog(msg,echo=True,level=log_error_level)
             if wait:
-                self.instrPermit()
+                self.instr_permit()
 
         dewarfocraw = self.dewarfoc.read(binary=True)
 

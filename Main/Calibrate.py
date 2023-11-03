@@ -121,12 +121,12 @@ class Calibrate(threading.Thread):
 
         apflog("Starting calibrate %s script." % (phase), level='Info', echo=True)
         if self.test:
-            apflog("Would have waited for permission (APFControl.instrPermit()) for phase %s" % (phase),echo=True)
+            apflog("Would have waited for permission (APFControl.instr_permit()) for phase %s" % (phase),echo=True)
             apflog("Would have run APFControl.ucamStatus() for phase %s" % (phase),echo=True)
             apflog("Would have run APFControl.calibrate for time %s" % (time),echo=True)
             return True
 
-        self.apf.instrPermit()
+        self.apf.instr_permit()
 
         result = self.apf.ucamStatus()
         if result is False:
@@ -141,11 +141,11 @@ class Calibrate(threading.Thread):
                 apflog("Not Starting calibrate %s script, sun too low." % (phase), level='Info', echo=True)
                 return True
             apflog("Calibrate Pre has failed. Trying again",level='warn',echo=True)
-            self.apf.instrPermit()
+            self.apf.instr_permit()
             result = self.apf.calibrate(script = self.calfile, time = time)
             if not result:
                 apflog("Error: Calibrate Pre has failed twice. Calibrate is exiting.",level='error',echo=True)
-                self.apf.turnOffLamps()
+                self.apf.turn_off_lamps()
 
         return result
 

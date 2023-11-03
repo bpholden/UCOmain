@@ -425,7 +425,7 @@ if __name__ == '__main__':
     observe = Observe(apf,opt)
     getUCOTargets = getUCOTargets(opt, task=parent, wait_time=target_time)
 
-    apf.instrPermit()
+    apf.instr_permit()
     apflog("Starting the main watcher." ,echo=True)
     mstart = astropy.time.Time(ktl.read("apftask","master_last_start",binary=True),format='unix')
 
@@ -526,7 +526,7 @@ if __name__ == '__main__':
     # 5) Take morning calibrations
     phase_index += 1
     APFTask.phase(parent, possible_phases[phase_index])
-    apf.instrPermit()
+    apf.instr_permit()
     result = apf.calibrate(script=opt.calibrate, time='post')
     if not result:
         apflog("Calibrate Post has failed.", level='warn',echo=True)
