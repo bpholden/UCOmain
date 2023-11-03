@@ -787,7 +787,7 @@ class APF:
 
     # Fucntion for checking what is currently open on the telescope
 
-    def isReadyForObservingDirect(self):
+    def is_ready_observing_direct(self):
         what = ''
         rv = False
         try:
@@ -813,14 +813,14 @@ class APF:
             rv = False
         return rv, what
 
-    def isReadyForObserving(self):
+    def is_ready_observing(self):
         """Returns the state of checkapf.WHATSOPN as a tuple (bool, str)."""
         try:
             whatstr = str(self.whatsopn)
             what = whatstr.split()
         except:
             apflog("checkapf.WHATSOPN returned a value that str.split cannot split",level='warn',echo=True)
-            return self.isReadyForObservingDirect()
+            return self.is_ready_observing_direct()
 
 
         if hasattr(what,'__iter__'):
@@ -829,9 +829,9 @@ class APF:
             else:
                 return False, ''
         else:
-            return self.isReadyForObservingDirect()
+            return self.is_ready_observing_direct()
 
-    def setObserverInfo(self, num=10000, name='Robot', owner='public'):
+    def set_observer_info(self, num=10000, name='Robot', owner='public'):
         if self.test: return
         apflog("Setting science camera parameters.")
         self.ucam('OBSERVER').write(name)

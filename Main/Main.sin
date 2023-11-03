@@ -383,7 +383,7 @@ if __name__ == '__main__':
         apflog("Setting Observer Information", echo=True)
         opt = setObsDefaults(opt)
         apflog("Using %s for name and %s for obs number." % (opt.name, repr(opt.obsnum)), echo=True)
-        apf.setObserverInfo(num=opt.obsnum, name=opt.name, owner=opt.owner)
+        apf.set_observer_info(num=opt.obsnum, name=opt.name, owner=opt.owner)
 
         apflog("Setting the task step to 0")
         APFTask.step(parent, 0)

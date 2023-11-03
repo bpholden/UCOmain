@@ -98,7 +98,7 @@ class Calibrate(threading.Thread):
 
         if setup:
             apflog("Will set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
-            self.apf.setObserverInfo(num=self.obsnum, name=self.outfile, owner=self.owner)
+            self.apf.set_observer_info(num=self.obsnum, name=self.outfile, owner=self.owner)
 
         apflog("Focus begun.", echo=True)
         result = self.apf.focusinstr()

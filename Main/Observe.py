@@ -803,7 +803,7 @@ class Observe(threading.Thread):
             # Open
             if self.apf.openOK and self.canOpen and not self.bad_weather:
                 APFTask.phase(self.task, "Observing")
-                if not self.apf.isReadyForObserving()[0] and float(cursunel) < SchedulerConsts.SUNEL_HOR:
+                if not self.apf.is_ready_observing()[0] and float(cursunel) < SchedulerConsts.SUNEL_HOR:
                     if float(cursunel) > sunel_lim and not rising:
                         APFTask.phase(self.task, "Watching")
                         APFTask.set(self.task, suffix="MESSAGE", value="Open at sunset", wait=False)
@@ -883,12 +883,12 @@ class Observe(threading.Thread):
                 pass
 
             # Check for servo errors
-            if not self.apf.slew_allowed.read(binary=True) and self.apf.isReadyForObserving()[0]:
+            if not self.apf.slew_allowed.read(binary=True) and self.apf.is_ready_observing()[0]:
                 apflog("Likely amplifier failure, may power cycle telescope", echo=True, level='alert')
                 rv = self.checkServos()
 
             # If we are open and scriptobs isn't running, start it up
-            if self.apf.isReadyForObserving()[0] and not running and float(cursunel) <= sunel_lim and self.apf.openOK and not focusing:
+            if self.apf.is_ready_observing()[0] and not running and float(cursunel) <= sunel_lim and self.apf.openOK and not focusing:
                 calstat = APFTask.get('CALIBRATE', ['STATUS'])
                 if calstat['STATUS'] in ['Running', 'Pausing', 'Paused']:
                     APFTask.abort("CALIBRATE")
