@@ -245,7 +245,7 @@ class APF:
         self.elapsed.monitor()
 
         self.obsnum.monitor()
-        self.obsnum.callback(self.updateLastObs)
+        self.obsnum.callback(self.update_last_obs)
 
         self.event.monitor()
         self.event.callback(self.eventmon)
@@ -1141,7 +1141,7 @@ class APF:
         return result, msg
 
 
-    def findStar(self):
+    def find_star(self):
         ra = self.tel['RA'].read()
         dec = self.tel['DEC'].read()
         rah,ram,ras = ra.split(":")
@@ -1264,7 +1264,7 @@ class APF:
         the star on the slit.
         Finally, once the star is acquired, it runs the telescope focus routine.
         """
-        star = self.findStar()
+        star = self.find_star()
         if not star:
             apflog("Cannot find star near current position!?",level='error',echo=True)
             return False
@@ -1331,7 +1331,7 @@ class APF:
         else:
             return False
 
-    def statesSet(self):
+    def state_set(self):
         # there are three states - but we do not care about ESTOPST, that is will be cleared in openatsunset/openatnight
         if self.dome['ECLOSEST']:
             return True
@@ -1340,7 +1340,7 @@ class APF:
         return False
 
 
-    def homeTelescope(self):
+    def home_telescope(self):
         cmd = os.path.join(SCRIPTDIR,"slew") + " --home"
         rv, rc = apftaskDo(cmd)
         try:
@@ -1355,7 +1355,7 @@ class APF:
                 apflog("cannot home telescope",level='Alert',echo=True)
                 return False
 
-    def checkHome(self,home=True):
+    def check_home(self,home=True):
         try:
             homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
         except Exception as e:
@@ -1366,7 +1366,7 @@ class APF:
         else:
             if homed == 5 or homed == 6:
                 if home:
-                    self.homeTelescope()
+                    self.home_telescope()
                 else:
                     apflog("Telescope needs to be homed",level='Alert',echo=True)
                     return False
@@ -1406,7 +1406,7 @@ class APF:
                 apflog("Can't open. No move permission.",echo=True)
                 return False
 
-        if self.statesSet():
+        if self.state_set():
             apflog("An unusal emergency state is set.", level="error",echo=True)
             return False
 
@@ -1426,7 +1426,7 @@ class APF:
             if not result:
                 apflog("Second openup attempt also failed. Exit code %d. Giving up." % code,echo=True)
                 return False
-        rv = self.checkHome()
+        rv = self.check_home()
         if rv == False:
             return False
         try:
@@ -1436,7 +1436,7 @@ class APF:
             return False
         return True
 
-    def powerDownTelescope(self):
+    def power_down_telescope(self):
         """Checks that we have the proper permission and dome is closed, then resets telescope power."""
         if self.test: return True
         cmd = os.path.join(SCRIPTDIR,"power_down_telescope")
@@ -1531,7 +1531,7 @@ class APF:
                 apflog("Closeup failed with exit code %d" % code, echo=True)
                 if self.servoFailure() or self.slew_allowed.read(binary=True) is False:
                     apflog("Likely Servo amplifier failure, may power cycle telescope",echo=True,level='alert')
-                    rv = self.powerDownTelescope()
+                    rv = self.power_down_telescope()
                     if rv:
                         apflog("Power cycled telescope",echo=True,level="error")
                     else:
@@ -1559,7 +1559,7 @@ class APF:
             return False
         return False
 
-    def updateLastObs(self,obsnum):
+    def update_last_obs(self,obsnum):
         """ If the last observation was a success,
         this function updates the file storing the last
         observation number and the hit_list which is
@@ -1958,7 +1958,7 @@ class APF:
 
 
 
-    def ucamReboot(self,fake=False):
+    def ucam_reboot(self,fake=False):
         if fake:
             apflog("Would have rebooted UCAM host ",echo=True)
             return True
@@ -2005,13 +2005,13 @@ class APF:
             apflog("UCAM host reboot failure, combo_ps still not ok" , level="alert", echo=True)
 
         self.obsnum.monitor()
-        self.obsnum.callback(self.updateLastObs)
+        self.obsnum.callback(self.update_last_obs)
 
         self.event.monitor()
         self.event.callback(self.eventmon)
 
 
-    def ucamRestart(self, fake=False):
+    def ucam_restart(self, fake=False):
 
         # modify -s apftask UCAMLAUNCHER_UCAM_COMMAND=Stop
         if fake:
@@ -2033,7 +2033,7 @@ class APF:
                 apflog("UCAM status bad, cannot restart",level='alert')
                 return False
 
-            self.ucamReboot()
+            self.ucam_reboot()
 
 
         return False
@@ -2048,7 +2048,7 @@ class APF:
 
         if self.combo_ps.read(binary=True) > 0:
             # brains!
-            rv = self.ucamRestart(fake=fake)
+            rv = self.ucam_restart(fake=fake)
             return rv
 
         try:
@@ -2056,14 +2056,14 @@ class APF:
             ucamsta1 = self.ucam['DISP1STA'].read(binary=True)
         except Exception as e:
             apflog('apfucam.DISPSTA failure, apfucam likely not running: %s' % (e),echo=True,level='Alert')
-            rv = self.ucamRestart(fake=fake)
+            rv = self.ucam_restart(fake=fake)
             return rv
         else:
             if ucamsta1 > 0 and ucamsta0 > 0:
                 # Things are still starting up
                 if ucamsta0 > 2:
                     # failure to connect
-                    rv = self.ucamRestart(fake=fake)
+                    rv = self.ucam_restart(fake=fake)
                     return rv
                 else:
                     rv = APFTask.waitfor(self.task, True, expression="$apfucam.DISP0STA = 0 & $apfucam.DISP1STA = 0", timeout=600)

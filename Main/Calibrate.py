@@ -55,7 +55,7 @@ class Calibrate(threading.Thread):
                 apflog("Focusinstr or calibrate or scriptobs are running?!", level='Error', echo=True)
             if result == False:
                 # this is a UCAM problem
-                rv = self.apf.ucamRestart()
+                rv = self.apf.ucam_restart()
                 if rv == False:
                     apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
 

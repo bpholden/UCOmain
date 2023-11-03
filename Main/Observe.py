@@ -133,7 +133,7 @@ class Observe(threading.Thread):
             # uh oh
             apflog("scriptobs has failed post UCAM recovery", level="error", echo=True)
             # reboot warsaw
-            rv = self.apf.ucamRestart()
+            rv = self.apf.ucam_restart()
             if rv:
                 self.apf.message.write("")
                 return True
@@ -214,7 +214,7 @@ class Observe(threading.Thread):
             rv = self.apf.servoFailure()
             if rv:
 
-                rv = self.apf.powerDownTelescope()
+                rv = self.apf.power_down_telescope()
                 if rv:
                     apflog("Power cycled telescope", echo=True)
                 else:
@@ -517,7 +517,7 @@ class Observe(threading.Thread):
             rv = self.apf.servoFailure()
             if rv:
                 apflog("Servo Failure, cannot close and power off telescope ", level="alert", echo=True)
-                rv = self.apf.powerDownTelescope()
+                rv = self.apf.power_down_telescope()
                 if rv:
                     apflog("Power cycled telescope", echo=True)
                 else:
