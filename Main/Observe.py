@@ -225,7 +225,7 @@ class Observe(threading.Thread):
             apflog("No current servo faults", echo=True)
             return True
 
-        elif result is False and "DomeShutter" in self.apf.isOpen()[1]:
+        elif result is False and "DomeShutter" in self.apf.is_open()[1]:
             apflog("Error: After 10 min move permission did not return, and the dome is still open.", level='error', echo=True)
             self.apf.close(force=True)
             return False
@@ -473,7 +473,7 @@ class Observe(threading.Thread):
                 apflog("UCAM OK", echo=True)
 
             apflog("Running open at %s as sunel = %4.2f" % (when, float(sunel)), echo=True)
-            apfopen, what = self.apf.isOpen()
+            apfopen, what = self.apf.is_open()
             if apfopen:
                 self.apf.dm_reset()
             else:
@@ -490,7 +490,7 @@ class Observe(threading.Thread):
                         self.apf.close()
                         self.canOpen = False
 
-            self.apf.checkFCs()
+            self.apf.check_FCUs()
 
             if datetime.now().strftime("%p") == 'PM':
                 setting = True
@@ -523,7 +523,7 @@ class Observe(threading.Thread):
                 else:
                     apflog("Failure power cycling telescope", echo=True, level="alert")
 
-            self.apf.checkFCs()
+            self.apf.check_FCUs()
             ds.zero_last_objs_attempted()
             return
 
@@ -702,7 +702,7 @@ class Observe(threading.Thread):
             self.bad_weather = self.apf.dewTooClose or not self.apf.openOK \
                 or not self.apf.gcam_power.binary
 
-            if self.apf.isOpen()[0] and self.bad_weather:
+            if self.apf.is_open()[0] and self.bad_weather:
                 closetime = datetime.now()
                 APFTask.set(self.task, suffix="MESSAGE", \
                             value="Closing for weather or instrument issues", wait=False)
@@ -788,13 +788,13 @@ class Observe(threading.Thread):
             if float(cursunel) > sunel_lim and not running and rising:
                 apflog("Closing due to sun elevation. Sunel = % 4.2f" % float(cursunel), echo=True)
                 APFTask.set(self.task, suffix="MESSAGE", value="Closing, sun is rising", wait=False)
-                if self.apf.isOpen()[0]:
+                if self.apf.is_open()[0]:
                     msg = "APF is open, closing due to sun elevation = %4.2f" % float(cursunel)
                     closing()
                 else:
                     msg = "Telescope was already closed when sun got to %4.2f" % float(cursunel)
 
-                if self.apf.isOpen()[0]:
+                if self.apf.is_open()[0]:
                     apflog("Error: Closeup did not succeed", level='error', echo=True)
 
                 self.exitMessage = msg
@@ -851,7 +851,7 @@ class Observe(threading.Thread):
                             apflog("Error: Lost permission during opening", echo=True)
 
                 # If we can open, try to set stuff up so the vent doors can be controlled by apfteq
-                if not rising and not self.apf.isOpen()[0] and float(cursunel) > SchedulerConsts.SUNEL_HOR:
+                if not rising and not self.apf.is_open()[0] and float(cursunel) > SchedulerConsts.SUNEL_HOR:
                     APFTask.set(self.task, suffix="MESSAGE", value="Powering up for APFTeq", wait=False)
                     APFTask.phase(self.task, "Watching")
                     
@@ -930,18 +930,18 @@ class Observe(threading.Thread):
 
 
             # Keep an eye on the deadman timer if we are open
-            if self.apf.isOpen()[0] and self.apf.dmtime <= DMLIM:
+            if self.apf.is_open()[0] and self.apf.dmtime <= DMLIM:
                 APFTask.set(self.task, suffix="MESSAGE", value="Reseting DM timer", wait=False)
                 self.apf.dm_reset()
 #                apflog("The APF is open, the DM timer is clicking down, and scriptobs is %s." % ( str(running)), level="debug")
 
-            if not self.apf.isOpen()[0] and not rising:
+            if not self.apf.is_open()[0] and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
                 APFTask.waitFor(self.task, True, timeout=5)
                 
-            if  self.apf.isOpen()[0] and float(cursunel) > sunel_lim and not rising:
+            if  self.apf.is_open()[0] and float(cursunel) > sunel_lim and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)

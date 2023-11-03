@@ -321,7 +321,7 @@ class APF:
     def __str__(self):
         # Determine if the sun rising / setting check is working
         now = datetime.now()
-        self.avgTelTemps()
+        self.avg_tel_temps()
         s = ''
         s += "At %s state of telescope is:\n" % str(now)
         s += "Sun elevation = %4.2f %s\n" % (self.sunel, "Rising" if self.sun_rising() else "Setting")
@@ -346,7 +346,7 @@ class APF:
         s += "Okay to open = %s -- %s\n" % (self.openOK['ascii'], self.checkapf['OPREASON'].read() )
         s += "Current Weather = %s\n" % self.checkapf['WEATHER'].read()
 
-        isopen, what = self.isOpen()
+        isopen, what = self.is_open()
         if isopen:
             s += "Currently open: %s\n" % what
         else:
@@ -701,9 +701,9 @@ class APF:
 
         return
 
-    def avgTelTemps(self):
+    def avg_tel_temps(self):
         """
-        self.avgTelTemp()
+        self.avg_tel_temps()
         sets the APFControl.avgtemps attribute.
         This will be a numpy array with the values in the order of:
 
@@ -755,7 +755,7 @@ class APF:
 
     def pred_tel_focus(self):
 
-        self.avgTelTemps()
+        self.avg_tel_temps()
         # m1 m2 tavg m2air tf3 tf4
 
         # values as of July 3 2022
@@ -769,7 +769,7 @@ class APF:
 
 
     # Function for checking what is currently open on the telescope
-    def isOpen(self):
+    def is_open(self):
         """Returns the state of checkapf.WHATSOPN as a tuple (bool, str)."""
         try:
             whatstr = str(self.whatsopn)
@@ -1538,7 +1538,7 @@ class APF:
                         apflog("Failure power cycling telescope",echo=True,level="alert")
                 if attempts == 7:
                     lstr = "Closeup has failed %d times consecutively. Human intervention likely required." % (attempts)
-                    areopen, whatsopen = self.isOpen()
+                    areopen, whatsopen = self.is_open()
                     if areopen == True:
                         # truly dire, the telescope is open
                         apflog(lstr, level='Alert', echo=True)
@@ -1655,7 +1655,7 @@ class APF:
         return rv
 
 
-    def checkFCs(self):
+    def check_FCUs(self):
         """
         If the dome is open the FCs should be off. Sometimes they are commanded off but do not turn off.
         This will attempt to fix that by checking if the dome is open, checking if the FCs are on, and
@@ -1686,7 +1686,7 @@ class APF:
 
     def eveningStar(self):
         """Aim the APF at the desired target. This calls prep-obs, slewlock, and focus-telescope."""
-        if self.isOpen()[0] == False:
+        if self.is_open()[0] == False:
             apflog("APF is not open. Can't target a star while closed.",level='error',echo=True)
             return
         self.dm_reset()
