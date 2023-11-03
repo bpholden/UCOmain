@@ -87,7 +87,7 @@ class Calibrate(threading.Thread):
 
         return
 
-    def focusInstr(self,setup=True):
+    def focus_instr(self,setup=True):
 
         self.set_focus_defaults()
 
@@ -174,9 +174,9 @@ class Calibrate(threading.Thread):
                     self.stop()
                     return
             elif pi == 1:
-                result = self.focusInstr()
+                result = self.focus_instr()
                 if result == False:
-                    result = self.focusInstr(setup=False)
+                    result = self.focus_instr(setup=False)
             elif pi == 2:
                 result = self.calibrate(cur_phase)
 
