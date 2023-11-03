@@ -45,17 +45,17 @@ class Calibrate(threading.Thread):
         self.start()
 
 
-    def testBias(self):
+    def test_bias(self):
 
         if self.test:
-            apflog("Would have taken a single bias frame using APFControl.testBias()",echo=True)
+            apflog("Would have taken a single bias frame using APFControl.test_bias()",echo=True)
         else:
-            result = self.apf.testBias()
+            result = self.apf.test_bias()
             if result == None:
                 apflog("Focusinstr or calibrate or scriptobs are running?!", level='Error', echo=True)
             if result == False:
                 # this is a UCAM problem
-                rv = self.apf.ucamRestart()
+                rv = self.apf.ucam_restart()
                 if rv == False:
                     apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
 
@@ -87,7 +87,7 @@ class Calibrate(threading.Thread):
 
         return
 
-    def focusInstr(self,setup=True):
+    def focus_instr(self,setup=True):
 
         self.set_focus_defaults()
 
@@ -98,7 +98,7 @@ class Calibrate(threading.Thread):
 
         if setup:
             apflog("Will set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
-            self.apf.setObserverInfo(num=self.obsnum, name=self.outfile, owner=self.owner)
+            self.apf.set_observer_info(num=self.obsnum, name=self.outfile, owner=self.owner)
 
         apflog("Focus begun.", echo=True)
         result = self.apf.focusinstr()
@@ -121,12 +121,12 @@ class Calibrate(threading.Thread):
 
         apflog("Starting calibrate %s script." % (phase), level='Info', echo=True)
         if self.test:
-            apflog("Would have waited for permission (APFControl.instrPermit()) for phase %s" % (phase),echo=True)
+            apflog("Would have waited for permission (APFControl.instr_permit()) for phase %s" % (phase),echo=True)
             apflog("Would have run APFControl.ucamStatus() for phase %s" % (phase),echo=True)
             apflog("Would have run APFControl.calibrate for time %s" % (time),echo=True)
             return True
 
-        self.apf.instrPermit()
+        self.apf.instr_permit()
 
         result = self.apf.ucamStatus()
         if result is False:
@@ -141,11 +141,11 @@ class Calibrate(threading.Thread):
                 apflog("Not Starting calibrate %s script, sun too low." % (phase), level='Info', echo=True)
                 return True
             apflog("Calibrate Pre has failed. Trying again",level='warn',echo=True)
-            self.apf.instrPermit()
+            self.apf.instr_permit()
             result = self.apf.calibrate(script = self.calfile, time = time)
             if not result:
                 apflog("Error: Calibrate Pre has failed twice. Calibrate is exiting.",level='error',echo=True)
-                self.apf.turnOffLamps()
+                self.apf.turn_off_lamps()
 
         return result
 
@@ -169,14 +169,14 @@ class Calibrate(threading.Thread):
             apflog("Phase now %s %d" % (cur_phase,pi),echo=True)
 
             if pi == 0:
-                result = self.testBias()
+                result = self.test_bias()
                 if result is False:
                     self.stop()
                     return
             elif pi == 1:
-                result = self.focusInstr()
+                result = self.focus_instr()
                 if result == False:
-                    result = self.focusInstr(setup=False)
+                    result = self.focus_instr(setup=False)
             elif pi == 2:
                 result = self.calibrate(cur_phase)
 

@@ -319,7 +319,7 @@ if __name__ == '__main__':
     # wrapper functions for controlling the telescope
     apf = APFControl.APF(task=parent, test=debug)
     APFTask.waitFor(parent, True, timeout=5)
-    apf.initGuideCam()
+    apf.init_guide_cam()
 
     possible_list = ''
     try:
@@ -383,7 +383,7 @@ if __name__ == '__main__':
         apflog("Setting Observer Information", echo=True)
         opt = setObsDefaults(opt)
         apflog("Using %s for name and %s for obs number." % (opt.name, repr(opt.obsnum)), echo=True)
-        apf.setObserverInfo(num=opt.obsnum, name=opt.name, owner=opt.owner)
+        apf.set_observer_info(num=opt.obsnum, name=opt.name, owner=opt.owner)
 
         apflog("Setting the task step to 0")
         APFTask.step(parent, 0)
@@ -425,7 +425,7 @@ if __name__ == '__main__':
     observe = Observe(apf,opt)
     getUCOTargets = getUCOTargets(opt, task=parent, wait_time=target_time)
 
-    apf.instrPermit()
+    apf.instr_permit()
     apflog("Starting the main watcher." ,echo=True)
     mstart = astropy.time.Time(ktl.read("apftask","master_last_start",binary=True),format='unix')
 
@@ -496,7 +496,7 @@ if __name__ == '__main__':
         apflog(msg, level='Info', echo=True)
 
     # We have finished taking data, and presumably it is the morning.
-    apf.setTeqMode('Morning')
+    apf.set_apfteq_mode('Morning')
     apf.close(force=True)
 
     # Keep a copy of observed_targets around for a bit just in case
@@ -526,7 +526,7 @@ if __name__ == '__main__':
     # 5) Take morning calibrations
     phase_index += 1
     APFTask.phase(parent, possible_phases[phase_index])
-    apf.instrPermit()
+    apf.instr_permit()
     result = apf.calibrate(script=opt.calibrate, time='post')
     if not result:
         apflog("Calibrate Post has failed.", level='warn',echo=True)
@@ -553,7 +553,7 @@ if __name__ == '__main__':
 
     # We have done everything we needed to, so leave
     # the telescope in day mode to allow it to start thermalizing to the next night.
-    apf.setTeqMode('Day')
+    apf.set_apfteq_mode('Day')
 
     # Update the last observation number to account for the morning calibration shots.
 
