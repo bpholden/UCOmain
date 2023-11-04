@@ -182,6 +182,17 @@ def update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None)
 
 
 def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constraints=None):
+    """
+    
+    hour_table = make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constraints=None)
+
+    Makes an hour table from the rank table and the current datetime.
+    Writes it to outfn in outdir.
+    The dt is a datetime object used to compute the length of the night.
+    If hour_constraints is not None, it is a dictionary with keys 'runname' and 'left'
+    which is checked against the default values in the hour table, and the final values
+    are the lesser of the two.
+    """
 
     if not outdir :
         outdir = os.getcwd()
@@ -197,7 +208,7 @@ def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constr
     hour_table = astropy.table.Table([rank_table['sheetn'], \
                                       rank_table['frac']], names=['sheetn','frac'])
 
-    sunset,sunrise = computeSunsetRise(dt,horizon='-9')
+    sunset,sunrise = compute_sunset_rise(dt,horizon='-9')
     if sunrise < sunset:
         sunrise += 86400
     tot = sunrise - sunset
@@ -221,6 +232,16 @@ def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constr
     return hour_table
 
 def find_time_left():
+    """
+    time_left = find_time_left()
+
+    Uses the timereport/time_left command to find the time left each program has.
+    Writes the output to a table and returns it.
+
+    This is slow, so it should only be called once per night. 
+    
+    """
+
     cmd = "/usr/local/lick/bin/timereport/time_left"
     if os.path.exists(cmd):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -253,7 +274,20 @@ def find_time_left():
 
 
 def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None):
+    """
+    make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None)
 
+    Makes a rank table. The sheet_table_name is the name of the sheet which contains the
+    current semester's rank table. 
+    The outfn is the output filename, defaults to rank_table, and the outdir is the output
+    directory, defaults to the current working directory.
+
+    If hour_constraints is not None, it is a dictionary with keys 'runname' and 'left'
+    which is checked against the default values in the hour table, and the final values
+    are the lesser of the two.
+    If hour_constraints is None, calls find_time_left() to get the time left for each program.
+    
+    """
     if not outdir :
         outdir = os.getcwd()
 
@@ -319,8 +353,8 @@ def time_check(star_table, totexptimes, dt):
     time_check - numpy array of booleans
     values are determined by whether or not the target can be observed in the time left
     """
-    maxexptime = computeSunrise(dt,horizon='-9')
-    maxfaintexptime = computeSunrise(dt,horizon='-18')
+    maxexptime = compute_sunrise(dt,horizon='-9')
+    maxfaintexptime = compute_sunrise(dt,horizon='-18')
     if maxexptime < SchedulerConsts.TARGET_EXPOSURE_TIME_MIN:
         maxexptime = SchedulerConsts.TARGET_EXPOSURE_TIME_MIN
         # this will try a target in case we get lucky
@@ -471,7 +505,7 @@ def compute_datetime(ctime):
     '''
     dt = compute_datetime(ctime)
     ctime - can be a float, datetime, or ephem.Date, else UT now is used
-    dt - datetime object
+    dt - datetime object appropriate for ctime.
     '''
     if type(ctime) == float:
         dt = datetime.utcfromtimestamp(int(ctime))
@@ -503,9 +537,9 @@ def make_APF_obs(dt, horizon=str(SchedulerConsts.TARGET_ELEVATION_MIN)):
 
     return apf_obs
 
-def computeSunsetRise(dt, horizon='0'):
+def compute_sunset_rise(dt, horizon='0'):
     '''
-    sunset, sunrise = computeSunsetRise(dt, horizon='0')
+    sunset, sunrise = compute_sunset_rise(dt, horizon='0')
     computes time in seconds before sunset
     '''
     apf_obs = make_APF_obs(dt, horizon=horizon)
@@ -518,20 +552,20 @@ def computeSunsetRise(dt, horizon='0'):
     sunrise *= 86400.0 # convert to seconds
     return sunset, sunrise
 
-def computeSunset(dt, horizon='0'):
+def compute_sunset(dt, horizon='0'):
     ''' 
-    sunset = computeSunset(dt, horizon='0')
-    helper to compute just sunset, calls computeSunsetRise
+    sunset = compute_sunset(dt, horizon='0')
+    helper to compute just sunset, calls compute_sunset_rise
     '''
-    sunset, _ = computeSunsetRise(dt, horizon=horizon)
+    sunset, _ = compute_sunset_rise(dt, horizon=horizon)
     return sunset
 
-def computeSunrise(dt, horizon='0'):
+def compute_sunrise(dt, horizon='0'):
     '''
-    sunrise = computeSunrise(dt, horizon='0')
-    helper to compute just sunrise, calls computeSunsetRise
+    sunrise = compute_sunrise(dt, horizon='0')
+    helper to compute just sunrise, calls compute_sunset_rise
     '''
-    _, sunrise = computeSunsetRise(dt, horizon=horizon)
+    _, sunrise = compute_sunset_rise(dt, horizon=horizon)
     return sunrise
 
 
@@ -589,6 +623,13 @@ def template_conditions(moon, seeing, slowdown):
         return False
 
 def find_closest(ras, decs, ra, dec):
+    """
+    find_closest(ras, decs, ra, dec)
+
+    Finds the closest index in ras and decs to ra and dec.
+    Does not do spherical trig, just a simple distance calculation.
+    
+    """
 
     distances = np.sqrt((ra - ras)**2 + (dec - decs)**2)
 
@@ -597,7 +638,12 @@ def find_closest(ras, decs, ra, dec):
     return min_ind
 
 def num_template_exp(vmag):
+    """
+    num_template_exp(vmag)
 
+    Returns the number of exposures for a template observation.
+    
+    """
     count = 7
 
     if vmag > 10:
@@ -610,6 +656,12 @@ def num_template_exp(vmag):
     return count
 
 def enough_time_templates(star_table, stars, idx, apf_obs, dt):
+    """
+    enough_time_templates(star_table, stars, idx, apf_obs, dt)
+
+    Returns True if there is enough time to observe the template for the star at index idx.
+    
+    """
 
     count = num_template_exp(star_table['Vmag'][idx])
 
@@ -617,7 +669,7 @@ def enough_time_templates(star_table, stars, idx, apf_obs, dt):
 
     tot_time += 210 + (2*40 + 40*(star_table['nexp'][idx]-1)) + 2400 # two B star exposures + three 70 second acquisitions and the actual observation readout times
     vis, star_elevations, scaled_els = Visible.visible(apf_obs, [stars[idx]], [tot_time])
-    time_left_before_sunrise = computeSunrise(dt, horizon='-18')
+    time_left_before_sunrise = compute_sunrise(dt, horizon='-18')
 
     try:
         apflog("enough_time_templates(): time for obs= %.1f  time until sunrise= %.1f " % (tot_time, time_left_before_sunrise),echo=True)
@@ -631,6 +683,12 @@ def enough_time_templates(star_table, stars, idx, apf_obs, dt):
 
 
 def find_Bstars(star_table,idx, bstars):
+    """
+    find_Bstars(star_table,idx, bstars)
+
+    Finds the B stars in the star_table that are close to the star at index idx.
+    
+    """
 
     near_idx = find_closest(star_table['ra'][bstars], star_table['dec'][bstars],star_table['ra'][idx], star_table['dec'][idx])
 
@@ -641,6 +699,14 @@ def find_Bstars(star_table,idx, bstars):
 
 
 def make_obs_block(star_table, idx, dt, focval):
+    """
+    make_obs_block(star_table, idx, dt, focval)
+
+    Makes an observation block for the star at index idx in the star_table.
+    This is a list of scriptobs lines but for the improved version of 
+    scriptobs that allows new modes which is currently not in use.
+    
+    """
 
     rv = []
 
@@ -695,6 +761,12 @@ def make_obs_block(star_table, idx, dt, focval):
     return rv
 
 def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode=''):
+    """
+    make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode='')
+
+    Makes a dictionary with the information needed to observe the star at index idx in the star_table.
+    
+    """
     res = dict()
 
     res['RA'] = stars[idx].a_ra
@@ -741,7 +813,14 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
     return res
 
 def last_attempted():
+    """
+    last_attempted()
 
+    Returns the last object attempted to be observed
+    if the observation failed.
+    If it cannot read the keyword, returns None.
+    
+    """
     failed_obs = None
 
     try:
@@ -782,6 +861,13 @@ def behind_moon(moon,ras,decs):
     return moon_check
 
 def config_defaults(owner):
+    """
+    config = config_defaults(owner)
+
+    Returns a dictionary with the default values for the configuration for
+    the sheet parser. 
+    
+    """
     config = dict()
     config['I2'] = 'Y'
     config['decker'] = 'W'
@@ -800,7 +886,15 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
                 outfn="googledex.dat", toofn="too.dat", \
                 outdir=None, focval=0, inst='', \
                 rank_sheetn='rank_table', delta_t=0):
-    """ Determine the best target to observe for the given input.
+    """ 
+    
+    getNext(ctime, seeing, slowdown, bstar=False, template=False, \
+                sheetns=["RECUR_A100",], owner='public', \
+                outfn="googledex.dat", toofn="too.dat", \
+                outdir=None, focval=0, inst='', \
+                rank_sheetn='rank_table', delta_t=0)
+
+    Determine the best target to observe for the given input.
         Takes the time, seeing, and slowdown factor.
         Returns a dict with target RA, DEC, Total Exposure time, and scritobs line
     """
