@@ -27,8 +27,8 @@ FOCUSTIME = 3600. # minimum time before checking telescope focus
 TEMP_LIMIT = 35. # deg F at the APF
 wxtimeout = timedelta(seconds=1800)
 SUNEL_HOR = -3.2
-DEWARMAX = 8650
-DEWARMIN = 8350
+DEWARMAX = 8600
+DEWARMIN = 8300
 TELFOCUSMIN = -0.00096
 TELFOCUSMAX = -0.00060
 #TELFOCUSTYP = -0.83529
