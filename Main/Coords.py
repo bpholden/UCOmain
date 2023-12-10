@@ -1,8 +1,16 @@
 import numpy as np
 
 def make_strs(deg,mn,sec,neg=False):
+    """
+    make_strs(deg,mn,sec,neg=False)
 
-        
+    Given degrees, minutes, seconds, and a boolean indicating if the value is negative, return
+    a tuple of strings representing the values.  The strings are formatted as follows:
+    deg: "%d"
+    mn: "%d"
+    sec: "%.4f"
+    """
+
     sdeg = "%d" % (deg)
     smn = "%d" % (abs(mn))
     ssec = "%.4f" % (abs(sec))
@@ -26,7 +34,7 @@ def get_RA_rad(hr, mn, sec):
         ra_hours *= 15 * np.pi/180.0
 
         shr, smn, ssec = make_strs(hr,mn,sec)
-        
+
         return ra_hours, shr, smn, ssec
     except:
         return rv
