@@ -466,7 +466,7 @@ class Observe(threading.Thread):
             mstr = "Open at %s" % (when)
             APFTask.set(self.task, suffix="MESSAGE", value=mstr, wait=False)
 
-            result = self.apf.ucamStatus()
+            result = self.apf.ucam_status()
             if result is False:
                 apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
             else:
