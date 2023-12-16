@@ -945,8 +945,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     final_priorities = compute_priorities(star_table,dt,
                                              rank_table=rank_table,
-                                             hour_table=hour_table,
-                                             observed=observed)
+                                             hour_table=hour_table)
 
     try:
         pri = max(final_priorities[available])
