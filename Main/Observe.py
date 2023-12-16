@@ -403,8 +403,10 @@ class Observe(threading.Thread):
             self.check_files()
 
             self.target = ds.getNext(time.time(), seeing, slowdown, bstar=self.obsBstar, \
-                                         sheetns=self.sheetn, owner=self.owner, template=self.doTemp, \
-                                         focval=self.focval, rank_sheetn=self.rank_tablen, delta_t=delta_t)
+                                         sheetns=self.sheetn, owner=self.owner,  \
+                                         template=self.doTemp, focval=self.focval, \
+                                         rank_sheetn=self.rank_tablen,\
+                                         start_time=self.starttime)
 
             if self.target is None:
                 apflog("No acceptable target was found. Since there does not seem to be anything to observe, %s will now shut down." % (self.name), echo=True)

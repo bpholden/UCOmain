@@ -43,9 +43,9 @@ def zero_last_objs_attempted():
     last_objs_attempted = []
     return
 
-def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None):
+def compute_priorities(star_table, cur_dt, hour_table=None, rank_table=None):
     """
-    new_pri = compute_priorities(star_table, cur_dt, observed=None, 
+    new_pri = compute_priorities(star_table, cur_dt, 
                                     hour_table=None, rank_table=None)
 
     Computes the priorities for the targets in star_table.
@@ -163,7 +163,9 @@ def update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None)
 
 
 def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constraints=None):
-
+    """
+    make_hour_table
+    """
     if not outdir :
         outdir = os.getcwd()
 
@@ -178,7 +180,7 @@ def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constr
     hour_table = astropy.table.Table([rank_table['sheetn'], \
                                       rank_table['frac']], names=['sheetn','frac'])
 
-    sunset,sunrise = computeSunsetRise(dt,horizon='-9')
+    sunset,sunrise = compute_sunset_rise(dt,horizon='-9')
     if sunrise < sunset:
         sunrise += 86400
     tot = sunrise - sunset
@@ -202,6 +204,9 @@ def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constr
     return hour_table
 
 def find_time_left():
+    """
+    find_time_left()
+    """
     cmd = "/usr/local/lick/bin/timereport/time_left"
     if os.path.exists(cmd):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -234,7 +239,9 @@ def find_time_left():
 
 
 def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None):
-
+    """
+    make_rank_table()
+    """
     if not outdir :
         outdir = os.getcwd()
 
@@ -292,7 +299,7 @@ def tot_exp_times(star_table, targ_num):
 
     return totexptimes
 
-def time_check(star_table, totexptimes, dt):
+def time_check(star_table, totexptimes, dt, start_time=None):
     """ time_check = time_check(star_table, totexptimes, dt, hour_table)
     star_table - astropy table of targets
     totexptimes - numpy array of total exposure times
@@ -300,8 +307,13 @@ def time_check(star_table, totexptimes, dt):
     time_check - numpy array of booleans
     values are determined by whether or not the target can be observed in the time left
     """
-    maxexptime = computeSunrise(dt,horizon='-9')
-    maxfaintexptime = computeSunrise(dt,horizon='-18')
+    maxexptime = compute_sunrise(dt,horizon='-9')
+    maxfaintexptime = compute_sunrise(dt,horizon='-18')
+
+    if start_time is not None:
+        maxexptime = start_time - time.time()
+        maxfaintexptime = start_time - time.time()
+
     if maxexptime < SchedulerConsts.TARGET_EXPOSURE_TIME_MIN:
         maxexptime = SchedulerConsts.TARGET_EXPOSURE_TIME_MIN
         # this will try a target in case we get lucky
@@ -484,9 +496,9 @@ def make_APF_obs(dt, horizon=str(SchedulerConsts.TARGET_ELEVATION_MIN)):
 
     return apf_obs
 
-def computeSunsetRise(dt, horizon='0'):
+def compute_sunset_rise(dt, horizon='0'):
     '''
-    sunset, sunrise = computeSunsetRise(dt, horizon='0')
+    sunset, sunrise = compute_sunset_rise(dt, horizon='0')
     computes time in seconds before sunset
     '''
     apf_obs = make_APF_obs(dt, horizon=horizon)
@@ -499,25 +511,25 @@ def computeSunsetRise(dt, horizon='0'):
     sunrise *= 86400.0 # convert to seconds
     return sunset, sunrise
 
-def computeSunset(dt, horizon='0'):
+def compute_sunset(dt, horizon='0'):
     ''' 
-    sunset = computeSunset(dt, horizon='0')
-    helper to compute just sunset, calls computeSunsetRise
+    sunset = compute_sunset(dt, horizon='0')
+    helper to compute just sunset, calls compute_sunset_rise
     '''
-    sunset, _ = computeSunsetRise(dt, horizon=horizon)
+    sunset, _ = compute_sunset_rise(dt, horizon=horizon)
     return sunset
 
-def computeSunrise(dt, horizon='0'):
+def compute_sunrise(dt, horizon='0'):
     '''
-    sunrise = computeSunrise(dt, horizon='0')
-    helper to compute just sunrise, calls computeSunsetRise
+    sunrise = compute_sunrise(dt, horizon='0')
+    helper to compute just sunrise, calls compute_sunset_rise
     '''
-    _, sunrise = computeSunsetRise(dt, horizon=horizon)
+    _, sunrise = compute_sunset_rise(dt, horizon=horizon)
     return sunrise
 
 
-def conditionCuts(moon, seeing, slowdown, star_table):
-    """ available = conditionCuts(moon, seeing, slowdown, star_table)
+def condition_cuts(moon, seeing, slowdown, star_table):
+    """ available = condition_cuts(moon, seeing, slowdown, star_table)
 
     Checks if columns are in the star_table, then cuts on those, returns a boolean numpy array
 
@@ -598,7 +610,7 @@ def enough_time_templates(star_table, stars, idx, apf_obs, dt):
 
     tot_time += 210 + (2*40 + 40*(star_table['nexp'][idx]-1)) + 2400 # two B star exposures + three 70 second acquisitions and the actual observation readout times
     vis, star_elevations, scaled_els = Visible.visible(apf_obs, [stars[idx]], [tot_time])
-    time_left_before_sunrise = computeSunrise(dt, horizon='-18')
+    time_left_before_sunrise = compute_sunrise(dt, horizon='-18')
 
     try:
         apflog("enough_time_templates(): time for obs= %.1f  time until sunrise= %.1f " % (tot_time, time_left_before_sunrise),echo=True)
@@ -780,7 +792,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
                 sheetns=["RECUR_A100",], owner='public', \
                 outfn="googledex.dat", toofn="too.dat", \
                 outdir=None, focval=0, inst='', \
-                rank_sheetn='rank_table', delta_t=0):
+                rank_sheetn='rank_table', start_time=None):
     """ Determine the best target to observe for the given input.
         Takes the time, seeing, and slowdown factor.
         Returns a dict with target RA, DEC, Total Exposure time, and scritobs line
@@ -877,7 +889,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     apflog(log_str, echo=True)
 
     # other condition cuts (seeing, transparency, moon phase)
-    cuts = conditionCuts(moon, seeing, slowdown, star_table)
+    cuts = condition_cuts(moon, seeing, slowdown, star_table)
     available = available & cuts
 
     if len(last_objs_attempted)>0:
@@ -897,7 +909,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     # Is the exposure time too long?
     apflog("getNext(): Removing really long exposures", echo=True)
-    time_good = time_check(star_table, totexptimes, dt)
+    time_good = time_check(star_table, totexptimes, dt, start_time=start_time)
 
     available = available & time_good
     if np.any(available) is False:
@@ -1030,12 +1042,11 @@ if __name__ == '__main__':
     while len(result['SCRIPTOBS']) > 0:
         ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
-    delta_t = 400
-    starttime += delta_t
+    
     for i in range(5):
 
         result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
-                         template=True, rank_sheetn=RANK_TABLEN, delta_t=delta_t)
+                         template=True, rank_sheetn=RANK_TABLEN)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
         if result is None:
@@ -1047,7 +1058,6 @@ if __name__ == '__main__':
                 ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
             ot.close()
             starttime += result["TOTEXP_TIME"]
-            delta_t += result["TOTEXP_TIME"]
 
     print("Done")
     ot.close()
@@ -1058,7 +1068,7 @@ if __name__ == '__main__':
     except:
         pass
     result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
-                     template=True, rank_sheetn=RANK_TABLEN, delta_t=delta_t)
+                     template=True, rank_sheetn=RANK_TABLEN)
 
 
     print("Testing templates")
