@@ -230,7 +230,7 @@ class Observe(threading.Thread):
             self.apf.close(force=True)
             return False
 
-    def checkFiles(self, outfn='googledex.dat'):
+    def check_files(self, outfn='googledex.dat'):
         outdir = os.getcwd()
         fullpath = os.path.join(outdir, outfn)
         if os.path.isfile(fullpath):
@@ -262,7 +262,8 @@ class Observe(threading.Thread):
 
 
     ####
-    # run is the main event loop, for historical reasons it has its own functions that are local in scope
+    # run is the main event loop, for historical reasons 
+    # it has its own functions that are local in scope
     ####
 
 
@@ -399,8 +400,8 @@ class Observe(threading.Thread):
                     self.scriptobs.stdin.write(curstr + '\n')
                     return
 
-            self.checkFiles()
-            delta_t = time.time() - self.apf.lastopen.binary
+            self.check_files()
+
             self.target = ds.getNext(time.time(), seeing, slowdown, bstar=self.obsBstar, \
                                          sheetns=self.sheetn, owner=self.owner, template=self.doTemp, \
                                          focval=self.focval, rank_sheetn=self.rank_tablen, delta_t=delta_t)
@@ -540,7 +541,7 @@ class Observe(threading.Thread):
                 rv = False
             return rv
 
-        def startTelescope():
+        def start_telescope():
             '''This starts up the telescope if the Az drive is disabled or the E-Stop State is True
             If the telescope is just disabled, the start up procedure for a new version of scriptobs should clear that state.
             '''
@@ -695,7 +696,6 @@ class Observe(threading.Thread):
             cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
             focusing = (self.apf.focussta['binary'] < 3)
-            calibrating = (self.apf.calsta['binary'] < 3)
 
             # Check and close for weather
             
@@ -775,7 +775,7 @@ class Observe(threading.Thread):
             if float(cursunel) >= sunel_lim and running:
                 APFTask.set(self.task, suffix="MESSAGE", value="Last call", wait=False)
                 if self.scriptobs is None:
-                    apflog("Robot claims to be running, but no self.scriptobs instance can be found. Instead calling kill_robot().", echo=True)
+                    apflog("Robot claims to be running, but no scriptobs instance can be found. Instead calling kill_robot().", echo=True)
                     self.apf.kill_robot()
                 else:
                     self.scriptobs.stdin.close()
@@ -843,7 +843,7 @@ class Observe(threading.Thread):
 
                     else:
                         success = True
-                    if success == False:
+                    if success is False:
                         self.apf.close()
                         if self.apf.openOK:
                             apflog("Error: Cannot open the dome", echo=True, level='error')
@@ -896,7 +896,7 @@ class Observe(threading.Thread):
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
                 
                 result = self.apf.enable_obs_inst()
-                if result == False:
+                if result is False:
                     apflog("Cannot enable instrument", level='warn', echo=True)
                     result = self.apf.enable_obs_inst()
                     if not result:
@@ -908,9 +908,9 @@ class Observe(threading.Thread):
                 rv = checkTelState()
                 if rv is False:
                     # this means that the telescope is not slewing and is not tracking
-                    rv = startTelescope()
+                    rv = start_telescope()
                     # if needed, will power up the Az drive and clear the estop state
-                    if rv == False:
+                    if rv is False:
                         apflog("Telescope stopped and cannot be restarted", level='Alert', echo=True)
                         closing(force=True)
 
