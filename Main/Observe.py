@@ -246,8 +246,8 @@ class Observe(threading.Thread):
 
         return
 
-    def shouldStartList(self):
-        """ Observe.shouldStartList()
+    def should_start_list(self):
+        """ Observe.should_start_list()
             should we start a fixed observing list or not? true if start time is None or if w/in + 1 hour - 0.5 hours of start time
         """
         if self.starttime == None:
@@ -624,7 +624,7 @@ class Observe(threading.Thread):
                 return
 
             apflog("Starting an instance of scriptobs", echo=True)
-            if self.fixedList is not None and self.shouldStartList():
+            if self.fixedList is not None and self.should_start_list():
                 # We wish to observe a fixed target list, in it's original order
                 if not os.path.exists(self.fixedList):
                     apflog("Error: starlist %s does not exist" % (self.fixedList), level="error")
@@ -747,7 +747,7 @@ class Observe(threading.Thread):
             # If scriptobs is running and waiting for input, give it a target
             if running and (float(cursunel) < sunel_lim) and (self.apf.sop.read().strip() == "Input"):
                 apflog("Entering target section", echo=True)
-                if self.fixedList is None or not self.shouldStartList():
+                if self.fixedList is None or not self.should_start_list():
                     self.lastObsSuccess = self.checkObsSuccess()
                     self.checkStar(haveobserved)
 
@@ -757,7 +757,7 @@ class Observe(threading.Thread):
                     APFTask.waitfor(self.task, True, timeout=15)
 
                     haveobserved = True
-                elif self.starttime is not None and self.shouldStartList():
+                elif self.starttime is not None and self.should_start_list():
                     apflog("Observing a fixed list called %s" % (self.fixedList), echo=True)
                     tot = readStarlistFile()
                     if tot == 0:
