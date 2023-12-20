@@ -255,7 +255,7 @@ class Observe(threading.Thread):
         ct = time.time()
         if ct > self.starttime and ct - self.starttime < 3600:
             return True
-        if ct < self.starttime and self.starttime - ct < 1800:
+        if ct < self.starttime and self.starttime - ct < 600:
             return True
         return False
 
