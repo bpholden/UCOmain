@@ -350,10 +350,14 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
 
     full_codex = retrieve_codex(req_cols, sheetns=sheetns, certificate=certificate, sleep=sleep)
 
+    # the assumption is that the first row is the column names
     col_names = full_codex[0]
     codex = full_codex[1:]
 
+    # find the indices of the columns we need, returns a dictionary
+    # of indices for each column name
     didx = find_columns(col_names,req_cols)
+    # Build the star table to return to the scheduler
     star_table = init_star_table(req_cols)
 
     if hour_constraints is not None:
@@ -361,27 +365,38 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
     else:
         done_names = []
 
-    # Build the star table to return to
+    # Go line by line through the list of lists that represents the google sheet
     for ls in codex:
         if ls[0] == '':
             continue
+        # Get the priority, we get this early to avoid parsing the rest of the line
+        # if the priority is too low
         if "pri" in didx and ls[didx["pri"]] is not None:
             apfpri = int_default(ls[didx["pri"]],default=-1)
         else:
             apfpri = int_default(ls[didx["APFpri"]],default=-1)
 
+        # if the nobs >= total obs, we are done with this target
         nobs = int_default(ls[didx["Nobs"]])
         totobs = int_default(ls[didx["Total Obs"]],default=-1)
+
+        # if the sheet name is in the done list, we will skip this target
         csheetn = check_flag("sheetn",didx,ls,"\A(.*)",'RECUR_A100')
         if 'owner' in didx:
             owner = check_flag("owner",didx,ls,"\A(.*)",csheetn)
+
+        # these are all the conditions that will cause us to skip this target    
         if totobs > 0 and nobs >= totobs: continue
         if apfpri < prilim: continue
         if csheetn in done_names: continue
+
         if apfpri > MAX_PRI: apfpri = MAX_PRI
 
-
+        # star names that are allowed in Google sheets may not work 
+        # in the actual star list sent to scroptobs
+        # so we do some cleanup here
         name = parse_starname(ls[didx["Star Name"]])
+
         # Get the RA
         raval, rahr, ramin, rasec = Coords.get_RA_rad(ls[didx["RA hr"]], ls[didx["RA min"]], ls[didx["RA sec"]])
         if raval is None:
@@ -444,6 +459,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         else:
             star_table['nexp'].append(int_default(ls[didx["APFnshots"]], default=1))
 
+        # most programs do not have binning, so we default to 1,1
         if "binning" in didx and ls[didx["binning"]] is not None:
             binp = int_default(ls[didx["binning"]], default=1)
             if binp != 1 and binp != 2 and binp != 4 and binp != 8:
@@ -453,28 +469,38 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         else:
             star_table['binning'].append("1,1")
 
+        # some targets want dark time, but many targets do not
+        # the external representation is the number of days new, which is
+        # is what the coversheet has, internal representation is the fraction
+        # of the moon that is illuminated
         if "DaysNew" in didx and ls[didx["DaysNew"]] is not None:
             days_from_new = float_default(ls[didx['DaysNew']], default=15.0)
             star_table['moon'].append(days_from_new / 15.0)
         else:
             star_table['moon'].append(1.0)
 
-        # scheduler specific
+        # scheduler specific, cadence is the time between exposures
+        # in nights, there are two different allowed column headings
         if "cad" in didx and ls[didx['cad']] is not None:
             cad_value = float_default(ls[didx["cad"]], default=0.7)
         else:
             cad_value = float_default(ls[didx["APFcad"]], default=0.7)
+        
         if cad_value > 0:
             star_table['cad'].append(cad_value)
         else:
             star_table['cad'].append(0.7)
 
+        # night_cad is how often per night a target can be observed
+        # night_obs is how many times it has been observed in the current night
         night_cad = float_default(ls[didx["night_cad"]], default=-1.0)
         if night_cad > 0:
             night_cad /= 60*24
         star_table['night_cad'].append(night_cad)
         star_table['night_obs'].append(0)
 
+        # cal_star and need_cal are flags for whether or not a target is a calibrator
+        # or if the star needs to have a calibrator observed the same night
         cal_star_val = check_flag("cal_star",didx,ls,"\A(y|Y)","N")
         need_cal_val = check_flag("need_cal",didx,ls,"\A(y|Y)","N")
         star_table['cal_star'].append(cal_star_val.upper())
@@ -490,7 +516,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
             inval = 1
         star_table['B-V'].append(inval)
 
-        # Nobs
+        # Nobs - number of observations
         star_table['nobs'].append(nobs)
 
         # Total Obs
@@ -499,12 +525,14 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         else:
             star_table['totobs'].append(0)
 
+        # another case where the column name is not consistent with the scriptobs name
         check = check_flag("Close Companion", didx, ls, r"\A(y|Y)","")
         if check == "Y" or check == "y" :
             star_table['do'].append(check)
         else:
             star_table['do'].append("")
 
+        # details about the spectrometer configuration
         decker_name = check_flag("decker", didx, ls, r"\A(W|N|T|S|O|K|L|M|B)", config["decker"])
         star_table['decker'].append(decker_name)
         i2select = check_flag("I2", didx, ls, r"\A(n|N)", config["I2"])
@@ -518,6 +546,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
 
         # need to check raoff and decoff values and alarm on failure
 
+        # a Bstar is a specific calibration star, so has its own flag
         if 'Bstar' in didx:
             star_table['Bstar'].append(check_flag('Bstar', didx, ls, "(Y|y)", 'N'))
             star_table['sheetn'].append(csheetn)
