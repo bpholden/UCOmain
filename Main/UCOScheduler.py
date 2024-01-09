@@ -51,11 +51,12 @@ def need_cal_star(star_table, observed, priorities):
     """
 
     # this is kind of clunky
+    cal_stars = np.zeros_like(priorities, dtype=bool)
     for sheetn in observed.sheetns:
         if np.any(star_table['need_cal'][star_table['sheetn'] == sheetn] == "Y"):
             # need to check if we need a cal, ie. the program that needs cals had targets
             # observed
-            cal_stars = star_table['cal_star'] == "Y"
+            cal_stars = cal_stars or (star_table['cal_star'] == "Y") and (star_table['sheetn'] == sheetn)
             priorities[cal_stars] = np.max(priorities)
 
     return priorities
