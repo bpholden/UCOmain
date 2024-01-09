@@ -56,8 +56,16 @@ def need_cal_star(star_table, observed, priorities):
         if np.any(star_table['need_cal'][star_table['sheetn'] == sheetn] == "Y"):
             # need to check if we need a cal, ie. the program that needs cals had targets
             # observed
-            cal_stars = cal_stars or (star_table['cal_star'] == "Y") and (star_table['sheetn'] == sheetn)
-            priorities[cal_stars] = np.max(priorities)
+            notdone = True
+            cal_star_names = star_table['name'][star_table['cal_star'][star_table['sheetn'] == sheetn]]
+            for cal_star_name in cal_star_names:
+                if cal_star_name in observed.names:
+                    notdone = False
+            if notdone:
+                cal_stars = cal_stars or (star_table['sheetn'] == sheetn)
+
+    if np.any(cal_stars):
+        priorities[cal_stars] = np.max(priorities)
 
     return priorities
 
@@ -1123,7 +1131,7 @@ if __name__ == '__main__':
     else:
         hour_constraints = None
 
-    RANK_TABLEN='2023A_ranks'
+    RANK_TABLEN='2024A_ranks'
     trank_table = make_rank_table(RANK_TABLEN, hour_constraints=hour_constraints)
 
     thour_table = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
