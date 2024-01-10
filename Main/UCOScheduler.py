@@ -57,13 +57,13 @@ def need_cal_star(star_table, observed, priorities):
             # need to check if we need a cal, ie. the program that needs cals had targets
             # observed
             notdone = True
-            cal_star_inds = (star_table['cal_star'] == 'Y') and (star_table['sheetn'] == sheetn)
+            cal_star_inds = (star_table['cal_star'] == 'Y') & (star_table['sheetn'] == sheetn)
             cal_star_names = star_table['name'][cal_star_inds]
             for cal_star_name in cal_star_names:
                 if cal_star_name in observed.names:
                     notdone = False
             if notdone:
-                cal_stars = cal_stars or (star_table['sheetn'] == sheetn)
+                cal_stars = cal_stars | (star_table['sheetn'] == sheetn)
 
     if np.any(cal_stars):
         priorities[cal_stars] = np.max(priorities)
