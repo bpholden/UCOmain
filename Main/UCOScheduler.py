@@ -63,7 +63,7 @@ def need_cal_star(star_table, observed, priorities):
                 if cal_star_name in observed.names:
                     notdone = False
             if notdone:
-                cal_stars = cal_stars | (star_table['sheetn'] == sheetn)
+                cal_stars = cal_stars | cal_star_inds
 
     if np.any(cal_stars):
         priorities[cal_stars] = np.max(priorities)
