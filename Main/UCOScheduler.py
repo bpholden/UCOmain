@@ -66,7 +66,7 @@ def need_cal_star(star_table, observed, priorities):
                 cal_stars = cal_stars | cal_star_inds
 
     if np.any(cal_stars):
-        priorities[cal_stars] = np.max(priorities)
+        priorities[cal_stars] = np.max(priorities) + 1
 
     return priorities
 
