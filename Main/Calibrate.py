@@ -46,17 +46,19 @@ class Calibrate(threading.Thread):
 
 
     def test_bias(self):
-
+        '''
+        test_bias() - Take a single bias frame to test the UCAM
+        '''
         if self.test:
             apflog("Would have taken a single bias frame using APFControl.test_bias()",echo=True)
         else:
             result = self.apf.test_bias()
             if result == None:
                 apflog("Focusinstr or calibrate or scriptobs are running?!", level='Error', echo=True)
-            if result == False:
+            if result is False:
                 # this is a UCAM problem
                 rv = self.apf.ucam_restart()
-                if rv == False:
+                if rv is False:
                     apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
 
         result = self.apf.ucam_status()
@@ -67,7 +69,9 @@ class Calibrate(threading.Thread):
 
 
     def set_focus_defaults(self):
-
+        '''
+        set_focus_defaults() - Set the default values for the focusinstr keywords
+        '''
         step_size = ktl.read('apftask', 'focusinstr_step_size', binary=True)
 
         if step_size == 0:
@@ -88,7 +92,9 @@ class Calibrate(threading.Thread):
         return
 
     def focus_instr(self,setup=True):
-
+        '''
+        focus_instr() - Run the focusinstr script
+        '''
         self.set_focus_defaults()
 
         if self.test:
@@ -109,7 +115,9 @@ class Calibrate(threading.Thread):
         return result
 
     def calibrate(self,phase):
-
+        '''
+        calibrate() - Run the calibrate script
+        '''
         eostele = ktl.Service('eostele')
         sunel = eostele["sunel"].read()
         sunel = float(sunel)
@@ -151,6 +159,9 @@ class Calibrate(threading.Thread):
 
 
     def run(self):
+        '''
+        run() - Run the calibration thread
+        '''
 
         apflog("Will start with phase %d %s after %.1f seconds" % (self.phase_index,self.possible_phases[self.phase_index],self.wait_time), echo=True)
 
@@ -196,7 +207,9 @@ class Calibrate(threading.Thread):
 
 
 if __name__ == "__main__":
-
+    '''
+    basic functionality test
+    '''
     task = 'example'
     APFTask.establish(task, os.getpid())
     apf = APFControl.APF(task=task,test=True)
