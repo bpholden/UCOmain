@@ -301,9 +301,6 @@ class APF:
         self.metxfersta.monitor()
         self.metxfersta.callback(self.apftaskMon)
 
-        self.calsta.monitor()
-        self.focussta.monitor()
-
         self.lastopen.monitor()
 
         # Grab some initial values for the state of the telescope
