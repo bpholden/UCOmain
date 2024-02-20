@@ -161,6 +161,11 @@ class APF:
     metxfersta   = robot['METSXFER_STATUS']
     calsta       = robot['CALIBRATE_STATUS']
     focussta     = robot['FOCUSINSTR_STATUS']
+    slewsta      = robot['SLEW_STATUS']
+    opensta      = robot['OPENUP_STATUS']
+    closesta     = robot['CLOSEUP_STATUS']
+    shuttersta   = robot['SHUTTER_STATUS']
+    focustelsta  = robot['FOCUSTEL_STATUS']
     ucamcmd      = robot['UCAMLAUNCHER_UCAM_COMMAND']
     lastopen     = robot['OPENUP_LAST_SUCCESS']
     msg = ""
@@ -273,6 +278,12 @@ class APF:
         self.dewpt.monitor()
         self.dewpt.callback(self.dewPtMon)
 
+        for kw in (self.slewsta, self.calsta, self.focussta, \
+                   self.shuttersta, self.opensta, self.closesta,\
+                    self.focustelsta):
+            kw.monitor()
+            kw.callback(self.apftask_status_mon)
+
         self.counts.monitor()
         self.teqmode.monitor()
         self.vmag.monitor()
@@ -299,9 +310,6 @@ class APF:
 
         self.metxfersta.monitor()
         self.metxfersta.callback(self.apftaskMon)
-
-        self.calsta.monitor()
-        self.focussta.monitor()
 
         self.lastopen.monitor()
 
@@ -618,7 +626,28 @@ class APF:
             # variables are serviceSTA and service is
             self.restart(name,host)
         return
+    
+    def apftask_status_mon(self,sta):
+        if sta['populated'] == False:
+            return
+        try:
+            sta_val = sta['binary']
+        except:
+            return
 
+        if sta_val >= 3:
+            # exited
+            nmsta = sta['name'].lower()
+            name, _ = nmsta.split("_")
+            pid = ktl.read('apftask',name + "_PID", binary=True)
+            if pid > 0:
+                # we have a contradiction
+                # the process is not running but the pid is stale
+                try:
+                    ktl.write('apftask',name + "_PS_STATE", '')
+                except:
+                    apflog("Cannot write to apftask.%s_PS_STATE" % (name),level='error',echo=True)
+                    pass
     ## end of callbacks for monitoring stuff
 
 
