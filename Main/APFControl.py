@@ -166,7 +166,7 @@ class APF:
     slewsta      = robot['SLEW_STATUS']
     opensta      = robot['OPENUP_STATUS']
     closesta     = robot['CLOSEUP_STATUS']
-    shuttersta   = robot['SHUTTER_STATUS']
+    shuttersta   = robot['SHUTTERS_STATUS']
     focustelsta  = robot['FOCUSTEL_STATUS']
 
     ucamcmd      = robot['UCAMLAUNCHER_UCAM_COMMAND']
