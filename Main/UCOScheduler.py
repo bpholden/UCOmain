@@ -788,7 +788,7 @@ def config_defaults(owner):
 
     return config
 
-def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
+def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
                 sheetns=["RECUR_A100",], owner='public', \
                 outfn="googledex.dat", toofn="too.dat", \
                 outdir=None, focval=0, inst='', \
@@ -807,10 +807,10 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     config = config_defaults(owner)
 
-    apflog( "getNext(): Finding target for time %s" % (dt), echo=True)
+    apflog( "get_next(): Finding target for time %s" % (dt), echo=True)
 
     if slowdown > SchedulerConsts.SLOWDOWN_MAX:
-        log_str = "getNext(): Slowndown value of %f " % (slowdown)
+        log_str = "get_next(): Slowndown value of %f " % (slowdown)
         log_str += "exceeds maximum of %f at time %s" % (SchedulerConsts.SLOWDOWN_MAX, dt)
         apflog(log_str , echo=True)
         return None
@@ -825,7 +825,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
         else:
             ptime = datetime.utcfromtimestamp(int(time.time()))
 
-    apflog("getNext(): Updating star list with previous observations", echo=True)
+    apflog("get_next(): Updating star list with previous observations", echo=True)
     observed, star_table = ParseUCOSched.update_local_starlist(ptime,\
                                                                outfn=outfn, toofn=toofn, \
                                                                 observed_file="observed_targets")
@@ -840,7 +840,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     # Note -- RA and Dec are returned in Radians
 
     if star_table is None:
-        apflog("getNext(): Parsing the star list", echo=True)
+        apflog("get_next(): Parsing the star list", echo=True)
         star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns, \
                                                          outfn=outfn, outdir=outdir, \
                                                             config=config)
@@ -869,11 +869,11 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     do_templates = template and template_conditions(moon, seeing, slowdown)
 
-    apflog("getNext(): Will attempt templates = %s" % str(do_templates) ,echo=True)
+    apflog("get_next(): Will attempt templates = %s" % str(do_templates) ,echo=True)
     # Note which of these are B-Stars for later.
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
 
-    apflog("getNext(): Computing exposure times", echo=True)
+    apflog("get_next(): Computing exposure times", echo=True)
     totexptimes = tot_exp_times(star_table, targ_num)
 
     available = np.ones(targ_num, dtype=bool)
@@ -884,7 +884,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     moon_check = behind_moon(moon, star_table['ra'], star_table['dec'])
     available = available & moon_check
-    log_str = "getNext(): Moon visibility check - stars rejected = "
+    log_str = "get_next(): Moon visibility check - stars rejected = "
     log_str += "%s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)]))
     apflog(log_str, echo=True)
 
@@ -899,25 +899,25 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     if bstar:
         # We just need a B star
-        apflog("getNext(): Selecting B stars", echo=True)
+        apflog("get_next(): Selecting B stars", echo=True)
         available = available & bstars
         shiftwest = False
     else:
-        apflog("getNext(): Culling B stars", echo=True)
+        apflog("get_next(): Culling B stars", echo=True)
         available = available & np.logical_not(bstars)
         shiftwest = True
 
     # Is the exposure time too long?
-    apflog("getNext(): Removing really long exposures", echo=True)
+    apflog("get_next(): Removing really long exposures", echo=True)
     time_good = time_check(star_table, totexptimes, dt, start_time=start_time)
 
     available = available & time_good
     if np.any(available) is False:
-        apflog( "getNext(): Not enough time left to observe any targets", level="error", echo=True)
+        apflog( "get_next(): Not enough time left to observe any targets", level="error", echo=True)
         return None
 
 
-    apflog("getNext(): Computing star elevations",echo=True)
+    apflog("get_next(): Computing star elevations",echo=True)
     fstars = [s for s,_ in zip(stars,available) if _ ]
     vis, star_elevations, scaled_els = Visible.visible(apf_obs, fstars, \
                                                        totexptimes[available], shiftwest=shiftwest)
@@ -925,7 +925,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     if len(star_elevations) > 0:
         currently_available[available] = currently_available[available] & vis
     else:
-        apflog( "getNext(): Couldn't find any suitable targets!", level="error", echo=True)
+        apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
         return None
 
     cur_elevations[available] += star_elevations[vis]
@@ -940,7 +940,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
 
     # Now just sort by priority, then cadence. Return top target
     if len(star_table['name'][available]) < 1:
-        apflog( "getNext(): Couldn't find any suitable targets!", level="error", echo=True)
+        apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
         return None
 
     final_priorities = compute_priorities(star_table,dt,
@@ -951,7 +951,7 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
         pri = max(final_priorities[available])
         sort_i = (final_priorities == pri) & available
     except:
-        apflog( "getNext(): Couldn't find any suitable targets!", level="error", echo=True)
+        apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
         return None
 
     if bstar:
@@ -967,15 +967,15 @@ def getNext(ctime, seeing, slowdown, bstar=False, template=False, \
     o_n = star_table['sheetn'][idx]
     p_n = final_priorities[idx]
 
-    apflog("getNext(): selected target %s for program %s at priority %.0f" % (t_n, o_n, p_n) )
-    nmstr= "getNext(): star names %s" % (np.asarray(star_table['name'][sort_i][sort_j]))
-    pristr= "getNext(): star priorities %s" % (np.asarray(final_priorities[sort_i][sort_j]))
-    mxpristr= "getNext(): max priority %d" % (pri)
-    shstr= "getNext(): star sheet names %s" % (np.asarray(star_table['sheetn'][sort_i][sort_j]))
+    apflog("get_next(): selected target %s for program %s at priority %.0f" % (t_n, o_n, p_n) )
+    nmstr= "get_next(): star names %s" % (np.asarray(star_table['name'][sort_i][sort_j]))
+    pristr= "get_next(): star priorities %s" % (np.asarray(final_priorities[sort_i][sort_j]))
+    mxpristr= "get_next(): max priority %d" % (pri)
+    shstr= "get_next(): star sheet names %s" % (np.asarray(star_table['sheetn'][sort_i][sort_j]))
     if bstar:
-        elstr= "getNext(): Bstar current elevations %s" % (cur_elevations[sort_i][sort_j])
+        elstr= "get_next(): Bstar current elevations %s" % (cur_elevations[sort_i][sort_j])
     else:
-        elstr= "getNext(): star scaled elevations %s" % (scaled_elevations[sort_i][sort_j])
+        elstr= "get_next(): star scaled elevations %s" % (scaled_elevations[sort_i][sort_j])
     apflog(nmstr, echo=True)
     apflog(shstr, echo=True)
     apflog(pristr, echo=True)
@@ -1020,7 +1020,7 @@ if __name__ == '__main__':
     else:
         hour_constraints = None
 
-    RANK_TABLEN='2023A_ranks'
+    RANK_TABLEN='2024A_ranks'
     trank_table = make_rank_table(RANK_TABLEN, hour_constraints=hour_constraints)
 
     thour_table = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
@@ -1037,14 +1037,14 @@ if __name__ == '__main__':
     OTFN = "observed_targets"
     ot = open(OTFN, "w")
     starttime = time.time()
-    result = getNext(starttime, 7.99, 0.4, bstar=True, sheetns=tsheet_list, rank_sheetn=RANK_TABLEN)
+    result = get_next(starttime, 7.99, 0.4, bstar=True, sheetns=tsheet_list, rank_sheetn=RANK_TABLEN)
     while len(result['SCRIPTOBS']) > 0:
         ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
     
     for i in range(5):
 
-        result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
+        result = get_next(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
                          template=True, rank_sheetn=RANK_TABLEN)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
@@ -1066,7 +1066,7 @@ if __name__ == '__main__':
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 2, binary=True)
     except:
         pass
-    result = getNext(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
+    result = get_next(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
                      template=True, rank_sheetn=RANK_TABLEN)
 
 

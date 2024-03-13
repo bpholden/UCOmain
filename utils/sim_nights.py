@@ -232,7 +232,7 @@ if __name__ == "__main__":
         observing = True
         while observing:
 
-            result = ds.getNext(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,
+            result = ds.get_next(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,
                                     sheetns=sheetns,outdir=options.outdir,rank_sheetn=options.rank_sheetn)
             if result:
                 if bstar:

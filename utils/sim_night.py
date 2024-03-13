@@ -93,7 +93,7 @@ hour_table = ds.make_hour_table(rank_table,curtime.datetime(),hour_constraints=h
 while observing:
     curtime = ephem.Date(curtime)
 
-    result = ds.getNext(curtime.datetime(), lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,sheetns=sheet_list,outdir=outdir,rank_sheetn=options.rank_sheetn)
+    result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,sheetns=sheet_list,outdir=outdir,rank_sheetn=options.rank_sheetn)
     if result:
         if bstar:
             bstar = False
