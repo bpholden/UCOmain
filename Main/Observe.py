@@ -1,5 +1,6 @@
 from __future__ import print_function
 from datetime import datetime
+import math
 import os
 import os.path
 import shutil
@@ -7,9 +8,6 @@ import re
 import sys
 import threading
 import time
-
-
-import numpy as np
 
 try:
     import ktl
@@ -822,7 +820,7 @@ class Observe(threading.Thread):
                             if not rv:
                                 apflog("evening star targeting and telescope focus did not work", level='warn', echo=True)
 
-                            chk_done = "$eostele.SUNEL < %f" % (SchedulerConsts.SUNEL_STARTLIM*np.pi/180.0)
+                            chk_done = "$eostele.SUNEL < %f" % (SchedulerConsts.SUNEL_STARTLIM*math.pi/180.0)
                             while float(cursunel) > SchedulerConsts.SUNEL_STARTLIM and not rising:
                                 outstr = "Sun is setting and sun at elevation of %.3f" % (float(cursunel))
                                 apflog(outstr, level='info', echo=True)

@@ -4,22 +4,17 @@ from __future__ import print_function
 import argparse
 import atexit
 import functools
-import glob
 import math
 import os
 import os.path
-import pickle
 import re
 import signal
 import sys
-import threading
 import time
 from datetime import datetime, timedelta
-from select import select
 
 import astropy.io.ascii
 import astropy.time
-import numpy as np
 
 # UCSC script for the task that runs everything
 # Monitors and operates the APF for an observing night
@@ -513,7 +508,7 @@ if __name__ == '__main__':
             apflog("Error: Updating the online googledex has failed: %s" % (e), level="error")
         logpush(os.path.join(os.getcwd(),"observed_targets"))
 
-    for fn in ("googledex.dat", "rank_table", "hour_table", "robot.log"):
+    for fn in ("googledex.dat", "rank_table", "hour_table", "robot.log","selected_targets"):
         if os.path.exists(os.path.join(os.getcwd(), fn)):
             logpush(os.path.join(os.getcwd(), fn))
 
