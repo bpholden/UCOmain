@@ -888,18 +888,28 @@ class Observe(threading.Thread):
                 rv = self.check_servos()
 
             # If we are open and scriptobs isn't running, start it up
-            if self.apf.is_ready_observing()[0] and not running and float(cursunel) <= sunel_lim and self.apf.openOK and not focusing:
-                calstat = APFTask.get('CALIBRATE', ['STATUS'])
-                if calstat['STATUS'] in ['Running', 'Pausing', 'Paused']:
+            if self.apf.is_ready_observing()[0] and not running \
+                and float(cursunel) <= sunel_lim and self.apf.openOK and not focusing:
+                rv = APFTask.waitFor(self.task, False,\
+                                      expression="$apftask.CALIBRATE_STATUS == 'Running'",\
+                                          timeout=1)
+                if rv:
                     try:
                         APFTask.abort("CALIBRATE")
                     except ktl.ktlError:
-                        apflog("Error: Cannot abort CALIBRATE", echo=True, level='error')
+                        apflog("Error: Cannot abort CALIBRATE", echo=True, level='warn')
                     except Exception as e:
                         apflog("Error: Cannot abort CALIBRATE: %s" % (e), echo=True, level='error')
+                    rv = APFTask.waitFor(self.task, False,\
+                                          expression="$apftask.CALIBRATE_STATUS != 'Running'",\
+                                              timeout=300)
+                    if rv is False:
+                        apflog("Error: CALIBRATE did not stop", echo=True, level='warn')
+                    else:
+                        apflog("CALIBRATE has stopped", echo=True)
 
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
-                
+
                 result = self.apf.enable_obs_inst()
                 if result is False:
                     apflog("Cannot enable instrument", level='warn', echo=True)
