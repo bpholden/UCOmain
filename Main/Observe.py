@@ -695,10 +695,10 @@ class Observe(threading.Thread):
             _, running = self.apf.find_robot()
             cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
-            focusing = (self.apf.focussta['binary'] < 3)
+            focusing = self.apf.focussta['binary'] < 3
 
             # Check and close for weather
-            
+
             self.bad_weather = self.apf.dewTooClose or not self.apf.openOK \
                 or not self.apf.gcam_power.binary
 
@@ -891,7 +891,12 @@ class Observe(threading.Thread):
             if self.apf.is_ready_observing()[0] and not running and float(cursunel) <= sunel_lim and self.apf.openOK and not focusing:
                 calstat = APFTask.get('CALIBRATE', ['STATUS'])
                 if calstat['STATUS'] in ['Running', 'Pausing', 'Paused']:
-                    APFTask.abort("CALIBRATE")
+                    try:
+                        APFTask.abort("CALIBRATE")
+                    except ktl.ktlError:
+                        apflog("Error: Cannot abort CALIBRATE", echo=True, level='error')
+                    except Exception as e:
+                        apflog("Error: Cannot abort CALIBRATE: %s" % (e), echo=True, level='error')
 
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
                 
