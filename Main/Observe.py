@@ -897,7 +897,8 @@ class Observe(threading.Thread):
                     try:
                         APFTask.abort("CALIBRATE")
                     except ktl.ktlError:
-                        apflog("Error: Cannot abort CALIBRATE", echo=True, level='warn')
+                        apflog("Warning: CALIBRATE still running after abort, this happens",\
+                                echo=True, level='warn')
                     except Exception as e:
                         apflog("Error: Cannot abort CALIBRATE: %s" % (e), echo=True, level='error')
                     rv = APFTask.waitFor(self.task, False,\
