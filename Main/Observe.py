@@ -430,7 +430,8 @@ class Observe(threading.Thread):
             try:
                 self.scriptobs.stdin.write(cur_line + '\n')
             except IOError as e:
-                apflog("Cannot observe target %s: IOError: %s" % (self.target['NAME'], e), echo=True, level='error')
+                apflog("Cannot observe target %s: IOError: %s"\
+                        % (self.target['NAME'], e), echo=True, level='error')
                 return
 
 
@@ -444,11 +445,14 @@ class Observe(threading.Thread):
             else:
                 self.blank = False
 
-            apflog("get_target(): V=%.2f  B-V=%.2f Pri=%.2f " % (self.VMAG, self.BV, self.target["PRI"]))
-            apflog("get_target(): FWHM=%.2f  Slowdown=%.2f  Countrate=%.2f" % (self.apf.avg_fwhm, slowdown, self.apf.countrate))
+            apflog("get_target(): V=%.2f  B-V=%.2f Pri=%.2f "\
+                    % (self.VMAG, self.BV, self.target["PRI"]))
+            apflog("get_target(): FWHM=%.2f  Slowdown=%.2f  Countrate=%.2f"\
+                    % (self.apf.avg_fwhm, slowdown, self.apf.countrate))
 
             apflog("get_target(): Target= %s Temp=%s" % (self.target["NAME"], istemp))
-            apflog("get_target(): Counts=%.2f  EXPTime=%.2f  Nexp=%d" % (self.target["COUNTS"], self.target["EXP_TIME"], self.target["NEXP"]))
+            apflog("get_target(): Counts=%.2f  EXPTime=%.2f  Nexp=%d"\
+                    % (self.target["COUNTS"], self.target["EXP_TIME"], self.target["NEXP"]))
             if self.target['isTemp']:
                 self.nTemps += 1
                 if self.nTemps >= self.totTemps:
@@ -872,11 +876,14 @@ class Observe(threading.Thread):
 
                         else:
                             if self.apf.openOK:
-                                apflog("Error: Vent doors did not open, is apfteq and eosdome running correctly?", level='info', echo=True)
+                                apflog("Error: Vent doors did not open, is apfteq and eosdome running correctly?",\
+                                        level='info', echo=True)
                             else:
-                                apflog("Error: Lost permission during attempt at opening", level='info', echo=True)
+                                apflog("Error: Lost permission during attempt at opening",\
+                                        level='info', echo=True)
                     else:
-                        apflog("Error: Cannot clear emergency stop, sleeping for 600 seconds", level="error")
+                        apflog("Error: Cannot clear emergency stop, sleeping for 600 seconds",\
+                                level="error")
                         APFTask.waitFor(self.task, True, timeout=600)
 
             else:
@@ -884,7 +891,8 @@ class Observe(threading.Thread):
 
             # Check for servo errors
             if not self.apf.slew_allowed.read(binary=True) and self.apf.is_ready_observing()[0]:
-                apflog("Likely amplifier failure, may power cycle telescope", echo=True, level='alert')
+                apflog("Likely amplifier failure, may power cycle telescope",\
+                        echo=True, level='alert')
                 rv = self.check_servos()
 
             # If we are open and scriptobs isn't running, start it up
