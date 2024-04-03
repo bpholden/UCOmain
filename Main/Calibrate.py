@@ -120,8 +120,7 @@ class Calibrate(threading.Thread):
         '''
         eostele = ktl.Service('eostele')
         sunel = eostele["sunel"].read()
-        sunel = float(sunel)
-        if sunel < 3:
+        if sunel.binary < 3:
             apflog("Not Starting calibrate %s script, sun too low." % (phase), level='Info', echo=True)
             return True
 
@@ -145,7 +144,8 @@ class Calibrate(threading.Thread):
         APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
         if result == False:
-            if sunel < 3:
+            sunel = eostele["sunel"].read()
+            if sunel.binary < 3:
                 apflog("Not Starting calibrate %s script, sun too low." % (phase), level='Info', echo=True)
                 return True
             apflog("Calibrate Pre has failed. Trying again",level='warn',echo=True)
