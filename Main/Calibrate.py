@@ -18,7 +18,9 @@ from apflog import *
 AVERAGE_INSTRFOC = 8522
 
 class Calibrate(threading.Thread):
-    def __init__(self, apf, name, wait_time, calfile, outfile, obsnum, phase_index=0, task='master', test=False, possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
+    def __init__(self, apf, name, wait_time, calfile, outfile, obsnum, phase_index=0,\
+                  task='master', test=False, \
+                    possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.apf = apf
@@ -47,7 +49,8 @@ class Calibrate(threading.Thread):
         else:
             result = self.apf.test_bias()
             if result == None:
-                apflog("Focusinstr or calibrate or scriptobs are running?!", level='Error', echo=True)
+                apflog("Focusinstr or calibrate or scriptobs are running?!",\
+                        level='Error', echo=True)
             if result is False:
                 # this is a UCAM problem
                 rv = self.apf.ucam_restart()
@@ -80,7 +83,8 @@ class Calibrate(threading.Thread):
             ktl.write('apftask', 'focusinstr_widetime', 60)
             ktl.write('apftask', 'focusinstr_narrowtime', 720)
             ktl.write('apftask', 'focusinstr_useref', True)
-            ktl.write('apftask', 'focusinstr_refname', '/home/user/apf_analysis/data/20220913_11318.fits,/home/user/apf_analysis/data/20220913_11319.fits')
+            ktl.write('apftask', 'focusinstr_refname',\
+                       '/home/user/apf_analysis/data/20220913_11318.fits,/home/user/apf_analysis/data/20220913_11319.fits')
 
         return
 
@@ -91,12 +95,14 @@ class Calibrate(threading.Thread):
         self.set_focus_defaults()
 
         if self.test:
-            apflog("Would have set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
+            apflog("Would have set observing info with %s %s and %s"\
+                    % (str(self.obsnum),self.outfile,self.owner))
             apflog("Would have run APFControl.focusinstr",echo=True)
             return True
 
         if setup:
-            apflog("Will set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
+            apflog("Will set observing info with %s %s and %s" %\
+                    (str(self.obsnum),self.outfile,self.owner))
             self.apf.set_observer_info(num=self.obsnum, name=self.outfile, owner=self.owner)
 
         apflog("Focus begun.", echo=True)
@@ -121,7 +127,8 @@ class Calibrate(threading.Thread):
 
         apflog("Starting calibrate %s script." % (phase), level='Info', echo=True)
         if self.test:
-            apflog("Would have waited for permission (APFControl.instr_permit()) for phase %s" % (phase),echo=True)
+            apflog("Would have waited for permission (APFControl.instr_permit()) for phase %s"\
+                    % (phase),echo=True)
             apflog("Would have run APFControl.ucam_status() for phase %s" % (phase),echo=True)
             apflog("Would have run APFControl.calibrate for time %s" % (time),echo=True)
             return True
@@ -145,7 +152,8 @@ class Calibrate(threading.Thread):
             self.apf.instr_permit()
             result = self.apf.calibrate(script = self.calfile, time = time)
             if not result:
-                apflog("Error: Calibrate Pre has failed twice. Calibrate is exiting.",level='error',echo=True)
+                apflog("Error: Calibrate Pre has failed twice. Calibrate is exiting.",\
+                       level='error',echo=True)
                 self.apf.turn_off_lamps()
 
         return result
@@ -200,9 +208,8 @@ class Calibrate(threading.Thread):
 
 
 if __name__ == "__main__":
-    '''
-    basic functionality test
-    '''
+
+    # basic functionality test
     task = 'example'
     APFTask.establish(task, os.getpid())
     apf = APFControl.APF(task=task,test=True)
