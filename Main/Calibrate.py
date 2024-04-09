@@ -1,16 +1,9 @@
 from __future__ import print_function
-from datetime import datetime, timedelta
 import os
 import os.path
-from select import select
-import re
-import subprocess
 import sys
-import thread
 import threading
 
-
-import numpy as np
 
 try:
     import ktl
