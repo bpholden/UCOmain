@@ -118,7 +118,7 @@ class Calibrate(threading.Thread):
         calibrate() - Run the calibrate script
         '''
         eostele = ktl.Service('eostele')
-        sunel = eostele["sunel"].read(binary=True)
+        sunel = float(eostele["sunel"].read())
         if sunel < 3:
             apflog("Not Starting calibrate %s script, sun too low."\
                     % (phase), level='Info', echo=True)
@@ -145,7 +145,7 @@ class Calibrate(threading.Thread):
         APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
         if result is False:
-            sunel = eostele["sunel"].read(binary=True)
+            sunel = float(eostele["sunel"].read())
             if sunel < 3:
                 apflog("Not Starting calibrate %s script, sun too low." % (phase),\
                         level='Info', echo=True)
