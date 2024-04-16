@@ -35,13 +35,13 @@ if __name__ == "__main__":
     desiredstars = options.desired_stars.split(",")
     sheetns = options.sheetn.split(",")
 
-    star_table, stars = ParseUCOSched.parseUCOSched(sheetns=sheetns,outfn=outfn,config=config)
+    star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns,outfn=outfn,config=config)
     now = datetime.datetime.now()
     
     for star in desiredstars:
         aidx, = np.where(star_table["name"] == star)
         idx = aidx[0]
-        ret = ds.makeScriptobsLine(star_table[idx],now,decker=star_table['decker'][idx], \
+        ret = ds.make_scriptobs_line(star_table[idx],now,decker=star_table['decker'][idx], \
                                                 owner=star_table['sheetn'][idx], \
                                                 I2=star_table['I2'][idx])
         print(ret)
