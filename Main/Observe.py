@@ -609,8 +609,9 @@ class Observe(threading.Thread):
             # Update the last obs file and hitlist if needed
 
             APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
-
+            self.apf.validate_UCAM_outputs()
             self.apf.update_windshield(self.windshield_mode)
+
             ripd, running = self.apf.find_robot()
             if running:
                 apflog("Scriptobs is already running yet start_scriptobs was called", level="warn", echo=True)
@@ -684,8 +685,6 @@ class Observe(threading.Thread):
         haveobserved = False
         failstart = 0
         do_msg = 0
-
-        self.apf.validate_UCAM_outputs()
 
         while self.signal:
             # Check on everything
