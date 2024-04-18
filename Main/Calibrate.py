@@ -200,14 +200,7 @@ class Calibrate(threading.Thread):
                 apflog("Phase %s failed" % cur_phase,echo=True)
                 return
 
-        self.stop()
         return
-
-
-    def stop(self):
-        self.signal = False
-        thread.exit()
-
 
 if __name__ == "__main__":
 

@@ -100,6 +100,8 @@ class Observe(threading.Thread):
         self.lineresult.monitor()
         self.observed = self.apftask['SCRIPTOBS_OBSERVED']
         self.observed.monitor()
+        self.phase = self.apftask['SCRIPTOBS_PHASE']
+        self.phase.monitor()
         self.selected = None
         self.notify_focus_failure = True
 
@@ -154,13 +156,15 @@ class Observe(threading.Thread):
         """
         retval = False
 
-        if self.observed.read(binary=True) is True:
+        if self.lineresult.binary == 3:
             retval = True
         else:
             r_v = self.apf.robot["FOCUSTEL_STATUS"].read(binary=True)
             if r_v > 3 and self.notify_focus_failure:
                 apflog("Telescope focus has failed", level="error", echo=True)
                 self.notify_focus_failure = False
+            if self.lineresult.binary == 2:
+                apflog("Observation failed at phase %s" % (self.phase.ascii), echo=True, level='warn')
         return retval
 
     def check_obs_finished(self):
@@ -351,7 +355,6 @@ class Observe(threading.Thread):
                 apflog("get_target(): Scriptobs phase is input, determining next target.", echo=True)
             else:
                 apflog("get_target(): Not at end of block but out of targets.", echo=True)
-
 
             self.obsBstar = ktl.read("apftask", "MASTER_OBSBSTAR", binary=True)
             apflog("get_target(): Setting obsBstar to %s" % (str(self.obsBstar)), echo=True)
@@ -956,7 +959,7 @@ class Observe(threading.Thread):
             if self.apf.is_open()[0] and self.apf.dmtime <= DMLIM:
                 APFTask.set(self.task, suffix="MESSAGE", value="Reseting DM timer", wait=False)
                 self.apf.dm_reset()
-#                apflog("The APF is open, the DM timer is clicking down, and scriptobs is %s." % ( str(running)), level="debug")
+                #apflog("The APF is open, the DM timer is clicking down, and scriptobs is %s." % ( str(running)), level="debug")
 
             if not self.apf.is_open()[0] and not rising:
                 omsg = "Waiting for sunset"
@@ -973,8 +976,7 @@ class Observe(threading.Thread):
 
     def stop(self):
         self.signal = False
-        threading.Thread._Thread_stop(self)
-
+        self.apf.kill_robot()
 
 if __name__ == "__main__":
 
