@@ -559,9 +559,11 @@ if __name__ == '__main__':
 
     if not debug:
         APFTask.set(parent, suffix="LAST_OBS_UCSC", value=apf.ucam["OBSNUM"].read())
-        APFTask.set(parent, suffix="MESSAGE",value="Updating last observation number to %s" % (apf.ucam["OBSNUM"].read()),wait=False)
-        apftask('MASTER_STARLIST').write('')
-        apftask('MASTER_UTSTARTLIST').write('')
+        ostr = "Updating last observation number to %s" % (apf.ucam["OBSNUM"].read())
+        APFTask.set(parent, suffix="MESSAGE",value=ostr,wait=False)
+        apftask('MASTER_STARLIST').write('',wait=False)
+        apftask('MASTER_UTSTARTLIST').write('',wait=False)
+        apftask["MASTER_OBSBSTAR"].write(True,binary=True,wait=False)
 
     rv = apf.turn_off_inst()
     APFTask.set(parent, suffix="MESSAGE",value="Turning off the motors",wait=False)
