@@ -309,6 +309,8 @@ def time_check(star_table, totexptimes, dt, start_time=None):
     """
     maxexptime = compute_sunrise(dt,horizon='-9')
     maxfaintexptime = compute_sunrise(dt,horizon='-18')
+    if maxfaintexptime > maxexptime:
+        maxfaintexptime = 0
 
     if start_time is not None:
         maxexptime = start_time - time.time()
@@ -320,6 +322,7 @@ def time_check(star_table, totexptimes, dt, start_time=None):
         # bright stars often have longer than
         # necessary exposure times, relying on the
         # exposure meter, we will not make this modification for faint stars
+        # we need to handle cases where night_cad > 0
 
     started_doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
     if np.any(started_doubles):
