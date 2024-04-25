@@ -344,7 +344,7 @@ def time_check(star_table, totexptimes, dt, start_time=None):
             except ValueError:
                 pass
 
-    faint = star_table['Vmag'] < SchedulerConsts.SLOWDOWN_VMAG_LIM
+    faint = star_table['Vmag'] > SchedulerConsts.SLOWDOWN_VMAG_LIM
     time_good = totexptimes <= maxexptime
     time_good_faint = totexptimes <= maxfaintexptime
 
