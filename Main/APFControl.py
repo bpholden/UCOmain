@@ -1862,10 +1862,10 @@ class APF:
         else:
             # State must be auto, so check wind and temperature.
             # This state enables or disables windshielding based on the wind speed and the outside temperature
-            if self.down > 0:
-                wvel = self.avg_lists['M3WIND']
-            else:
-                wvel = self.avg_lists['M5WIND']
+            #if self.down > 0:
+            #    wvel = self.avg_lists['M3WIND']
+            #else:
+            wvel = self.avg_lists['M5WIND']
 
             apflog("Current median wind speed is %.2f with the limit %.2f" % (wvel,WINDSHIELD_LIMIT), level='debug')
             if currMode == 'enable' and wvel <= WINDSHIELD_LIMIT and float(self.avg_lists['M5OUTEMP']) > TEMP_LIMIT:
