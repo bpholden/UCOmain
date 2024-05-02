@@ -481,7 +481,7 @@ class Observe(threading.Thread):
                 apflog("UCAM OK", echo=True)
 
             apflog("Running open at %s as sunel = %4.2f" % (when, float(sunel)), echo=True)
-            apfopen, what = self.apf.is_open()
+            apfopen, _ = self.apf.is_open()
             if apfopen:
                 self.apf.dm_reset()
             else:
@@ -489,7 +489,7 @@ class Observe(threading.Thread):
 
             result = self.apf.openat(sunset=sunset)
             apflog("opening completed with result %s" % (result), echo=True)
-            if result == False:
+            if result is False:
                 apflog("opening hasn't successfully opened. Current sunel = %4.2f" % (float(sunel)), level='warn', echo=True)
                 if float(sunel) < SchedulerConsts.SUNEL_ENDLIM:
                     result = self.apf.openat(sunset=sunset)
@@ -499,11 +499,6 @@ class Observe(threading.Thread):
                         self.canOpen = False
 
             self.apf.check_FCUs()
-
-            if datetime.now().strftime("%p") == 'PM':
-                setting = True
-            else:
-                setting = False
             self.apf.dm_reset()
 
             return result
@@ -524,7 +519,8 @@ class Observe(threading.Thread):
                 return
             rv = self.apf.servo_failure()
             if rv:
-                apflog("Servo Failure, cannot close and power off telescope ", level="alert", echo=True)
+                ostr = "Servo failure detected, power cycling telescope"
+                apflog(ostr, level="alert", echo=True)
                 rv = self.apf.power_down_telescope()
                 if rv:
                     apflog("Power cycled telescope", echo=True)
@@ -550,7 +546,8 @@ class Observe(threading.Thread):
 
         def start_telescope():
             '''This starts up the telescope if the Az drive is disabled or the E-Stop State is True
-            If the telescope is just disabled, the start up procedure for a new version of scriptobs should clear that state.
+            If the telescope is just disabled, the start up procedure for a new version 
+            of scriptobs should clear that state.
             '''
             rv = False
 
@@ -629,7 +626,6 @@ class Observe(threading.Thread):
                 apflog("Cannot start an instance of scriptobs because do not have permission", echo=True, level='error')
                 return
 
-            apflog("Starting an instance of scriptobs", echo=True)
             if self.fixedList is not None and self.should_start_list():
                 # We wish to observe a fixed target list, in it's original order
                 if not os.path.exists(self.fixedList):
@@ -667,7 +663,7 @@ class Observe(threading.Thread):
                 # We wish to observe with the dynamic scheduler
             _, running = self.apf.find_robot()
             if running is False:
-                apflog("Starting an instance of scriptobs for dynamic observing.", echo=True)
+                apflog("Starting an instance of scriptobs for observing.", echo=True)
                 self.scriptobs = self.apf.start_robot()
                 # Don't let the watcher run over the robot starting up
                 APFTask.waitFor(self.task, True, timeout=10)
@@ -878,8 +874,8 @@ class Observe(threading.Thread):
 
                         else:
                             if self.apf.openOK:
-                                apflog("Error: Vent doors did not open, is apfteq and eosdome running correctly?",\
-                                        level='info', echo=True)
+                                ostr="Error: Vent doors did not open, is apfteq and eosdome running correctly?"
+                                apflog(ostr, level='info', echo=True)
                             else:
                                 apflog("Error: Lost permission during attempt at opening",\
                                         level='info', echo=True)
@@ -937,7 +933,8 @@ class Observe(threading.Thread):
                     rv = start_telescope()
                     # if needed, will power up the Az drive and clear the estop state
                     if rv is False:
-                        apflog("Telescope stopped and cannot be restarted", level='Alert', echo=True)
+                        ostr = "Error: Telescope is not tracking or slewing, cannot start up telescope."
+                        apflog(ostr, level='Alert', echo=True)
                         closing(force=True)
 
                 start_scriptobs()
@@ -948,8 +945,9 @@ class Observe(threading.Thread):
                         lvl = "Alert"
                     else:
                         lvl = "warn"
-                    apflog("scriptobs is not running just after being started!", level=lvl, echo=True)
-                    APFTask.set(self.task, suffix="MESSAGE", value="scriptobs is not running just after being started!", wait=False)
+                    ostr = "Scriptobs is not running just after being started!"
+                    apflog(ostr, level=lvl, echo=True)
+                    APFTask.set(self.task, suffix="MESSAGE", value=ostr, wait=False)
                 omsg = "Starting scriptobs"
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
@@ -959,14 +957,13 @@ class Observe(threading.Thread):
             if self.apf.is_open()[0] and self.apf.dmtime <= DMLIM:
                 APFTask.set(self.task, suffix="MESSAGE", value="Reseting DM timer", wait=False)
                 self.apf.dm_reset()
-                #apflog("The APF is open, the DM timer is clicking down, and scriptobs is %s." % ( str(running)), level="debug")
 
             if not self.apf.is_open()[0] and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
                 APFTask.waitFor(self.task, True, timeout=5)
-                
+
             if  self.apf.is_open()[0] and float(cursunel) > sunel_lim and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
@@ -981,22 +978,22 @@ class Observe(threading.Thread):
 if __name__ == "__main__":
 
     class Test:
-        pass
+        def __init__(self):
+            self.owner = 'public'
+            self.name = 'apf'
+            self.windshield = 'auto'
+            self.fixed = None
+            self.sheet = 'Bstars'
+            self.rank_table = '2024A_ranks'
+            self.start = None
+            self.test = True
+            self.raster = False
 
 
     parent = 'example'
     APFTask.establish(parent, os.getpid())
 
     opt = Test()
-    opt.owner = 'public'
-    opt.name = 'apf'
-    opt.windshield = 'auto'
-    opt.fixed = None
-    opt.sheet = 'Bstars'
-    opt.rank_table = '2022A_ranks'
-    opt.start = None
-    opt.test = True
-    opt.raster = False
 
     apf = APFControl.APF(task=parent, test=True)
     APFTask.waitFor(parent, True, timeout=2)
@@ -1013,6 +1010,5 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             apflog("%s has been killed by user." % (observe.name), echo=True)
             sys.exit()
-        except:
-            apflog("%s killed by unknown." % (observe.name), echo=True)
-            sys.exit()
+    print("Done")
+
