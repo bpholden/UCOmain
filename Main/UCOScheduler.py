@@ -76,9 +76,9 @@ def compute_priorities(star_table, cur_dt, hour_table=None, rank_table=None):
         too_much = hour_table['cur']  > hour_table['tot']
         done_sheets = hour_table['sheetn'][too_much]
     else:
-        done_sheets = []
+        done_sheets = False
 
-    if done_sheets != []:
+    if done_sheets is not False:
         done_sheets_str = " ".join(list(done_sheets))
         apflog("The following sheets are finished for the night: %s " % 
                (done_sheets_str), echo=True)
@@ -351,6 +351,31 @@ def time_check(star_table, totexptimes, dt, start_time=None):
     time_good[faint] = time_good_faint[faint]
 
     return time_good
+
+def sun_el_check(star_table, apf_obs, horizon='-18'):
+    '''
+    sun_el_check = sun_el_check(star_table, stars, idx, apf_obs, dt, horizon='0')
+    star_table - astropy table of targets
+    stars - list of ephem.FixedBody objects
+    idx - index of target in star_table
+    apf_obs - ephem.Observer object
+    dt - datetime object
+    horizon - string of horizon in degrees
+    sun_el_check - boolean
+    '''
+    bright_enough = np.ones(len(star_table['Vmag']), dtype=bool)
+
+    sun = ephem.Sun()
+    sun.compute(apf_obs)
+    sun_el = np.degrees(sun.alt)
+
+    faint = star_table['Vmag'] > SchedulerConsts.SLOWDOWN_VMAG_LIM
+
+    if sun_el > float(horizon):
+        bright_enough[faint] = False
+
+    return bright_enough
+
 
 def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='', temp=False):
     """ given a name, a row in a star table and a do_flag, will generate 
@@ -890,6 +915,9 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
     log_str = "get_next(): Moon visibility check - stars rejected = "
     log_str += "%s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)]))
     apflog(log_str, echo=True)
+
+    sun_el_good = sun_el_check(star_table, apf_obs, horizon='-18')
+    available = available & sun_el_good
 
     # other condition cuts (seeing, transparency, moon phase)
     cuts = condition_cuts(moon, seeing, slowdown, star_table)
