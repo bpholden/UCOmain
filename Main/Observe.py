@@ -327,6 +327,9 @@ class Observe(threading.Thread):
             return slowdown
 
         def pop_next():
+            '''
+            pop_next() - pops the next target from the target queue if any
+            '''
 
             curstr = None
 
@@ -334,19 +337,29 @@ class Observe(threading.Thread):
                 tlist = self.target["SCRIPTOBS"]
                 if len(tlist) > 0:
                     apflog("get_target(): Going through remaining target queue.", echo=True)
-                    curstr = tlist.pop() 
+                    curstr = tlist.pop()
                     return curstr
 
             if self.fixedtarget is not None and 'SCRIPTOBS' in list(self.fixedtarget.keys()):
                 tlist = self.fixedtarget["SCRIPTOBS"]
                 if len(tlist) > 0:
                     apflog("get_target(): Going through fixed starlist.", echo=True)
-                    curstr = tlist.pop() 
+                    curstr = tlist.pop()
                 else:
                     apflog("get_target(): Finished fixed starlist.", echo=True)
                     self.fixedtarget = None
 
             return curstr
+
+        def empty_queue():
+            '''
+            empty_queue() - empties the target queue
+            '''
+            if self.target is not None and 'SCRIPTOBS' in list(self.target.keys()):
+                while len(self.target["SCRIPTOBS"]) > 0:
+                    self.target["SCRIPTOBS"].pop()
+
+            return
 
         # This is called when an observation finishes, and selects the next target
         def get_target():
@@ -396,6 +409,7 @@ class Observe(threading.Thread):
                 self.apf.autofoc.write("robot_autofocus_enable")
             else:
                 curstr = pop_next()
+                # if there is a target in the queue, use it
                 if curstr:
                     self.append_selected("%s avgfwhm=%05.2f slowdown=%04.2f" % (curstr, seeing, slowdown))
                     self.scriptobs.stdin.write(curstr + '\n')
@@ -500,6 +514,7 @@ class Observe(threading.Thread):
 
             self.apf.check_FCUs()
             self.apf.dm_reset()
+            empty_queue()
 
             return result
 
