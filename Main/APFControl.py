@@ -99,7 +99,7 @@ class APF:
 
 
     dewlist = []
-    dewTooClose = False
+    dew_too_close = False
 
     # KTL Services and Keywords
     tel        = ktl.Service('eostele')
@@ -350,7 +350,7 @@ class APF:
         s += "elapsed = %5.2f sec \n" % self.elapsed
         s += "M1 = %5.2f deg C M2 = %5.2f deg C Tel Avg = %5.2f deg C M2 Air = %5.2f deg C FCU3 = %5.2f deg C FCU4 = %5.2f deg C\n" % tuple(self.avgtemps)
         s += "Dewpt = %5.2f deg C Teq Mode - %s\n" % (np.average(self.dewlist),self.teqmode)
-        s += "Too close to the dewpoint? = %s\n" % self.dewTooClose
+        s += "Too close to the dewpoint? = %s\n" % self.dew_too_close
         s += "Guider camera power is %s\n" % ("ON" if self.gcam_power.binary else "OFF")
         s += "M2 Focus Value = % 4.3f\n" % (float(self.aafocus['binary'])*1000.0)
         s += "M2 Focus Value = % 4.3f (focus kwd)\n" % (float(self.focus['binary'])*1000.0)
@@ -534,12 +534,12 @@ class APF:
                 curm2 = np.average(np.asarray(self.mon_lists['TM2CSUR']))
                 curm2air = np.average(np.asarray(self.mon_lists['TM2CAIR']))
 
-                if self.dewTooClose:
+                if self.dew_too_close:
                     if curm2air - curdew > 3 or curm2 - curdew > 5:
-                        self.dewTooClose = False
+                        self.dew_too_close = False
                 else:
                     if curm2air - curdew < 2 or curm2 - curdew < 4:
-                        self.dewTooClose = True
+                        self.dew_too_close = True
                         apflog("M2 temperatures too close to dew point",echo=True,level='warning')
 
         return

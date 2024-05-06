@@ -717,7 +717,7 @@ class Observe(threading.Thread):
 
             # Check and close for weather
 
-            self.bad_weather = self.apf.dewTooClose or not self.apf.openOK \
+            self.bad_weather = self.apf.dew_too_close or not self.apf.openOK \
                 or not self.apf.gcam_power.binary
 
             if self.apf.is_open()[0] and self.bad_weather:
@@ -727,7 +727,7 @@ class Observe(threading.Thread):
                 apflog("No longer ok to open: %s." % (closetime), echo=True)
                 apflog("OPREASON: " + self.apf.checkapf["OPREASON"].read(), echo=True)
                 apflog("WEATHER: " + self.apf.checkapf['WEATHER'].read(), echo=True)
-                apflog("CLOSE TO DEW POINT: %s" % (str(self.apf.dewTooClose)), echo=True)
+                apflog("CLOSE TO DEW POINT: %s" % (str(self.apf.dew_too_close)), echo=True)
                 apflog("Guider camera power: %s" % ("ON" if self.apf.gcam_power.binary else "OFF"), \
                        echo=True)
                 closing()
