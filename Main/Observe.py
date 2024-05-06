@@ -544,6 +544,7 @@ class Observe(threading.Thread):
 
             self.apf.check_FCUs()
             ds.zero_last_objs_attempted()
+            self.starFailures = 0
             return
 
 
