@@ -141,7 +141,7 @@ class Observe(threading.Thread):
                 return False
 
         mtch = re.search("ERR/WIND", message)
-        if mtch:
+        if mtch and self.apf.ok2open is True:
             # uh oh
             apflog("scriptobs has failed - checking servos", level="error", echo=True)
             rv = self.check_servos()
