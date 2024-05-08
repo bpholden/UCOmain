@@ -171,7 +171,6 @@ class APF:
 
     ucamcmd      = robot['UCAMLAUNCHER_UCAM_COMMAND']
     lastopen     = robot['OPENUP_LAST_SUCCESS']
-    msg = ""
 
     ucam       = ktl.Service('apfucam')
     outfile    = ucam['OUTFILE']
@@ -242,13 +241,13 @@ class APF:
 
         # Set the callbacks and monitors
         self.ok2open.monitor()
-        self.ok2open.callback(self.okmon)
+        self.ok2open.callback(self.ok_mon)
 
         self.dmtimer.monitor()
-        self.dmtimer.callback(self.dmtimemon)
+        self.dmtimer.callback(self.dm_time_mon)
 
         self.kcountrate.monitor()
-        self.kcountrate.callback(self.countratemon)
+        self.kcountrate.callback(self.countrate_mon)
 
         self.elapsed.monitor()
 
@@ -256,7 +255,7 @@ class APF:
         self.obsnum.callback(self.update_last_obs)
 
         self.event.monitor()
-        self.event.callback(self.eventmon)
+        self.event.callback(self.event_mon)
 
         self.hatchpos.monitor()
         self.ucampower.monitor()
@@ -275,11 +274,11 @@ class APF:
             self.mon_lists[kw['name']] = []
             self.avg_lists[kw['name']] = None
             kw.monitor()
-            kw.callback(self.listMon)
+            kw.callback(self.list_mon)
             kw.read()
 
         self.dewpt.monitor()
-        self.dewpt.callback(self.dewPtMon)
+        self.dewpt.callback(self.dew_pt_mon)
 
         for kw in (self.slewsta, self.calsta, self.focussta, \
                    self.shuttersta, self.opensta, self.closesta,\
@@ -310,10 +309,10 @@ class APF:
         self.faenable.monitor()
 
         self.apfteqsta.monitor()
-        self.apfteqsta.callback(self.apftaskMon)
+        self.apfteqsta.callback(self.apftask_mon)
 
         self.metxfersta.monitor()
-        self.metxfersta.callback(self.apftaskMon)
+        self.metxfersta.callback(self.apftask_mon)
 
         self.lastopen.monitor()
 
@@ -343,7 +342,6 @@ class APF:
         s += "Slowdown = %5.2f x\n" % self.slowdown
         s += "Last open time = %.2f sec\n" % (self.lastopen.binary)
         s += "Time since opening = %6.2f sec\n" % (time.time() - self.lastopen.binary)
-        s += "Msg = %s\n" % self.msg
         s += "countrate = %5.2g cts/s\n" % self.countrate
         s += "kcountrate = %5.2g cts/s\n" % self.kcountrate
         s += "ncountrate = %d frames \n" % self.ncountrate
@@ -398,7 +396,7 @@ class APF:
 
         return
 
-    def countmon(self, counts):
+    def count_mon(self, counts):
         if counts['populated'] == False:
             return
         try:
@@ -416,7 +414,7 @@ class APF:
             return
 
 
-    def countratemon(self, kcountrate):
+    def countrate_mon(self, kcountrate):
         if kcountrate['populated'] == False:
             return
 
@@ -430,7 +428,7 @@ class APF:
         self.ncountrate += 1
         return
 
-    def eventmon(self, event):
+    def event_mon(self, event):
         if event['populated'] == False:
             return
 
@@ -457,30 +455,30 @@ class APF:
 
     # Callback for ok2open permission
     # -- Check that if we fall down a logic hole we don't error out
-    def okmon(self,ok2open):
+    def ok_mon(self,ok2open):
         if ok2open['populated'] == False:
             return
         try:
             ok = ok2open # historical
         except Exception as e:
-            apflog("Exception in okmon for checkapf.OPEN_OK: %s" % (e), level='error')
+            apflog("Exception in ok_mon for checkapf.OPEN_OK: %s" % (e), level='error')
             return
         try:
             if self.mv_perm.read(binary=False) == False:
                 ok = False
         except Exception as e:
-            apflog("Exception in okmon for checkapf.MOVE_PERM: %s" % (e), level='error')
+            apflog("Exception in ok_mon for checkapf.MOVE_PERM: %s" % (e), level='error')
             return
         try:
             if not self.userkind.read(binary=True) == 3:
                 ok = False
         except Exception as e:
-            apflog("Exception in okmon checkapf.USERKIND: %s" % (e), level='error')
+            apflog("Exception in ok_mon checkapf.USERKIND: %s" % (e), level='error')
             return
         self.openOK = ok
         return
 
-    def listMon(self,keyword):
+    def list_mon(self,keyword):
         if keyword['populated'] == False:
             return
 
@@ -489,7 +487,7 @@ class APF:
         try:
             curval = float(keyword['binary'])
         except Exception as e:
-            apflog("Exception in listMon: %s" % (e), level='error')
+            apflog("Exception in list_mon: %s" % (e), level='error')
             return
 
         if self.mon_lists[name] == []:
@@ -503,17 +501,17 @@ class APF:
         return
 
     # Callback for Deadman timer
-    def dmtimemon(self,dmtime):
+    def dm_time_mon(self,dmtime):
         if dmtime['populated'] == False:
             return
         try:
             self.dmtime = dmtime
         except Exception as e:
-            apflog("Exception in dmtimemon: %s %s" % (type(e), e), level='error')
+            apflog("Exception in dm_time_mon: %s %s" % (type(e), e), level='error')
 
         return
 
-    def dewPtMon(self,dew):
+    def dew_pt_mon(self,dew):
         if dew['populated'] == False:
             return
         try:
@@ -545,7 +543,7 @@ class APF:
         return
 
 
-    def apftaskMon(self,status):
+    def apftask_mon(self,status):
         if status['populated'] == False:
             return
         try:
@@ -2261,7 +2259,7 @@ class APF:
         self.obsnum.callback(self.update_last_obs)
 
         self.event.monitor()
-        self.event.callback(self.eventmon)
+        self.event.callback(self.event_mon)
 
 
     def ucam_restart(self, fake=False):
