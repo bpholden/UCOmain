@@ -382,7 +382,7 @@ class APF:
     ## callbacks - these are the callbacks used to measure quantities or flip states
     ## these are always running
 
-    def ucamdispatchmon(self):
+    def ucam_dispatch_mon(self):
         if self.ucamd0sta['populated'] == False:
             return
         try:
@@ -1920,7 +1920,7 @@ class APF:
             return
 
         # check on weirdness for UCAM host post-reboot
-        self.ucamdispatchmon()
+        self.ucam_dispatch_mon()
 
         # Call prep-obs
         apflog("Calling prep-obs.",echo=True)
@@ -2031,7 +2031,7 @@ class APF:
             APFLib.write("apfmot.DEWARFOCRAW",lastfit_dewarfoc)
 
         # check on weirdness for UCAM host post-reboot
-        self.ucamdispatchmon()
+        self.ucam_dispatch_mon()
 
 
 
