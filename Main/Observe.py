@@ -306,9 +306,9 @@ class Observe(threading.Thread):
                 if slowdown < 0:
                     slowdown = 1
                     apflog("Countrate non-sensical %g" % (self.apf.countrate), echo=True, level='warn')
-                    self.apf.counts.monitor(start=False)
-                    self.apf.counts.monitor(start=True)
-                    self.apf.counts.callback(self.apf.countmon)
+                    self.apf.kcountrate.monitor(start=False)
+                    self.apf.kcountrate.monitor(start=True)
+                    self.apf.kcountrate.callback(self.apf.countrate_mon)
                     # yes this happened.
                 if slowdown < SchedulerConsts.SLOWDOWN_MIN:
                     slowdown = SchedulerConsts.SLOWDOWN_MIN
