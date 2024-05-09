@@ -1908,7 +1908,7 @@ class APF:
 
         return
 
-    def eveningStar(self):
+    def evening_star(self):
         """Aim the APF at the desired target. This calls prep-obs, slewlock, and focus-telescope."""
         if self.is_open()[0] == False:
             apflog("APF is not open. Can't target a star while closed.",level='error',echo=True)

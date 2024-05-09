@@ -834,7 +834,7 @@ class Observe(threading.Thread):
                                 apflog("Error: No longer have opening permission", level="error", echo=True)
 
                         else:
-                            rv = self.apf.eveningStar()
+                            rv = self.apf.evening_star()
                             if not rv:
                                 apflog("evening star targeting and telescope focus did not work", level='warn', echo=True)
 
