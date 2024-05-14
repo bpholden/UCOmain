@@ -5,6 +5,7 @@ import os
 import smtplib
 import stat
 import datetime
+import time
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -123,7 +124,7 @@ def main():
     to_val = ['holden@ucolick.org', '8314211210@txt.att.net']
     to_val_mod = to_val[0:1]
     sendmail(subject, body, to=to_val)
-
+    time.sleep(3)
     timed_alert(subject, body, to_pre=to_val, to_post=to_val_mod)
                  
 
