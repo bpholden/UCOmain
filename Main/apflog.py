@@ -120,9 +120,12 @@ def main():
     body = "This is a test message."
     body += "Error messages from the APF observe script will be sent with this function."
     subject = "[APF] Test"
-    sendmail(subject, body, to=['holden@ucolick.org', '8314211210@txt.att.net'])
+    to_val = ['holden@ucolick.org', '8314211210@txt.att.net']
+    to_val_mod = to_val[0:1]
+    sendmail(subject, body, to=to_val)
 
-
+    timed_alert(subject, body, to_pre=to_val, to_post=to_val_mod)
+                 
 
 
 if __name__ == '__main__':
