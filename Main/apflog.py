@@ -82,22 +82,22 @@ def timed_alert(subject, msg, to_pre, to_post):
 def apflog(msg, level='Notice', echo=True):
     """Wraps the APF.log function. Messages are logged as 'master'."""
 
-    APF.log(str(msg), level=level, echo=echo)
-
     to_val = ['holden@ucolick.org', 'jrees@ucolick.org']
     alert_to_val = ['holden@ucolick.org', '8314211210@txt.att.net', 'jrees@ucolick.org']
     if level in ['error']:
         subject = "[APF] An Error has occured"
         sendmail(subject, msg, to=to_val)
 
-    if level in ['timed_alert']:
-        subject = "[APF] A Serious Error has occured, but not so serious as to wake someone up."
-        timed_alert(subject, msg, to_val, alert_to_val)
-
     if level in ['Crit', 'Alert', 'Emerg']:
         subject = "[APF] A Serious Error has occured"
         sendmail(subject, msg, to=alert_to_val)
 
+    if level in ['timed_alert']:
+        subject = "[APF] A Serious Error has occured, but not so serious as to wake someone up."
+        timed_alert(subject, msg, to_val, alert_to_val)
+        level = 'Alert'
+
+    APF.log(str(msg), level=level, echo=echo)
 
 def sendmail(subject, body, to=['holden@ucolick.org']):
     """Send an email to the specified list of people."""
@@ -121,6 +121,9 @@ def main():
     body += "Error messages from the APF observe script will be sent with this function."
     subject = "[APF] Test"
     sendmail(subject, body, to=['holden@ucolick.org', '8314211210@txt.att.net'])
+
+
+
 
 if __name__ == '__main__':
     # Send a test message
