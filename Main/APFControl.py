@@ -1694,14 +1694,18 @@ class APF:
             val = self.tel[nm].read(binary=True)
             if val:
                 servo_failed = True
-                apflog("Error: Servo Amplifier Fault: %s %s" % (nm,val), level="alert", echo=True)
+                msg = "Error: Servo Amplifier Fault: " + nm + " " + val
+                apflog(msg, level="alert", echo=True)
+                self.robot['MASTER_MESSAGE'].write(msg)
 
         for pr in prefixs:
             nm = pr + "FERROR"
             val = self.tel[nm].read(binary=True)
             if val:
                 servo_failed = True
-                apflog("Error: Fatal Following Error: %s %s" % (nm,val), level="alert", echo=True)
+                msg = "Error: Following Error Fault: " + nm + " " + val
+                apflog(msg, level="alert", echo=True)
+                self.robot['MASTER_MESSAGE'].write(msg)
 
         return servo_failed
 
