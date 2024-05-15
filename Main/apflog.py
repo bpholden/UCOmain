@@ -74,9 +74,9 @@ def timed_alert(subject, msg, to_pre, to_post):
 
     # Check if the current time is within the window
     if now > window_start and now < window_end:
-        to_val = to_pre
-    else:
         to_val = to_post
+    else:
+        to_val = to_pre
 
     sendmail(subject, msg, to=to_val)
 
