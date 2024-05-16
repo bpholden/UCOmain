@@ -5,6 +5,7 @@ import os
 import smtplib
 import stat
 import datetime
+import time
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -73,16 +74,14 @@ def timed_alert(subject, msg, to_pre, to_post):
 
     # Check if the current time is within the window
     if now > window_start and now < window_end:
-        to_val = to_pre
-    else:
         to_val = to_post
+    else:
+        to_val = to_pre
 
     sendmail(subject, msg, to=to_val)
 
 def apflog(msg, level='Notice', echo=True):
     """Wraps the APF.log function. Messages are logged as 'master'."""
-
-    APF.log(str(msg), level=level, echo=echo)
 
     to_val = ['holden@ucolick.org', 'jrees@ucolick.org']
     alert_to_val = ['holden@ucolick.org', '8314211210@txt.att.net', 'jrees@ucolick.org']
@@ -90,14 +89,16 @@ def apflog(msg, level='Notice', echo=True):
         subject = "[APF] An Error has occured"
         sendmail(subject, msg, to=to_val)
 
-    if level in ['timed_alert']:
-        subject = "[APF] A Serious Error has occured, but not so serious as to wake someone up."
-        timed_alert(subject, msg, to_val, alert_to_val)
-
     if level in ['Crit', 'Alert', 'Emerg']:
         subject = "[APF] A Serious Error has occured"
         sendmail(subject, msg, to=alert_to_val)
 
+    if level in ['timed_alert']:
+        subject = "[APF] A Serious Error has occured, but not so serious as to wake someone up."
+        timed_alert(subject, msg, to_val, alert_to_val)
+        level = 'Alert'
+
+    APF.log(str(msg), level=level, echo=echo)
 
 def sendmail(subject, body, to=['holden@ucolick.org']):
     """Send an email to the specified list of people."""
@@ -120,7 +121,13 @@ def main():
     body = "This is a test message."
     body += "Error messages from the APF observe script will be sent with this function."
     subject = "[APF] Test"
-    sendmail(subject, body, to=['holden@ucolick.org', '8314211210@txt.att.net'])
+    to_val = ['holden@ucolick.org', '8314211210@txt.att.net']
+    to_val_mod = to_val[0:1]
+    sendmail(subject, body, to=to_val)
+    time.sleep(3)
+    timed_alert(subject, body, to_pre=to_val, to_post=to_val_mod)
+                 
+
 
 if __name__ == '__main__':
     # Send a test message

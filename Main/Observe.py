@@ -864,7 +864,9 @@ class Observe(threading.Thread):
                     if success is False:
                         self.apf.close()
                         if self.apf.openOK:
-                            apflog("Error: Cannot open the dome", echo=True, level='error')
+                            omsg = "Error: Cannot open the dome"
+                            APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
+                            apflog(omsg, echo=True, level='error')
                         else:
                             apflog("Error: Lost permission during opening", echo=True)
 
@@ -971,7 +973,6 @@ class Observe(threading.Thread):
 
             # Keep an eye on the deadman timer if we are open
             if self.apf.is_open()[0] and self.apf.dmtime <= DMLIM:
-                APFTask.set(self.task, suffix="MESSAGE", value="Reseting DM timer", wait=False)
                 self.apf.dm_reset()
 
             if not self.apf.is_open()[0] and not rising:
