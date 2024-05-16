@@ -10,8 +10,7 @@ import os.path
 import re
 import signal
 import sys
-import time
-from datetime import datetime, timedelta
+import datetime
 
 import astropy.io.ascii
 import astropy.time
@@ -102,24 +101,24 @@ def get_start_time(hr, mn):
 
     Returns a UNIX time stamp for the start time
     '''
-    lt = datetime.now()
-    ct = datetime.utcnow()
+    lt = datetime.datetime.now()
+    ct = datetime.datetime.utcnow()
 
     td_utc = ct - lt
     td_utc_off = int(10*math.floor(td_utc.seconds/10))
 
     # the hr and mn arguments are for the UT time
-    st = datetime(ct.year, ct.month, ct.day, hr, mn)
+    st = datetime.datetime(ct.year, ct.month, ct.day, hr, mn)
     if lt.hour >= 12 and ct.day == lt.day:
         # the usual start time is the afternoon,
         # sunset is after the start of next day in UT
         # if the ut day and the local day are the same
         # it is early afternoon and we need to add a day
         # if it is late enough, the ut day will be correct
-        st += timedelta(days=1)
+        st += datetime.timedelta(days=1)
 
     # strftime assumes that this a local time, so the time stamp is wrong by the UT offset
-    st -= timedelta(seconds=td_utc_off)
+    st -= datetime.timedelta(seconds=td_utc_off)
     ts = float(st.strftime("%s"))
 
     return ts
@@ -139,16 +138,16 @@ def calc_focus_start_time():
 
     '''
     # computes time before sunset
-    udt = datetime.utcnow()
-    dt = datetime.now()
+    udt = datetime.datetime.utcnow()
+    dt = datetime.datetime.now()
     time_to_sunset = ds.compute_sunset(udt)
     if time_to_sunset > 36000:
         # the sun has already set
         start_time = -1.
     else:
         start_time = time_to_sunset - 3.0*3600.
-    t_delta = timedelta(0,start_time)
-    sun_delta = timedelta(0,time_to_sunset)
+    t_delta = datetime.timedelta(0,start_time)
+    sun_delta = datetime.timedelta(0,time_to_sunset)
     start_dt = dt + t_delta
     sun_dt = dt + sun_delta
     return start_time, start_dt, sun_dt, time_to_sunset + 1200
@@ -207,13 +206,13 @@ def args(apftask):
         opt.start = saved_time
 
     if opt.name == None:
-        now = datetime.now()
-        oneday = timedelta(days=-1)
+        now = datetime.datetime.now()
+        oneday = datetime.timedelta(days=-1)
         if now.hour < 12:
             now += oneday
         opt.name = '%4d%02d%02d' % (now.year,now.month,now.day)
 
-    if opt.sheet != None:
+    if opt.sheet is None:
         try:
             apftask.write('MASTER_SHEETLIST',opt.sheet,timeout=2)
         except Exception as e:
@@ -427,7 +426,7 @@ if __name__ == '__main__':
     while observe.signal:
         # Observe is running, check for keyboard interupt
         try:
-            currTime = datetime.now()
+            currTime = datetime.datetime.now()
             # Check if it is after ~8:00AM.
             # If it is, something must be hung up, so lets force
             #  a closeup and run post cals.
