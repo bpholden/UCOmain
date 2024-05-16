@@ -205,14 +205,14 @@ def args(apftask):
     elif opt.fixed != None and saved_time != '':
         opt.start = saved_time
 
-    if opt.name == None:
+    if opt.name is None:
         now = datetime.datetime.now()
         oneday = datetime.timedelta(days=-1)
         if now.hour < 12:
             now += oneday
         opt.name = '%4d%02d%02d' % (now.year,now.month,now.day)
 
-    if opt.sheet is None:
+    if opt.sheet is not None:
         try:
             apftask.write('MASTER_SHEETLIST',opt.sheet,timeout=2)
         except Exception as e:
