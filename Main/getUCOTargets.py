@@ -1,5 +1,5 @@
 from __future__ import print_function
-from datetime import datetime
+import datetime
 import os
 import os.path
 import threading
@@ -120,7 +120,7 @@ class getUCOTargets(threading.Thread):
                     shutil.copyfile("googledex.dat.1","googledex.dat")
 
             try:
-                hour_table = ds.make_hour_table(rank_table,datetime.now(),hour_constraints=hour_constraints)
+                hour_table = ds.make_hour_table(rank_table,datetime.datetime.now(),hour_constraints=hour_constraints)
             except Exception as e:
                 hour_table = None
                 apflog("Error: Cannot make hour_table?! %s" % (e),level="error")

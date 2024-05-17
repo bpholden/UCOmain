@@ -3,7 +3,7 @@ from __future__ import print_function
 import os
 
 import time
-from datetime import datetime
+import datetime
 import subprocess
 
 import numpy as np
@@ -139,7 +139,7 @@ def update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None)
     cur = dt
     for i in range(0,nobj):
         hr, mn = observed.times[i]
-        prev = datetime(dt.year, dt.month, dt.day, hr, mn)
+        prev = datetime.datetime(dt.year, dt.month, dt.day, hr, mn)
         diff = cur - prev
         hourdiff = diff.days * 24 + diff.seconds / 3600.
         if hourdiff > 0:
@@ -495,14 +495,14 @@ def compute_datetime(ctime):
     dt - datetime object
     '''
     if type(ctime) == float:
-        dt = datetime.utcfromtimestamp(int(ctime))
+        dt = datetime.datetime.utcfromtimestamp(int(ctime))
     elif type(ctime) == datetime:
         dt = ctime
     elif type(ctime) == ephem.Date:
         dt = ctime.datetime()
     else:
         #punt and use current UT
-        dt = datetime.utcnow()
+        dt = datetime.datetime.utcnow()
     return dt
 
 
@@ -846,12 +846,12 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
     try:
         apfguide = ktl.Service('apfguide')
         stamp = apfguide['midptfin'].read(binary=True)
-        ptime = datetime.utcfromtimestamp(stamp)
+        ptime = datetime.datetime.utcfromtimestamp(stamp)
     except:
-        if type(dt) == datetime:
+        if type(dt) == datetime.datetime:
             ptime = dt
         else:
-            ptime = datetime.utcfromtimestamp(int(time.time()))
+            ptime = datetime.datetime.utcfromtimestamp(int(time.time()))
 
     apflog("get_next(): Updating star list with previous observations", echo=True)
     observed, star_table = ParseUCOSched.update_local_starlist(ptime,\
@@ -1043,7 +1043,7 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
 
 if __name__ == '__main__':
 
-    t_dt = datetime.now()
+    t_dt = datetime.datetime.now()
 
     cfn = os.path.join('.','time_left.csv')
     if os.path.exists(cfn):
