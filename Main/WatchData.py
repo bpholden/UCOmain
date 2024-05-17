@@ -1,5 +1,4 @@
 from __future__ import print_function
-from datetime import datetime, timedelta
 import glob
 import os
 import os.path
@@ -10,7 +9,6 @@ import time
 import astropy.io.fits
 import astropy.time
 
-import apflog
 import ktl
 
 class WatchData(threading.Thread):
@@ -60,9 +58,9 @@ class WatchData(threading.Thread):
     def stop(self):
         self.signal = False
         threading.Thread._Thread__stop(self)
-    
+
     def run(self):
-        
+
         while self.signal:
             bad = self.checkFiles()
 
@@ -90,4 +88,4 @@ if __name__ == "__main__":
             print("%s killed by unknown." % (wd.name))
             wd.stop()
             sys.exit()
-
+    print("Done")
