@@ -4,7 +4,7 @@ import json
 import os
 import re
 import time
-from datetime import datetime, timedelta
+import datetime
 
 import astropy
 import astropy.io.ascii
@@ -703,12 +703,12 @@ def update_local_starlist(intime, observed_file="observed_targets", outfn='parse
                 owner = 'RECUR_A100'
 
             if isinstance(obstime,float):
-                t = datetime.utcfromtimestamp(obstime)
+                t = datetime.datetime.utcfromtimestamp(obstime)
             else:
                 hr, min = obstime
-                if type(intime) != datetime:
-                    intime = datetime.utcnow()
-                t = datetime(intime.year, intime.month, intime.day, hr, min)
+                if type(intime) != datetime.datetime:
+                    intime = datetime.datetime.utcnow()
+                t = datetime.datetime(intime.year, intime.month, intime.day, hr, min)
 
             jd = round(float(ephem.julian_date(t)), 4)
 
@@ -760,10 +760,10 @@ def observed_JD(star_table_row,otime,ctime):
     # value to calculate the full JD
     if jd is None:
         if isinstance(otime,float):
-            t = datetime.utcfromtimestamp(otime)
+            t = datetime.datetime.utcfromtimestamp(otime)
         else:
             hr, mn = otime
-            t = datetime(ctime.year, ctime.month, ctime.day, hr, mn)
+            t = datetime.datetime(ctime.year, ctime.month, ctime.day, hr, mn)
             jd = float(ephem.julian_date(t))
 
     return jd
