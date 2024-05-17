@@ -1,5 +1,5 @@
 from __future__ import print_function
-from datetime import datetime
+import datetime
 import math
 import os
 import os.path
@@ -120,7 +120,7 @@ class Observe(threading.Thread):
         except:
             self.selected = None
         else:
-            out_line = "%s %s\n" % (str(datetime.utcnow()), curstr)
+            out_line = "%s %s\n" % (str(datetime.datetime.utcnow()), curstr)
             self.selected.write(out_line)
             self.selected.close()
 
@@ -721,7 +721,7 @@ class Observe(threading.Thread):
                 or not self.apf.gcam_power.binary
 
             if self.apf.is_open()[0] and self.bad_weather:
-                closetime = datetime.now()
+                closetime = datetime.datetime.now()
                 APFTask.set(self.task, suffix="MESSAGE", \
                             value="Closing for weather or instrument issues", wait=False)
                 apflog("No longer ok to open: %s." % (closetime), echo=True)
@@ -845,7 +845,7 @@ class Observe(threading.Thread):
                                 result = APFTask.waitFor(self.task, True, expression=chk_done, timeout=60)
                                 self.apf.dm_reset()
                                 if self.apf.openOK['binary'] is False:
-                                    closetime = datetime.now()
+                                    closetime = datetime.datetime.now()
                                     APFTask.set(self.task, suffix="MESSAGE", value="Closing for weather", wait=False)
                                     apflog("No longer ok to open.", echo=True)
                                     apflog("OPREASON: " + self.apf.checkapf["OPREASON"].read(), echo=True)
@@ -1021,7 +1021,7 @@ if __name__ == "__main__":
     observe.start()
     while observe.signal:
         try:
-            dt = datetime.now()
+            dt = datetime.datetime.now()
             print(dt)
             APFTask.wait(parent, True, timeout=100)
         except KeyboardInterrupt:

@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from datetime import datetime, timedelta
+import datetime
 import time
 
 import ephem
@@ -169,7 +169,7 @@ if __name__ == '__main__':
     apf_obs.elevation = 1274
     # Minimum observation to observe things at
     apf_obs.horizon = str(SchedulerConsts.TARGET_ELEVATION_MIN)
-    apf_obs.date = datetime.utcfromtimestamp(int(time.time()))
+    apf_obs.date = datetime.datetime.utcfromtimestamp(int(time.time()))
 
     test_star = ephem.FixedBody()
     test_star._ra = ephem.hours(":".join(["1", "44", "4.083"]))

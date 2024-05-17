@@ -496,7 +496,7 @@ def compute_datetime(ctime):
     '''
     if type(ctime) == float:
         dt = datetime.datetime.utcfromtimestamp(int(ctime))
-    elif type(ctime) == datetime:
+    elif type(ctime) == datetime.datetime:
         dt = ctime
     elif type(ctime) == ephem.Date:
         dt = ctime.datetime()
