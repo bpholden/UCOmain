@@ -6,7 +6,7 @@ import time
 import os
 import os.path
 import math
-from datetime import datetime, timedelta
+import datetime
 
 import numpy as np
 
@@ -25,7 +25,7 @@ slowlim = 100
 WINDSHIELD_LIMIT = 10. # mph at the APF
 FOCUSTIME = 3600. # minimum time before checking telescope focus
 TEMP_LIMIT = 35. # deg F at the APF
-wxtimeout = timedelta(seconds=1800)
+wxtimeout = datetime.timedelta(seconds=1800)
 SUNEL_HOR = -3.2
 DEWARMAX = 8600
 DEWARMIN = 8300
@@ -331,7 +331,7 @@ class APF:
 
     def __str__(self):
         # Determine if the sun rising / setting check is working
-        now = datetime.now()
+        now = datetime.datetime.now()
         self.avg_tel_temps()
         s = ''
         s += "At %s state of telescope is:\n" % str(now)
@@ -665,7 +665,7 @@ class APF:
 
         """
         # the sun also rises
-        now = datetime.now()
+        now = datetime.datetime.now()
         if now.strftime("%p") == 'AM':
             return True
         else:
@@ -1348,7 +1348,7 @@ class APF:
         Starts the recording of a guider move.
         
         """
-        now = datetime.now()
+        now = datetime.datetime.now()
         self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day, self.tel['TARGNAME'].read()))
         self.fits3dir.write('/data/apfguide')
         self.save3d.write(True)
@@ -1742,8 +1742,8 @@ class APF:
 
         apflog("Running closeup script")
         attempts = 0
-        close_start = datetime.now()
-        while (datetime.now() - close_start).seconds < 1800 and attempts < 8:
+        close_start = datetime.datetime.now()
+        while (datetime.datetime.now() - close_start).seconds < 1800 and attempts < 8:
             result = APFTask.waitFor(self.task, False, chk_mv, timeout=300)
             if not result:
                 apflog("Didn't have move permission after 5 minutes. ", echo=True)
