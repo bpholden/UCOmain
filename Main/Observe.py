@@ -791,7 +791,6 @@ class Observe(threading.Thread):
             # If the sun is rising and we are finishing an observation
             # Send scriptobs EOF. This will shut it down after the observation
             if float(cursunel) >= sunel_lim and running:
-                APFTask.set(self.task, suffix="MESSAGE", value="Last call", wait=False)
                 if self.scriptobs is None:
                     apflog("Robot claims to be running, but no scriptobs instance can be found. Instead calling kill_robot().", echo=True)
                     self.apf.kill_robot()

@@ -1831,14 +1831,14 @@ class APF:
         predfocus  = self.pred_tel_focus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         focus_diff = math.fabs(predfocus - self.focus['binary'])
-        focus_diff *= 1e6
+        focus_diff *= 1e3
 
         #self.focus.write(predfocus,binary=True,wait=False)
-        predfocus *= 1e6
+        predfocus *= 1e3
         self.autofoc.write("robot_autofocus_enable")
         focval = 1
 
-        ostr = "Current telescope focus more than %6.3f microns from predicted, setting to %.3f." % (focus_diff, predfocus)
+        ostr = "Current telescope focus more than %5.3f mm from predicted, setting to %5.3f." % (focus_diff, predfocus)
         APFTask.set(self.task, suffix="MESSAGE", value=ostr, wait=False)
 
         return focval
