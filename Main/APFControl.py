@@ -2072,7 +2072,8 @@ class APF:
         else:
             if not self.ucam['EVENT_STR'].read() == "ControllerReady":
                 apflog("Waiting for current exposure to finish.")
-                self.ucam['EVENT_STR'].waitfor(" = ReadoutBegin", timeout=1200)
+                time_out_val = self.apfucam['REMAINING'].read(binary=True)+1
+                self.ucam['EVENT_STR'].waitfor(" = ReadoutBegin", timeout=time_out_val)
 
         ripd, running = self.find_robot()
         if running:
