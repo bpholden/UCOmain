@@ -811,7 +811,7 @@ def update_sheet_lastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn
     if len(obslog.names) == 0:
         return
     if ctime is None:
-        ctime = datetime.utcfromtimestamp(int(time.time()))
+        ctime = datetime.datetime.utcfromtimestamp(int(time.time()))
 
     outfn = os.path.join(outdir,outfn)
     star_table = read_star_table(outfn)
