@@ -201,7 +201,7 @@ class Observe(threading.Thread):
             if self.starFailures%3 == 0:
                 log_str = "%d failures of observing a star in a row " % (self.starFailures)
                 log_str += "- suggesting homing telescope or closing for the night"
-                apflog(log_str, echo=True, level='Alert')
+                apflog(log_str, echo=True, level='timed_alert')
 
     def check_servos(self):
 
@@ -490,7 +490,7 @@ class Observe(threading.Thread):
 
             result = self.apf.ucam_status()
             if result is False:
-                apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
+                apflog("Failure in UCAM status and restart!", level='timed_alert', echo=True)
             else:
                 apflog("UCAM OK", echo=True)
 
@@ -535,7 +535,7 @@ class Observe(threading.Thread):
             rv = self.apf.servo_failure()
             if rv:
                 ostr = "Servo failure detected, power cycling telescope"
-                apflog(ostr, level="alert", echo=True)
+                apflog(ostr, level="timed_alert", echo=True)
                 rv = self.apf.power_down_telescope()
                 if rv:
                     apflog("Power cycled telescope", echo=True)
@@ -827,7 +827,7 @@ class Observe(threading.Thread):
                         success = opening(cursunel, sunset=True)
                         if success is False:
                             if self.apf.openOK:
-                                apflog("Error: Cannot open the dome", level="alert", echo=True)
+                                apflog("Error: Cannot open the dome", level="timed_alert", echo=True)
                             else:
                                 # lost permision during opening, happens more often than you think
                                 apflog("Error: No longer have opening permission", level="error", echo=True)
@@ -907,7 +907,7 @@ class Observe(threading.Thread):
             # Check for servo errors
             if not self.apf.slew_allowed.read(binary=True) and self.apf.is_ready_observing()[0]:
                 apflog("Likely amplifier failure, may power cycle telescope",\
-                        echo=True, level='alert')
+                        echo=True, level='error')
                 rv = self.check_servos()
 
             # If we are open and scriptobs isn't running, start it up
@@ -939,7 +939,7 @@ class Observe(threading.Thread):
                     apflog("Cannot enable instrument", level='warn', echo=True)
                     result = self.apf.enable_obs_inst()
                     if not result:
-                        apflog("Error: cannot enable instrument twice.", level='alert', echo=True)
+                        apflog("Error: cannot enable instrument twice.", level='timed_alert', echo=True)
                         return result
                 else:
                     apflog("Instrument OK", echo=True)
@@ -951,7 +951,7 @@ class Observe(threading.Thread):
                     # if needed, will power up the Az drive and clear the estop state
                     if rv is False:
                         ostr = "Error: Telescope is not tracking or slewing, cannot start up telescope."
-                        apflog(ostr, level='Alert', echo=True)
+                        apflog(ostr, level='timed_alert', echo=True)
                         closing(force=True)
 
                 start_scriptobs()
@@ -959,7 +959,7 @@ class Observe(threading.Thread):
                 if not APFTask.waitFor(self.task, True, expression=expr, timeout=10):
                     failstart += 1
                     if failstart % 11 == 0 and failstart > 0:
-                        lvl = "Alert"
+                        lvl = "timed_alert"
                     else:
                         lvl = "warn"
                     ostr = "Scriptobs is not running just after being started!"
