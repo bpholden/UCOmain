@@ -819,10 +819,8 @@ class Observe(threading.Thread):
 
             # Open
             if self.apf.openOK and self.canOpen and not self.bad_weather:
-                APFTask.phase(self.task, "Observing")
                 if not self.apf.is_ready_observing()[0] and float(cursunel) < SchedulerConsts.SUNEL_HOR:
                     if float(cursunel) > sunel_lim and not rising:
-                        APFTask.phase(self.task, "Watching")
                         APFTask.set(self.task, suffix="MESSAGE", value="Open at sunset", wait=False)
                         success = opening(cursunel, sunset=True)
                         if success is False:
@@ -872,8 +870,6 @@ class Observe(threading.Thread):
                 # If we can open, try to set stuff up so the vent doors can be controlled by apfteq
                 if not rising and not self.apf.is_open()[0] and float(cursunel) > SchedulerConsts.SUNEL_HOR:
                     APFTask.set(self.task, suffix="MESSAGE", value="Powering up for APFTeq", wait=False)
-                    APFTask.phase(self.task, "Watching")
-                    
                     if self.apf.clear_estop():
                         try:
                             APFLib.write(self.apf.dome['AZENABLE'], 'enable', timeout=10)
@@ -1027,4 +1023,3 @@ if __name__ == "__main__":
             apflog("%s has been killed by user." % (observe.name), echo=True)
             sys.exit()
     print("Done")
-

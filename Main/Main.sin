@@ -39,10 +39,12 @@ os.umask(0o007)
 
 success = False
 
-parent = 'master'
+PARENT = 'master'
 
 # global
 paused = False
+
+POSSIBLE_PHASES = ["Init", "Focus", "Cal-Pre", "Watching", "Cal-Post", "Focus-Post"]
 
 def control_watch(keyword,parent):
     if keyword['populated'] == False:
@@ -153,7 +155,7 @@ def calc_focus_start_time():
     return start_time, start_dt, sun_dt, time_to_sunset + 1200
 
 def args(apftask):
-    p_c = ["Init", "Focus", "Cal-Pre", "Cal-Post", "Watching"]
+    p_c = POSSIBLE_PHASES
     w_c = ["on", "off", "auto"]
     b_c = [1, 2, 4]
     parser = argparse.ArgumentParser(description="Set default options")
@@ -329,21 +331,21 @@ if __name__ == '__main__':
 
     # All the phase options that this script uses. 
     # This allows us to check if we exited out of the script early.
-    possible_phases = ["Init", "Focus", "Cal-Pre", "Watching", "Cal-Post", "Focus-Post"]
+    
     phase_index = 0
     # If a command line phase was specified, use that.
     if opt.phase != None:
         APFTask.phase(parent, opt.phase)
-        phase_index = possible_phases.index(str(opt.phase).strip())
+        phase_index = POSSIBLE_PHASES.index(str(opt.phase).strip())
         phase.poll()
     elif phase.read() != "":
         # start where the main left off
-        phase_index = possible_phases.index(str(phase.read()).strip())
+        phase_index = POSSIBLE_PHASES.index(str(phase.read()).strip())
         phase.poll()
 
     # If the phase isn't a valid option
     # then assume we are starting a fresh night and start from setting the observer information.
-    if str(phase).strip() not in possible_phases:
+    if str(phase).strip() not in POSSIBLE_PHASES:
         apflog("Starting phase is not valid. Phase being set to Init", echo=True)
         APFTask.phase(parent, "Init")
     apflog("Phase at start is: %s" % phase, echo=True)
@@ -403,10 +405,10 @@ if __name__ == '__main__':
 
     if phase_index < 3:
         apflog("Starting calibration thread at phase %s" % \
-               (possible_phases[phase_index]), echo=True)
+               (POSSIBLE_PHASES[phase_index]), echo=True)
         calibrate = Calibrate(apf, 'public', stime, opt.calibrate, \
                               opt.name, opt.obsnum, phase_index=phase_index, \
-                              task=parent, test=debug, possible_phases=possible_phases)
+                              task=parent, test=debug, possible_phases=POSSIBLE_PHASES)
     else:
         apflog("Skipping calibrations", echo=True)
         calibrate = None
@@ -509,8 +511,8 @@ if __name__ == '__main__':
     except Exception as e:
         apflog("Note: Cannot stop monitoring ok2open. %s" % (e), level="warn", echo=True)
     # 5) Take morning calibrations
-    phase_index += 1
-    APFTask.phase(parent, possible_phases[phase_index])
+    phase_index = 4
+    APFTask.phase(parent, POSSIBLE_PHASES[phase_index])
     apf.instr_permit()
     result = apf.calibrate(script=opt.calibrate, time='post')
     if not result:
@@ -527,8 +529,8 @@ if __name__ == '__main__':
     apf.ucam['BINNING'].write(bin_str)
 
     # Focus the instrument once more
-    phase_index += 1
-    APFTask.phase(parent, possible_phases[phase_index])
+    phase_index = 5
+    APFTask.phase(parent, POSSIBLE_PHASES[phase_index])
     apflog("Running Focus-Post", echo=True)
     result = apf.focusinstr(log_error_level='error')
     if not result:
@@ -550,7 +552,7 @@ if __name__ == '__main__':
         apftask('MASTER_UTSTARTLIST').write('',wait=False)
         apftask["MASTER_OBSBSTAR"].write(True,binary=True,wait=False)
 
-    rv = apf.turn_off_inst()
+    _ = apf.turn_off_inst()
     APFTask.set(parent, suffix="MESSAGE",value="Turning off the motors",wait=False)
 
     # All Done!
