@@ -24,10 +24,6 @@ def get_start_time(hr_mn, datestr):
     '''
     datestr = "%s %s" % (datestr, hr_mn)
     dt = datetime.strptime(datestr,"%Y/%m/%d %H:%M")
-
-    po = timedelta(days=1)
-
-    dt = dt + po
     return float(dt.strftime("%s"))
 
 
