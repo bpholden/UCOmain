@@ -46,7 +46,9 @@ def parse_options():
 
 def find_date(in_date):
     if in_date == "today":
-        today = datetime.utcnow()
+        today = datetime.now()
+        po = timedelta(days=1)
+        today = today + po
         datestr = "%d/%02d/%02d" % (today.year,today.month,today.day)
     else:
         datestr = in_date
