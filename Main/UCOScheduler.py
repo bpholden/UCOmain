@@ -313,9 +313,9 @@ def time_check(star_table, totexptimes, dt, start_time=None):
         maxfaintexptime = 0
 
     if start_time is not None:
-        maxexptime = start_time - time.time()
-        maxfaintexptime = start_time - time.time()
-
+        maxexptime = start_time - float(dt.strftime('%s'))
+        maxfaintexptime = start_time - float(dt.strftime('%s'))
+    
     if maxexptime < SchedulerConsts.TARGET_EXPOSURE_TIME_MIN:
         maxexptime = SchedulerConsts.TARGET_EXPOSURE_TIME_MIN
         # this will try a target in case we get lucky

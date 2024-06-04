@@ -1695,7 +1695,7 @@ class APF:
             if val:
                 servo_failed = True
                 msg = "Error: Servo Amplifier Fault: " + nm + " " + val
-                apflog(msg, level="alert", echo=True)
+                apflog(msg, level="timed_alert", echo=True)
                 self.robot['MASTER_MESSAGE'].write(msg)
 
         for pr in prefixs:
@@ -1704,7 +1704,7 @@ class APF:
             if val:
                 servo_failed = True
                 msg = "Error: Following Error Fault: " + nm + " " + val
-                apflog(msg, level="alert", echo=True)
+                apflog(msg, level="timed_alert", echo=True)
                 self.robot['MASTER_MESSAGE'].write(msg)
 
         return servo_failed
@@ -1753,12 +1753,12 @@ class APF:
             if not result:
                 apflog("Closeup failed with exit code %d" % code, echo=True)
                 if self.servo_failure() or self.slew_allowed.read(binary=True) is False:
-                    apflog("Likely Servo amplifier failure, may power cycle telescope",echo=True,level='alert')
+                    apflog("Likely Servo amplifier failure, may power cycle telescope",echo=True,level='error')
                     rv = self.power_down_telescope()
                     if rv:
                         apflog("Power cycled telescope",echo=True,level="error")
                     else:
-                        apflog("Failure power cycling telescope",echo=True,level="alert")
+                        apflog("Failure power cycling telescope",echo=True,level="error")
                 if attempts == 7:
                     lstr = "Closeup has failed %d times consecutively. Human intervention likely required." % (attempts)
                     areopen, whatsopen = self.is_open()

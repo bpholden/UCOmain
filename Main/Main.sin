@@ -196,7 +196,7 @@ def args(apftask):
             mn = int(mtch.group(2))
             opt.start = get_start_time(hr,mn)
             try:
-                apftask.write("MASTER_UTSTARTLIST", opt.start,wait=False)
+                apftask.write("MASTER_UTSTARTLIST", opt.start, wait=False)
             except Exception as e:
                 apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
 
@@ -414,7 +414,7 @@ if __name__ == '__main__':
         calibrate = None
 
     # Start the main watcher thread
-    observe = Observe(apf,opt)
+    observe = Observe(apf, opt)
     getUCOTargets = getUCOTargets(opt, task=parent, wait_time=target_time)
 
     apf.instr_permit()
