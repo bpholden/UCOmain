@@ -163,7 +163,7 @@ def get_spreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT):
         apflog(errlog,echo=True,level='error')
     return worksheet
 
-def retrieve_codex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,sleep=True):
+def retrieve_codex(req_cols,sheetns, certificate=DEFAULT_CERT, sleep=True):
     """retrieve_codex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT)
 
     returns the "codex", a list of lists containing all of the columns
@@ -221,7 +221,7 @@ def retrieve_codex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT,s
     return full_codex
 
 
-def find_columns(col_names,req_cols,opt_cols=[]):
+def find_columns(col_names,req_cols):
     """find_columns finds the indices for the column names in the list of
 
     required columns indices = find_columns(col_names, req_cols)
@@ -241,10 +241,6 @@ def find_columns(col_names,req_cols,opt_cols=[]):
         else:
             apflog("%s Not found in column names from google spreadsheet" % (r) ,\
                    level="Warn",echo=True)
-
-    for r in opt_cols:
-        if r in col_names:
-            didx[r] = col_names.index(r)
 
     # hack to handle an error
     if req_cols[0] == "Star Name" and req_cols[0] not in list(didx.keys()):
@@ -341,7 +337,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
                     "texp", "I2", "expcount", "decker","Close Companion", \
                     "lastobs", "B-V", \
                     "cad", "pri", "nexp", "count", "binning", \
-                    "night_cad","night_obs", "DaysNew", \
+                    "night_cad", "night_obs", "night_nexp", "DaysNew", \
                     "Template", "Nobs", "Total Obs", "Bstar", "Only Template", \
 #                    "mode", "raoff", "decoff",  "obsblock",\
                     'sheetn', 'owner' \
@@ -352,7 +348,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
     col_names = full_codex[0]
     codex = full_codex[1:]
 
-    didx = find_columns(col_names,req_cols)
+    didx = find_columns(col_names, req_cols)
     star_table = init_star_table(req_cols)
 
     if hour_constraints is not None:
@@ -469,10 +465,13 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
             star_table['cad'].append(0.7)
 
         night_cad = float_default(ls[didx["night_cad"]], default=-1.0)
+        night_nexp = 1
         if night_cad > 0:
             night_cad /= 60*24
+            night_nexp = float_default(ls[didx["night_nexp"]], default=2)
         star_table['night_cad'].append(night_cad)
         star_table['night_obs'].append(0)
+        star_table['night_nexp'].append(night_nexp)
 
         star_table['pri'].append(apfpri)
         star_table["lastobs"].append(float_default(ls[didx["lastobs"]], default=0))

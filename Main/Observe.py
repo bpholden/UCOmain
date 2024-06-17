@@ -159,11 +159,9 @@ class Observe(threading.Thread):
         if self.lineresult.binary == 3:
             retval = True
         else:
-            script_mess = self.apf.robot["SCRIPTOBS_MESSAGE"].read()
-            if 'ERR/WINDSHIELD' in script_mess:
-                apflog("Windshield error detected", echo=True, level='error')
+            if "ERR/WIND"  in self.apf.robot["MASTER_MESSAGE"].read():
+                apflog("Windshield error, check for faults", echo=True, level='error')
                 return retval
-            
             r_v = self.apf.robot["FOCUSTEL_STATUS"].read(binary=True)
             if r_v > 3 and self.notify_focus_failure:
                 apflog("Telescope focus has failed", level="error", echo=True)
