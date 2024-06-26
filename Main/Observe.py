@@ -630,8 +630,10 @@ class Observe(threading.Thread):
             APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
             self.apf.validate_UCAM_outputs()
             self.apf.update_windshield(self.windshield_mode)
+            self.apf.apftask_mon(self.apf.metxfersta)
+            self.apf.apftask_mon(self.apf.apfteqsta)
 
-            ripd, running = self.apf.find_robot()
+            _, running = self.apf.find_robot()
             if running:
                 apflog("Scriptobs is already running yet start_scriptobs was called", level="warn", echo=True)
                 return

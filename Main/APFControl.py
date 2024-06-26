@@ -309,11 +309,8 @@ class APF:
         self.faenable.monitor()
 
         self.apfteqsta.monitor()
-        self.apfteqsta.callback(self.apftask_mon)
-
         self.metxfersta.monitor()
-        self.metxfersta.callback(self.apftask_mon)
-
+        
         self.lastopen.monitor()
 
         # Grab some initial values for the state of the telescope
