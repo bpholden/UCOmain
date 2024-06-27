@@ -284,7 +284,6 @@ class APF:
                    self.shuttersta, self.opensta, self.closesta,\
                     self.focustelsta):
             kw.monitor()
-            kw.callback(self.apftask_status_mon)
 
 
         self.counts.monitor()
@@ -1093,6 +1092,19 @@ class APF:
                 return False
 
         return True
+
+    def status_clear(self):
+        """
+        status_clear()
+
+        Clears the PS status of any APFTask where
+        the PS status does not match the actual status.
+        """
+        for kw in (self.slewsta, self.calsta, self.focussta, \
+                   self.shuttersta, self.opensta, self.closesta,\
+                    self.focustelsta):
+            self.apftask_status_mon(kw)
+
 
     def focusinstr(self, log_error_level='Alert'):
         """
