@@ -632,6 +632,7 @@ class Observe(threading.Thread):
             self.apf.update_windshield(self.windshield_mode)
             self.apf.apftask_mon(self.apf.metxfersta)
             self.apf.apftask_mon(self.apf.apfteqsta)
+            self.apf.status_clear()
 
             _, running = self.apf.find_robot()
             if running:
@@ -719,7 +720,7 @@ class Observe(threading.Thread):
             cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
             focusing = self.apf.focussta['binary'] < 3
-
+            self.apf.status_clear()
             # Check and close for weather
 
             self.bad_weather = self.apf.dew_too_close or not self.apf.openOK \
