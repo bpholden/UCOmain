@@ -809,8 +809,9 @@ class Observe(threading.Thread):
 
             # If the sun is rising and scriptobs has stopped, run closeup
             if float(cursunel) > sunel_lim and not running and rising:
-                apflog("Closing due to sun elevation. Sunel = % 4.2f" % float(cursunel), echo=True)
-                APFTask.set(self.task, suffix="MESSAGE", value="Closing, sun is rising", wait=False)
+                outstr = "Closing due to sun elevation. Sunel = % 4.2f" % float(cursunel)
+                apflog(outstr, echo=True)
+                APFTask.set(self.task, suffix="MESSAGE", value=outstr, wait=False)
                 if self.apf.is_open()[0]:
                     msg = "APF is open, closing due to sun elevation = %4.2f" % float(cursunel)
                     closing()
