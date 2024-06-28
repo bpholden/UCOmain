@@ -1103,7 +1103,8 @@ class APF:
         for kw in (self.slewsta, self.calsta, self.focussta, \
                    self.shuttersta, self.opensta, self.closesta,\
                     self.focustelsta):
-            self.apftask_status_mon(kw)
+            #self.apftask_status_mon(kw)
+            pass
 
 
     def focusinstr(self, log_error_level='Alert'):
