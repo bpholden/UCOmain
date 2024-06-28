@@ -626,7 +626,7 @@ class APF:
         return
 
     def apftask_status_mon(self,sta):
-        if sta['populated'] == False:
+        if sta['populated'] is False:
             return
         try:
             sta_val = sta['binary']
