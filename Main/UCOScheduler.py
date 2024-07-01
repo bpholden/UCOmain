@@ -890,7 +890,7 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
     return res
 
 def last_attempted():
-    '''
+    """
 
     last_attempted()
 
@@ -901,7 +901,6 @@ def last_attempted():
 
     If the last object was not observed successfully,
     returns the name of the object
-    '''
 
     Returns the last object attempted to be observed
     if the observation failed.
