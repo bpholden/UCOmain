@@ -65,7 +65,8 @@ def compute_priorities(star_table, cur_dt, hour_table=None, rank_table=None):
     good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
 
-    started_doubles = (star_table['night_cad'] > 0) & (star_table['night_obs'] < star_table['night_nexp'])
+    started_doubles = star_table['night_cad'] > 0
+    started_doubles = started_doubles & (star_table['night_obs'] < star_table['night_nexp'])
     if np.any(started_doubles):
         redo = started_doubles & (cadence_check > (star_table['night_cad'] - BUFFER))
         redo = redo & (cadence_check < (star_table['night_cad'] + BUFFER))
