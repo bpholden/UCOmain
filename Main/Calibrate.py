@@ -1,16 +1,9 @@
 from __future__ import print_function
-from datetime import datetime, timedelta
 import os
 import os.path
-from select import select
-import re
-import subprocess
 import sys
-import thread
 import threading
 
-
-import numpy as np
 
 try:
     import ktl
@@ -25,7 +18,9 @@ from apflog import *
 AVERAGE_INSTRFOC = 8522
 
 class Calibrate(threading.Thread):
-    def __init__(self, apf, name, wait_time, calfile, outfile, obsnum, phase_index=0, task='master', test=False, possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
+    def __init__(self, apf, name, wait_time, calfile, outfile, obsnum, phase_index=0,\
+                  task='master', test=False, \
+                    possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.apf = apf
@@ -46,20 +41,23 @@ class Calibrate(threading.Thread):
 
 
     def test_bias(self):
-
+        '''
+        test_bias() - Take a single bias frame to test the UCAM
+        '''
         if self.test:
             apflog("Would have taken a single bias frame using APFControl.test_bias()",echo=True)
         else:
             result = self.apf.test_bias()
             if result == None:
-                apflog("Focusinstr or calibrate or scriptobs are running?!", level='Error', echo=True)
-            if result == False:
+                apflog("Focusinstr or calibrate or scriptobs are running?!",\
+                        level='Error', echo=True)
+            if result is False:
                 # this is a UCAM problem
                 rv = self.apf.ucam_restart()
-                if rv == False:
+                if rv is False:
                     apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
 
-        result = self.apf.ucamStatus()
+        result = self.apf.ucam_status()
         if result is False:
             apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
 
@@ -67,7 +65,9 @@ class Calibrate(threading.Thread):
 
 
     def set_focus_defaults(self):
-
+        '''
+        set_focus_defaults() - Set the default values for the focusinstr keywords
+        '''
         step_size = ktl.read('apftask', 'focusinstr_step_size', binary=True)
 
         if step_size == 0:
@@ -83,21 +83,26 @@ class Calibrate(threading.Thread):
             ktl.write('apftask', 'focusinstr_widetime', 60)
             ktl.write('apftask', 'focusinstr_narrowtime', 720)
             ktl.write('apftask', 'focusinstr_useref', True)
-            ktl.write('apftask', 'focusinstr_refname', '/home/user/apf_analysis/data/20220913_11318.fits,/home/user/apf_analysis/data/20220913_11319.fits')
+            ktl.write('apftask', 'focusinstr_refname',\
+                       '/home/user/apf_analysis/data/20220913_11318.fits,/home/user/apf_analysis/data/20220913_11319.fits')
 
         return
 
     def focus_instr(self,setup=True):
-
+        '''
+        focus_instr() - Run the focusinstr script
+        '''
         self.set_focus_defaults()
 
         if self.test:
-            apflog("Would have set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
+            apflog("Would have set observing info with %s %s and %s"\
+                    % (str(self.obsnum),self.outfile,self.owner))
             apflog("Would have run APFControl.focusinstr",echo=True)
             return True
 
         if setup:
-            apflog("Will set observing info with %s %s and %s" % (str(self.obsnum),self.outfile,self.owner))
+            apflog("Will set observing info with %s %s and %s" %\
+                    (str(self.obsnum),self.outfile,self.owner))
             self.apf.set_observer_info(num=self.obsnum, name=self.outfile, owner=self.owner)
 
         apflog("Focus begun.", echo=True)
@@ -109,26 +114,29 @@ class Calibrate(threading.Thread):
         return result
 
     def calibrate(self,phase):
-
+        '''
+        calibrate() - Run the calibrate script
+        '''
         eostele = ktl.Service('eostele')
-        sunel = eostele["sunel"].read()
-        sunel = float(sunel)
+        sunel = float(eostele["sunel"].read())
         if sunel < 3:
-            apflog("Not Starting calibrate %s script, sun too low." % (phase), level='Info', echo=True)
+            apflog("Not Starting calibrate %s script, sun too low."\
+                    % (phase), level='Info', echo=True)
             return True
 
         time = phase[4:].lower()
 
         apflog("Starting calibrate %s script." % (phase), level='Info', echo=True)
         if self.test:
-            apflog("Would have waited for permission (APFControl.instr_permit()) for phase %s" % (phase),echo=True)
-            apflog("Would have run APFControl.ucamStatus() for phase %s" % (phase),echo=True)
+            apflog("Would have waited for permission (APFControl.instr_permit()) for phase %s"\
+                    % (phase),echo=True)
+            apflog("Would have run APFControl.ucam_status() for phase %s" % (phase),echo=True)
             apflog("Would have run APFControl.calibrate for time %s" % (time),echo=True)
             return True
 
         self.apf.instr_permit()
 
-        result = self.apf.ucamStatus()
+        result = self.apf.ucam_status()
         if result is False:
             apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
             return False
@@ -136,21 +144,27 @@ class Calibrate(threading.Thread):
         result = self.apf.calibrate(script = self.calfile, time = time)
         APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
-        if result == False:
+        if result is False:
+            sunel = float(eostele["sunel"].read())
             if sunel < 3:
-                apflog("Not Starting calibrate %s script, sun too low." % (phase), level='Info', echo=True)
+                apflog("Not Starting calibrate %s script, sun too low." % (phase),\
+                        level='Info', echo=True)
                 return True
             apflog("Calibrate Pre has failed. Trying again",level='warn',echo=True)
             self.apf.instr_permit()
             result = self.apf.calibrate(script = self.calfile, time = time)
             if not result:
-                apflog("Error: Calibrate Pre has failed twice. Calibrate is exiting.",level='error',echo=True)
+                apflog("Error: Calibrate Pre has failed twice. Calibrate is exiting.",\
+                       level='error',echo=True)
                 self.apf.turn_off_lamps()
 
         return result
 
 
     def run(self):
+        '''
+        run() - Run the calibration thread
+        '''
 
         apflog("Will start with phase %d %s after %.1f seconds" % (self.phase_index,self.possible_phases[self.phase_index],self.wait_time), echo=True)
 
@@ -186,17 +200,11 @@ class Calibrate(threading.Thread):
                 apflog("Phase %s failed" % cur_phase,echo=True)
                 return
 
-        self.stop()
         return
-
-
-    def stop(self):
-        self.signal = False
-        thread.exit()
-
 
 if __name__ == "__main__":
 
+    # basic functionality test
     task = 'example'
     APFTask.establish(task, os.getpid())
     apf = APFControl.APF(task=task,test=True)
