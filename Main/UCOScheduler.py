@@ -51,6 +51,9 @@ def need_cal_star(star_table, observed, priorities):
     """
 
     # this is kind of clunky
+    if observed is None or observed.sheetns is None:
+        return priorities
+
     cal_stars = np.zeros_like(priorities, dtype=bool)
     for sheetn in observed.sheetns:
         if np.any(star_table['need_cal'][star_table['sheetn'] == sheetn] == "Y"):
@@ -93,6 +96,7 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
     bad_cadence = np.logical_not(good_cadence)
 
     started_doubles = star_table['night_cad'] > 0
+    started_doubles = started_doubles & (star_table['night_obs'] > 0)
     started_doubles = started_doubles & (star_table['night_obs'] < star_table['night_nexp'])
     if np.any(started_doubles):
         redo = started_doubles & (cadence_check > (star_table['night_cad'] - BUFFER))
