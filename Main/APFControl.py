@@ -285,13 +285,6 @@ class APF:
                     self.focustelsta):
             kw.monitor()
 
-
-        for kw in (self.slewsta, self.calsta, self.focussta, \
-                   self.shuttersta, self.opensta, self.closesta,\
-                    self.focustelsta):
-            kw.monitor()
-            kw.callback(self.apftask_status_mon)
-
         self.counts.monitor()
         self.teqmode.monitor()
         self.vmag.monitor()
@@ -630,14 +623,6 @@ class APF:
             # variables are serviceSTA and service is
             self.restart(name,host)
         return
-
-    def apftask_status_mon(self,sta):
-        if sta['populated'] == False:
-            return
-        try:
-            sta_val = sta['binary']
-        except:
-            return
 
     def apftask_status_mon(self,sta):
         if sta['populated'] is False:
