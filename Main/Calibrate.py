@@ -113,7 +113,7 @@ class Calibrate(threading.Thread):
 
         return result
 
-    def calibrate(self,phase):
+    def calibrate(self, phase):
         '''
         calibrate() - Run the calibrate script
         '''
@@ -124,14 +124,14 @@ class Calibrate(threading.Thread):
                     % (phase), level='Info', echo=True)
             return True
 
-        time = phase[4:].lower()
+        ctime = phase[4:].lower()
 
         apflog("Starting calibrate %s script." % (phase), level='Info', echo=True)
         if self.test:
             apflog("Would have waited for permission (APFControl.instr_permit()) for phase %s"\
                     % (phase),echo=True)
             apflog("Would have run APFControl.ucam_status() for phase %s" % (phase),echo=True)
-            apflog("Would have run APFControl.calibrate for time %s" % (time),echo=True)
+            apflog("Would have run APFControl.calibrate for time %s" % (ctime),echo=True)
             return True
 
         self.apf.instr_permit()
@@ -141,7 +141,7 @@ class Calibrate(threading.Thread):
             apflog("Failure in UCAM status and restart!", level='Alert', echo=True)
             return False
 
-        result = self.apf.calibrate(script = self.calfile, time = time)
+        result = self.apf.calibrate(script = self.calfile, time = ctime)
         APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
 
         if result is False:
@@ -152,7 +152,7 @@ class Calibrate(threading.Thread):
                 return True
             apflog("Calibrate Pre has failed. Trying again",level='warn',echo=True)
             self.apf.instr_permit()
-            result = self.apf.calibrate(script = self.calfile, time = time)
+            result = self.apf.calibrate(script = self.calfile, time = ctime)
             if not result:
                 apflog("Error: Calibrate Pre has failed twice. Calibrate is exiting.",\
                        level='error',echo=True)
@@ -199,6 +199,8 @@ class Calibrate(threading.Thread):
             else:
                 apflog("Phase %s failed" % cur_phase,echo=True)
                 return
+
+        APFTask.phase(self.task, self.possible_phases[end])
 
         return
 

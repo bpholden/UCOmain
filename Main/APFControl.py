@@ -286,6 +286,12 @@ class APF:
             kw.monitor()
 
 
+        for kw in (self.slewsta, self.calsta, self.focussta, \
+                   self.shuttersta, self.opensta, self.closesta,\
+                    self.focustelsta):
+            kw.monitor()
+            kw.callback(self.apftask_status_mon)
+
         self.counts.monitor()
         self.teqmode.monitor()
         self.vmag.monitor()
@@ -309,7 +315,7 @@ class APF:
 
         self.apfteqsta.monitor()
         self.metxfersta.monitor()
-        
+
         self.lastopen.monitor()
 
         # Grab some initial values for the state of the telescope
@@ -619,11 +625,19 @@ class APF:
         if sta_val > 3:
             # warning or higher
             nmsta = sta['name'].lower()
-            name = "apf" + nmsta[0:7] 
-            # this relies on the fact that all of the STA 
+            name = "apf" + nmsta[0:7]
+            # this relies on the fact that all of the STA
             # variables are serviceSTA and service is
             self.restart(name,host)
         return
+
+    def apftask_status_mon(self,sta):
+        if sta['populated'] == False:
+            return
+        try:
+            sta_val = sta['binary']
+        except:
+            return
 
     def apftask_status_mon(self,sta):
         if sta['populated'] is False:
@@ -646,7 +660,7 @@ class APF:
                 except:
                     apflog("Cannot write to apftask.%s_PS_STATE" % (name),level='error',echo=True)
                     pass
-        return 
+        return
     ## end of callbacks for monitoring stuff
 
 
@@ -672,9 +686,9 @@ class APF:
         """
 
         init_keyword(keyword, value, timeout=None)
-        
+
         Writes the keyword to the value given a timeout.
-        
+
         """
 
         success = False
@@ -700,7 +714,7 @@ class APF:
         init_gexptime()
 
         Sets guider exposure time to 1 second.
-        
+
         """
 
         timeout = None
@@ -715,7 +729,7 @@ class APF:
         init_sumframe()
 
         Sets sumframe to 1.
-        
+
         """
         ret_val = self.init_keyword(self.sumframe, 1)
         return ret_val
@@ -726,7 +740,7 @@ class APF:
         init_guide_cam()
 
         Sets the guider camera to sensible defaults.
-        
+
         """
 
         if self.gcam_power.binary is False:
@@ -755,7 +769,7 @@ class APF:
 
         Checks the output file from the UCAM to make sure it matches
         the values it should have.
-        
+
         """
         if self.outfile.read() != self.desired_outfile:
             apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
@@ -914,12 +928,12 @@ class APF:
         """
         set_observer_info(num=10000, name='Robot', owner='public')
 
-        This sets the apfucam.OBSERVER keyword, 
-        the apfucam.OBSNUM keyword, 
+        This sets the apfucam.OBSERVER keyword,
+        the apfucam.OBSNUM keyword,
         and the checkapf.OWNRHINT keyword.
         Also sets up other items just to be safe, such as
         the output directory, binning, and the file prefix.
-        
+
         """
         if self.test: return
         apflog("Setting science camera parameters.")
@@ -983,11 +997,11 @@ class APF:
         """
         write_stages(stagelist, component, state)
 
-        For every stage in stagelist, write the 
-        component to the value state. 
+        For every stage in stagelist, write the
+        component to the value state.
         The timeout is 10 seconds.
         Returns True on success, False otherwise.
-        
+
         """
         rv = True
         for stage in stagelist:
@@ -1070,8 +1084,8 @@ class APF:
         '''
         hatch_correct(self)
 
-        The hatch occasionally fails to open, leaving it in an unknown state. 
-        This function tries to fix that by closing the hatch and then 
+        The hatch occasionally fails to open, leaving it in an unknown state.
+        This function tries to fix that by closing the hatch and then
         opening the hatch again.
         '''
         if self.hatchpos['populated'] == False:
@@ -1111,11 +1125,11 @@ class APF:
         """
         focusinstr()
 
-        A wrapper for the instrument focus method. 
-        This ensures that the permissions are available, 
+        A wrapper for the instrument focus method.
+        This ensures that the permissions are available,
         turns on various stages, makes sure that the UCAM is configured,
         and checks the output of the focus.
-        
+
         """
         self.instr_permit()
         rv = self.enable_cal_inst()
@@ -1175,11 +1189,11 @@ class APF:
     def calibrate(self, script, time):
         """
         calibrate(script, time)
-        
+
         Runs the calibrate shell script with the specified script as
-        the option. 
+        the option.
         The time variable must be "pre" or "post" which is also passed
-        to the calibrate script. 
+        to the calibrate script.
 
         """
         self.validate_UCAM_outputs()
@@ -1356,7 +1370,7 @@ class APF:
         save_movie()
 
         Starts the recording of a guider move.
-        
+
         """
         now = datetime.datetime.now()
         self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day, self.tel['TARGNAME'].read()))
@@ -1369,7 +1383,7 @@ class APF:
         stop_movie()
 
         Stops recording a guider movie.
-        
+
         """
         self.save3d.write(False)
         self.fits3dir.write('/tmp/')
@@ -1378,7 +1392,7 @@ class APF:
     def run_focustel(self):
         """
         Runs the telescope focus routine.
-        
+
         """
         el = self.tel['EL'].read(binary=True)
         cfspos = self.fspos.read(binary=True)
@@ -1434,7 +1448,7 @@ class APF:
         """
         run_centerup()
 
-        Runs the centerup script to center up the telescope on the 
+        Runs the centerup script to center up the telescope on the
         target in the guider.
         """
         cmd = os.path.join(SCRIPTDIR,'centerup')
@@ -1488,7 +1502,7 @@ class APF:
         Sets the mode for APFTEQ to the commanded value.
         Does not check if value is allowed, but does if the switch was
         successful.
-        
+
         """
 
         apflog("Setting TEQMode to %s" % mode)
@@ -1507,7 +1521,7 @@ class APF:
         clear_estop()
 
         Clears the Estop state by running the clear_estop script.
-        
+
         """
 
         if self.test: return True
@@ -1538,10 +1552,10 @@ class APF:
         state_set()
 
         This checks if certain emergency stop states are set.
-        
+
         """
 
-        # there are three states - but we do not care about ESTOPST, 
+        # there are three states - but we do not care about ESTOPST,
         # that is will be cleared in openatsunset/openatnight
         if self.dome['ECLOSEST']:
             return True
@@ -1556,7 +1570,7 @@ class APF:
 
         Homes the telescope using the slew script.
         Then verifies homing occurred.
-        
+
         """
         cmd = os.path.join(SCRIPTDIR,"slew") + " --home"
         rv, rc = apftaskDo(cmd)
@@ -1578,7 +1592,7 @@ class APF:
 
         Checks if the telescope has been homed.
         If not, homes if the variable home=True.
-        
+
         """
         try:
             homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
@@ -1605,7 +1619,7 @@ class APF:
         Function to ready the APF for observing. Calls either openatsunset or openatnight.
            This function will attempt to open successfully twice. If both attempts
            fail, then it will return false, allowing the master to register the error
-           and behave accodingly. Otherwise it will return True. 
+           and behave accodingly. Otherwise it will return True.
         """
         # If this is a test run, just return True
         if self.test: return True
@@ -1823,7 +1837,7 @@ class APF:
 
     def set_autofoc_val(self):
         """ APFControl.set_autofoc_val()
-            tests when the last time the telescope was focused, 
+            tests when the last time the telescope was focused,
             if more than FOCUSTIME enable focus check
         """
 
@@ -1980,7 +1994,7 @@ class APF:
         dm_reset()
 
         Writes to ROBOSTATE keyword, effecitively tapping the deadman switch.
-        
+
         """
         try:
             APFLib.write(self.checkapf['ROBOSTATE'], "master operating",timeout=10)
@@ -2099,9 +2113,9 @@ class APF:
         """
         test_bias()
 
-        Takes a single test bias exposure. 
+        Takes a single test bias exposure.
         The function will turn on the UCAM and start the UCAM software if needed.
-        The output will be test_#.fits, where # is an integer that increments to 
+        The output will be test_#.fits, where # is an integer that increments to
         not overwrite the previous bias if it exists.
         """
 
@@ -2220,7 +2234,7 @@ class APF:
 
     def ucam_reboot(self,fake=False):
         """
-        ucam_reboot 
+        ucam_reboot
 
         Reboots the UCAM host using the UCAMLAUNCHER
 

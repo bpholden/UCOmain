@@ -43,16 +43,46 @@ def zero_last_objs_attempted():
     last_objs_attempted = []
     return
 
-def compute_priorities(star_table, cur_dt, hour_table=None, rank_table=None):
+def need_cal_star(star_table, observed, priorities):
     """
-    new_pri = compute_priorities(star_table, cur_dt, 
+    need_cal_star(star_table, priorities)
+
+    Returns True if there is a calibration star in the star_table.
+    """
+
+    # this is kind of clunky
+    if observed is None or observed.sheetns is None:
+        return priorities
+
+    cal_stars = np.zeros_like(priorities, dtype=bool)
+    for sheetn in observed.sheetns:
+        if np.any(star_table['need_cal'][star_table['sheetn'] == sheetn] == "Y"):
+            # need to check if we need a cal, ie. the program that needs cals had targets
+            # observed
+            notdone = True
+            cal_star_inds = (star_table['cal_star'] == 'Y') & (star_table['sheetn'] == sheetn)
+            cal_star_names = star_table['name'][cal_star_inds]
+            for cal_star_name in cal_star_names:
+                if cal_star_name in observed.names:
+                    notdone = False
+            if notdone:
+                cal_stars = cal_stars | cal_star_inds
+
+    if np.any(cal_stars):
+        priorities[cal_stars] = np.max(priorities) + 1
+
+    return priorities
+
+def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None):
+    """
+    new_pri = compute_priorities(star_table, cur_dt,
                                     hour_table=None, rank_table=None)
 
     Computes the priorities for the targets in star_table.
     This is a function of the current time, the last time the target was observed,
     the cadence of the target, the current hour table and the rank table.
     """
-    # make this a function, have it return the current priorities, than change 
+    # make this a function, have it return the current priorities, than change
     # references to the star_table below into references to the current priority list
     new_pri = np.zeros_like(star_table['pri'])
 
@@ -66,6 +96,7 @@ def compute_priorities(star_table, cur_dt, hour_table=None, rank_table=None):
     bad_cadence = np.logical_not(good_cadence)
 
     started_doubles = star_table['night_cad'] > 0
+    started_doubles = started_doubles & (star_table['night_obs'] > 0)
     started_doubles = started_doubles & (star_table['night_obs'] < star_table['night_nexp'])
     if np.any(started_doubles):
         redo = started_doubles & (cadence_check > (star_table['night_cad'] - BUFFER))
@@ -81,7 +112,7 @@ def compute_priorities(star_table, cur_dt, hour_table=None, rank_table=None):
 
     if done_sheets is not False:
         done_sheets_str = " ".join(list(done_sheets))
-        apflog("The following sheets are finished for the night: %s " % 
+        apflog("The following sheets are finished for the night: %s " %
                (done_sheets_str), echo=True)
 
     cadence_check /= star_table['cad']
@@ -104,6 +135,8 @@ def compute_priorities(star_table, cur_dt, hour_table=None, rank_table=None):
 
     if np.any(redo):
         new_pri[redo] = np.max(rank_table['rank'])
+
+    new_pri = need_cal_star(star_table, observed, new_pri)
 
     return new_pri
 
@@ -165,8 +198,17 @@ def update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None)
 
 def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constraints=None):
     """
-    make_hour_table
+
+    hour_table = make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constraints=None)
+
+    Makes an hour table from the rank table and the current datetime.
+    Writes it to outfn in outdir.
+    The dt is a datetime object used to compute the length of the night.
+    If hour_constraints is not None, it is a dictionary with keys 'runname' and 'left'
+    which is checked against the default values in the hour table, and the final values
+    are the lesser of the two.
     """
+
     if not outdir :
         outdir = os.getcwd()
 
@@ -206,8 +248,15 @@ def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constr
 
 def find_time_left():
     """
-    find_time_left()
+    time_left = find_time_left()
+
+    Uses the timereport/time_left command to find the time left each program has.
+    Writes the output to a table and returns it.
+
+    This is slow, so it should only be called once per night.
+
     """
+
     cmd = "/usr/local/lick/bin/timereport/time_left"
     if os.path.exists(cmd):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -241,7 +290,18 @@ def find_time_left():
 
 def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None):
     """
-    make_rank_table()
+    make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None)
+
+    Makes a rank table. The sheet_table_name is the name of the sheet which contains the
+    current semester's rank table.
+    The outfn is the output filename, defaults to rank_table, and the outdir is the output
+    directory, defaults to the current working directory.
+
+    If hour_constraints is not None, it is a dictionary with keys 'runname' and 'left'
+    which is checked against the default values in the hour table, and the final values
+    are the lesser of the two.
+    If hour_constraints is None, calls find_time_left() to get the time left for each program.
+
     """
     if not outdir :
         outdir = os.getcwd()
@@ -256,7 +316,7 @@ def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_cons
         sheetns, ranks, fracs, asciitoos = ParseUCOSched.parse_rank_table(sheet_table_name=sheet_table_name)
         if sheetns is None or len(sheetns) == 0:
             return None
-            # this should result in this function being called again but with the 
+            # this should result in this function being called again but with the
             # backup table being used
         toos = [ True if str(a) == 'y' else False for a in asciitoos ]
 
@@ -286,7 +346,7 @@ def tot_exp_times(star_table, targ_num):
     totexptimes = tot_exp_times(star_table, targ_num)
     star_table - astropy table of targets
     targ_num - number of targets
-    
+
     totexptimes - numpy array of total exposure times
     '''
     totexptimes = np.zeros(targ_num, dtype=float)
@@ -380,7 +440,7 @@ def sun_el_check(star_table, apf_obs, horizon='-18'):
 
 
 def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='', temp=False):
-    """ given a name, a row in a star table and a do_flag, will generate 
+    """ given a name, a row in a star table and a do_flag, will generate
     a scriptobs line as a string:
     line = make_scriptobs_line(star_table_row, t, decker="W",I2="Y")
 
@@ -494,7 +554,7 @@ def compute_datetime(ctime):
     '''
     dt = compute_datetime(ctime)
     ctime - can be a float, datetime, or ephem.Date, else UT now is used
-    dt - datetime object
+    dt - datetime object appropriate for ctime.
     '''
     if isinstance(ctime, float):
         dt = datetime.datetime.utcfromtimestamp(int(ctime))
@@ -542,7 +602,7 @@ def compute_sunset_rise(dt, horizon='0'):
     return sunset, sunrise
 
 def compute_sunset(dt, horizon='0'):
-    ''' 
+    '''
     sunset = compute_sunset(dt, horizon='0')
     helper to compute just sunset, calls compute_sunset_rise
     '''
@@ -637,7 +697,7 @@ def num_template_exp(vmag):
 
     vmag - V magnitude of target
     count - number of exposures for a template observation
-    
+
     '''
     count = 7
 
@@ -661,7 +721,7 @@ def enough_time_templates(star_table, stars, idx, apf_obs, dt):
 
     enough_time_templates - boolean
 
-    Computes the time needed for a template observation 
+    Computes the time needed for a template observation
     and checks if there is enough time left before sunrise.
     '''
 
@@ -708,7 +768,7 @@ def find_Bstars(star_table,idx, bstars):
 
 def make_obs_block(star_table, idx, dt, focval):
     '''
-    
+
     make_obs_block(star_table, idx, dt, focval)
 
     star_table - astropy table of targets
@@ -773,7 +833,7 @@ def make_obs_block(star_table, idx, dt, focval):
 
 def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode=''):
     '''
-    
+
     make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode='')
 
     stars - list of ephem.FixedBody objects
@@ -834,8 +894,8 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
     return res
 
 def last_attempted():
-    '''
-    
+    """
+
     last_attempted()
 
     failed_obs - string of the last object attempted
@@ -843,10 +903,14 @@ def last_attempted():
     searches for the last object attempted in the apftask ktl variables
     SCRIPTOBS_LINE and SCRIPTOBS_LINE_RESULT
 
-    If the last object was not observed successfully, 
+    If the last object was not observed successfully,
     returns the name of the object
-    '''
 
+    Returns the last object attempted to be observed
+    if the observation failed.
+    If it cannot read the keyword, returns None.
+
+    """
     failed_obs = None
 
     try:

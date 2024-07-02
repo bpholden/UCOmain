@@ -267,7 +267,7 @@ class Observe(threading.Thread):
 
 
     ####
-    # run is the main event loop, for historical reasons 
+    # run is the main event loop, for historical reasons
     # it has its own functions that are local in scope
     ####
 
