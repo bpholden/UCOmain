@@ -136,6 +136,8 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
     if np.any(redo):
         new_pri[redo] = np.max(rank_table['rank'])
 
+    new_pri[star_table['cal_star'] == 'Y'] = 0
+
     new_pri = need_cal_star(star_table, observed, new_pri)
 
     return new_pri
