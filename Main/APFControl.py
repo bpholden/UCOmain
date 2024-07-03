@@ -43,13 +43,13 @@ else:
 SCRIPTDIR = os.path.join(LROOT,'bin/robot/')
 
 
-def apftaskDo(cmd, debug=True, cwd='./'):
+def apftask_do(cmd, debug=True, cwd='./'):
     newcmd = "apftask do %s" % (cmd)
-    rv, retcode = cmdexec(newcmd, debug=debug, cwd=cwd)
+    rv, retcode = cmd_exec(newcmd, debug=debug, cwd=cwd)
     return rv, retcode
 
 
-def cmdexec(cmd, debug=False, cwd='./'):
+def cmd_exec(cmd, debug=False, cwd='./'):
     apflog("Executing Command: %s" % repr(cmd), echo=True)
 
     args = cmd.split()
@@ -234,7 +234,7 @@ class APF:
             kw = self.apfminimon[kwnm]
             try:
                 kw.monitor()
-                kw.callback(self.miniMonMon)
+                kw.callback(self.mini_mon_mon)
                 self.apfstas.append(kw)
             except Exception as e:
                 apflog("Cannot monitor keyword %s: %s" % (kwnm,e),echo=True, level='warn')
@@ -592,7 +592,7 @@ class APF:
         return
 
 
-    def miniMonMon(self,sta,host="hamburg"):
+    def mini_mon_mon(self,sta,host="hamburg"):
         if sta['populated'] == False:
             return
         try:
@@ -607,7 +607,7 @@ class APF:
             self.restart(name,host)
         return
 
-    def apfMonMon(self,sta,host="shadow"):
+    def apfmon_mon(self,sta,host="shadow"):
         if sta['populated'] == False:
             return
         try:
@@ -1219,7 +1219,7 @@ class APF:
             self.apfschedule('OWNRHINT').write('public')
 
         cmd = '%s %s %s' % (s_calibrate,script, time)
-        result, code = apftaskDo(cmd,debug=True,cwd=os.getcwd())
+        result, code = apftask_do(cmd,debug=True,cwd=os.getcwd())
         if not result:
             apflog("%s %s failed with return code %d" % (s_calibrate, script, code),echo=True)
         expression="($apftask.CALIBRATE_STATUS != 0) and ($apftask.CALIBRATE_STATUS != 1) "
@@ -1266,7 +1266,7 @@ class APF:
 
         execstr = " ".join(['focusinstr',flags])
         cmd = os.path.join(SCRIPTDIR,execstr)
-        result, code = apftaskDo(cmd,cwd=os.getcwd())
+        result, code = apftask_do(cmd,cwd=os.getcwd())
 
         expression="($apftask.FOCUSINSTR_STATUS != 3)"
         if ktl.waitFor(expression=expression, timeout=.1):
@@ -1344,7 +1344,7 @@ class APF:
             return True
 
         apflog("Slewing by executing %s" %(cmd), echo=True)
-        result, code = apftaskDo(cmd,cwd=os.path.curdir,debug=True)
+        result, code = apftask_do(cmd,cwd=os.path.curdir,debug=True)
         if not result:
             apflog("Failed at slewlock - check logs could be a slew failure or a failure to acquire: %s" %(code), level="error", echo=True)
 
@@ -1396,7 +1396,7 @@ class APF:
 
         apflog("Running focus_telescope routine.",echo=True)
         cmd = os.path.join(SCRIPTDIR,'focus_telescope -c %.3f' % (float(self.pred_tel_focus())*1000.0))
-        result, code = apftaskDo(cmd,cwd=os.path.curdir)
+        result, code = apftask_do(cmd,cwd=os.path.curdir)
 
         self.stop_movie()
 
@@ -1423,7 +1423,7 @@ class APF:
         istr = "%d" % (ind)
         cmdargs = cmd
 
-        result, code = apftaskDo(cmdargs,cwd=os.path.curdir)
+        result, code = apftask_do(cmdargs,cwd=os.path.curdir)
 
         if not result:
             apflog("autoexposure failed with code %d" % code, echo=True)
@@ -1437,7 +1437,7 @@ class APF:
         target in the guider.
         """
         cmd = os.path.join(SCRIPTDIR,'centerup')
-        result, code = apftaskDo(cmd,cwd=os.path.curdir)
+        result, code = apftask_do(cmd,cwd=os.path.curdir)
         if not result:
             apflog("centerup failed with code %d" % code, echo=True)
         return result
@@ -1519,7 +1519,7 @@ class APF:
                 return False
 
         cmd = os.path.join(SCRIPTDIR,'clear_estop')
-        result, code = apftaskDo(cmd,debug=True,cwd=os.getcwd())
+        result, code = apftask_do(cmd,debug=True,cwd=os.getcwd())
         if result:
             try:
                 estopstate = self.dome.read('ESTOPST',binary=True)
@@ -1558,7 +1558,7 @@ class APF:
 
         """
         cmd = os.path.join(SCRIPTDIR,"slew") + " --home"
-        rv, rc = apftaskDo(cmd)
+        rv, rc = apftask_do(cmd)
         try:
             homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
         except Exception as e:
@@ -1643,11 +1643,11 @@ class APF:
 
         # Make two tries at opening. If they both fail return False so the caller can act
         # accordingly.
-        result, code = apftaskDo(cmd)
+        result, code = apftask_do(cmd)
         if not result:
             apflog("First openup attempt has failed. Exit code = %d. After a pause, will make one more attempt." % code,echo=True)
             APFTask.waitFor(self.task, True, timeout=10)
-            result, code = apftaskDo(cmd)
+            result, code = apftask_do(cmd)
             if not result:
                 apflog("Second openup attempt also failed. Exit code %d. Giving up." % code,echo=True)
                 return False
@@ -1679,7 +1679,7 @@ class APF:
         # one last check
 
         apflog("Running power_down_telescope script")
-        result, _ = apftaskDo(cmd)
+        result, _ = apftask_do(cmd)
         if result:
             return True
 
@@ -1727,7 +1727,7 @@ class APF:
         cmd = os.path.join(SCRIPTDIR,"closeup")
         if force:
             apflog("Calling a single instance of closeup. Will return regardless of result.", echo=True)
-            result, code = apftaskDo(cmd)
+            result, code = apftask_do(cmd)
             return result
         if self.mv_perm.binary == False:
             if self.chk_close.binary == True:
@@ -1758,7 +1758,7 @@ class APF:
                 apflog("Didn't have move permission after 5 minutes. ", echo=True)
                 break
             attempts += 1
-            result, code = apftaskDo(cmd)
+            result, code = apftask_do(cmd)
             if not result:
                 apflog("Closeup failed with exit code %d" % code, echo=True)
                 if self.servo_failure() or self.slew_allowed.read(binary=True) is False:
@@ -1938,11 +1938,11 @@ class APF:
         # Call prep-obs
         apflog("Calling prep-obs.",echo=True)
         prepobs = os.path.join(SCRIPTDIR,'prep-obs') + ' --evening'
-        result, ret_code = apftaskDo(prepobs)
+        result, ret_code = apftask_do(prepobs)
         if result == False:
             # try again
             self.dm_reset()
-            result, ret_code = apftaskDo(prepobs)
+            result, ret_code = apftask_do(prepobs)
             if result is False:
                 apflog("Prep-obs returned error code %d. Targeting object has failed." % (ret_code),level='error',echo=True)
                 return
@@ -1951,7 +1951,7 @@ class APF:
 
         self.dm_reset()
         apflog("Slewing to lower el",echo=True)
-        result, ret_code = apftaskDo('slew -e 75')
+        result, ret_code = apftask_do('slew -e 75')
         if result == False:
             apflog("Slew returned error code %d. Targeting object has failed." % (ret_code),level='error',echo=True)
             return
@@ -2050,10 +2050,10 @@ class APF:
 
         telstate = self.tel['TELSTATE'].read()
         if telstate == 'Disabled':
-            rv, retc = apftaskDo(os.path.join(SCRIPTDIR,"slew --hold"))
+            rv, retc = apftask_do(os.path.join(SCRIPTDIR,"slew --hold"))
             if not rv:
                 return rv
-        rv, retc = apftaskDo(os.path.join(SCRIPTDIR,"prep-obs"))
+        rv, retc = apftask_do(os.path.join(SCRIPTDIR,"prep-obs"))
         if not rv:
             return rv
         # Start scriptobs

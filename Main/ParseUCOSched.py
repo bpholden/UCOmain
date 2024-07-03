@@ -112,7 +112,7 @@ def float_default(value,default=0.0):
     return rv
 
 
-def get_spreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT):
+def get_spreadsheet(sheetn="The Googledex", certificate=DEFAULT_CERT):
     """ Get the spreadsheet from google
 
     worksheet = get_spreadsheet(sheetn="The Googledex",certificate=DEFAULT_CERT)
