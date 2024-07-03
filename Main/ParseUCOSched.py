@@ -901,7 +901,9 @@ def update_sheet_lastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn
                     otime, taketemp, curowner, prev = log_values(local_name, obslog, prev)
 
                     try:
-                        star_table_row = star_table[(star_table['name'] == local_name)&(star_table['sheetn'] == sheetn)]
+                        c_row = star_table['name'] == local_name
+                        c_row = c_row & (star_table['sheetn'] == sheetn)
+                        star_table_row = star_table[c_row]
                     except:
                         star_table_row = None
 
