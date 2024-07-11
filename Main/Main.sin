@@ -495,9 +495,15 @@ if __name__ == '__main__':
     if os.path.exists(os.path.join(os.getcwd(),"observed_targets")):
         try:
             apflog("Updating the online googledex with the observed times", level='Info', echo=True)
-            ParseUCOSched.update_sheet_lastobs(os.path.join(os.getcwd(),"observed_targets"),outfn="googledex.dat")
+            obs_fn = os.path.join(os.getcwd(),"observed_targets")
+            n_up = ParseUCOSched.update_sheet_lastobs(obs_fn,outfn="googledex.dat")
         except Exception as e:
             apflog("Error: Updating the online googledex has failed: %s" % (e), level="error")
+        else:
+            if n_up > 0:
+                apflog("Updated %d entries in the online googledex" % (n_up), level='Info', echo=True)
+            else:
+                apflog("Failure updating the online googledex", level='warn', echo=True)
         logpush(os.path.join(os.getcwd(),"observed_targets"))
 
     for fn in ("googledex.dat", "rank_table", "hour_table", "robot.log","selected_targets"):
