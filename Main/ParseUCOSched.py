@@ -866,16 +866,28 @@ def update_sheet_lastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn
             continue
 
         # The top of the sheet is a list of column names
-        nmcol = vals[0].index('Star Name')
-        col = vals[0].index("lastobs")
-        nobscol = vals[0].index("Nobs")
+        try:
+            nmcol = vals[0].index('Star Name')
+        except ValueError:
+            apflog("Cannot find 'Star Name' in the column names for sheet %s" % (sheetn),echo=True,level="error")
+            continue
+        try:
+            col = vals[0].index("lastobs")
+        except ValueError:
+            apflog("Cannot find 'lastobs' in the column names for sheet %s" % (sheetn),echo=True,level="error")
+            continue
+        try:
+            nobscol = vals[0].index("Nobs")
+        except ValueError:
+            apflog("Cannot find 'Nobs' in the column names for sheet %s" % (sheetn),echo=True,level="error")
+            continue
         try:
             tempcol = vals[0].index("Template")
-        except:
+        except ValueError:
             tempcol = -1
         try:
             nightobscol = vals[0].index('night_obs')
-        except:
+        except ValueError:
             nightobscol = -1
 
         wait_time = len(vals)
