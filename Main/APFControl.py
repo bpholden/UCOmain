@@ -1134,9 +1134,11 @@ class APF:
 
         self.validate_UCAM_outputs()
 
-        lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal"])
+        lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal","useref"])
         if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
+        if bool(lastfocus_dict["useref"]) is False:
+            self.robot['FOCUSINSTR_USEREF'].write(True,binary=True)
 
         result, msg = self.run_focusinstr()
         if result:
