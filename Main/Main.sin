@@ -76,7 +76,7 @@ def control_watch(keyword,parent):
         return
 
 
-def signalShutdown(signal, frame):
+def signal_shutdown(signal, frame):
     shutdown()
 
 def shutdown():
@@ -154,7 +154,7 @@ def calc_focus_start_time():
     sun_dt = dt + sun_delta
     return start_time, start_dt, sun_dt, time_to_sunset + 1200
 
-def args(apftask):
+def parse_args(apftask):
     p_c = POSSIBLE_PHASES
     w_c = ["on", "off", "auto"]
     b_c = [1, 2, 4]
@@ -255,13 +255,13 @@ if __name__ == '__main__':
     apftask = ktl.Service("apftask")
 
     # Parse the command line arguments
-    opt = args(apftask)
+    opt = parse_args(apftask)
 
     # Register the atexit function after parsing the command line arguments
     # This prevents printing the help followed by exited/failure message
     atexit.register(shutdown)
-    signal.signal(signal.SIGINT,  signalShutdown)
-    signal.signal(signal.SIGTERM, signalShutdown)
+    signal.signal(signal.SIGINT,  signal_shutdown)
+    signal.signal(signal.SIGTERM, signal_shutdown)
 
     # Log the Command line arguments
     apflog("Command Line Args:")
