@@ -53,7 +53,7 @@ class Observe(threading.Thread):
         self.blank = False
         self.decker = "W"
 
-        self.obsBstar = True
+        self.obsBstar = not(opt.no_Bstar)
         self.lastObsSuccess = True
         self.lastObsFinished = True
         self.starFailures = 0

@@ -176,6 +176,7 @@ def parse_args(apftask):
     parser.add_argument('--rank_table', default='2024B_ranks', help="Optional name for table of sheet ranks")
     parser.add_argument('--sheet',default=None,help="Optional name for a Google spreadsheet")
     parser.add_argument('--owner',default='public',help="Optional name for file owners")
+    parser.add_argument('--no_Bstar', action='store_true', default=False, help="Do not observe B stars")
 
     parser.add_argument('--time_left',default=None,help="File name for remaining time in programs")
 
