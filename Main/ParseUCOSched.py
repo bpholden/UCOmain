@@ -287,6 +287,12 @@ def parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
                 frac.append(cfrac)
                 too.append(row[didx['too']].lower())
 
+    if 'RECUR_A100' not in sheetns:
+        sheetns.append('RECUR_A100')
+        rank.append(200)
+        frac.append(0.05)
+        too.append('n')
+ 
     return sheetns, rank, frac, too
 
 
@@ -319,7 +325,8 @@ def init_star_table(col_list):
 
 
 
-def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,sleep=True,hour_constraints=None):
+def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,sleep=True,
+                hour_constraints=None):
     '''
     star_table = parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,
                              prilim=1,sleep=True,hour_constraints=None)
@@ -597,7 +604,9 @@ def gen_stars(star_table):
 
 
 
-def parse_UCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W',  'Bstar' : 'N' },force_download=False,prilim=0.5,hour_constraints=None):
+def parse_UCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.dat",
+                   outdir=None,config={'I2': 'Y', 'decker': 'W',  'Bstar' : 'N' },
+                   force_download=False,prilim=0.5,hour_constraints=None):
     """ parse_UCOSched parses google sheets and returns the output as a tuple
     This routine downloads the data if needed and saves the output to a file.
     If the file exists, it just reads in the file.
@@ -630,10 +639,12 @@ def parse_UCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.
         try:
             star_table = read_star_table(outfn)
         except:
-            star_table  = parse_codex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, hour_constraints=hour_constraints)
+            star_table  = parse_codex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, 
+                                      hour_constraints=hour_constraints)
 
     else:
-        star_table = parse_codex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, hour_constraints=hour_constraints)
+        star_table = parse_codex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, 
+                                 hour_constraints=hour_constraints)
 
     stars = gen_stars(star_table)
 
