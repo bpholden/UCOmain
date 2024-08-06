@@ -1058,6 +1058,10 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
     # Note which of these are B-Stars for later.
     bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
 
+    if bstar and np.any(bstars) is False:
+        apflog("get_next(): No B stars listed in target sheets!", label='Error', echo=True)
+        return None
+
     apflog("get_next(): Computing exposure times", echo=True)
     totexptimes = tot_exp_times(star_table, targ_num)
 
