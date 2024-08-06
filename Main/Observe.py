@@ -1007,7 +1007,7 @@ if __name__ == "__main__":
             self.start = None
             self.test = True
             self.raster = False
-            self.no_bstar = False
+            self.no_Bstar = False
 
 
     parent = 'example'
