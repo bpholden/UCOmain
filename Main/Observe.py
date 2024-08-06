@@ -1002,11 +1002,12 @@ if __name__ == "__main__":
             self.name = 'apf'
             self.windshield = 'auto'
             self.fixed = None
-            self.sheet = 'Bstars'
-            self.rank_table = '2024A_ranks'
+            self.sheet = 'RECUR_A100'
+            self.rank_table = '2024B_ranks'
             self.start = None
             self.test = True
             self.raster = False
+            self.no_bstar = False
 
 
     parent = 'example'
