@@ -221,6 +221,7 @@ class APF:
         self.test = test
         self.task = task
         self.desired_outfile = None
+        self.old_size = 0
 
         try:
             self.eosgcam['GENABLE'].write(True,binary=True)
@@ -2355,6 +2356,28 @@ class APF:
                 return False
 
         return True
+    
+    def ucam_watchdir(self):
+        '''
+        
+        ucam_watchdir()
+
+        This simply watches the data directory to make sure that it increases in size
+        when exposures are taken. 
+        '''
+
+        outdir = self.ucam['OUTDIR'].read()
+        cmd_str = ['du','-s',outdir]
+        try:
+            dir_size = subprocess.check_output(cmd_str)
+        except Exception as e:
+            apflog("Cannot compute size of %s: %s %s" % (outdir, type(e), e))
+            return False
+
+        if dir_size > self.old_size:
+            self.old_size = dir_size
+            return True
+        return False
 
 if __name__ == '__main__':
     print("Testing telescope monitors, grabbing and printing out current state.")
