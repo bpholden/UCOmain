@@ -18,7 +18,7 @@ import SchedulerConsts
 
 class getUCOTargets(threading.Thread):
 
-    def __init__(self, opt, task='master',prilim=0.5,certificate=SchedulerConsts.DEFAULT_CERT,wait_time=0):
+    def __init__(self, opt, task='master', prilim=0.5, wait_time=0):
         threading.Thread.__init__(self)
 
         self.task = task
@@ -36,7 +36,7 @@ class getUCOTargets(threading.Thread):
         self.wait_time = wait_time
 
         self.prilim = prilim
-        self.certificate = certificate
+        self.certificate = SchedulerConsts.DEFAULT_CERT
 
         if opt.test:
             self.debug = opt.test
@@ -111,8 +111,10 @@ class getUCOTargets(threading.Thread):
             if self.signal is False:
                 return
             try:
-                star_table,stars = ParseUCOSched.parse_UCOSched(sheetns=self.sheets,outfn='googledex.dat',
-                                                                outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
+                _ = ParseUCOSched.parse_UCOSched(sheetns=self.sheets,outfn='googledex.dat',
+                                                                outdir=os.getcwd(),
+                                                                prilim=self.prilim,
+                                                                certificate=self.certificate)
             except Exception as e:
                 apflog("Error: Cannot download googledex?! %s %s" % (type(e), e),level="error")
                 # goto backup
@@ -120,18 +122,21 @@ class getUCOTargets(threading.Thread):
                     shutil.copyfile("googledex.dat.1","googledex.dat")
 
             try:
-                hour_table = ds.make_hour_table(rank_table,datetime.datetime.now(),hour_constraints=hour_constraints)
+                _ = ds.make_hour_table(rank_table,datetime.datetime.now(),
+                                                hour_constraints=hour_constraints)
             except Exception as e:
-                hour_table = None
                 apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
 
         while self.signal and self.too is not None:
 
-            if APFTask.waitfor(self.task,False,expression='apftask.SCRIPTOBS_PHASE==Observing',timeout=self.timeout):
+            if APFTask.waitfor(self.task,False,expression='apftask.SCRIPTOBS_PHASE==Observing',
+                               timeout=self.timeout):
 
                 self.reading = True
                 try:
-                    ParseUCOSched.parse_TOO(too_sheetns=self.too,outfn='googledex.dat',outdir=os.getcwd(),prilim=self.prilim,certificate=self.certificate)
+                    ParseUCOSched.parse_TOO(too_sheetns=self.too, outfn='googledex.dat',
+                                            outdir=os.getcwd(), prilim=self.prilim,
+                                            certificate=self.certificate)
                 except Exception as e:
                     apflog("Error: Cannot download %s: %s" % (self.too,e),level="error")
                 self.reading = False
