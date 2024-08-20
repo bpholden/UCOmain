@@ -180,7 +180,7 @@ def retrieve_codex(req_cols,sheetns, certificate=DEFAULT_CERT, sleep=True):
     full_codex.append(req_cols)
     for sheetn in sheetns:
         wait_time = 0
-        worksheet = get_spreadsheet(sheetn=sheetn,certificate=certificate)
+        worksheet = get_spreadsheet(sheetn=sheetn, certificate=certificate)
         if worksheet:
             cur_codex = None
             more_sleeping=10.
