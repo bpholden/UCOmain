@@ -1,0 +1,114 @@
+#! @KPYTHON@
+from __future__ import print_function
+
+import os
+import sys
+import time
+import atexit
+import functools
+import argparse
+
+import ktl
+import APF
+import APFTask
+from apflog import apflog
+
+def control_watch(keyword,parent):
+    if keyword['populated'] == False:
+        return
+    try:
+        value = keyword['ascii']
+        status = APFTask.get(parent,suffix=('STATUS',))
+        if status['STATUS'] == 'Paused':
+            paused = True
+        else:
+            paused = False
+
+        if value == "Abort":
+            APFTask.set(parent,suffix='STATUS',value='Exited/Failure')
+            APFTask.set(parent,suffix='MESSAGE',value="Aborted by APFTask")
+            os.kill(os.getpid(),signal.SIGINT)
+        elif value == "Pause" and not paused:
+            try:
+                APFTask.set(parent,suffix='STATUS',value='PAUSED')
+                APFTask.set(parent,suffix='MESSAGE',value="Paused by APFTask")
+                paused = True
+            except:
+                APF.log("Failure to set STATUS in APFTask",level=error)
+                os.kill(os.getpid(),signal.SIGINT)
+
+        else:
+            try:
+                APFTask.set(parent,suffix='STATUS',value='Running')
+                APFTask.set(parent,suffix='MESSAGE',value="Proceed by APFTask")
+                paused = False
+            except:
+                APF.log("Failure to set STATUS in APFTask",level=error)
+                os.kill(os.getpid(),signal.SIGINT)
+
+    except:
+        return
+
+
+def shutdown():
+    status = 'Exited/Success'
+        
+    try:
+        APFTask.set(parent, 'STATUS', status)
+    except:   
+        os._exit(1)
+    else:
+        os._exit(0)
+
+
+def args():
+    parser = argparse.ArgumentParser(description="Set default options")
+    parser.add_argument('-t', '--test', action='store_true', help="Start the master in test mode. No modification to the master task will be made, but will run as example.")
+    parser.add_argument('-p', '--phase', help='Phase, which is ignored')
+
+    opt = parser.parse_args()
+    return opt
+
+
+if __name__ == "__main__":
+    opt = args()
+
+    if opt.test:
+        parent = "example"
+    else:
+        parent = "master"
+    atexit.register (shutdown)
+    apftask = ktl.Service("apftask")        
+    try:
+        apflog("Attempting to establish apftask as %s" % parent)
+        APFTask.establish(parent, os.getpid())
+    except Exception as e:
+        print(e)
+        apflog("Task is already running with name %s." % parent, echo=True)
+        sys.exit("Couldn't establish APFTask %s" % parent)
+    # Set preliminary signal and tripwire conditions
+    apflog("Setting APFTask signal and tripwire.")
+    APFTask.set(parent, "SIGNAL", "TERM")
+    APFTask.set(parent, "TRIPWIRE", "TASK_ABORT")
+
+    control = apftask[parent + '_CONTROL']
+    cw = functools.partial(control_watch,parent=parent)
+    control.monitor()
+    control.callback(cw)
+
+    APFTask.set(parent,suffix="MESSAGE",value="CLOSED",wait=False)
+    eostele = ktl.Service('eostele')
+    sunel = eostele['sunel']
+    sunel.monitor()
+
+    APFTask.set(parent,suffix="PHASE",value="Waiting for sunset",wait=False)
+    sunset = '$eostele.SUNEL< 0'
+    APFTask.waitFor(parent, True, timeout=43200,expression=sunset)
+
+
+    APFTask.set(parent,suffix="PHASE",value="Waiting for sunrise",wait=False)
+    sunrise = '$eostele.SUNEL> 0'
+    APFTask.waitFor(parent, True, timeout=50400,expression=sunrise)
+
+    APFTask.set(parent,suffix="PHASE",value="Past sunrise",wait=False)
+    APFTask.set(parent,suffix="MESSAGE",value="Day time",wait=False)
