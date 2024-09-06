@@ -162,7 +162,7 @@ def parse_args():
     return options, datelist
 
 
-def updateConstraints(googledex_fn):
+def update_constraints(googledex_fn):
 
     star_table = astropy.io.ascii.read(googledex_fn)
     star_table['night_obs'] = 0
@@ -170,7 +170,7 @@ def updateConstraints(googledex_fn):
 
     return
 
-def updateHourConstraints(tleftfn):
+def update_hour_constraints(tleftfn):
 
     hour_table =  astropy.io.ascii.read('hour_table')
     time_left = astropy.io.ascii.read(tleftfn)
@@ -195,7 +195,7 @@ if __name__ == "__main__":
 
     options,datelist = parse_args()
     bstar = options.bstar
-    masterfp,star_strs,star_dates = prep_master(options.outdir,options.master)
+    masterfp, star_strs, star_dates = prep_master(options.outdir,options.master)
 
     rank_table = ds.make_rank_table(options.rank_sheetn)
     sheetns = list(rank_table['sheetn'][rank_table['rank'] > 0])
@@ -261,8 +261,8 @@ if __name__ == "__main__":
         
         print ("sun rose")
         if hour_constraints:
-            updateHourConstraints(tleftfn)
-        updateConstraints(os.path.join(options.outdir,options.infile))
+            update_hour_constraints(tleftfn)
+        update_constraints(os.path.join(options.outdir,options.infile))
 
         if os.path.isfile(otfn):
             try:
