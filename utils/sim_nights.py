@@ -22,9 +22,9 @@ import ParseUCOSched
 def read_datefile(datefn):
 
     try:
-        datefile = open(options.datefile)
+        datefile = open(datefn)
     except Exception as e:
-        print ("cannot open %s, and we died trying: %s" % (args[0], e))
+        print ("cannot open %s, and we died trying: %s" % (datefn, e))
         sys.exit()
 
     datelist = []
@@ -34,7 +34,7 @@ def read_datefile(datefn):
             print ("%s is not an acceptable date string" % (datestr))
             sys.exit()
         datelist.append(datestr)
-        
+
     return datelist
 
 def gen_datelist(startstr,endstr):
@@ -46,7 +46,7 @@ def gen_datelist(startstr,endstr):
         print("Start date %s is after end date %s"  %( str(start), str(end)))
         sys.exit(1)
 
-    
+
     cur = start
     while cur < end:
         breakbeg = datetime(cur.year,12,24)
@@ -128,11 +128,11 @@ def parse_args():
     parser.add_option("--rank_table",dest="rank_sheetn",default="2023A_ranks")
 
     parser.add_option("-m","--masterfile",dest="master",default="sim_master.simout")
-    (options, args) = parser.parse_args()    
+    (options, args) = parser.parse_args()
 
     if len(args) < 2 and options.datefile == "":
         print ("needs either a date pair or an input file which lists the dates")
-        sys.exit()    
+        sys.exit()
 
     if options.datefile != "":
         df = os.path.join(options.outdir,options.datefile)
@@ -162,7 +162,7 @@ def parse_args():
     return options, datelist
 
 
-def updateConstraints(googledex_fn):
+def update_constraints(googledex_fn):
 
     star_table = astropy.io.ascii.read(googledex_fn)
     star_table['night_obs'] = 0
@@ -170,7 +170,7 @@ def updateConstraints(googledex_fn):
 
     return
 
-def updateHourConstraints(tleftfn):
+def update_hour_constraints(tleftfn):
 
     hour_table =  astropy.io.ascii.read('hour_table')
     time_left = astropy.io.ascii.read(tleftfn)
@@ -187,11 +187,10 @@ def updateHourConstraints(tleftfn):
             time_left['left'][time_left['runname'] == runname] = time_left['alloc'][time_left['runname'] == runname] - time_left['used'][time_left['runname'] == runname]
 
     time_left.write(tleftfn,format='csv',overwrite=True)
-    return 
+    return
 ###
 
-if __name__ == "__main__":
-
+def main():
 
     options,datelist = parse_args()
     bstar = options.bstar
@@ -213,7 +212,7 @@ if __name__ == "__main__":
 
         curtime, endtime, apf_obs = NightSim.sun_times(datestr)
 
-        hour_table = ds.make_hour_table(rank_table, curtime.datetime(),\
+        _ = ds.make_hour_table(rank_table, curtime.datetime(),\
                                         hour_constraints=hour_constraints)
 
         star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns,\
@@ -227,7 +226,7 @@ if __name__ == "__main__":
         lastslow = 5
         lastfwhm = 15
         otfn = os.path.join(options.outdir,"observed_targets")
-        ot = open(otfn,"w")
+        ot = open(otfn,"w",encoding='utf-8')
         ot.close()
         observing = True
         while observing:
@@ -256,13 +255,13 @@ if __name__ == "__main__":
                 lastfwhm = 15
             if curtime > endtime:
                 observing = False
-        
+
             curtime = ephem.Date(curtime)
-        
+
         print ("sun rose")
         if hour_constraints:
-            updateHourConstraints(tleftfn)
-        updateConstraints(os.path.join(options.outdir,options.infile))
+            update_hour_constraints(tleftfn)
+        update_constraints(os.path.join(options.outdir,options.infile))
 
         if os.path.isfile(otfn):
             try:
@@ -271,6 +270,11 @@ if __name__ == "__main__":
                 print ("cannot unlink %s" %(otfn))
     if masterfp:
         masterfp.close()
-        
+
+
+
+if __name__ == "__main__":
+    main()
+
 
 # done
