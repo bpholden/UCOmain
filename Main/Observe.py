@@ -482,8 +482,12 @@ class Observe(threading.Thread):
 
         # opens the dome & telescope, if sunset is True calls open at sunset, else open at night
         def opening(sunel, sunset=False):
-            if self.canOpen is False:
+            if self.canOpen == False:
                 apflog("We cannot open, so not trying", level='Error', echo=True)
+                return False
+            if self.apf.robot["SLEW_ALLOWED"].read(binary=True) == False:
+                apflog("Opening: Slewing not allowed, so not opening", echo=True)
+                self.canOpen = False
                 return False
             when = "night"
             if sunset:
