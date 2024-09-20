@@ -194,7 +194,7 @@ def main():
 
     options,datelist = parse_args()
     bstar = options.bstar
-    masterfp,star_strs,star_dates = prep_master(options.outdir,options.master)
+    masterfp, star_strs, star_dates = prep_master(options.outdir,options.master)
 
     rank_table = ds.make_rank_table(options.rank_sheetn)
     sheetns = list(rank_table['sheetn'][rank_table['rank'] > 0])
