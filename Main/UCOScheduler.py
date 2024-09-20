@@ -115,23 +115,21 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
         apflog("The following sheets are finished for the night: %s " %
                (done_sheets_str), echo=True)
 
-    cadence_check /= star_table['cad']
-    bad_pri = np.floor(cadence_check * 100)
-    bad_pri = np.int_(bad_pri)
-
-    done_all = star_table['nobs'] >= star_table['totobs']
-    new_pri[done_all] = 0
+    bad_pri = np.ones_like(star_table['pri'])
 
     if rank_table is not None:
         for sheetn in rank_table['sheetn']:
             if sheetn not in done_sheets:
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += rank_table['rank'][rank_table['sheetn'] == sheetn]
-                new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
+                new_pri[cur & bad_cadence] += bad_pri[(cur & bad_cadence)]
             else:
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += 100
-                new_pri[cur & bad_cadence] += bad_pri[cur & bad_cadence]
+                new_pri[cur & bad_cadence] += bad_pri[(cur & bad_cadence)]
+
+    done_all = (star_table['nobs'] >= star_table['totobs']) & (star_table['totobs'] > 0)
+    new_pri[done_all] = 0
 
     if np.any(redo):
         new_pri[redo] = np.max(rank_table['rank'])
