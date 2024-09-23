@@ -535,20 +535,26 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
 
     return str(ret)
 
-def calc_elevations(stars, observer):
+
+def compute_preferred_el(star_table, targ_num):
     '''
-    els = calc_elevations(stars, observer)
-    stars - list of ephem.FixedBody objects
-    observer - ephem.Observer object
-    els - numpy array of elevations in degrees of stars for observer
+    pref_el = compute_preferred_el(star_table, targ_num)
+    star_table - astropy table of targets
+    targ_num - number of targets
+    pref_el - numpy array of preferred elevations
     '''
-    els = []
-    for s in stars:
-        observer.date = ephem.Date(observer.date)
-        s.compute(observer)
-        cur_el = np.degrees(s.alt)
-        els.append(cur_el)
-    return np.array(els)
+    pref_el = np.zeros(targ_num, dtype=float)
+    for i in range(0,targ_num):
+        if star_table['Vmag'][i] > SchedulerConsts.SLOWDOWN_VMAG_LIM:
+            pref_el[i] = SchedulerConsts.TARGET_ELEVATION_HIGH_MIN
+        else:
+            pref_el[i] = SchedulerConsts.TARGET_ELEVATION_MIN
+
+    return pref_el
+
+   # pref_el_min = [ SchedulerConsts.TARGET_ELEVATION_HIGH_MIN ] * targ_num
+
+
 
 def compute_datetime(ctime):
     '''
@@ -1106,12 +1112,12 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
         apflog( "get_next(): Not enough time left to observe any targets", level="error", echo=True)
         return None
 
+    # Compute the elevations of the stars
 
-    apflog("get_next(): Computing star elevations",echo=True)
+     apflog("get_next(): Computing star elevations",echo=True)
     fstars = [s for s,_ in zip(stars,available) if _ ]
     vis, star_elevations, scaled_els = Visible.visible(apf_obs, fstars, \
-                                                       totexptimes[available], shiftwest=shiftwest,
-                                                       pref_min_el=SchedulerConsts.TARGET_ELEVATION_MIN
+                                                       totexptimes[available], shiftwest=shiftwest
                                                        )
     currently_available = available
     if len(star_elevations) > 0:
