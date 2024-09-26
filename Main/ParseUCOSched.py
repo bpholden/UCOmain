@@ -74,17 +74,17 @@ def parse_starname(starname):
     requirements (no spaces, trim trialing spaces, etc.)
     """
     ostarname = starname.strip()
-    m= re.search("HD\s+\d+",starname)
+    m= re.search(r"HD\s+\d+",starname)
     if m:
-        ostarname = re.sub("HD\s+","HD",starname)
-    m = re.search("\s+",ostarname)
+        ostarname = re.sub(r"HD\s+","HD",starname)
+    m = re.search(r"\s+",ostarname)
     while m:
-        ostarname = re.sub("\s+","_",ostarname)
+        ostarname = re.sub(r"\s+","_",ostarname)
         m = re.search("\s+",ostarname)
-    m = re.search("\+",ostarname)
+    m = re.search(r"\+",ostarname)
     while m:
-        ostarname = re.sub("\+","p",ostarname)
-        m = re.search("\+",ostarname)
+        ostarname = re.sub(r"\+","p",ostarname)
+        m = re.search(r"\+",ostarname)
 
     return ostarname
 
