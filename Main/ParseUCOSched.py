@@ -833,10 +833,10 @@ def log_values(local_name, obslog, prev):
 
     return otime, taketemp, curowner, prev
 
-def update_sheet_lastobs(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='parsesched.dat',outdir=None):
+def update_online_sheets(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='parsesched.dat',outdir=None):
     """
-        Update the online googledex lastobs column assuming things in filename have been observed.
-        update_sheet_lastobs(filename, sheetn="The Googledex",time=None,certificate=DEFAULT_CERT)
+        Update the online googledex  assuming things in filename have been observed.
+        update_online_sheets(filename, sheetn="The Googledex",time=None,certificate=DEFAULT_CERT)
 
         filename - where the observations are logged
         ctime - current time as a time stamp

@@ -20,4 +20,4 @@ if __name__ == "__main__":
         else:
             sheetns = set(obslog.sheetns)
 
-        ParseUCOSched.update_sheet_lastobs(fn,outfn=outfn)
+        ParseUCOSched.update_online_sheets(fn,outfn=outfn)
