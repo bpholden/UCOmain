@@ -499,7 +499,11 @@ if __name__ == '__main__':
             obs_fn = os.path.join(os.getcwd(),"observed_targets")
             n_up = ParseUCOSched.update_online_sheets(obs_fn,outfn="googledex.dat")
         except Exception as e:
-            apflog("Error: Updating the online googledex has failed: %s" % (e), level="error")
+            try:
+                err_str = "Failed to update the online googledex with the observed times " + type(e) + e
+            except Exception:
+                err_str = "Failed to update the online googledex with the observed times " + type(e)
+            apflog(err_str, level="error")
         else:
             if n_up > 0:
                 apflog("Updated %d entries in the online googledex" % (n_up), level='Info', echo=True)
