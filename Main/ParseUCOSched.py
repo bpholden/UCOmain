@@ -850,7 +850,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
     worksheet = get_spreadsheet(sheetn=sheetn,certificate=DEFAULT_CERT)
     try:
         worksheet_vals = worksheet.get_all_values()
-    except:
+    except gspread.exceptions.APIError:
         apflog("Cannot get values from worksheet %s" % (sheetn),echo=True,level="error")
         return 0
     # Google does not like too many requests at once
