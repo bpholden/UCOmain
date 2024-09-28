@@ -948,7 +948,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                         if taketemp == "Y" and have_temp == "N" and curowner == sheetn:
                             worksheet.update_cell(i+1, tempcol+1, "Y")
                             nupdates += 1
-                        apflog( "Updated %s to having a template in %s" % (v[0],sheetn),echo=True)
+                            apflog( "Updated %s to having a template in %s" % (v[0],sheetn),echo=True)
                     except:
                         apflog( "Error logging template obs for %s" % (v[0]),echo=True,level='error')
                 else:
