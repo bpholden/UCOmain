@@ -500,9 +500,10 @@ if __name__ == '__main__':
             n_up = ParseUCOSched.update_online_sheets(obs_fn,outfn="googledex.dat")
         except Exception as e:
             try:
-                err_str = "Failed to update the online googledex with the observed times " + type(e) + e
+                err_str = "Failed to update the online googledex with the observed times "
+                err_str += type(e) + " " + e
             except Exception:
-                err_str = "Failed to update the online googledex with the observed times " + type(e)
+                err_str = "Failed to update the online googledex with the observed times "
             apflog(err_str, level="error")
         else:
             if n_up > 0:
