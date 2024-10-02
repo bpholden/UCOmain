@@ -145,7 +145,7 @@ def get_spreadsheet(sheetn="The Googledex", certificate=DEFAULT_CERT):
     except Exception as e:
         apflog("Cannot log into Google API.", echo=True,level='error')
         apflog("%s %s" % (type(e), e),echo=True,level='error')
-        return None
+        return None, None
     worksheet = None
     tries = 0
     errlog = None
@@ -161,7 +161,19 @@ def get_spreadsheet(sheetn="The Googledex", certificate=DEFAULT_CERT):
             time.sleep(1)
     if worksheet is None:
         apflog(errlog,echo=True,level='error')
-    return worksheet
+        return None, None
+    
+    cur_codex = None
+    more_sleeping=10.
+    while cur_codex is None:
+        try:
+            cur_codex = worksheet.get_all_values()
+        except:
+            if sleep:
+                time.sleep(more_sleeping)
+            cur_codex = None
+    
+    return worksheet, cur_codex
 
 def retrieve_codex(req_cols,sheetns, certificate=DEFAULT_CERT, sleep=True):
     """retrieve_codex(req_cols,sheetns=["The Googledex"],certificate=DEFAULT_CERT)
@@ -180,18 +192,8 @@ def retrieve_codex(req_cols,sheetns, certificate=DEFAULT_CERT, sleep=True):
     full_codex.append(req_cols)
     for sheetn in sheetns:
         wait_time = 0
-        worksheet = get_spreadsheet(sheetn=sheetn, certificate=certificate)
+        worksheet, cur_codex = get_spreadsheet(sheetn=sheetn, certificate=certificate)
         if worksheet:
-            cur_codex = None
-            more_sleeping=10.
-            while cur_codex is None:
-                try:
-                    cur_codex = worksheet.get_all_values()
-                except:
-                    if sleep:
-                        time.sleep(more_sleeping)
-                    cur_codex = None
-
             if len(cur_codex) <= 0:
                 apflog("Worksheet %s exists but is empty, skipping" % (sheetn), \
                        level='error', echo=True)
@@ -266,13 +268,10 @@ def parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
     frac = []
     too = []
 
-    worksheet = get_spreadsheet(sheetn=sheet_table_name,certificate=certificate)
+    worksheet, cur_codex = get_spreadsheet(sheetn=sheet_table_name,certificate=certificate)
     if worksheet:
-        cur_codex = worksheet.get_all_values()
-        if len(cur_codex) <= 0:
-            apflog("Worksheet %s exists but is empty, skipping" % (sheet_table_name),\
-                   level='error', echo=True)
-            return None, None
+        if worksheet is None:
+            return None, None, None, None
 
         req_cols = ["sheetn", "rank", "frac", "too"]
         didx = find_columns(cur_codex[0], req_cols)
@@ -847,19 +846,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
     if ctime is None:
         ctime = datetime.datetime.utcfromtimestamp(int(time.time()))
 
-    worksheet = get_spreadsheet(sheetn=sheetn,certificate=DEFAULT_CERT)
-
-    worksheet_vals = None
-    ntries = 0
-    while worksheet_vals is None:
-        try:
-            worksheet_vals = worksheet.get_all_values()
-        except gspread.exceptions.APIError:
-            time.sleep(10)
-            ntries += 1
-            if ntries > 5:
-                apflog("Cannot get values from worksheet %s" % (sheetn),echo=True,level="error")
-                return 0
+    worksheet, worksheet_vals = get_spreadsheet(sheetn=sheetn,certificate=DEFAULT_CERT)
 
     # Google does not like too many requests at once
     time.sleep(len(worksheet_vals))
