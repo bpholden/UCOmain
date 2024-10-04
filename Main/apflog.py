@@ -126,7 +126,7 @@ def main():
     sendmail(subject, body, to=to_val)
     time.sleep(3)
     timed_alert(subject, body, to_pre=to_val, to_post=to_val_mod)
-                 
+
 
 
 if __name__ == '__main__':
