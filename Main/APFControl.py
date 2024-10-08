@@ -539,7 +539,7 @@ class APF:
         return
 
 
-    def apftask_mon(self,status):
+    def apftask_mon(self, status):
         if status['populated'] == False:
             return
         try:
@@ -552,7 +552,7 @@ class APF:
         hosts['APFTEQ'] = 'hamburg.ucolick.org'
 
 
-        if status_val > 2:
+        if status_val > 0:
             # apftask status values are $(TASKNAME)_status
             taskname_status = status['name'].lower().strip()
             taskname_split =  taskname_status.split("_")
