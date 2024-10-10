@@ -19,9 +19,8 @@ def generic(machine,services,command):
 
 def restart(machine,services):
     rv, s = generic(machine,services,'restart')
-    return rv, s 
+    return rv, s
 
 def status(machine,services):
     rv, s = generic(machine,services,'status')
-    return rv, s 
-
+    return rv, s
