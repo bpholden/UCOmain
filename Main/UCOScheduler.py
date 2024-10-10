@@ -1117,7 +1117,7 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
     apflog("get_next(): Computing star elevations",echo=True)
     fstars = [s for s,_ in zip(stars,available) if _ ]
     vis, star_elevations, scaled_els = Visible.visible(apf_obs, fstars, \
-                                                       totexptimes[available], 
+                                                       totexptimes[available],
                                                        shiftwest=shiftwest
     )
 
