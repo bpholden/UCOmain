@@ -162,12 +162,9 @@ class Observe(threading.Thread):
             if "ERR/WIND"  in self.apf.robot["MASTER_MESSAGE"].read():
                 apflog("Windshield error, check for faults", echo=True, level='error')
                 return retval
-            r_v = self.apf.robot["FOCUSTEL_STATUS"].read(binary=True)
-            if r_v > 3 and self.notify_focus_failure:
-                apflog("Telescope focus has failed", level="error", echo=True)
-                self.notify_focus_failure = False
             if self.lineresult.binary == 2:
-                apflog("Observation failed at phase %s" % (self.phase.ascii), echo=True, level='warn')
+                apflog("Observation failed at phase %s" % (self.phase.ascii), \
+                       echo=True, level='warn')
         return retval
 
     def check_obs_finished(self):
