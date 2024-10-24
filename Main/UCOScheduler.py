@@ -374,8 +374,13 @@ def time_check(star_table, totexptimes, dt, start_time=None):
         maxfaintexptime = 0
 
     if start_time is not None:
-        maxexptime = start_time - float(dt.strftime('%s'))
-        maxfaintexptime = start_time - float(dt.strftime('%s'))
+        # dt is a UT datetime object, start_time is a UT time stamp
+        # however strftime assumes that the dt is in local time
+        # JFC, this is a mess
+        utc_offset = datetime.datetime.utcnow() - datetime.datetime.now()
+        curr_time = float(dt.strftime('%s')) - utc_offset.total_seconds()
+        maxexptime = start_time - curr_time
+        maxfaintexptime = start_time - curr_time
 
     if maxexptime < SchedulerConsts.TARGET_EXPOSURE_TIME_MIN:
         maxexptime = SchedulerConsts.TARGET_EXPOSURE_TIME_MIN
