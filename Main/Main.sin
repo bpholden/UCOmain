@@ -442,7 +442,7 @@ if __name__ == '__main__':
                 err_str += " It was stopped and post calibrations will be attempted."
                 apflog(err_str, level='warn')
                 break
-            if observe.isAlive() is False:
+            if observe.is_alive() is False:
                 # this means that the thread died, usually because of an uncaught exception
                 # observe.signal will still be True
                 # overwrite observe with a new instance and restart the thread
@@ -455,7 +455,7 @@ if __name__ == '__main__':
                 observe.start()
 
             if calibrate:
-                if calibrate.isAlive() is False and ktl.read("apftask","focusinstr_status",binary=True) != 3:
+                if calibrate.is_alive() is False and ktl.read("apftask","focusinstr_status",binary=True) != 3:
                     fstart = astropy.time.Time(ktl.read("apftask","focusinstr_last_start",binary=True),format='unix')
                     if (ktl.read("apftask","focusinstr_status",binary=True)) > 3 and (fstart < mstart):
                         # this means that the thread died, usually because of an uncaught exception
