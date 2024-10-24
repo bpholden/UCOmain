@@ -25,11 +25,11 @@ import SchedulerConsts
 DMLIM = 1140
 
 class Observe(threading.Thread):
-    """ Observe(apf, opt, totTemps=4, task='master')
+    """ Observe(apf, opt, tot_temps=4, task='master')
         The Observe class is a thread
         that runs the observing process.
     """
-    def __init__(self, apf, opt, totTemps=4, task='master'):
+    def __init__(self, apf, opt, tot_temps=4, task='master'):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.apf = apf
@@ -63,9 +63,9 @@ class Observe(threading.Thread):
         self.star_failures = 0
 
         if opt.fixed:
-            self.fixedList = opt.fixed
+            self.fixed_list = opt.fixed
         else:
-            self.fixedList = None
+            self.fixed_list = None
         if opt.sheet:
             self.sheetn = opt.sheet
         else:
@@ -76,12 +76,12 @@ class Observe(threading.Thread):
             self.rank_tablen = None
         if opt.start:
             try:
-                self.starttime = float(opt.start)
+                self.start_time = float(opt.start)
             except ValueError as e:
                 apflog("ValueError: %s" % (e), echo=True, level='error')
-                self.starttime = None
+                self.start_time = None
         else:
-            self.starttime = None
+            self.start_time = None
         if opt.raster:
             self.raster = opt.raster
         else:
@@ -90,10 +90,10 @@ class Observe(threading.Thread):
             self.debug = opt.test
         else:
             self.debug = False
-        self.doTemp = True
-        self.nTemps = 0
+        self.do_temp = True
+        self.n_temps = 0
         self.focval = 0
-        self.totTemps = totTemps
+        self.tot_temps = tot_temps
 
         self.target = None
         self.fixedtarget = None
@@ -260,14 +260,14 @@ class Observe(threading.Thread):
     def should_start_list(self):
         """ Observe.should_start_list()
             should we start a fixed observing list or not? true if start 
-            time is None or if w/in + 1 hour - 0.5 hours of start time
+            time is None or if w/in + 1 hour - 3 minutes of start time
         """
-        if self.starttime is None:
+        if self.start_time is None:
             return True
         ct = time.time()
-        if ct > self.starttime and ct - self.starttime < 3600:
+        if ct > self.start_time and ct - self.start_time < 3600:
             return True
-        if ct < self.starttime and self.starttime - ct < 600:
+        if ct < self.start_time and self.start_time - ct < 180:
             return True
         return False
 
@@ -438,9 +438,9 @@ class Observe(threading.Thread):
 
             self.target = ds.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, \
                                          sheetns=self.sheetn, owner=self.owner,  \
-                                         template=self.doTemp, focval=self.focval, \
+                                         template=self.do_temp, focval=self.focval, \
                                          rank_sheetn=self.rank_tablen,\
-                                         start_time=self.starttime)
+                                         start_time=self.start_time)
 
             if self.target is None:
                 apflog("No acceptable target was found. Since there does not seem to be anything to observe, %s will now shut down." % (self.name), echo=True)
@@ -448,7 +448,7 @@ class Observe(threading.Thread):
                 # wouldn't want to leave a zombie scriptobs running
                 self.scriptobs.stdin.close()
                 self.apf.close()
-                if self.fixedList is None:
+                if self.fixed_list is None:
                     APFLib.write(self.apf.ldone, 0)
                 self.apf.countrate = -1.0
                 # sleep for a half hour to see if the clouds blow by
@@ -491,9 +491,9 @@ class Observe(threading.Thread):
             apflog("get_target(): Counts=%.2f  EXPTime=%.2f  Nexp=%d"\
                     % (self.target["COUNTS"], self.target["EXP_TIME"], self.target["NEXP"]))
             if self.target['isTemp']:
-                self.nTemps += 1
-                if self.nTemps >= self.totTemps:
-                    self.doTemp = False
+                self.n_temps += 1
+                if self.n_temps >= self.tot_temps:
+                    self.do_temp = False
 
             return
 
@@ -614,13 +614,15 @@ class Observe(threading.Thread):
             return rv
 
         def read_starlist_file():
+            '''read_starlist_file() - reads the starlist file and appends it to the target queue
+            '''
             tot = 0
-            if self.fixedList is None:
+            if self.fixed_list is None:
                 return 0
             self.fixedtarget = dict()
             self.fixedtarget["SCRIPTOBS"] = []
-            apflog("Reading star list fixedlist %s" % (self.fixedList), echo=True)
-            with open(self.fixedList, 'r') as f:
+            apflog("Reading star list fixed_list %s" % (self.fixed_list), echo=True)
+            with open(self.fixed_list, 'r') as f:
                 for line in f:
                     sline = line.strip()
                     if sline == '':
@@ -634,9 +636,9 @@ class Observe(threading.Thread):
 
 
             if tot == 0:
-                apflog("Error: starlist %s is empty" % (self.fixedList), level="error")
-                self.fixedList = None
-                self.starttime = None
+                apflog("Error: starlist %s is empty" % (self.fixed_list), level="error")
+                self.fixed_list = None
+                self.start_time = None
                 self.target = None
             else:
                 apflog("%d total starlist lines and %d lines done." % (tot, self.apf.ldone))
@@ -646,7 +648,9 @@ class Observe(threading.Thread):
 
         # starts an instance of scriptobs
         def start_scriptobs():
-            # Update the last obs file and hitlist if needed
+            '''start_scriptobs() - starts an instance of scriptobs
+            '''
+            # Update the last obs file
 
             APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
             self.apf.validate_UCAM_outputs()
@@ -669,12 +673,12 @@ class Observe(threading.Thread):
                 apflog("Cannot start an instance of scriptobs because do not have permission", echo=True, level='error')
                 return
 
-            if self.fixedList is not None and self.should_start_list():
+            if self.fixed_list is not None and self.should_start_list():
                 # We wish to observe a fixed target list, in it's original order
-                if not os.path.exists(self.fixedList):
-                    apflog("Error: starlist %s does not exist" % (self.fixedList), level="error")
-                    self.fixedList = None
-                    self.starttime = None
+                if not os.path.exists(self.fixed_list):
+                    apflog("Error: starlist %s does not exist" % (self.fixed_list), level="error")
+                    self.fixed_list = None
+                    self.start_time = None
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
                     APFLib.write(self.apf.robot["MASTER_UTSTARTLIST"], "")
 
@@ -685,16 +689,16 @@ class Observe(threading.Thread):
                 if self.apf.ldone == tot:
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
                     APFLib.write(self.apf.robot["MASTER_UTSTARTLIST"], "")
-                    self.fixedList = None
-                    self.starttime = None
+                    self.fixed_list = None
+                    self.start_time = None
                     self.target = None
                     if not self.apf.test:
                         APFTask.set(self.task, suffix="STARLIST", value="")
                     apflog("Finished fixed list on line %d, will start dynamic scheduler" % int(self.apf.ldone), echo=True)
                 else:
-                    apflog("Found Fixed list %s" % self.fixedList, echo=True)
+                    apflog("Found Fixed list %s" % self.fixed_list, echo=True)
                     apflog("Starting fixed list on line %d" % int(self.apf.ldone), echo=True)
-                    self.fixedList = None
+                    self.fixed_list = None
 
             else:
                 if self.BV is None:
@@ -790,7 +794,7 @@ class Observe(threading.Thread):
             # If scriptobs is running and waiting for input, give it a target
             if running and (float(cursunel) < sunel_lim) and (self.apf.sop.read().strip() == "Input"):
                 apflog("Entering target section", echo=True)
-                if self.fixedList is None or not self.should_start_list():
+                if self.fixed_list is None or not self.should_start_list():
                     self.last_obs_success = self.check_obs_success()
                     self.check_star(haveobserved)
 
@@ -800,19 +804,19 @@ class Observe(threading.Thread):
                     APFTask.waitfor(self.task, True, timeout=15)
 
                     haveobserved = True
-                elif self.starttime is not None and self.should_start_list():
-                    apflog("Observing a fixed list called %s" % (self.fixedList), echo=True)
+                elif self.start_time is not None and self.should_start_list():
+                    apflog("Observing a fixed list called %s" % (self.fixed_list), echo=True)
                     tot = read_starlist_file()
                     if tot == 0:
-                        apflog("Error: starlist %s is empty" % (self.fixedList), level="error")
-                        self.fixedList = None
-                        self.starttime = None
+                        apflog("Error: starlist %s is empty" % (self.fixed_list), level="error")
+                        self.fixed_list = None
+                        self.start_time = None
                         self.target = None
                     else:
                         apflog("%d total starlist lines and %d lines done." % (tot, self.apf.ldone))
                         while len(self.target["SCRIPTOBS"]) > 0:
                             self.scriptobs.stdin.write(self.target["SCRIPTOBS"].pop() + '\n')
-                        self.fixedList = None
+                        self.fixed_list = None
 
 
             # If the sun is rising and we are finishing an observation
