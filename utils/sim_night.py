@@ -24,11 +24,13 @@ def get_start_time(hr_mn, datestr):
     '''
     datestr = "%s %s" % (datestr, hr_mn)
     dt = datetime.strptime(datestr,"%Y/%m/%d %H:%M")
+    ut_off = datetime.utcnow() - datetime.now()
+    dt = dt - ut_off
     return float(dt.strftime("%s"))
 
 
 def parse_options():
-    parser = optparse.OptionParser()
+    parser = optparse.Optio nParser()
     parser.add_option("-d","--date",dest="date",default="today")
     parser.add_option("-f","--fixed",dest="fixed",default="")
     parser.add_option("--rank_table",dest="rank_sheetn",default="2024B_ranks")
