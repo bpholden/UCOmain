@@ -25,6 +25,10 @@ import SchedulerConsts
 DMLIM = 1140
 
 class Observe(threading.Thread):
+    """ Observe(apf, opt, totTemps=4, task='master')
+        The Observe class is a thread
+        that runs the observing process.
+    """
     def __init__(self, apf, opt, totTemps=4, task='master'):
         threading.Thread.__init__(self)
         self.setDaemon(True)
@@ -53,10 +57,10 @@ class Observe(threading.Thread):
         self.blank = False
         self.decker = "W"
 
-        self.obsBstar = not(opt.no_Bstar)
-        self.lastObsSuccess = True
-        self.lastObsFinished = True
-        self.starFailures = 0
+        self.obs_B_star = not opt.no_Bstar
+        self.last_obs_success = True
+        self.last_obs_finished = True
+        self.star_failures = 0
 
         if opt.fixed:
             self.fixedList = opt.fixed
@@ -187,24 +191,26 @@ class Observe(threading.Thread):
             the current value of obsBstar
             The variable OBSBSTAR still overrides
         """
-        self.obsBstar = ktl.read('apftask', 'MASTER_OBSBSTAR', binary=True)
+        self.obs_B_star = ktl.read('apftask', 'MASTER_OBSBSTAR', binary=True)
 
-        if haveobserved and self.lastObsSuccess:
-            self.obsBstar = False
+        if haveobserved and self.last_obs_success:
+            self.obs_B_star = False
             try:
-                ktl.write('apftask', 'MASTER_OBSBSTAR', self.obsBstar, binary=True)
+                ktl.write('apftask', 'MASTER_OBSBSTAR', self.obs_B_star, binary=True)
             except Exception as e:
                 apflog("Error: Cannot communicate with apftask: %s" % (e), level="error")
-            self.starFailures = 0
+            self.star_failures = 0
         else:
-            self.starFailures += 1
-            if self.starFailures%3 == 0:
-                log_str = "%d failures of observing a star in a row " % (self.starFailures)
+            self.star_failures += 1
+            if self.star_failures%3 == 0:
+                log_str = "%d failures of observing a star in a row " % (self.star_failures)
                 log_str += "- suggesting homing telescope or closing for the night"
                 apflog(log_str, echo=True, level='timed_alert')
 
     def check_servos(self):
-
+        """ Observe.check_servos()
+            checks for servo faults and power cycles the telescope if necessary
+        """
         _, running = self.apf.find_robot()
         if running:
             self.apf.kill_robot(now=True)
@@ -233,6 +239,9 @@ class Observe(threading.Thread):
             return False
 
     def check_files(self, outfn='googledex.dat'):
+        """ Observe.check_files(outfn='googledex.dat')
+            checks for the existence of a file, and if it exists, makes a backup
+        """
         outdir = os.getcwd()
         fullpath = os.path.join(outdir, outfn)
         if os.path.isfile(fullpath):
@@ -250,9 +259,10 @@ class Observe(threading.Thread):
 
     def should_start_list(self):
         """ Observe.should_start_list()
-            should we start a fixed observing list or not? true if start time is None or if w/in + 1 hour - 0.5 hours of start time
+            should we start a fixed observing list or not? true if start 
+            time is None or if w/in + 1 hour - 0.5 hours of start time
         """
-        if self.starttime == None:
+        if self.starttime is None:
             return True
         ct = time.time()
         if ct > self.starttime and ct - self.starttime < 3600:
@@ -287,13 +297,18 @@ class Observe(threading.Thread):
                 return 5
 
             if self.apf.avg_fwhm < 1.0:
-                apflog("Warning!: AVG_FWHM = %4.2f. By Odin's beard that seems low." % self.apf.avg_fwhm, echo=True)
+                apflog("Warning!: AVG_FWHM = %4.2f. By Odin's beard that seems low."\
+                        % self.apf.avg_fwhm, echo=True)
                 return SchedulerConsts.SLOWDOWN_MAX
-            
+
             slowdown = 1
             apflog("Calculating expected counts")
-            apflog("self.VMAG [%4.2f] - self.BV [%4.2f] - self.apf.ael [%4.2f]" % (self.VMAG, self.BV, self.apf.ael))
-            exp_cnts_sec = ExposureCalculations.getEXPMeter_Rate(self.VMAG, self.BV, self.apf.ael, self.apf.avg_fwhm, self.decker)
+            apflog("self.VMAG [%4.2f] - self.BV [%4.2f] - self.apf.ael [%4.2f]"\
+                    % (self.VMAG, self.BV, self.apf.ael))
+            exp_cnts_sec = ExposureCalculations.getEXPMeter_Rate(self.VMAG, \
+                                                                 self.BV, self.apf.ael, \
+                                                                    self.apf.avg_fwhm, \
+                                                                        self.decker)
             try:
                 if self.apf.countrate <= 0:
                     try:
@@ -305,23 +320,27 @@ class Observe(threading.Thread):
                 slowdown = exp_cnts_sec / self.apf.countrate
                 if slowdown < 0:
                     slowdown = 1
-                    apflog("Countrate non-sensical %g" % (self.apf.countrate), echo=True, level='warn')
+                    apflog("Countrate non-sensical %g" % (self.apf.countrate), \
+                           echo=True, level='warn')
                     self.apf.kcountrate.monitor(start=False)
                     self.apf.kcountrate.monitor(start=True)
                     self.apf.kcountrate.callback(self.apf.countrate_mon)
                     # yes this happened.
                 if slowdown < SchedulerConsts.SLOWDOWN_MIN:
                     slowdown = SchedulerConsts.SLOWDOWN_MIN
-                    apflog("slowdown too low, countrate= %g" % (self.apf.countrate), echo=True, level='debug')
+                    apflog("slowdown too low, countrate= %g" % (self.apf.countrate), \
+                           echo=True, level='debug')
                     # yes this happened.
                 if slowdown > SchedulerConsts.SLOWDOWN_MAX:
                     slowdown = SchedulerConsts.SLOWDOWN_MAX
-                    apflog("slowdown too high, countrate= %g" % (self.apf.countrate), echo=True, level='debug')
+                    apflog("slowdown too high, countrate= %g" % (self.apf.countrate), \
+                           echo=True, level='debug')
             except ZeroDivisionError:
                 apflog("Current countrate was 0. Slowdown will be set to 1.", echo=True)
                 slowdown = 1
 
-            apflog("countrate = %.2f, ccountrate = %.2f" % (self.apf.countrate, self.apf.ccountrate))
+            apflog("countrate = %.2f, ccountrate = %.2f" % (self.apf.countrate, \
+                                                            self.apf.ccountrate))
             apflog("slowdown factor = %4.2f" % slowdown, echo=True)
             APFLib.write(self.apf.robot["MASTER_SLOWDOWN"], slowdown)
             return slowdown
@@ -369,8 +388,8 @@ class Observe(threading.Thread):
             else:
                 apflog("get_target(): Not at end of block but out of targets.", echo=True)
 
-            self.obsBstar = ktl.read("apftask", "MASTER_OBSBSTAR", binary=True)
-            apflog("get_target(): Setting obsBstar to %s" % (str(self.obsBstar)), echo=True)
+            self.obs_B_star = ktl.read("apftask", "MASTER_OBSBSTAR", binary=True)
+            apflog("get_target(): Setting obsBstar to %s" % (str(self.obs_B_star)), echo=True)
 
             if self.scriptobs is None:
                 apflog("Called get_target, but there is not instance of scriptobs associated with %s. This is an error condition." % (self.name), level='error', echo=True)
@@ -405,7 +424,7 @@ class Observe(threading.Thread):
             # setup a B star observation if needed
             # if not B star observation, look at current stack of
             # observations and see if anything is left
-            if self.obsBstar:
+            if self.obs_B_star:
                 self.apf.autofoc.write("robot_autofocus_enable")
             else:
                 curstr = pop_next()
@@ -417,7 +436,7 @@ class Observe(threading.Thread):
 
             self.check_files()
 
-            self.target = ds.get_next(time.time(), seeing, slowdown, bstar=self.obsBstar, \
+            self.target = ds.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, \
                                          sheetns=self.sheetn, owner=self.owner,  \
                                          template=self.doTemp, focval=self.focval, \
                                          rank_sheetn=self.rank_tablen,\
@@ -425,7 +444,8 @@ class Observe(threading.Thread):
 
             if self.target is None:
                 apflog("No acceptable target was found. Since there does not seem to be anything to observe, %s will now shut down." % (self.name), echo=True)
-                # Send scriptobs EOF to finish execution - wouldn't want to leave a zombie scriptobs running
+                # Send scriptobs EOF to finish execution -
+                # wouldn't want to leave a zombie scriptobs running
                 self.scriptobs.stdin.close()
                 self.apf.close()
                 if self.fixedList is None:
@@ -548,7 +568,7 @@ class Observe(threading.Thread):
 
             self.apf.check_FCUs()
             ds.zero_last_objs_attempted()
-            self.starFailures = 0
+            self.star_failures = 0
             return
 
 
@@ -771,7 +791,7 @@ class Observe(threading.Thread):
             if running and (float(cursunel) < sunel_lim) and (self.apf.sop.read().strip() == "Input"):
                 apflog("Entering target section", echo=True)
                 if self.fixedList is None or not self.should_start_list():
-                    self.lastObsSuccess = self.check_obs_success()
+                    self.last_obs_success = self.check_obs_success()
                     self.check_star(haveobserved)
 
                     APFTask.set(self.task, suffix="MESSAGE", value="Calling get_target", wait=False)
@@ -1014,13 +1034,13 @@ if __name__ == "__main__":
     parent = 'example'
     APFTask.establish(parent, os.getpid())
 
-    opt = Test()
+    t_opt = Test()
 
-    apf = APFControl.APF(task=parent, test=True)
+    t_apf = APFControl.APF(task=parent, test=True)
     APFTask.waitFor(parent, True, timeout=2)
-    print(str(apf))
+    print(str(t_apf))
 
-    observe = Observe(apf, opt, task=parent)
+    observe = Observe(t_apf, t_opt, task=parent)
     APFTask.waitFor(parent, True, timeout=2)
     observe.start()
     while observe.signal:
