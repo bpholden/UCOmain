@@ -32,7 +32,7 @@ def gen_seeing(nsize=200,val=-1):
     if val < 0:
         val = np.random.uniform(size=1)
     alpha = 0.52
-    
+
     if val < 0.9:
         mean = np.random.normal(loc=8.,scale=1.0,size=1)
         rms  = np.random.normal(loc=1.9,scale=1.0,size=1)
@@ -47,7 +47,7 @@ def gen_seeing(nsize=200,val=-1):
 
 #    deviates = np.random.normal(loc=mean,scale=rms,size=nsize)
     return deviates
-        
+
 def gen_seeing_el(deviate,el):
     zd = 90 - el
     deviate += (0.0903544076597*zd +  -0.00172591889888*zd*zd + 3.3157238117e-05*zd*zd*zd)
@@ -99,7 +99,7 @@ def checkdate(datestr):
         return False
     if int(match.group(5)) < 1 or int(match.group(5)) > 31:
         return False
-    
+
     return True
 
 
@@ -122,7 +122,7 @@ def compute_simulation(result,curtime,star,apf_obs,slowdowns,fwhms,owner):
         fexptime = float(metertime)
     else:
         fexptime = float(exp_time)
-        
+
     curtime += (fexptime+40.)/86400
     barycentertime += fexptime/(2.*86400)
     totcounts = fexptime * specrate
@@ -170,7 +170,7 @@ def sum_owner_times(vals):
     owner_tots['total'] = 0.
     owner_els['total'] = 0.
     owner_nexps['total'] = 0
-            
+
     for i in range(0,len(vals['owner'])):
         m = re.search("\ARECUR_A100",vals['owner'][i])
         owner_tots[vals['owner'][i]] += float(vals['etime'][i])
@@ -180,9 +180,8 @@ def sum_owner_times(vals):
         owner_els['total'] += float(vals['El'][i])
         owner_nexps['total'] += 1
 
-            
     for o in owner_els.keys():
         if owner_nexps[o] > 0:
             owner_els[o] /= owner_nexps[o]
-            
+
     return owner_tots,owner_els,owner_nexps
