@@ -291,11 +291,14 @@ class Observe(threading.Thread):
                 return self.apf.robot["MASTER_SLOWDOWN"].read()
 
             if self.BV is None:
-                apflog("Warning!: Ended up in get_target() with no B Magnitude value, slowdown can't be computed.", echo=True)
+                ostr = "Warning!: Ended up in get_target() with no B Magnitude value, "
+                ostr += "color will be guessed."
+                apflog(ostr, echo=True)
                 self.BV = 0.6 # use a default average
 
             if self.VMAG is None:
-                apflog("Warning!: Ended up in get_target() with no V Magnitude value, slowdown can't be computed.", echo=True)
+                ostr = "Warning!: Ended up in get_target() with no V magnitude, "
+                ostr += "assumed a slowdown of 5."
                 return 5
 
             if self.apf.avg_fwhm < 1.0:
