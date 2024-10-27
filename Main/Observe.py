@@ -315,6 +315,11 @@ class Observe(threading.Thread):
                 ostr += "assumed a slowdown of 5."
                 return 5
 
+            if self.apf.line_result.read(binary=True) < 3:
+                # this means that the previous observation failed, so will assume
+                # a big slowdown
+                return 5
+
             if self.apf.avg_fwhm < 1.0:
                 apflog("Warning!: AVG_FWHM = %4.2f. By Odin's beard that seems low."\
                         % self.apf.avg_fwhm, echo=True)
