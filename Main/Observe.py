@@ -121,6 +121,12 @@ class Observe(threading.Thread):
         self.canOpen = True
 
     def append_selected(self, curstr):
+        """
+        append_selected(curstr)
+        Appends the most recent scriptobs line as curstr
+        to the selected_targets file.
+        
+        """
         try:
             self.selected = open("selected_targets", "a+")
         except:
@@ -133,6 +139,12 @@ class Observe(threading.Thread):
         return
 
     def check_scriptobs_messages(self):
+        """
+        check_scriptobs_messages()
+        Checks the scriptobs error messages and logs appropriately.
+        Performs certain actions to attempt to correct errors when
+        appropriate.
+        """
         message = self.apf.message.read()
         mtch = re.search("ERR/UCAM", message)
         if mtch:
