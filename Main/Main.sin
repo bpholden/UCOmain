@@ -482,7 +482,7 @@ if __name__ == '__main__':
     # Check if the observe left us an exit message.
     # If so, something strange likely happened so log it.
     try:
-        msg = observe.exitMessage
+        msg = observe.exit_message
     except AttributeError:
         pass
     else:
