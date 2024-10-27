@@ -98,7 +98,7 @@ class Observe(threading.Thread):
         self.exit_message = None
 
         self.target = None
-        self.fixedtarget = None
+        self.fixed_target = None
         self.bad_weather = False
 
         self.apftask = ktl.Service('apftask')
@@ -361,14 +361,14 @@ class Observe(threading.Thread):
                     curstr = tlist.pop()
                     return curstr
 
-            if self.fixedtarget is not None and 'SCRIPTOBS' in list(self.fixedtarget.keys()):
-                tlist = self.fixedtarget["SCRIPTOBS"]
+            if self.fixed_target is not None and 'SCRIPTOBS' in list(self.fixed_target.keys()):
+                tlist = self.fixed_target["SCRIPTOBS"]
                 if len(tlist) > 0:
                     apflog("get_target(): Going through fixed starlist.", echo=True)
                     curstr = tlist.pop()
                 else:
                     apflog("get_target(): Finished fixed starlist.", echo=True)
-                    self.fixedtarget = None
+                    self.fixed_target = None
 
             return curstr
 
@@ -625,8 +625,8 @@ class Observe(threading.Thread):
             tot = 0
             if self.fixed_list is None:
                 return 0
-            self.fixedtarget = dict()
-            self.fixedtarget["SCRIPTOBS"] = []
+            self.fixed_target = dict()
+            self.fixed_target["SCRIPTOBS"] = []
             apflog("Reading star list fixed_list %s" % (self.fixed_list), echo=True)
             with open(self.fixed_list, 'r') as f:
                 for line in f:
@@ -637,8 +637,8 @@ class Observe(threading.Thread):
                         continue
                     else:
                         tot += 1
-                        self.fixedtarget["SCRIPTOBS"].append(sline)
-            self.fixedtarget["SCRIPTOBS"].reverse()
+                        self.fixed_target["SCRIPTOBS"].append(sline)
+            self.fixed_target["SCRIPTOBS"].reverse()
 
 
             if tot == 0:
