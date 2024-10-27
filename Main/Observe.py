@@ -391,7 +391,8 @@ class Observe(threading.Thread):
         def get_target():
 
             if self.check_obs_finished():
-                apflog("get_target(): Scriptobs phase is input, determining next target.", echo=True)
+                apflog("get_target(): Scriptobs phase is input, determining next target.",\
+                        echo=True)
             else:
                 apflog("get_target(): Not at end of block but out of targets.", echo=True)
 
@@ -399,10 +400,13 @@ class Observe(threading.Thread):
             apflog("get_target(): Setting obsBstar to %s" % (str(self.obs_B_star)), echo=True)
 
             if self.scriptobs is None:
-                apflog("Called get_target, but there is not instance of scriptobs associated with %s. This is an error condition." % (self.name), level='error', echo=True)
+                ostr = "Called get_target, but there is not instance of scriptobs associated"
+                ostr += " with %s. This is an error condition." % (self.name)
+                apflog(ostr, level='error', echo=True)
                 ripd, running = self.apf.find_robot()
                 if running:
-                    apflog("Attempting to kill the existing robot, %d" % (ripd), level='error', echo=True)
+                    apflog("Attempting to kill the existing robot, %d" %\
+                            (ripd), level='error', echo=True)
                     self.apf.kill_robot()
                 return
 
@@ -411,17 +415,19 @@ class Observe(threading.Thread):
 
             # Check for a valid seeing measurment. If there isn't one, use a default
             if self.apf.avg_fwhm == 0.:
-                apflog("get_target(): Warning AVG_FWHM is 0. A default value of 15 will be used in its place.", echo=True)
+                ostr = "get_target(): Warning AVG_FWHM is 0." 
+                ostr += " A default value of 15 will be used in its place."
+                apflog(ostr, echo=True)
                 seeing = 15
             else:
                 seeing = float(self.apf.avg_fwhm)
                 apflog("get_target(): Current AVG_FWHM = %5.2f" % seeing)
 
-            if self.apf.hatch_correct() == False:
+            if self.apf.hatch_correct() is False:
                 apflog("get_target(): Error setting hatch position.", level='Alert')
                 return
 
-            if self.apf.init_guide_cam() == False:
+            if self.apf.init_guide_cam() is False:
                 apflog("get_target(): Error initializing guide camera.", echo=True, level='warn')
                 if not self.apf.gcam_power.binary:
                     return
