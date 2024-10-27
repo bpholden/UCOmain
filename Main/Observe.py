@@ -430,7 +430,8 @@ class Observe(threading.Thread):
                 curstr = pop_next()
                 # if there is a target in the queue, use it
                 if curstr:
-                    self.append_selected("%s avgfwhm=%05.2f slowdown=%04.2f" % (curstr, seeing, slowdown))
+                    self.append_selected("%s avgfwhm=%05.2f slowdown=%04.2f" % \
+                                         (curstr, seeing, slowdown))
                     self.scriptobs.stdin.write(curstr + '\n')
                     return
 
@@ -443,7 +444,10 @@ class Observe(threading.Thread):
                                          start_time=self.starttime)
 
             if self.target is None:
-                apflog("No acceptable target was found. Since there does not seem to be anything to observe, %s will now shut down." % (self.name), echo=True)
+                log_str = "No acceptable target was found. "
+                log_str += "Since there does not seem to be anything to observe"
+                log_str += "%s will now shut down." % (self.name)
+                apflog(log_str, echo=True)
                 # Send scriptobs EOF to finish execution -
                 # wouldn't want to leave a zombie scriptobs running
                 self.scriptobs.stdin.close()
