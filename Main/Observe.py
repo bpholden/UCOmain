@@ -95,6 +95,8 @@ class Observe(threading.Thread):
         self.focval = 0
         self.totTemps = totTemps
 
+        self.exit_message = None
+
         self.target = None
         self.fixedtarget = None
         self.bad_weather = False
@@ -823,7 +825,9 @@ class Observe(threading.Thread):
             # Send scriptobs EOF. This will shut it down after the observation
             if float(cursunel) >= sunel_lim and running:
                 if self.scriptobs is None:
-                    apflog("Robot claims to be running, but no scriptobs instance can be found. Instead calling kill_robot().", echo=True)
+                    log_str = "Robot claims to be running, but no scriptobs instance can be found."
+                    log_str += "Instead calling kill_robot()."
+                    apflog(log_str, echo=True)
                     self.apf.kill_robot()
                 else:
                     self.scriptobs.stdin.close()
@@ -846,39 +850,50 @@ class Observe(threading.Thread):
                 if self.apf.is_open()[0]:
                     apflog("Error: Closeup did not succeed", level='error', echo=True)
 
-                self.exitMessage = msg
+                self.exit_message = msg
                 self.stop()
 
             # Open
             if self.apf.openOK and self.canOpen and not self.bad_weather:
-                if not self.apf.is_ready_observing()[0] and float(cursunel) < SchedulerConsts.SUNEL_HOR:
+                if not self.apf.is_ready_observing()[0] and \
+                    float(cursunel) < SchedulerConsts.SUNEL_HOR:
                     if float(cursunel) > sunel_lim and not rising:
                         APFTask.set(self.task, suffix="MESSAGE", value="Open at sunset", wait=False)
                         success = opening(cursunel, sunset=True)
                         if success is False:
                             if self.apf.openOK:
-                                apflog("Error: Cannot open the dome", level="timed_alert", echo=True)
+                                apflog("Error: Cannot open the dome", level="timed_alert", \
+                                       echo=True)
                             else:
                                 # lost permision during opening, happens more often than you think
-                                apflog("Error: No longer have opening permission", level="error", echo=True)
+                                apflog("Error: No longer have opening permission",\
+                                        level="error", echo=True)
 
                         else:
                             rv = self.apf.evening_star()
                             if not rv:
-                                apflog("evening star targeting and telescope focus did not work", level='warn', echo=True)
+                                apflog("evening star targeting and telescope focus did not work",\
+                                        level='warn', echo=True)
 
-                            chk_done = "$eostele.SUNEL < %f" % (SchedulerConsts.SUNEL_STARTLIM*math.pi/180.0)
+                            chk_done = "$eostele.SUNEL < %f" % \
+                                (SchedulerConsts.SUNEL_STARTLIM*math.pi/180.0)
                             while float(cursunel) > SchedulerConsts.SUNEL_STARTLIM and not rising:
-                                outstr = "Sun is setting and sun at elevation of %.3f" % (float(cursunel))
+                                outstr = "Sun is setting and sun at elevation of %.3f"\
+                                      % (float(cursunel))
                                 apflog(outstr, level='info', echo=True)
-                                result = APFTask.waitFor(self.task, True, expression=chk_done, timeout=60)
+                                result = APFTask.waitFor(self.task, True, \
+                                                         expression=chk_done, \
+                                                            timeout=60)
                                 self.apf.dm_reset()
                                 if self.apf.openOK['binary'] is False:
                                     closetime = datetime.datetime.now()
-                                    APFTask.set(self.task, suffix="MESSAGE", value="Closing for weather", wait=False)
+                                    APFTask.set(self.task, suffix="MESSAGE",\
+                                                 value="Closing for weather", wait=False)
                                     apflog("No longer ok to open.", echo=True)
-                                    apflog("OPREASON: " + self.apf.checkapf["OPREASON"].read(), echo=True)
-                                    apflog("WEATHER: " + self.apf.checkapf['WEATHER'].read(), echo=True)
+                                    apflog("OPREASON: " + self.apf.checkapf["OPREASON"].read(),\
+                                            echo=True)
+                                    apflog("WEATHER: " + self.apf.checkapf['WEATHER'].read(),\
+                                            echo=True)
                                     closing()
                                     break
 
@@ -900,8 +915,11 @@ class Observe(threading.Thread):
                             apflog("Error: Lost permission during opening", echo=True)
 
                 # If we can open, try to set stuff up so the vent doors can be controlled by apfteq
-                if not rising and not self.apf.is_open()[0] and float(cursunel) > SchedulerConsts.SUNEL_HOR:
-                    APFTask.set(self.task, suffix="MESSAGE", value="Powering up for APFTeq", wait=False)
+                if not rising and not self.apf.is_open()[0] and \
+                    float(cursunel) > SchedulerConsts.SUNEL_HOR:
+                    APFTask.set(self.task, suffix="MESSAGE", \
+                                value="Powering up for APFTeq", \
+                                    wait=False)
                     if self.apf.clear_estop():
                         try:
                             APFLib.write(self.apf.dome['AZENABLE'], 'enable', timeout=10)
@@ -919,7 +937,8 @@ class Observe(threading.Thread):
 
                         else:
                             if self.apf.openOK:
-                                ostr="Error: Vent doors did not open, is apfteq and eosdome running correctly?"
+                                ostr = "Error: Vent doors did not open, is apfteq"
+                                ostr += " and eosdome running correctly?"
                                 apflog(ostr, level='info', echo=True)
                             else:
                                 apflog("Error: Lost permission during attempt at opening",\
@@ -967,7 +986,8 @@ class Observe(threading.Thread):
                     apflog("Cannot enable instrument", level='warn', echo=True)
                     result = self.apf.enable_obs_inst()
                     if not result:
-                        apflog("Error: cannot enable instrument twice.", level='timed_alert', echo=True)
+                        apflog("Error: cannot run enable instrument twice.", \
+                               level='timed_alert', echo=True)
                         return result
                 else:
                     apflog("Instrument OK", echo=True)
@@ -978,7 +998,8 @@ class Observe(threading.Thread):
                     rv = start_telescope()
                     # if needed, will power up the Az drive and clear the estop state
                     if rv is False:
-                        ostr = "Error: Telescope is not tracking or slewing, cannot start up telescope."
+                        ostr = "Error: Telescope is not tracking or slewing," 
+                        ostr += "cannot start up telescope."
                         apflog(ostr, level='timed_alert', echo=True)
                         closing(force=True)
 
@@ -1016,6 +1037,9 @@ class Observe(threading.Thread):
 
 
     def stop(self):
+        """
+        stop()
+        """
         self.signal = False
         self.apf.kill_robot()
 
