@@ -236,7 +236,9 @@ class Observe(threading.Thread):
             return True
 
         elif result is False and "DomeShutter" in self.apf.is_open()[1]:
-            apflog("Error: After 10 min move permission did not return, and the dome is still open.", level='error', echo=True)
+            ostr = "Error: After 10 min move permission did not return, "
+            ostr += "and the dome is still open."
+            apflog(ostr, level='error', echo=True)
             self.apf.close(force=True)
             return False
 
