@@ -605,7 +605,8 @@ class APF:
         if sta_val > 3:
             # warning or higher
             nmsta = sta['name'].lower()
-            name = nmsta[0:7] # this relies on the fact that all of the STA variables are serviceSTA and service is
+            name = nmsta[0:7] # this relies on the fact that all of the STA 
+            # variables are serviceSTA and service is
             self.restart(name,host)
         return
 
@@ -759,11 +760,13 @@ class APF:
 
         """
         if self.outfile.read() != self.desired_outfile:
-            apflog("Output filename is %s and not the current date %s" % (self.outfile, self.desired_outfile),level='error',echo=True)
+            apflog("Output filename is %s and not the current date %s" % \
+                   (self.outfile, self.desired_outfile),level='error',echo=True)
             self.outfile.write(self.desired_outfile)
 
         if self.obsnum < self.robot["MASTER_LAST_OBS_UCSC"]:
-            apflog("Output file number is %s which is less than the last logged value %s" % (self.obsnum, self.robot["MASTER_LAST_OBS_UCSC"]),level='error',echo=True)
+            apflog("Output file number is %s which is less than the last logged value %s"\
+                    % (self.obsnum, self.robot["MASTER_LAST_OBS_UCSC"]),level='error',echo=True)
             self.obsnum.write(self.robot["MASTER_LAST_OBS_UCSC"])
 
         return
@@ -953,10 +956,13 @@ class APF:
         Do we have instrument permission and is the user kind correct?
         """
         try:
-            while not self.instr_perm.read(binary=True,timeout=2) or self.userkind.read(binary=True,timeout=2) != 3:
+            while not self.instr_perm.read(binary=True,timeout=2) or \
+                self.userkind.read(binary=True,timeout=2) != 3:
                 apflog("Waiting for instrument permission to be true and userkind to be robotic")
-                APFTask.waitfor(self.task, True, expression="$checkapf.INSTR_PERM = true", timeout=600)
-                APFTask.waitfor(self.task, True, expression="$checkapf.USERKIND = robotic", timeout=600)
+                APFTask.waitfor(self.task, True, expression="$checkapf.INSTR_PERM = true", \
+                                timeout=600)
+                APFTask.waitfor(self.task, True, expression="$checkapf.USERKIND = robotic", \
+                                timeout=600)
         except Exception as e:
             apflog("Cannot communicate with checkapf: %s" % (e),echo=True,level='alert')
             return False
@@ -1716,7 +1722,7 @@ class APF:
             val = self.tel[nm].read(binary=True)
             if val:
                 servo_failed = True
-                msg = "Error: Following Error Fault: " + nm + " " + val
+                msg = "Error: Following Error Fault: " + str(nm) + " " + str(val)
                 apflog(msg, level="timed_alert", echo=True)
                 self.robot['MASTER_MESSAGE'].write(msg)
 
@@ -1741,7 +1747,8 @@ class APF:
         chk_mv = '$checkapf.MOVE_PERM == true'
         result = APFTask.waitFor(self.task, False, chk_mv, timeout=1200)
         if not result:
-            apflog("Didn't have move permission after 20 minutes. Going ahead with closeup.", echo=True)
+            apflog("Didn't have move permission after 20 minutes. Going ahead with closeup.",\
+                    echo=True)
             return False
         try:
             if self.apfmon['FRONT_SHUTTER_CLOSEUPSTA'].read(binary=True,timeout=2) != 2:
@@ -1750,7 +1757,8 @@ class APF:
                 apflog("Dome Shutters maybe running away!", level='error', echo=True)
                 return False
         except:
-            apflog("Cannot communicate with apfmon1, proceeding anyway (fingers crossed)", level='error', echo=True)
+            apflog("Cannot communicate with apfmon1, proceeding anyway (fingers crossed)", \
+                 level='error', echo=True)
 
 
         apflog("Running closeup script")
@@ -1766,7 +1774,8 @@ class APF:
             if not result:
                 apflog("Closeup failed with exit code %d" % code, echo=True)
                 if self.servo_failure() or self.slew_allowed.read(binary=True) is False:
-                    apflog("Likely Servo amplifier failure, may power cycle telescope",echo=True,level='error')
+                    apflog("Likely Servo amplifier failure, may power cycle telescope",\
+                           echo=True,level='error')
                     rv = self.power_down_telescope()
                     if rv:
                         apflog("Power cycled telescope",echo=True,level="error")
@@ -1851,7 +1860,8 @@ class APF:
         self.autofoc.write("robot_autofocus_enable")
         focval = 1
 
-        ostr = "Current telescope focus more than %5.3f mm from predicted, setting to %5.3f." % (focus_diff, predfocus)
+        ostr = "Current telescope focus more than %5.3f mm" % focus_diff
+        ostr += "from predicted, setting to %5.3f." % predfocus
         APFTask.set(self.task, suffix="MESSAGE", value=ostr, wait=False)
 
         return focval
@@ -1876,19 +1886,23 @@ class APF:
 
         else:
             # State must be auto, so check wind and temperature.
-            # This state enables or disables windshielding based on the wind speed and the outside temperature
+            # This state enables or disables windshielding based on the 
+            # wind speed and the outside temperature
             #if self.down > 0:
             #    wvel = self.avg_lists['M3WIND']
             #else:
             wvel = self.avg_lists['M5WIND']
 
-            apflog("Current median wind speed is %.2f with the limit %.2f" % (wvel,WINDSHIELD_LIMIT), level='debug')
-            if currMode == 'enable' and wvel <= WINDSHIELD_LIMIT and float(self.avg_lists['M5OUTEMP']) > TEMP_LIMIT:
+            apflog("Current median wind speed is %.2f with the limit %.2f" % \
+                   (wvel,WINDSHIELD_LIMIT), level='debug')
+            if currMode == 'enable' and wvel <= WINDSHIELD_LIMIT and \
+                float(self.avg_lists['M5OUTEMP']) > TEMP_LIMIT:
                 apflog("Setting scriptobs_windshield to Disable")
                 rv = "Disable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
 
-            if currMode == 'disable' and (wvel > WINDSHIELD_LIMIT or float(self.avg_lists['M5OUTEMP']) < TEMP_LIMIT):
+            if currMode == 'disable' and (wvel > WINDSHIELD_LIMIT or \
+                                          float(self.avg_lists['M5OUTEMP']) < TEMP_LIMIT):
                 apflog("Setting scriptobs_windshield to Enable")
                 rv = "Enable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
@@ -1898,9 +1912,11 @@ class APF:
 
     def check_FCUs(self):
         """
-        If the dome is open the FCs should be off. Sometimes they are commanded off but do not turn off.
-        This will attempt to fix that by checking if the dome is open, checking if the FCs are on, and
-        then turning them on, then off. Which is the only way to turn them off.
+        If the dome is open the FCs should be off. Sometimes they are commanded 
+        off but do not turn off.
+        This will attempt to fix that by checking if the dome is open, checking 
+        if the FCs are on, and then turning them on, then off. Which is the only
+        way to turn them off.
         """
 
         for fc in ('FC2','FC3'):
