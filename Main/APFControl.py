@@ -158,7 +158,7 @@ class APF:
     autofoc      = robot["SCRIPTOBS_AUTOFOC"]
     slew_allowed = robot['SLEW_ALLOWED']
     observed     = robot['SCRIPTOBS_OBSERVED']
-    line_result  = robot['SCRIPTOBS_LINES_RESULT']
+    line_result  = robot['SCRIPTOBS_LINE_RESULT']
 
     apfteqsta    = robot['APFTEQ_STATUS']
     metxfersta   = robot['METSXFER_STATUS']
