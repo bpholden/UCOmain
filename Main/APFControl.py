@@ -1910,7 +1910,7 @@ class APF:
         return rv
 
 
-    def check_FCUs(self):
+    def check_FCUs(self, check_apfmon=False):
         """
         If the dome is open the FCs should be off. Sometimes they are commanded 
         off but do not turn off.
@@ -1918,6 +1918,11 @@ class APF:
         if the FCs are on, and then turning them on, then off. Which is the only
         way to turn them off.
         """
+
+        if check_apfmon:
+            status_value = self.apfmon['FC_STATUSSTA'].read(binary=True)
+            if status_value < 4:
+                return
 
         for fc in ('FC2','FC3'):
             if 'Vents' in self.whatsopn['ascii'] or 'DomeShutter' in self.whatsopn['ascii']:

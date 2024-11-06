@@ -779,7 +779,7 @@ class Observe(threading.Thread):
             cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
             focusing = self.apf.focussta['binary'] < 3
-            self.apf.status_clear()
+            self.apf.check_FCUs(check_apfmon=True)
             # Check and close for weather
 
             self.bad_weather = self.apf.dew_too_close or not self.apf.openOK \
