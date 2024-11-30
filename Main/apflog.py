@@ -95,7 +95,7 @@ def apflog(msg, level='Notice', echo=True):
 
     if level in ['timed_alert']:
         subject = "[APF] A Serious Error has occured, but not so serious as to wake someone up."
-        timed_alert(subject, msg, to_val, alert_to_val)
+        timed_alert(subject, msg, alert_to_val, to_val)
         level = 'Alert'
 
     APF.log(str(msg), level=level, echo=echo)
