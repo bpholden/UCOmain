@@ -169,8 +169,7 @@ def get_spreadsheet(sheetn="The Googledex", certificate=DEFAULT_CERT):
         try:
             cur_codex = worksheet.get_all_values()
         except:
-            if sleep:
-                time.sleep(more_sleeping)
+            time.sleep(more_sleeping)
             cur_codex = None
     
     return worksheet, cur_codex
