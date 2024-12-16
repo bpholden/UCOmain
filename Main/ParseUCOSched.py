@@ -445,7 +445,7 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
             star_table[coln].append(float_default(ls[didx[coln]]))
 
 
-        star_table['Vmag'].append(float_default(ls[didx["Vmag"]], default=15.0))
+        star_table['Vmag'].append(float_default(ls[didx["Vmag"]], default=10.0))
         star_table['texp'].append(float_default(ls[didx["texp"]], default=1200))
         expcount = float_default(ls[didx["expcount"]],default=1e9)
         expcount = min(expcount,EXP_LIM)
