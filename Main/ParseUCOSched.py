@@ -374,9 +374,9 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         totobs = int_default(ls[didx["Total Obs"]],default=-1)
 
         # if the sheet name is in the done list, we will skip this target
-        csheetn = check_flag("sheetn",didx,ls,"\A(.*)",'RECUR_A100')
+        csheetn = check_flag("sheetn",didx,ls,r"\A(.*)",'RECUR_A100')
         if 'owner' in didx:
-            owner = check_flag("owner",didx,ls,"\A(.*)",csheetn)
+            owner = check_flag("owner",didx,ls,r"\A(.*)",csheetn)
 
         # these are all the conditions that will cause us to skip this target
         if totobs > 0 and nobs >= totobs: continue
