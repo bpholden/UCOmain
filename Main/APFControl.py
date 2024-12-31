@@ -1713,7 +1713,7 @@ class APF:
             val = self.tel[nm].read(binary=True)
             if val:
                 servo_failed = True
-                msg = "Error: Servo Amplifier Fault: " + nm + " " + val
+                msg = "Error: Servo Amplifier Fault: " + str(nm) + " " + str(val)
                 apflog(msg, level="timed_alert", echo=True)
                 self.robot['MASTER_MESSAGE'].write(msg)
 
