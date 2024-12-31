@@ -162,7 +162,7 @@ def get_spreadsheet(sheetn="The Googledex", certificate=DEFAULT_CERT):
     if worksheet is None:
         apflog(errlog,echo=True,level='error')
         return None, None
-    
+
     cur_codex = None
     more_sleeping=10.
     while cur_codex is None:
@@ -171,7 +171,7 @@ def get_spreadsheet(sheetn="The Googledex", certificate=DEFAULT_CERT):
         except:
             time.sleep(more_sleeping)
             cur_codex = None
-    
+
     return worksheet, cur_codex
 
 def retrieve_codex(req_cols,sheetns, certificate=DEFAULT_CERT, sleep=True):
@@ -196,7 +196,6 @@ def retrieve_codex(req_cols,sheetns, certificate=DEFAULT_CERT, sleep=True):
             if len(cur_codex) <= 0:
                 apflog("Worksheet %s exists but is empty, skipping" % (sheetn), \
                        level='error', echo=True)
-
                 continue
             didx = find_columns(cur_codex[0],req_cols)
 
@@ -217,7 +216,6 @@ def retrieve_codex(req_cols,sheetns, certificate=DEFAULT_CERT, sleep=True):
                 apflog("Sleeping %.1f seconds to keep Google happy" % (wait_time), \
                        level="info",echo=True)
                 time.sleep(wait_time)
-
 
     return full_codex
 
@@ -290,9 +288,8 @@ def parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
         rank.append(200)
         frac.append(0.05)
         too.append('n')
- 
-    return sheetns, rank, frac, too
 
+    return sheetns, rank, frac, too
 
 def init_star_table(col_list):
 
@@ -320,8 +317,6 @@ def init_star_table(col_list):
     star_table['only_template'] = []
 
     return star_table
-
-
 
 def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,sleep=True,
                 hour_constraints=None):
@@ -735,9 +730,9 @@ def update_local_starlist(intime, observed_file="observed_targets", outfn='parse
     for name in obslog.names:
 
         prev = 0
-        for n_appear in range(0,obslog.names.count(name)):
+        for _ in range(0,obslog.names.count(name)):
 
-            obstime, taketemp, owner, prev = log_values(name, obslog, prev)
+            obstime, _, owner, prev = log_values(name, obslog, prev)
 
             if owner == 'public':
                 owner = 'RECUR_A100'
@@ -745,10 +740,10 @@ def update_local_starlist(intime, observed_file="observed_targets", outfn='parse
             if isinstance(obstime,float):
                 t = datetime.datetime.utcfromtimestamp(obstime)
             else:
-                hr, min = obstime
+                hr, mn = obstime
                 if type(intime) != datetime.datetime:
                     intime = datetime.datetime.utcnow()
-                t = datetime.datetime(intime.year, intime.month, intime.day, hr, min)
+                t = datetime.datetime(intime.year, intime.month, intime.day, hr, mn)
 
             jd = round(float(ephem.julian_date(t)), 4)
 
@@ -832,7 +827,6 @@ def log_values(local_name, obslog, prev):
     return otime, taketemp, curowner, prev
 
 def update_a_sheet(sheetn, obslog, star_table, ctime):
-
     '''
     update_a_sheet(worksheet_vals, obslog)
 
