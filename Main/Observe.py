@@ -422,7 +422,7 @@ class Observe(threading.Thread):
                 apflog(ostr, level='error', echo=True)
                 ripd, running = self.apf.find_robot()
                 if running:
-                    apflog("Attempting to kill the existing robot, %d" %\
+                    apflog("Attempting to kill the existing scriptobs instance, %d" %\
                             (ripd), level='error', echo=True)
                     self.apf.kill_robot()
                 return
