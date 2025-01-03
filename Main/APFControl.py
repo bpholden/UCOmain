@@ -1707,24 +1707,25 @@ class APF:
         if estopstate:
             return False
 
+        msg = ""
         prefixs = ["AZ","EL","FA","FB","FC","TR" ]
         for pr in prefixs:
             nm = pr + "AMPFLT"
             val = self.tel[nm].read(binary=True)
             if val:
                 servo_failed = True
-                msg = "Error: Servo Amplifier Fault: " + str(nm) + " " + str(val)
-                apflog(msg, level="timed_alert", echo=True)
-                self.robot['MASTER_MESSAGE'].write(msg)
+                msg += "Error: Servo Amplifier Fault: " + str(nm) + " " + str(val) + "\n"
+                
 
         for pr in prefixs:
             nm = pr + "FERROR"
             val = self.tel[nm].read(binary=True)
             if val:
                 servo_failed = True
-                msg = "Error: Following Error Fault: " + str(nm) + " " + str(val)
-                apflog(msg, level="timed_alert", echo=True)
-                self.robot['MASTER_MESSAGE'].write(msg)
+                msg = "Error: Following Error Fault: " + str(nm) + " " + str(val) + "\n"
+        if msg != "":
+            apflog(msg, level='error', echo=True)
+            self.robot['MASTER_MESSAGE'].write(msg)
 
         return servo_failed
 
