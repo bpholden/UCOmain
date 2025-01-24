@@ -761,8 +761,8 @@ class APF:
         """
         if self.outfile.read() != self.desired_outfile:
             apflog("Output filename is %s and not the current date %s" % \
-                   (self.outfile, self.desired_outfile),level='error',echo=True)
-            self.outfile.write(self.desired_outfile)
+                   (self.desired_outfile, self.outfile),level='error',echo=True)
+            self.outfile.write(self.outfile)
 
         if self.obsnum < self.robot["MASTER_LAST_OBS_UCSC"]:
             apflog("Output file number is %s which is less than the last logged value %s"\
