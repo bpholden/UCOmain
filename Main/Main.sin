@@ -159,7 +159,7 @@ def parse_args(apftask):
     w_c = ["on", "off", "auto"]
     b_c = [1, 2, 4]
     parser = argparse.ArgumentParser(description="Set default options")
-    parser.add_argument('-n', '--name', type=str,default=None, help='This values is used as the UCAM observer name, as well as the file prefix.')
+    parser.add_argument('-n', '--name', type=str, =None, help='This values is used as the file prefix.')
     parser.add_argument('-o', '--obsnum', type=int, help='Sets the UCAM observation number to this integer value.')
     parser.add_argument('-b', '--binning', choices=b_c, default=1, type=int, help='Sets the UCAM binning, bins in both pixels, allowed to be 1, 2 or 4.')
     parser.add_argument('-p', '--phase', choices=p_c, help='Specify the starting phase of the watcher. Allows for skipping standard procedures.')
@@ -172,13 +172,12 @@ def parse_args(apftask):
     parser.add_argument('-s', '--start', default=None, type=str, help="When specified with a fixed starlist, this option starts that list at that UT (e.g. 09:00).")
     parser.add_argument('--raster', action='store_true', default=False, help="If a fixed starlist is given, use it for a raster scan.")
     parser.add_argument('--too', default=None, help="Download this sheet every 20 minutes for ToO targets")
-
     parser.add_argument('--rank_table', default='2024B_ranks', help="Optional name for table of sheet ranks")
-    parser.add_argument('--sheet',default=None,help="Optional name for a Google spreadsheet")
-    parser.add_argument('--owner',default='public',help="Optional name for file owners")
+    parser.add_argument('--sheet', default=None,help="Optional name for a Google spreadsheet")
+    parser.add_argument('--owner', default='public', help="Optional name for file owners")
     parser.add_argument('--no_Bstar', action='store_true', default=False, help="Do not observe B stars")
 
-    parser.add_argument('--time_left',default=None,help="File name for remaining time in programs")
+    parser.add_argument('--time_left', default=None, help="File name for remaining time in programs")
 
     opt = parser.parse_args()
 
