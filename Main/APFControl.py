@@ -2077,9 +2077,6 @@ class APF:
             rv, retc = apftask_do(os.path.join(SCRIPTDIR,"slew --hold"))
             if not rv:
                 return rv
-        rv, retc = apftask_do(os.path.join(SCRIPTDIR,"prep-obs"))
-        if not rv:
-            return rv
         # Start scriptobs
 
         outfile = open("robot.log", 'a')
