@@ -2072,8 +2072,6 @@ class APF:
         # check on weirdness for UCAM host post-reboot
         self.ucam_dispatch_mon()
 
-
-
         telstate = self.tel['TELSTATE'].read()
         if telstate == 'Disabled':
             rv, retc = apftask_do(os.path.join(SCRIPTDIR,"slew --hold"))
