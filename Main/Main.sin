@@ -32,9 +32,9 @@ import APFControl
 import ParseUCOSched
 import UCOScheduler as ds
 from apflog import apflog, logpush
-from Calibrate import Calibrate
-from getUCOTargets import getUCOTargets
-from Observe import Observe
+import Calibrate
+import getUCOTargets
+import Observe
 
 os.umask(0o007)
 
@@ -407,7 +407,7 @@ def main():
     if phase_index < 3:
         apflog("Starting calibration thread at phase %s" % \
                (POSSIBLE_PHASES[phase_index]), echo=True)
-        calibrate = Calibrate(apf, 'public', stime, opt.calibrate, \
+        calibrate = Calibrate.Calibrate(apf, 'public', stime, opt.calibrate, \
                               opt.name, opt.obsnum, phase_index=phase_index, \
                               task=parent, test=debug, possible_phases=POSSIBLE_PHASES)
     else:
@@ -415,8 +415,8 @@ def main():
         calibrate = None
 
     # Start the main watcher thread
-    observe = Observe(apf, opt)
-    getUCOTargets = getUCOTargets(opt, task=parent, wait_time=target_time)
+    observe = Observe.Observe(apf, opt)
+    _ = getUCOTargets.getUCOTargets(opt, task=parent, wait_time=target_time)
 
     apf.instr_permit()
     apflog("Starting the main watcher." ,echo=True)
@@ -429,12 +429,12 @@ def main():
     while observe.signal:
         # Observe is running, check for keyboard interupt
         try:
-            currTime = datetime.datetime.now()
+            curr_time = datetime.datetime.now()
             # Check if it is after ~8:00AM.
             # If it is, something must be hung up, so lets force
             #  a closeup and run post cals.
             #  Log that we force a close so we can look into why this happened.
-            if currTime.hour == 8:
+            if curr_time.hour == 8:
                 # Its 8 AM. Lets closeup
                 observe.stop()
                 observe.signal=False
@@ -449,7 +449,7 @@ def main():
                 err_str = "Observe thread has died. Will attempt to restart."
                 apflog(err_str, level='error', echo=True)
 
-                observe = Observe(apf,opt)
+                observe = Observe.Observe(apf,opt)
                 observe.task = parent
 
                 observe.start()
