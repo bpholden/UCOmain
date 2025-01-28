@@ -10,6 +10,7 @@ import os.path
 import re
 import signal
 import sys
+import time
 import datetime
 
 import astropy.io.ascii
@@ -30,24 +31,23 @@ except:
 import APFControl
 import ParseUCOSched
 import UCOScheduler as ds
-from apflog import *
+from apflog import apflog, logpush
 from Calibrate import Calibrate
 from getUCOTargets import getUCOTargets
 from Observe import Observe
 
 os.umask(0o007)
 
-success = False
-
 PARENT = 'master'
 
 # global
 paused = False
+success = False
 
 POSSIBLE_PHASES = ["Init", "Focus", "Cal-Pre", "Watching", "Cal-Post", "Focus-Post"]
 
 def control_watch(keyword,parent):
-    if keyword['populated'] == False:
+    if keyword['populated'] is False:
         return
     try:
         value = keyword['ascii']
@@ -81,7 +81,7 @@ def signal_shutdown(signal, frame):
 
 def shutdown():
     global success
-    if success == True:
+    if success:
         status = 'Exited/Success'
 
     else:
@@ -238,7 +238,7 @@ def find_obs_num(last):
 
 def set_obs_defaults(opt):
     opt.owner = 'public'
-    if opt.obsnum == None:
+    if opt.obsnum is None:
         apflog("Figuring out what the observation number should be.", echo=True)
         opt.obsnum = find_obs_num(int(ktl.read('apftask','MASTER_LAST_OBS_UCSC', binary=True)))
     else:
@@ -246,11 +246,9 @@ def set_obs_defaults(opt):
 
     return opt
 
+def main():
 
-
-
-if __name__ == '__main__':
-
+    global success
     apflog("Starting main...")
     apftask = ktl.Service("apftask")
 
@@ -574,3 +572,6 @@ if __name__ == '__main__':
 
     success = True
     shutdown()
+
+if __name__ == "__main__":
+    main()
