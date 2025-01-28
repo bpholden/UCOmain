@@ -181,14 +181,7 @@ def parse_args(apftask):
 
     opt = parser.parse_args()
 
-    saved_time = ''
-    if opt.fixed != None:
-        try:
-            saved_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
-        except Exception as e:
-            apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
-
-    if opt.start != None and opt.fixed != None and saved_time == '':
+    if opt.start is not None and opt.fixed is not None:
 
         mtch = re.search("\A(\d+)\:(\d+)",opt.start)
         if mtch:
@@ -204,7 +197,14 @@ def parse_args(apftask):
             print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
             shutdown()
 
-    elif opt.fixed != None and saved_time != '':
+    elif opt.fixed is not None:
+        saved_time = ''
+        try:
+            saved_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
+        except Exception as e:
+            apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
+            saved_time = None
+
         opt.start = saved_time
 
     if opt.name is None:
@@ -316,7 +316,7 @@ if __name__ == '__main__':
     except Exception as e:
         apflog("Cannot read apftask.MASTER_STARLIST: %s" % (e),level='warn',echo=True)
 
-    if opt.fixed != None:
+    if opt.fixed is not None:
         # This resets lines done if this is a new target list
         if opt.fixed != possible_list:
             APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
@@ -327,7 +327,10 @@ if __name__ == '__main__':
         else:
             apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
 
-
+    if opt.start is not None:
+        apflog("Will be starting star list %s at time %s" % (opt.fixed, opt.start),echo=True)
+        if time.time() > opt.start:
+            apflog("Start time %s is in the past" % (opt.start),echo=True,level='error')
 
     # All the phase options that this script uses.
     # This allows us to check if we exited out of the script early.
