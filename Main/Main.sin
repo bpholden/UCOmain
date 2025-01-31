@@ -154,6 +154,67 @@ def calc_focus_start_time():
     sun_dt = dt + sun_delta
     return start_time, start_dt, sun_dt, time_to_sunset + 1200
 
+def setup_fixed_list(opt, possible_list, apf):
+    '''
+    setup_fixed_list(fixed)
+
+    This function sets up the fixed star list for the night
+    '''
+
+    if opt.fixed:
+        if not os.path.exists(opt.fixed):
+            errmsg = "starlist %s does not exist" % (opt.fixed)
+            apflog(errmsg, level="error", echo=True)
+            shutdown()
+        
+        APFTask.set(parent, "STARLIST", opt.fixed)
+    else:
+        APFTask.set(parent, "STARLIST", "")    
+
+    if opt.fixed != possible_list:
+        APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
+    if opt.line != None:
+        APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], int(opt.line))
+        apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
+    else:
+        apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
+
+
+def fixed_start_time(opt):
+    '''
+    fixed_start_time(opt)
+
+    Sets the start time for a fixed star list
+    '''
+
+    saved_time = ''
+    if opt.fixed != None:
+        try:
+            saved_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
+        except Exception as e:
+            apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
+
+    if opt.start != None and opt.fixed != None and saved_time == '':
+
+        mtch = re.search("\A(\d+)\:(\d+)",opt.start)
+        if mtch:
+            hr = int(mtch.group(1))
+            mn = int(mtch.group(2))
+            opt.start = get_start_time(hr,mn)
+            try:
+                apftask.write("MASTER_UTSTARTLIST", opt.start, wait=False)
+            except Exception as e:
+                apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
+
+        else:
+            print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
+            shutdown()
+
+    elif opt.fixed != None and saved_time != '':
+        opt.start = saved_time
+
+    return opt
+
 def parse_args(apftask):
     p_c = POSSIBLE_PHASES
     w_c = ["on", "off", "auto"]
@@ -182,32 +243,6 @@ def parse_args(apftask):
 
     opt = parser.parse_args()
 
-    saved_time = ''
-    if opt.fixed != None:
-        try:
-            saved_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
-        except Exception as e:
-            apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
-
-    if opt.start != None and opt.fixed != None and saved_time == '':
-
-        mtch = re.search("\A(\d+)\:(\d+)",opt.start)
-        if mtch:
-            hr = int(mtch.group(1))
-            mn = int(mtch.group(2))
-            opt.start = get_start_time(hr,mn)
-            try:
-                apftask.write("MASTER_UTSTARTLIST", opt.start, wait=False)
-            except Exception as e:
-                apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
-
-        else:
-            print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
-            shutdown()
-
-    elif opt.fixed != None and saved_time != '':
-        opt.start = saved_time
-
     if opt.name is None:
         now = datetime.datetime.now()
         oneday = datetime.timedelta(days=-1)
@@ -221,6 +256,8 @@ def parse_args(apftask):
         except Exception as e:
             apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn', echo=True)
         opt.sheet = opt.sheet.split(",")
+
+    opt = fixed_start_time(opt)
 
     return opt
 
@@ -317,17 +354,7 @@ if __name__ == '__main__':
     except Exception as e:
         apflog("Cannot read apftask.MASTER_STARLIST: %s" % (e),level='warn',echo=True)
 
-    if opt.fixed != None:
-        # This resets lines done if this is a new target list
-        if opt.fixed != possible_list:
-            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
-            APFLib.write(apf.robot["MASTER_STARLIST"], opt.fixed)
-        if opt.line != None:
-            APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], int(opt.line))
-            apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
-        else:
-            apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
-
+    setup_fixed_list(opt, possible_list, apf)
 
 
     # All the phase options that this script uses.
@@ -358,16 +385,7 @@ if __name__ == '__main__':
     #  make sure we perform these operations.
 
     APFLib.write(apf.robot["SCRIPTOBS_MESSAGE"], "Setting defaults for observing.")
-    if opt.fixed:
-        if not os.path.exists(opt.fixed):
-            errmsg = "starlist %s does not exist" % (opt.fixed)
-            apflog(errmsg, level="error", echo=True)
-            shutdown()
-        if not debug:
-            APFTask.set(parent, "STARLIST", opt.fixed)
-    else:
-        if not debug:
-            APFTask.set(parent, "STARLIST", "")
+    
 
     if phase_index == 0:
         apflog("Setting Observer Information", echo=True)
