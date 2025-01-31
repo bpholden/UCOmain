@@ -118,7 +118,7 @@ class Observe(threading.Thread):
             else:
                 self.sheetn = ["RECUR_A100",]
 
-        self.canOpen = True
+        self.can_open = True
 
     def append_selected(self, curstr):
         """
@@ -422,7 +422,7 @@ class Observe(threading.Thread):
                 apflog(ostr, level='error', echo=True)
                 ripd, running = self.apf.find_robot()
                 if running:
-                    apflog("Attempting to kill the existing robot, %d" %\
+                    apflog("Attempting to kill the existing scriptobs instance, %d" %\
                             (ripd), level='error', echo=True)
                     self.apf.kill_robot()
                 return
@@ -533,12 +533,12 @@ class Observe(threading.Thread):
 
         # opens the dome & telescope, if sunset is True calls open at sunset, else open at night
         def opening(sunel, sunset=False):
-            if self.canOpen == False:
+            if self.can_open is False:
                 apflog("We cannot open, so not trying", level='Error', echo=True)
                 return False
             if self.apf.robot["SLEW_ALLOWED"].read(binary=True) == False:
                 apflog("Opening: Slewing not allowed, so not opening", echo=True)
-                self.canOpen = False
+                self.can_open = False
                 return False
             when = "night"
             if sunset:
@@ -568,7 +568,7 @@ class Observe(threading.Thread):
                     if not result and self.apf.openOK['binary']:
                         apflog("Error: opening has failed twice, likely needs intervention.", level='Alert', echo=True)
                         self.apf.close()
-                        self.canOpen = False
+                        self.can_open = False
 
             self.apf.check_FCUs()
             self.apf.dm_reset()
@@ -778,7 +778,6 @@ class Observe(threading.Thread):
             _, running = self.apf.find_robot()
             cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
-            focusing = self.apf.focussta['binary'] < 3
             self.apf.check_FCUs(check_apfmon=True)
             # Check and close for weather
 
@@ -886,7 +885,7 @@ class Observe(threading.Thread):
                 self.stop()
 
             # Open
-            if self.apf.openOK and self.canOpen and not self.bad_weather:
+            if self.apf.openOK and self.can_open and not self.bad_weather:
                 if not self.apf.is_ready_observing()[0] and \
                     float(cursunel) < SchedulerConsts.SUNEL_HOR:
                     if float(cursunel) > sunel_lim and not rising:
@@ -930,7 +929,7 @@ class Observe(threading.Thread):
                                     break
 
 
-                    elif not rising or (rising and float(cursunel) < (sunel_lim - 5)) and self.canOpen and not self.bad_weather:
+                    elif not rising or (rising and float(cursunel) < (sunel_lim - 5)) and self.can_open and not self.bad_weather:
                         success = opening(cursunel)
                         omsg = "Opening at %s" % (cursunel)
                         APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
@@ -991,7 +990,12 @@ class Observe(threading.Thread):
 
             # If we are open and scriptobs isn't running, start it up
             if self.apf.is_ready_observing()[0] and not running \
-                and float(cursunel) <= sunel_lim and self.apf.openOK and not focusing:
+                and float(cursunel) <= sunel_lim and self.apf.openOK:
+                focusing = self.apf.focussta['binary'] < 3
+                if focusing:
+                    apflog("Focusing in progress, waiting for it to finish", echo=True)
+                    APFTask.waitFor(self.task, True, timeout=60)
+                    continue
                 rv = APFTask.waitFor(self.task, False,\
                                       expression="$apftask.CALIBRATE_STATUS == 'Running'",\
                                           timeout=1)

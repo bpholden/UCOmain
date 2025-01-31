@@ -761,8 +761,8 @@ class APF:
         """
         if self.outfile.read() != self.desired_outfile:
             apflog("Output filename is %s and not the current date %s" % \
-                   (self.outfile, self.desired_outfile),level='error',echo=True)
-            self.outfile.write(self.desired_outfile)
+                   (self.desired_outfile, self.outfile),level='error',echo=True)
+            self.outfile.write(self.outfile)
 
         if self.obsnum < self.robot["MASTER_LAST_OBS_UCSC"]:
             apflog("Output file number is %s which is less than the last logged value %s"\
@@ -1707,24 +1707,25 @@ class APF:
         if estopstate:
             return False
 
+        msg = ""
         prefixs = ["AZ","EL","FA","FB","FC","TR" ]
         for pr in prefixs:
             nm = pr + "AMPFLT"
             val = self.tel[nm].read(binary=True)
             if val:
                 servo_failed = True
-                msg = "Error: Servo Amplifier Fault: " + nm + " " + val
-                apflog(msg, level="timed_alert", echo=True)
-                self.robot['MASTER_MESSAGE'].write(msg)
+                msg += "Error: Servo Amplifier Fault: " + str(nm) + " " + str(val) + "\n"
+                
 
         for pr in prefixs:
             nm = pr + "FERROR"
             val = self.tel[nm].read(binary=True)
             if val:
                 servo_failed = True
-                msg = "Error: Following Error Fault: " + str(nm) + " " + str(val)
-                apflog(msg, level="timed_alert", echo=True)
-                self.robot['MASTER_MESSAGE'].write(msg)
+                msg = "Error: Following Error Fault: " + str(nm) + " " + str(val) + "\n"
+        if msg != "":
+            apflog(msg, level='error', echo=True)
+            self.robot['MASTER_MESSAGE'].write(msg)
 
         return servo_failed
 
@@ -2071,16 +2072,11 @@ class APF:
         # check on weirdness for UCAM host post-reboot
         self.ucam_dispatch_mon()
 
-
-
         telstate = self.tel['TELSTATE'].read()
         if telstate == 'Disabled':
             rv, retc = apftask_do(os.path.join(SCRIPTDIR,"slew --hold"))
             if not rv:
                 return rv
-        rv, retc = apftask_do(os.path.join(SCRIPTDIR,"prep-obs"))
-        if not rv:
-            return rv
         # Start scriptobs
 
         outfile = open("robot.log", 'a')
