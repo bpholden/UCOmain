@@ -77,9 +77,15 @@ def control_watch(keyword,parent):
 
 
 def signal_shutdown(signal, frame):
+    '''
+    signal_shutdown(signal, frame)
+    '''
     shutdown()
 
 def shutdown():
+    '''
+    shutdown()
+    '''
     global success
     if success:
         status = 'Exited/Success'
@@ -155,29 +161,47 @@ def calc_focus_start_time():
     return start_time, start_dt, sun_dt, time_to_sunset + 1200
 
 def parse_args(apftask):
+    '''
+    parse_args(apftask)
+    '''
     p_c = POSSIBLE_PHASES
     w_c = ["on", "off", "auto"]
     b_c = [1, 2, 4]
     parser = argparse.ArgumentParser(description="Set default options")
-    parser.add_argument('-n', '--name', type=str, default=None, help='This values is used as the file prefix.')
-    parser.add_argument('-o', '--obsnum', type=int, help='Sets the UCAM observation number to this integer value.')
-    parser.add_argument('-b', '--binning', choices=b_c, default=1, type=int, help='Sets the UCAM binning, bins in both pixels, allowed to be 1, 2 or 4.')
-    parser.add_argument('-p', '--phase', choices=p_c, help='Specify the starting phase of the watcher. Allows for skipping standard procedures.')
-    parser.add_argument('-f', '--fixed', default=None, help='Specify a fixed target list to observe. File will be searched for relative to the current working directory.')
-    parser.add_argument('-t', '--test', action='store_true', help="Start the watcher in test mode. No modification to telescope, instrument, or observer settings will be made.")
+    parser.add_argument('-n', '--name', type=str, default=None, \
+                        help='This values is used as the file prefix.')
+    parser.add_argument('-o', '--obsnum', type=int, \
+                        help='Sets the UCAM observation number to this integer value.')
+    parser.add_argument('-b', '--binning', choices=b_c, default=1, type=int, \
+                        help='Sets the UCAM binning, bins in both pixels, allowed to be 1, 2 or 4.')
+    parser.add_argument('-p', '--phase', choices=p_c, \
+                        help='Specify the starting phase of the watcher. Allows for skipping standard procedures.')
+    parser.add_argument('-f', '--fixed', default=None, \
+                        help='Specify a fixed target list to observe. File will be searched for relative to the current working directory.')
+    parser.add_argument('-t', '--test', action='store_true', \
+                        help="Start the watcher in test mode. No modification to telescope, instrument, or observer settings will be made.")
 #    parser.add_argument('-r', '--restart', action='store_true', default=False, help="Restart the specified fixed star list from the beginning. This resets scriptobs_lines_done to 0.") # removed should possible make default True and this option be False
-    parser.add_argument('-w', '--windshield', choices=w_c, default='auto', help="Turn windshielding on, off, or let the software decide based on the current average wind speed (Default is auto). Velocity > %.1f mph turns windshielding on." % (APFControl.WINDSHIELD_LIMIT))
-    parser.add_argument('-c', '--calibrate', default='uco', type=str, help="Specify the calibrate script to use. Specify string to be used in calibrate 'arg' pre/post")
-    parser.add_argument('-l', '--line', type=int, help="If a fixed starlist is given, starts the list at line N.")
-    parser.add_argument('-s', '--start', default=None, type=str, help="When specified with a fixed starlist, this option starts that list at that UT (e.g. 09:00).")
-    parser.add_argument('--raster', action='store_true', default=False, help="If a fixed starlist is given, use it for a raster scan.")
-    parser.add_argument('--too', default=None, help="Download this sheet every 20 minutes for ToO targets")
-    parser.add_argument('--rank_table', default='2024B_ranks', help="Optional name for table of sheet ranks")
-    parser.add_argument('--sheet', default=None,help="Optional name for a Google spreadsheet")
+    parser.add_argument('-w', '--windshield', choices=w_c, default='auto', \
+                        help="Turn windshielding on, off, or let the software decide based on the current average wind speed (Default is auto). Velocity > %.1f mph turns windshielding on." % (APFControl.WINDSHIELD_LIMIT))
+    parser.add_argument('-c', '--calibrate', default='uco', type=str, \
+                        help="Specify the calibrate script to use. Specify string to be used in calibrate 'arg' pre/post")
+    parser.add_argument('-l', '--line', type=int, \
+                        help="If a fixed starlist is given, starts the list at line N.")
+    parser.add_argument('-s', '--start', default=None, type=str, \
+                        help="When specified with a fixed starlist, this option starts that list at that UT (e.g. 09:00).")
+    parser.add_argument('--raster', action='store_true', default=False, \
+                        help="If a fixed starlist is given, use it for a raster scan.")
+    parser.add_argument('--too', default=None, \
+                        help="Download this sheet every 20 minutes for ToO targets")
+    parser.add_argument('--rank_table', default='2024B_ranks', \
+                        help="Optional name for table of sheet ranks")
+    parser.add_argument('--sheet', default=None,\
+                        help="Optional name for a Google spreadsheet")
     parser.add_argument('--owner', default='public', help="Optional name for file owners")
-    parser.add_argument('--no_Bstar', action='store_true', default=False, help="Do not observe B stars")
-
-    parser.add_argument('--time_left', default=None, help="File name for remaining time in programs")
+    parser.add_argument('--no_Bstar', action='store_true',\
+                         default=False, help="Do not observe B stars")
+    parser.add_argument('--time_left', default=None, \
+                        help="File name for remaining time in programs")
 
     opt = parser.parse_args()
 
@@ -194,7 +218,8 @@ def parse_args(apftask):
                 apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
 
         else:
-            print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
+            err_str = "Start time %s is not in the format HH:MM" % (opt.start)
+            print(err_str)
             shutdown()
 
     elif opt.fixed is not None:
@@ -237,6 +262,9 @@ def find_obs_num(last):
     return last
 
 def set_obs_defaults(opt):
+    '''
+    set_obs_defaults(opt)
+    '''
     opt.owner = 'public'
     if opt.obsnum is None:
         apflog("Figuring out what the observation number should be.", echo=True)
@@ -247,7 +275,9 @@ def set_obs_defaults(opt):
     return opt
 
 def main():
-
+    '''
+    main()
+    '''
     global success
     apflog("Starting main...")
     apftask = ktl.Service("apftask")
@@ -321,7 +351,8 @@ def main():
             APFLib.write(apf.robot["MASTER_STARLIST"], opt.fixed)
         if opt.line != None:
             APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], int(opt.line))
-            apflog("Will be starting star list %s at line %d" % (opt.fixed, int(opt.line)),echo=True)
+            apflog("Will be starting star list %s at line %d" \
+                   % (opt.fixed, int(opt.line)),echo=True)
         else:
             apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
 
@@ -335,7 +366,7 @@ def main():
 
     phase_index = 0
     # If a command line phase was specified, use that.
-    if opt.phase != None:
+    if opt.phase is not None:
         APFTask.phase(parent, opt.phase)
         phase_index = POSSIBLE_PHASES.index(str(opt.phase).strip())
         phase.poll()
@@ -455,9 +486,12 @@ def main():
                 observe.start()
 
             if calibrate:
-                if calibrate.is_alive() is False and ktl.read("apftask","focusinstr_status",binary=True) != 3:
-                    fstart = astropy.time.Time(ktl.read("apftask","focusinstr_last_start",binary=True),format='unix')
-                    if (ktl.read("apftask","focusinstr_status",binary=True)) > 3 and (fstart < mstart):
+                if calibrate.is_alive() is False and\
+                  ktl.read("apftask","focusinstr_status",binary=True) != 3:
+                    fstart = astropy.time.Time(ktl.read("apftask","focusinstr_last_start",\
+                                                        binary=True),format='unix')
+                    if (ktl.read("apftask","focusinstr_status",binary=True)) > 3 \
+                    and (fstart < mstart):
                         # this means that the thread died, usually because of an uncaught exception
                         apflog("Calibrate thread has died!", level='Alert', echo=True)
                         try:
@@ -507,7 +541,8 @@ def main():
             apflog(err_str, level="error")
         else:
             if n_up > 0:
-                apflog("Updated %d entries in the online googledex" % (n_up), level='Info', echo=True)
+                apflog("Updated %d entries in the online googledex" % (n_up),\
+                        level='Info', echo=True)
             else:
                 apflog("Failure updating the online googledex", level='warn', echo=True)
         logpush(os.path.join(os.getcwd(),"observed_targets"))
@@ -515,8 +550,6 @@ def main():
     for fn in ("googledex.dat", "rank_table", "hour_table", "robot.log","selected_targets"):
         if os.path.exists(os.path.join(os.getcwd(), fn)):
             logpush(os.path.join(os.getcwd(), fn))
-
-    apfmon = ktl.Service('apfmon')
 
     try:
         apf.ok2open.monitor(start=False)
