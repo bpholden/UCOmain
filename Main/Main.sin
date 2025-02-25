@@ -193,7 +193,7 @@ def setup_fixed_list(opt, possible_list, apf):
         apflog("Will be starting star list %s at line 0" % opt.fixed,echo=True)
 
 
-def fixed_start_time(opt):
+def fixed_start_time(opt, apftask):
     '''
     fixed_start_time(opt)
 
@@ -203,7 +203,7 @@ def fixed_start_time(opt):
     saved_time = ''
     if opt.fixed is not None:
         try:
-            saved_time = APFTask.read('MASTER_UTSTARTLIST',timeout=5)
+            saved_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
         except Exception as e:
             apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
 
@@ -215,7 +215,7 @@ def fixed_start_time(opt):
             mn = int(mtch.group(2))
             opt.start = get_start_time(hr,mn)
             try:
-                APFTask.write("MASTER_UTSTARTLIST", opt.start, wait=False)
+                apftask.write("MASTER_UTSTARTLIST", opt.start, wait=False)
             except Exception as e:
                 apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
 
@@ -287,7 +287,7 @@ def parse_args(apftask):
             apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn', echo=True)
         opt.sheet = opt.sheet.split(",")
 
-    opt = fixed_start_time(opt)
+    opt = fixed_start_time(opt, apftask)
 
     return opt
 
