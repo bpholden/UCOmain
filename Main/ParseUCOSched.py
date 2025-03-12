@@ -344,6 +344,8 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
                     ]
 
     full_codex = retrieve_codex(req_cols, sheetns=sheetns, certificate=certificate, sleep=sleep)
+    if full_codex is None or len(full_codex) == 1:
+        return None
 
     # the assumption is that the first row is the column names
     col_names = full_codex[0]
@@ -621,7 +623,7 @@ def parse_UCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.
     """
 
 
-
+    stars = None
     # Downloading all the values is going slowly.
     # Try to only have to load this once a day
     if not outdir :
@@ -637,6 +639,9 @@ def parse_UCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.
     else:
         star_table = parse_codex(config, sheetns=sheetns, certificate=certificate, prilim=prilim, 
                                  hour_constraints=hour_constraints)
+
+    if star_table is None:
+        return (star_table, stars)
 
     stars = gen_stars(star_table)
 
