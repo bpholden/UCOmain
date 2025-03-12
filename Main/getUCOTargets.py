@@ -50,10 +50,6 @@ class getUCOTargets(threading.Thread):
 
         self.start()
 
-    def stop(self):
-        self.signal = False
-        threading.Thread._Thread__stop(self)
-
     def copy_backup(self, file_name):
         old_name = file_name + ".1"
         if os.path.exists(old_name):
