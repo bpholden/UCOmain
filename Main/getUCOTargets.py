@@ -162,6 +162,6 @@ if __name__ == "__main__":
     opt = Opt()
     opt.test = False
     opt.time_left = "/home/holden/time_left.csv"
-    opt.rank_table = '2023A_ranks'
+    opt.rank_table = '2025A_ranks_operational'
 
     get_targs = getUCOTargets(opt, task=task)
