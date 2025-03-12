@@ -1225,7 +1225,7 @@ if __name__ == '__main__':
     else:
         hour_constraints = None
 
-    RANK_TABLEN='2024A_ranks'
+    RANK_TABLEN='2025A_ranks_operational'
     trank_table = make_rank_table(RANK_TABLEN, hour_constraints=hour_constraints)
 
     thour_table = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
