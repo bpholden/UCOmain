@@ -261,7 +261,7 @@ def parse_args(apftask):
                         help="If a fixed starlist is given, use it for a raster scan.")
     parser.add_argument('--too', default=None, \
                         help="Download this sheet every 20 minutes for ToO targets")
-    parser.add_argument('--rank_table', default='2024B_ranks', \
+    parser.add_argument('--rank_table', default='2025A_ranks', \
                         help="Optional name for table of sheet ranks")
     parser.add_argument('--sheet', default=None,\
                         help="Optional name for a Google spreadsheet")
