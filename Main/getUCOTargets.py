@@ -102,12 +102,12 @@ class getUCOTargets(threading.Thread):
 
         sheetlist_name = 'MASTER_SHEETLIST'
         if self.debug:
-            sheetlist_name = 'EXAMPLE_VAR1'
+            sheetlist_name = 'EXAMPLE_VAR_1'
 
         try:
             self.apftask.write(sheetlist_name,",".join(self.sheets),timeout=2)
         except Exception as e:
-            apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
+            apflog("Cannot write apftask.%s: %s" % (sheetlist_name, e), level='warn',echo=True)
 
         if rank_table and 'too' in rank_table.columns:
             if np.any(rank_table['too']):
