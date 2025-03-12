@@ -267,7 +267,7 @@ def parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
 
     worksheet, cur_codex = get_spreadsheet(sheetn=sheet_table_name,certificate=certificate)
     if worksheet is None:
-            return None, None, None, None
+        return None, None, None, None
 
     req_cols = ["sheetn", "rank", "frac", "too"]
     didx = find_columns(cur_codex[0], req_cols)
