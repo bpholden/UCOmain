@@ -317,7 +317,7 @@ def set_obs_defaults(opt):
 
     return opt
 
-def init_phase(opt, apf):
+def init_phase(opt, apf, parent):
     apflog("Setting Observer Information", echo=True)
     opt = set_obs_defaults(opt)
     apflog("Using %s for name and %s for obs number." % (opt.name, repr(opt.obsnum)), echo=True)
@@ -440,7 +440,7 @@ def main():
     APFLib.write(apf.robot["SCRIPTOBS_MESSAGE"], "Setting defaults for observing.")
 
     if phase_index == 0:
-        opt = init_phase(opt, apf)
+        opt = init_phase(opt, apf, parent)
 
     if apf.desired_outfile is None and opt.name is not None:
         apf.desired_outfile = opt.name
