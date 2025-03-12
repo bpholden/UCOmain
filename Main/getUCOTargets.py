@@ -59,17 +59,12 @@ class getUCOTargets(threading.Thread):
 
     def run(self):
 
-        # these tests are against binary values
-        # and binary values are in radians
-        # the test is for -4 degrees
         expression = '$eostele.SUNEL < -0.0'
+        if self.debug:
+            expression = '$eostele.SUNEL < 100.0'
         APFTask.waitFor(self.task, True, expression=expression, timeout=self.wait_time)
 
         if self.signal is False:
-            return
-
-        if self.debug:
-            print("Would have downloaded %s" % (self.rank_table))
             return
 
         hour_constraints = None
@@ -105,8 +100,12 @@ class getUCOTargets(threading.Thread):
         if self.sheets is None and rank_table:
             self.sheets = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
+        sheetlist_name = 'MASTER_SHEETLIST'
+        if self.debug:
+            sheetlist_name = 'EXAMPLE_VAR1'
+
         try:
-            self.apftask.write('MASTER_SHEETLIST',",".join(self.sheets),timeout=2)
+            self.apftask.write(sheetlist_name,",".join(self.sheets),timeout=2)
         except Exception as e:
             apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
 
@@ -116,6 +115,7 @@ class getUCOTargets(threading.Thread):
 
         if self.signal is False:
             return
+
         tab = None
         try:
             tab, _ = ParseUCOSched.parse_UCOSched(sheetns=self.sheets,outfn=self.star_tab,
@@ -134,7 +134,7 @@ class getUCOTargets(threading.Thread):
         except Exception as e:
             apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
 
-        while self.signal and self.too is not None:
+        while self.signal and self.too is not None and not self.debug:
 
             if APFTask.waitfor(self.task,False,expression='apftask.SCRIPTOBS_PHASE==Observing',
                                timeout=self.timeout):
