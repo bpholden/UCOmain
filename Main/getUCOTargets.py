@@ -160,7 +160,7 @@ if __name__ == "__main__":
     task = 'example'
     APFTask.establish(task,os.getpid())
     opt = Opt()
-    opt.test = False
+    opt.test = True
     opt.time_left = "/home/holden/time_left.csv"
     opt.rank_table = '2025A_ranks_operational'
 
