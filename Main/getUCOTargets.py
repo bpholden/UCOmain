@@ -37,6 +37,7 @@ class getUCOTargets(threading.Thread):
 
         self.prilim = prilim
         self.certificate = SchedulerConsts.DEFAULT_CERT
+        self.star_tab = 'googledex.dat' # historical
 
         if opt.test:
             self.debug = opt.test
@@ -53,6 +54,13 @@ class getUCOTargets(threading.Thread):
         self.signal = False
         threading.Thread._Thread__stop(self)
 
+    def copy_backup(self, file_name):
+        old_name = file_name + ".1"
+        if os.path.exists(old_name):
+            shutil.copyfile(old_name, file_name)
+            return True
+        return False
+
     def run(self):
 
         # these tests are against binary values
@@ -66,66 +74,69 @@ class getUCOTargets(threading.Thread):
 
         if self.debug:
             print("Would have downloaded %s" % (self.rank_table))
-        else:
-            if self.time_left is None :
-                hour_constraints=None
-            else:
-                if os.path.exists(self.time_left):
-                    try:
-                        hour_constraints = astropy.io.ascii.read(self.time_left)
-                    except Exception as e:
-                        hour_constraints = None
-                        apflog("Error: Cannot read file of time left %s : %s" % (opt.time_left,e))
-                else:
-                    hour_constraints = None
+            return
 
+        hour_constraints = None
+        if os.path.exists(self.time_left):
             try:
-                rank_table = ds.make_rank_table(self.rank_table,outdir=os.getcwd(),\
-                                                hour_constraints=hour_constraints)
+                hour_constraints = astropy.io.ascii.read(self.time_left)
             except Exception as e:
-                apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
-                # goto backup
-                if os.path.exists("rank_table.1"):
-                    shutil.copyfile("rank_table.1","rank_table")
-                    try:
-                        rank_table = ds.make_rank_table(sheet_table_name=opt.rank_table,outdir=os.getcwd(),hour_constraints=hour_constraints)
-                    except Exception as e:
-                        apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
-                        rank_table = None
+                hour_constraints = None
+                apflog("Error: Cannot read file of time left %s : %s" % (self.time_left,e))
 
-            if self.signal is False:
-                return
+        rank_table = None
+        try:
+            rank_table = ds.make_rank_table(self.rank_table, outdir=os.getcwd(),\
+                                            hour_constraints=hour_constraints)
+        except Exception as e:
+            apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
 
-            if self.sheets is None:
-                self.sheets = list(rank_table['sheetn'][rank_table['rank'] > 0])
+        if rank_table is None:
+        # goto backup
+            if self.copy_backup(self.rank_table):
+                try:
+                    rank_table = ds.make_rank_table(self.rank_table,
+                                                    outdir=os.getcwd(),
+                                                    hour_constraints=hour_constraints)
+                except Exception as e:
+                    apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
+                    rank_table = None
 
-            try:
-                self.apftask.write('MASTER_SHEETLIST',",".join(self.sheets),timeout=2)
-            except Exception as e:
-                apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
 
-            if 'too' in rank_table.columns:
-                if np.any(rank_table['too']):
-                    self.too = list(rank_table['sheetn'][rank_table['too']])
+        if self.signal is False:
+            return
 
-            if self.signal is False:
-                return
-            try:
-                _ = ParseUCOSched.parse_UCOSched(sheetns=self.sheets,outfn='googledex.dat',
-                                                                outdir=os.getcwd(),
-                                                                prilim=self.prilim,
-                                                                certificate=self.certificate)
-            except Exception as e:
-                apflog("Error: Cannot download googledex?! %s %s" % (type(e), e),level="error")
-                # goto backup
-                if os.path.exists("googledex.dat.1"):
-                    shutil.copyfile("googledex.dat.1","googledex.dat")
+        if self.sheets is None and rank_table:
+            self.sheets = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
-            try:
-                _ = ds.make_hour_table(rank_table,datetime.datetime.now(),
-                                                hour_constraints=hour_constraints)
-            except Exception as e:
-                apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
+        try:
+            self.apftask.write('MASTER_SHEETLIST',",".join(self.sheets),timeout=2)
+        except Exception as e:
+            apflog("Cannot write apftask.MASTER_SHEETLIST: %s" % (e), level='warn',echo=True)
+
+        if rank_table and 'too' in rank_table.columns:
+            if np.any(rank_table['too']):
+                self.too = list(rank_table['sheetn'][rank_table['too']])
+
+        if self.signal is False:
+            return
+        tab = None
+        try:
+            tab, _ = ParseUCOSched.parse_UCOSched(sheetns=self.sheets,outfn=self.star_tab,
+                                                        outdir=os.getcwd(),
+                                                        prilim=self.prilim,
+                                                        certificate=self.certificate)
+        except Exception as e:
+            apflog("Error: Cannot download googledex?! %s %s" % (type(e), e),level="error")
+
+        if tab is None:
+            self.copy_backup(self.star_tab)
+
+        try:
+            _ = ds.make_hour_table(rank_table,datetime.datetime.now(),
+                                            hour_constraints=hour_constraints)
+        except Exception as e:
+            apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
 
         while self.signal and self.too is not None:
 
@@ -134,14 +145,12 @@ class getUCOTargets(threading.Thread):
 
                 self.reading = True
                 try:
-                    ParseUCOSched.parse_TOO(too_sheetns=self.too, outfn='googledex.dat',
+                    ParseUCOSched.parse_TOO(too_sheetns=self.too, outfn=self.star_tab,
                                             outdir=os.getcwd(), prilim=self.prilim,
                                             certificate=self.certificate)
                 except Exception as e:
                     apflog("Error: Cannot download %s: %s" % (self.too,e),level="error")
                 self.reading = False
-
-        self.stop()
 
         return
 
