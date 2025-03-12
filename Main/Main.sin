@@ -317,6 +317,27 @@ def set_obs_defaults(opt):
 
     return opt
 
+def init_phase(opt, apf):
+    apflog("Setting Observer Information", echo=True)
+    opt = set_obs_defaults(opt)
+    apflog("Using %s for name and %s for obs number." % (opt.name, repr(opt.obsnum)), echo=True)
+    apf.set_observer_info(num=opt.obsnum, name=opt.name, owner=opt.owner)
+
+    apflog("Setting the task step to 0")
+    APFTask.step(parent, 0)
+    if os.path.exists(os.path.join(os.getcwd(),"googledex.dat")):
+        logpush(os.path.join(os.getcwd(),"googledex.dat"))
+
+    if os.path.exists(os.path.join(os.getcwd(),"robot.log")):
+        logpush(os.path.join(os.getcwd(),"robot.log"))
+
+    apflog("Setting SCRIPTOBS_LINES_DONE to 0")
+    APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
+    APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)
+    apflog("Initialization finished")
+
+    return opt
+
 def main():
     '''
     main()
@@ -417,25 +438,9 @@ def main():
     #  make sure we perform these operations.
 
     APFLib.write(apf.robot["SCRIPTOBS_MESSAGE"], "Setting defaults for observing.")
-    
+
     if phase_index == 0:
-        apflog("Setting Observer Information", echo=True)
-        opt = set_obs_defaults(opt)
-        apflog("Using %s for name and %s for obs number." % (opt.name, repr(opt.obsnum)), echo=True)
-        apf.set_observer_info(num=opt.obsnum, name=opt.name, owner=opt.owner)
-
-        apflog("Setting the task step to 0")
-        APFTask.step(parent, 0)
-        if os.path.exists(os.path.join(os.getcwd(),"googledex.dat")):
-            logpush(os.path.join(os.getcwd(),"googledex.dat"))
-
-        if os.path.exists(os.path.join(os.getcwd(),"robot.log")):
-            logpush(os.path.join(os.getcwd(),"robot.log"))
-
-        apflog("Setting SCRIPTOBS_LINES_DONE to 0")
-        APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
-        APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)
-        apflog("Initialization finished")
+        opt = init_phase(opt, apf)
 
     if apf.desired_outfile is None and opt.name is not None:
         apf.desired_outfile = opt.name
