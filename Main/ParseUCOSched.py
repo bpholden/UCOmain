@@ -266,22 +266,21 @@ def parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
     too = []
 
     worksheet, cur_codex = get_spreadsheet(sheetn=sheet_table_name,certificate=certificate)
-    if worksheet:
-        if worksheet is None:
+    if worksheet is None:
             return None, None, None, None
 
-        req_cols = ["sheetn", "rank", "frac", "too"]
-        didx = find_columns(cur_codex[0], req_cols)
+    req_cols = ["sheetn", "rank", "frac", "too"]
+    didx = find_columns(cur_codex[0], req_cols)
 
-        for row in cur_codex[1:]:
-            if row[0] != "":
-                sheetns.append(row[didx['sheetn']])
-                crank = float_default(row[didx['rank']])
-                crank = int(round(crank))
-                rank.append(crank)
-                cfrac = float_default(row[didx['frac']])
-                frac.append(cfrac)
-                too.append(row[didx['too']].lower())
+    for row in cur_codex[1:]:
+        if row[0] != "":
+            sheetns.append(row[didx['sheetn']])
+            crank = float_default(row[didx['rank']])
+            crank = int(round(crank))
+            rank.append(crank)
+            cfrac = float_default(row[didx['frac']])
+            frac.append(cfrac)
+            too.append(row[didx['too']].lower())
 
     if 'RECUR_A100' not in sheetns:
         sheetns.append('RECUR_A100')
