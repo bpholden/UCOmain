@@ -749,9 +749,6 @@ class Observe(threading.Thread):
                 # Don't let the watcher run over the robot starting up
                 APFTask.waitFor(self.task, True, timeout=10)
 
-
-
-
             return
 
 
