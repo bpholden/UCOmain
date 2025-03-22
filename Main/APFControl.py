@@ -1843,9 +1843,15 @@ class APF:
         # check last telescope focus
         lastfoc = self.robot['FOCUSTEL_LAST_SUCCESS'].read(binary=True)
 
-        if self.sun_rising() and (self.sunel.read(binary=True) > -20):
+        if self.sun_rising() and (self.sunel.read(binary=True) < -20):
             self.autofoc.write("robot_autofocus_disable")
             return 0
+
+        lastopen = self.robot['OPENUP_LAST_SUCCESS'].read(binary=True)
+
+        if lastfoc < lastopen:
+            self.autofoc.write("robot_autofucs_enable")
+            return 2
 
         if time.time() - lastfoc < 3600:
             self.autofoc.write("robot_autofocus_disable")
@@ -1955,7 +1961,9 @@ class APF:
         self.dm_reset()
 
         if self.calsta['binary'] < 3 or self.focussta['binary'] < 3:
-            apflog('Focusinstr and/or Calibrate are running, will skip evening star observation. focusinstr=%s calibrate=%s' % (self.calsta,self.focussta),echo=True)
+            log_str = 'Focusinstr and/or Calibrate are running, will skip evening star observation.'
+            log_str += ' focusinstr=%s calibrate=%s' % (self.calsta,self.focussta)
+            apflog(log_str,echo=True)
             return
 
         # check on weirdness for UCAM host post-reboot
@@ -1970,7 +1978,9 @@ class APF:
             self.dm_reset()
             result, ret_code = apftask_do(prepobs)
             if result is False:
-                apflog("Prep-obs returned error code %d. Targeting object has failed." % (ret_code),level='error',echo=True)
+                log_str = "Prep-obs returned error code %d. " % (ret_code)
+                log_str += "Targeting object has failed."
+                apflog(log_str,level='error',echo=True)
                 return
 
         self.decker.write('W',wait=False)
@@ -1991,7 +2001,9 @@ class APF:
                 self.guide['CLEARSUMS'].write('now')
                 self.guide['CLEARSUMS'].write('gstate')
             except Exception as e:
-                apflog("Cannot write 3 to SCRIPTOBS_LINE_RESULT or True to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
+                log_str = "Cannot write 3 to SCRIPTOBS_LINE_RESULT or True"
+                log_str += " to SCRIPTOBS_OBSERVED: %s" % (e)
+                apflog(log_str, level='warn', echo=True)
             return True
         else:
             try:
@@ -2038,8 +2050,8 @@ class APF:
         rpid = self.robot['SCRIPTOBS_PID'].read(binary=True)
         if rpid == '' or rpid == -1:
             return rpid, False
-        else:
-            return rpid, True
+
+        return rpid, True
 
     def start_robot(self,observation=None,skip=False,raster=False):
         """Start an instance of scriptobs. Returns the result from subprocess.Popen()."""
@@ -2049,7 +2061,7 @@ class APF:
             if observation is not None:
                 apflog("Would be taking observation in starlist %s" % observation,echo=True)
             APFTask.waitFor(self.task, True, timeout=10)
-            return
+            return None
 
         # Make sure the telescope autofocus is enabled
         APFLib.write(self.autofoc, "robot_autofocus_enable")
@@ -2057,7 +2069,7 @@ class APF:
         result = APFTask.waitFor(self.task, False, chk_foc, timeout=60)
         if not result:
             apflog("Error setting scriptobs_autofoc", level='error',echo=True)
-            return
+            return None
 
         # Make sure APFTEQ is in night mode for observations
         if self.teqmode.read() != 'Night':
@@ -2066,7 +2078,10 @@ class APF:
             # Check the instrument focus for a reasonable value
         if self.dewarfoc > DEWARMAX or self.dewarfoc < DEWARMIN:
             lastfit_dewarfoc = ktl.read("apftask","FOCUSINSTR_LASTFOCUS",binary=True)
-            apflog("Warning: The dewar focus is currently %d. This is outside the typical range of acceptable values. Resetting to last derived value %d" % (self.dewarfoc,lastfit_dewarfoc), level = "error", echo=True)
+            log_str = "Warning: The dewar focus is currently %d. " % (self.dewarfoc)
+            log_str += "This is outside the typical range of acceptable values."
+            log_str += "Resetting to last derived value %d" % (lastfit_dewarfoc)
+            apflog(log_str, level = "error", echo=True)
             APFLib.write("apfmot.DEWARFOCRAW",lastfit_dewarfoc)
 
         # check on weirdness for UCAM host post-reboot
@@ -2074,9 +2089,9 @@ class APF:
 
         telstate = self.tel['TELSTATE'].read()
         if telstate == 'Disabled':
-            rv, retc = apftask_do(os.path.join(SCRIPTDIR,"slew --hold"))
+            rv, _ = apftask_do(os.path.join(SCRIPTDIR,"slew --hold"))
             if not rv:
-                return rv
+                return None
         # Start scriptobs
 
         outfile = open("robot.log", 'a')
@@ -2126,11 +2141,11 @@ class APF:
         not overwrite the previous bias if it exists.
         """
 
-        if self.ucampower == False:
+        if self.ucampower is False:
             self.ucampower.write('On',wait=False)
             rv = self.ucampower.waitFor('== On',timeout=30)
             APFTask.wait(self.task, True, timeout=5)
-            if rv == False:
+            if rv is False:
                 apflog('Cannot power on UCam',level='Alert',echo=True)
                 return False
 
@@ -2152,9 +2167,12 @@ class APF:
 
         apfschedule = ktl.Service('apfschedule')
         # check if the focusinstr or calibrate tasks are already running
-        if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0 or ktl.read('apftask','CALIBRATE_PID',binary=True) > 0 or ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0 :
+        if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0:
             return None
-
+        if ktl.read('apftask','CALIBRATE_PID',binary=True) > 0:
+            return None
+        if ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0:
+            return None
         # create exposure object
         exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent=self.task,dark=True)
 
@@ -2227,17 +2245,13 @@ class APF:
         if fake:
             apflog("would have executed %s" % (os.path.join(SCRIPTDIR,"robot_power_cycle_ucam")))
             return True
-        else:
-            val = subprocess.call(os.path.join(SCRIPTDIR,"robot_power_cycle_ucam"))
-            if val > 0:
-                apflog("power cycle of UCAM failed",level='alert')
-                return False
 
-            return True
+        val = subprocess.call(os.path.join(SCRIPTDIR,"robot_power_cycle_ucam"))
+        if val > 0:
+            apflog("power cycle of UCAM failed",level='alert')
+            return False
 
         return True
-
-
 
     def ucam_reboot(self,fake=False):
         """
@@ -2253,7 +2267,6 @@ class APF:
         apftask = ktl.Service('apftask')
         command = apftask['UCAMLAUNCHER_UCAM_COMMAND']
         ucamstat = apftask['UCAMLAUNCHER_UCAM_STATUS']
-        status = apftask['UCAMLAUNCHER_STATUS']
 
         try:
             command.write("Stop")
@@ -2273,7 +2286,6 @@ class APF:
 
         command = apftask['UCAMLAUNCHER_UCAM_COMMAND']
         ucamstat = apftask['UCAMLAUNCHER_UCAM_STATUS']
-        status = apftask['UCAMLAUNCHER_STATUS']
 
         try:
             command.write("Run")
@@ -2288,8 +2300,8 @@ class APF:
         apflog("UCAM software combo_ps keyword OK",echo=True)
         if nv:
             return nv
-        else:
-            apflog("UCAM host reboot failure, combo_ps still not ok" , level="alert", echo=True)
+
+        apflog("UCAM host reboot failure, combo_ps still not ok" , level="alert", echo=True)
 
         self.obsnum.monitor()
         self.obsnum.callback(self.update_last_obs)
@@ -2308,25 +2320,23 @@ class APF:
             # would have restarted software
             apflog("Would have restarted UCAM software ")
             return True
-        else:
-            try:
-                apflog("Stop and restarting UCAM software",echo=True)
-                ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
-                if self.combo_ps.waitFor(" == MissingProcesses",timeout=30):
-                    ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
-                    nv = self.combo_ps.waitFor(" == Ok",timeout=30)
-                    if nv:
-                        return nv
-                    else:
-                        apflog("UCAM  restart failure, combo_ps still not ok" , level="error", echo=True)
-            except:
-                apflog("UCAM status bad, cannot restart",level='alert')
-                return False
 
-            self.ucam_reboot()
+        try:
+            apflog("Stop and restarting UCAM software",echo=True)
+            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
+            if self.combo_ps.waitFor(" == MissingProcesses",timeout=30):
+                ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
+                nv = self.combo_ps.waitFor(" == Ok",timeout=30)
+                if nv:
+                    return True    
+                apflog("UCAM  restart failure, combo_ps still not ok" , level="error", echo=True)
+        except:
+            apflog("UCAM status bad, cannot restart",level='alert')
+            return False
 
+        rv = self.ucam_reboot()
 
-        return False
+        return rv
 
 
 
@@ -2361,9 +2371,9 @@ class APF:
                     # failure to connect
                     rv = self.ucam_restart(fake=fake)
                     return rv
-                else:
-                    rv = APFTask.waitfor(self.task, True, expression="$apfucam.DISP0STA = 0 & $apfucam.DISP1STA = 0", timeout=600)
-                    return rv
+
+                rv = APFTask.waitfor(self.task, True, expression="$apfucam.DISP0STA = 0 & $apfucam.DISP1STA = 0", timeout=600)
+                return rv
 
         ucamlaunch_sta = self.robot['UCAMLAUNCHER_UCAM_STATUS'].read(binary=True)
         if ucamlaunch_sta == 0:
