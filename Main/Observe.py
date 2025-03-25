@@ -220,6 +220,10 @@ class Observe(threading.Thread):
                 log_str = "%d failures of observing a star in a row " % (self.star_failures)
                 log_str += "- suggesting homing telescope or closing for the night"
                 apflog(log_str, echo=True, level='timed_alert')
+            if self.star_failures%7 == 0:
+                log_str = "%d failures of observing a star in a row " % (self.star_failures)
+                log_str += "- suggesting homing telescope or closing for the night"
+                apflog(log_str, echo=True, level='alert')
 
     def check_servos(self):
         """ Observe.check_servos()
