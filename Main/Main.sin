@@ -220,7 +220,8 @@ def fixed_start_time(opt, apftask):
                 apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
 
         else:
-            print("Start time %s does not match required format hours:minutes where both the hours and the minutes are integers", (opt.start))
+            logstr = "Invalid time format for fixed star list start time: %s" % (opt.start)
+            apflog(logstr, level='error', echo=True)
             shutdown()
 
     elif opt.fixed is not None and saved_time != '':
