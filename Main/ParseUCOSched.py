@@ -853,6 +853,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
     time.sleep(len(worksheet_vals))
 
     nupdates = 0
+    n_temps = 0
 
     try:
         nmcol = worksheet_vals[0].index('Star Name')
@@ -922,6 +923,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                         if taketemp and have_temp == "N" and curowner == sheetn:
                             worksheet.update_cell(i+1, tempcol+1, "Y")
                             nupdates += 1
+                            n_temps += 1
                             apflog( "Updated %s to having a template in %s" % (v[0],sheetn),echo=True)
                     except:
                         apflog( "Error logging template obs for %s" % (v[0]),echo=True,level='error')
@@ -953,7 +955,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                 #         nupdates += 1
             # bottom of loop
 
-    return nupdates
+    return nupdates, n_temps
 
 
 def update_online_sheets(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn='parsesched.dat',outdir=None):
@@ -989,12 +991,15 @@ def update_online_sheets(observed_file,ctime=None,certificate=DEFAULT_CERT,outfn
         needed_sheetns.append('RECUR_A100')
 
     nupdates = 0
+    n_temps = 0
     for sheetn in needed_sheetns:
 
         try:
-            nupdates += update_a_sheet(sheetn, obslog, star_table, ctime)
+            c_updates, c_temps = update_a_sheet(sheetn, obslog, star_table, ctime)
+            nupdates += c_updates
+            n_temps += c_temps
         except:
             apflog("Error updating sheet %s" % (sheetn),echo=True,level='error')
             continue
 
-    return nupdates
+    return nupdates, n_temps
