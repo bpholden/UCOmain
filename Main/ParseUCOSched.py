@@ -823,7 +823,10 @@ def log_values(local_name, obslog, prev):
     prev = nameidx+1
     # observation details
     otime = obslog.times[nameidx]
-    taketemp = obslog.temps[nameidx]
+    taketemp_val = obslog.temps[nameidx]
+    taketemp = False
+    if taketemp_val == 'Y':
+        taketemp = True
     curowner = obslog.owners[nameidx]
     if curowner == 'public':
         curowner = 'RECUR_A100'
@@ -913,32 +916,10 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                 except:
                     nobs = 0
 
-                new_nobs = nobs + n_appear + 1
-                # update_cell(row, col, val) - col and row are 1 indexed
-                try:
-                    if round(jd, 3) > pastdate and curowner == sheetn:
-                        worksheet.update_cell(i+1, col+1, round(jd, 3) )
-                        worksheet.update_cell(i+1, nobscol+1, new_nobs )
-                        if nightobscol >= 0:
-                            worksheet.update_cell(i+1, nightobscol+1, n_appear+1)
-                            nupdates += 1
-
-                        nupdates += 2
-                        apflog( "Updated %s from %.4f to %.4f and %d in %s" % (v[0],pastdate,round(jd, 3),new_nobs,sheetn),echo=True)
-                except:
-                    if curowner == sheetn:
-                        apflog("Updated %s to %.4f and %d in %s" % (v[0],round(jd,3),1,sheetn),echo=True)
-                        worksheet.update_cell(i+1, col+1, round(jd,3) )
-                        worksheet.update_cell(i+1, nobscol+1, new_nobs )
-                        nupdates += 2
-                        if nightobscol >= 0:
-                            worksheet.update_cell(i+1, nightobscol+1, n_appear+1)
-                            nupdates += 1
-
                 if tempcol > 0:
                     try:
                         have_temp = v[tempcol]
-                        if taketemp == "Y" and have_temp == "N" and curowner == sheetn:
+                        if taketemp and have_temp == "N" and curowner == sheetn:
                             worksheet.update_cell(i+1, tempcol+1, "Y")
                             nupdates += 1
                             apflog( "Updated %s to having a template in %s" % (v[0],sheetn),echo=True)
@@ -946,6 +927,24 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                         apflog( "Error logging template obs for %s" % (v[0]),echo=True,level='error')
                 else:
                     pass
+
+                new_nobs = nobs + n_appear + 1
+                # update_cell(row, col, val) - col and row are 1 indexed
+                try:
+                    if round(jd, 3) > pastdate and curowner == sheetn and not taketemp:
+                        worksheet.update_cell(i+1, col+1, round(jd, 3) )
+                        worksheet.update_cell(i+1, nobscol+1, new_nobs )
+                        if nightobscol >= 0:
+                            worksheet.update_cell(i+1, nightobscol+1, n_appear+1)
+                            nupdates += 1
+                        log_str = "Updated %s from %.4f " % (v[0],pastdate)
+                        log_str += "to %.4f and %d in %s"  % (round(jd, 3),new_nobs,sheetn)
+                        nupdates += 2
+                        apflog(log_str, echo=True)
+                except:
+                    apflog("Error updating %s in %s" % (v[0],sheetn),echo=True,level='error')
+                    apflog("Cannot update %s to %.4f and %d in %s" % (v[0],round(jd,3),1,sheetn),echo=True)
+
                 # if nightobscol >= 0:
                 #     if i > 0:
                 #         worksheet.update_cell(i+1, nightobscol+1, 0)
