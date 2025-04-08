@@ -1041,6 +1041,31 @@ class APF:
                 errstr = "Cannot abort scriptobs: %s" % (e)
                 apflog(errstr,level="Warn",echo=True)
 
+    def turn_on_ucam(self):
+
+        self.ucampower.write('On',wait=False)
+        rv = self.ucampower.waitFor('== On',timeout=30)
+        APFTask.wait(self.task, True, timeout=5)
+        if rv is False:
+            apflog('Cannot power on UCam',level='Alert',echo=True)
+            return False
+
+        ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
+        APFTask.wait(self.task, True, timeout=1)
+        ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
+        APFTask.wait(self.task, True, timeout=1)
+        rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
+        if rv == 0:
+            apflog("UCAM software did not start, trying again",echo=True,level='Warn')
+            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
+            APFTask.wait(self.task, True, timeout=1)
+            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
+            APFTask.wait(self.task, True, timeout=1)
+            rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
+            if rv == 0:
+                apflog("UCAM software did not start",echo=True,level='Alert')
+                return False
+        return True
 
     def test_bias(self):
         """
@@ -1053,37 +1078,19 @@ class APF:
         """
 
         if self.ucampower is False:
-            self.ucampower.write('On',wait=False)
-            rv = self.ucampower.waitFor('== On',timeout=30)
-            APFTask.wait(self.task, True, timeout=5)
+            rv = self.turn_on_ucam()
             if rv is False:
-                apflog('Cannot power on UCam',level='Alert',echo=True)
+                apflog("Cannot power on UCAM",level='alert')
                 return False
-
-            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
-            APFTask.wait(self.task, True, timeout=1)
-            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
-            APFTask.wait(self.task, True, timeout=1)
-            rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
-            if rv == 0:
-                apflog("UCAM software did not start, trying again",echo=True,level='Warn')
-                ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
-                APFTask.wait(self.task, True, timeout=1)
-                ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
-                APFTask.wait(self.task, True, timeout=1)
-                rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
-                if rv == 0:
-                    apflog("UCAM software did not start",echo=True,level='Alert')
-                    return False
 
         apfschedule = ktl.Service('apfschedule')
         # check if the focusinstr or calibrate tasks are already running
         if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0:
-            return None
+            return False
         if ktl.read('apftask','CALIBRATE_PID',binary=True) > 0:
-            return None
+            return False
         if ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0:
-            return None
+            return False
         # create exposure object
         exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent=self.task,dark=True)
 
