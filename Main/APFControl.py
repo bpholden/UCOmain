@@ -942,30 +942,6 @@ class APF:
 
 
 
-    def save_movie(self):
-        """
-        save_movie()
-
-        Starts the recording of a guider move.
-
-        """
-        now = datetime.datetime.now()
-        self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day, self.tel['TARGNAME'].read()))
-        self.fits3dir.write('/data/apfguide')
-        self.save3d.write(True)
-        return
-
-    def stop_movie(self):
-        """
-        stop_movie()
-
-        Stops recording a guider movie.
-
-        """
-        self.save3d.write(False)
-        self.fits3dir.write('/tmp/')
-        return
-
     def update_last_obs(self,obsnum):
         """ If the last observation was a success,
         this function updates the file storing the last
@@ -978,241 +954,6 @@ class APF:
 
         return
 
-
-    def set_tel_foc(self):
-        """
-        Sets the telescope focus to the predicted value returned by
-        pred_tel_focus()
-        """
-
-        predfocus  = self.pred_tel_focus()
-        self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
-
-        if self.mv_perm and self.faenable['binary'] == 1:
-            try:
-                self.focus.write(predfocus,binary=True,wait=False)
-                self.robot['MASTER_MESSAGE'].write("Wrote %f to eostele.Focus" % (predfocus*1000.) )
-            except Exception as e:
-                apflog("Cannot write eostele.FOCUS: %s" % (e), level="error", echo=True)
-
-    def set_autofoc_val(self):
-        """ APFControl.set_autofoc_val()
-            tests when the last time the telescope was focused,
-            if more than FOCUSTIME enable focus check
-        """
-
-        # check last telescope focus
-        lastfoc = self.robot['FOCUSTEL_LAST_SUCCESS'].read(binary=True)
-
-        if self.sun_rising() and (self.sunel.read(binary=True) < -20):
-            self.autofoc.write("robot_autofocus_disable")
-            return 0
-
-        lastopen = self.robot['OPENUP_LAST_SUCCESS'].read(binary=True)
-
-        if lastfoc < lastopen:
-            self.autofoc.write("robot_autofucs_enable")
-            return 2
-
-        if time.time() - lastfoc < 3600:
-            self.autofoc.write("robot_autofocus_disable")
-            return 0
-
-        predfocus  = self.pred_tel_focus()
-        self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
-        focus_diff = math.fabs(predfocus - self.focus['binary'])
-        focus_diff *= 1e3
-
-        #self.focus.write(predfocus,binary=True,wait=False)
-        predfocus *= 1e3
-        self.autofoc.write("robot_autofocus_enable")
-        focval = 1
-
-        ostr = "Current telescope focus more than %5.3f mm" % focus_diff
-        ostr += "from predicted, setting to %5.3f." % predfocus
-        APFTask.set(self.task, suffix="MESSAGE", value=ostr, wait=False)
-
-        return focval
-
-    def update_windshield(self, state):
-        """Checks the current windshielding mode.
-        If the input state is auto, makes sure the mode is set properly based on wind speed and temperature.
-        Otherwise, the input state defines the mode.
-        """
-        currMode = self.robot["SCRIPTOBS_WINDSHIELD"].read().strip().lower()
-        rv = currMode
-        if state == 'on':
-            if currMode != 'enable':
-                apflog("Setting scriptobs_windshield to Enable")
-                rv = "Enable"
-                APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
-        elif state == 'off':
-            if currMode != 'disable':
-                apflog("Setting scriptobs_windshield to Disable")
-                rv = "Disable"
-                APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
-
-        else:
-            # State must be auto, so check wind and temperature.
-            # This state enables or disables windshielding based on the 
-            # wind speed and the outside temperature
-            #if self.down > 0:
-            #    wvel = self.avg_lists['M3WIND']
-            #else:
-            wvel = self.avg_lists['M5WIND']
-
-            apflog("Current median wind speed is %.2f with the limit %.2f" % \
-                   (wvel,WINDSHIELD_LIMIT), level='debug')
-            if currMode == 'enable' and wvel <= WINDSHIELD_LIMIT and \
-                float(self.avg_lists['M5OUTEMP']) > TEMP_LIMIT:
-                apflog("Setting scriptobs_windshield to Disable")
-                rv = "Disable"
-                APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
-
-            if currMode == 'disable' and (wvel > WINDSHIELD_LIMIT or \
-                                          float(self.avg_lists['M5OUTEMP']) < TEMP_LIMIT):
-                apflog("Setting scriptobs_windshield to Enable")
-                rv = "Enable"
-                APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
-
-        return rv
-
-
-    def check_FCUs(self, check_apfmon=False):
-        """
-        If the dome is open the FCs should be off. Sometimes they are commanded 
-        off but do not turn off.
-        This will attempt to fix that by checking if the dome is open, checking 
-        if the FCs are on, and then turning them on, then off. Which is the only
-        way to turn them off.
-        """
-
-        if check_apfmon:
-            status_value = self.apfmon['FC_STATUSSTA'].read(binary=True)
-            if status_value < 4:
-                return
-
-        for fc in ('FC2','FC3'):
-            if 'Vents' in self.whatsopn['ascii'] or 'DomeShutter' in self.whatsopn['ascii']:
-                # fcs should be off
-                if self.dome[fc].read(binary=True):
-                    try:
-                        self.dome[fc + 'CMD'].write(True)
-                        time.sleep(.1)
-                        self.dome[fc + 'CMD'].write(False)
-                    except:
-                        pass
-            else:
-                # fcs should be on
-                if self.dome[fc].read(binary=False):
-                    try:
-                        self.dome[fc + 'CMD'].write(False)
-                        time.sleep(.1)
-                        self.dome[fc + 'CMD'].write(True)
-                    except:
-                        pass
-
-        return
-
-    def evening_star(self):
-        """Aim the APF at the desired target. This calls prep-obs, slewlock, and focus-telescope."""
-        if self.is_open()[0] == False:
-            apflog("APF is not open. Can't target a star while closed.",level='error',echo=True)
-            return
-        self.dm_reset()
-
-        if self.calsta['binary'] < 3 or self.focussta['binary'] < 3:
-            log_str = 'Focusinstr and/or Calibrate are running, will skip evening star observation.'
-            log_str += ' focusinstr=%s calibrate=%s' % (self.calsta,self.focussta)
-            apflog(log_str,echo=True)
-            return
-
-        # check on weirdness for UCAM host post-reboot
-        self.ucam_dispatch_mon()
-
-        # Call prep-obs
-        apflog("Calling prep-obs.",echo=True)
-        prepobs = os.path.join(SCRIPTDIR,'prep-obs') + ' --evening'
-        result, ret_code = apftask_do(prepobs)
-        if result == False:
-            # try again
-            self.dm_reset()
-            result, ret_code = apftask_do(prepobs)
-            if result is False:
-                log_str = "Prep-obs returned error code %d. " % (ret_code)
-                log_str += "Targeting object has failed."
-                apflog(log_str,level='error',echo=True)
-                return
-
-        self.decker.write('W',wait=False)
-
-        self.dm_reset()
-        apflog("Slewing to lower el",echo=True)
-        result, ret_code = apftask_do('slew -e 75')
-        if result == False:
-            apflog("Slew returned error code %d. Targeting object has failed." % (ret_code),level='error',echo=True)
-            return
-        # Slew to the specified RA and DEC, set guide camera settings, and centerup( Slewlock )
-        # Focus the telescope - all of this, including finding the star, is done in focusTel
-        self.dm_reset()
-        if self.find_star_focustel():
-            try:
-                self.robot['SCRIPTOBS_LINE_RESULT'].write(3)
-                self.robot['SCRIPTOBS_OBSERVED'].write(True)
-                self.guide['CLEARSUMS'].write('now')
-                self.guide['CLEARSUMS'].write('gstate')
-            except Exception as e:
-                log_str = "Cannot write 3 to SCRIPTOBS_LINE_RESULT or True"
-                log_str += " to SCRIPTOBS_OBSERVED: %s" % (e)
-                apflog(log_str, level='warn', echo=True)
-            return True
-        else:
-            try:
-                self.robot['SCRIPTOBS_LINE_RESULT'].write(2)
-            except Exception as e:
-                apflog("Cannot write 2 to SCRIPTOBS_LINE_RESULT: %s" % (e), level='warn', echo=True)
-            return False
-
-    def dm_reset(self):
-        """
-        dm_reset()
-
-        Writes to ROBOSTATE keyword, effecitively tapping the deadman switch.
-
-        """
-        try:
-            APFLib.write(self.checkapf['ROBOSTATE'], "master operating",timeout=10)
-        except Exception as e:
-            try:
-                ukind = self.userkind.read()
-            except:
-                ukind = "Unknown"
-            ostr = "Error: Cannot write to ROBOSTATE, USERKIND = %s, reason: %s" % (ukind,e)
-            apflog(ostr,level='error',echo=True)
-
-    def dm_zero(self):
-        """
-        dm_zero()
-
-        Sets deadman timer to 0 (-1).
-        If the telescope or dome is open, checkapf will force it closed.
-        """
-        try:
-            if self.checkapf['DMTIME'].read(binary=True) < 1:
-                APFLib.write(self.dmtimer, -1,timeout=10)
-        except Exception as e:
-            ostr = "Error: cannot touch DM Timer: %s " %( e)
-            apflog(ostr,level='error',echo=True)
-
-    def find_robot(self):
-        """Trys to find a running instance of scriptobs.
-            Returns the PID along with a boolean representing
-            if the robot was succesfully found."""
-        rpid = self.robot['SCRIPTOBS_PID'].read(binary=True)
-        if rpid == '' or rpid == -1:
-            return rpid, False
-
-        return rpid, True
 
     def start_robot(self,observation=None,skip=False,raster=False):
         """Start an instance of scriptobs. Returns the result from subprocess.Popen()."""
@@ -1269,6 +1010,15 @@ class APF:
 
         return p
 
+    def find_robot(self):
+        """Trys to find a running instance of scriptobs.
+            Returns the PID along with a boolean representing
+            if the robot was succesfully found."""
+        rpid = self.robot['SCRIPTOBS_PID'].read(binary=True)
+        if rpid == '' or rpid == -1:
+            return rpid, False
+
+        return rpid, True
 
     def kill_robot(self, now=False):
         """ In case during an exposure there is a need to stop the robot and close up."""
