@@ -89,3 +89,811 @@ class TelescopeControl:
         self.dewpt      = self.eoscool('DEWPAVG3')
         self.temp3now   = self.eoscool('TEMPNOW3')
         self.temp4now   = self.eoscool('TEMPNOW4')
+
+        self.robot        = ktl.Service('apftask')
+        self.autofoc      = self.robot["SCRIPTOBS_AUTOFOC"]
+        self.slew_allowed = self.robot['SLEW_ALLOWED']
+
+        self.apfteqsta    = self.robot['APFTEQ_STATUS']
+        self.metxfersta   = self.robot['METSXFER_STATUS']
+        self.slewsta      = self.robot['SLEW_STATUS']
+        self.opensta      = self.robot['OPENUP_STATUS']
+        self.closesta     = self.robot['CLOSEUP_STATUS']
+        self.shuttersta   = self.robot['SHUTTERS_STATUS']
+        self.focustelsta  = self.robot['FOCUSTEL_STATUS']
+        self.lastopen     = self.robot['OPENUP_LAST_SUCCESS']
+
+
+
+
+        self.ok2open.monitor()
+        self.ok2open.callback(self.ok_mon)
+
+        self.dmtimer.monitor()
+        self.dmtimer.callback(self.dm_time_mon)
+
+        self.teqmode.monitor()
+        self.down.monitor()
+        self.whatsopn.monitor()
+        self.mv_perm.monitor()
+        self.chk_close.monitor()
+        self.slew_allowed.monitor()
+
+        self.sunel.monitor()
+        self.aaz.monitor()
+        self.ael.monitor()
+        self.fspos.monitor()
+        self.rspos.monitor()
+        self.focus.monitor()
+        self.aafocus.monitor()
+        self.faenable.monitor()
+        self.lastopen.monitor()
+
+        self.mon_lists = dict()
+        self.avg_lists = dict()
+
+        for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,\
+                   self.t045kw,self.t135kw,self.t225kw,self.t315kw,self.temp3now,\
+                    self.temp4now,self.wx,self.altwx,self.airtemp):
+            self.mon_lists[kw['name']] = []
+            self.avg_lists[kw['name']] = None
+            kw.monitor()
+            kw.callback(self.list_mon)
+            kw.read()
+
+        self.dewpt.monitor()
+        self.dewpt.callback(self.dew_pt_mon)
+
+        for kw in (self.slewsta, self.calsta, self.focussta, \
+                   self.shuttersta, self.opensta, self.closesta,\
+                    self.focustelsta):
+            kw.monitor()
+
+        # Grab some initial values for the state of the telescope
+
+        self.wx.read()
+        self.altwx.read()
+        self.dewpt.read()
+        self.counts.read()
+        self.ok2open.read()
+        self.avgtemps = np.asarray([self.avg_lists[nm] for nm in \
+                                     ('TM1S210','TM2CSUR','TAVERAGE',\
+                                      'TM2CAIR','TEMPNOW3','TEMPNOW4')])
+
+    def __str__(self):
+        # Determine if the sun rising / setting check is working
+        now = datetime.datetime.now()
+        self.avg_tel_temps()
+        s = ''
+        s += "At %s state of telescope is:\n" % str(now)
+        s += "Sun elevation = %4.2f %s\n" % (self.sunel, "Rising" if self.sun_rising() else "Setting")
+        s += "Telescope -- AZ=%4.2f  EL=%4.2f \n" % (self.aaz, self.ael)
+        s += "Front/Rear Shutter=%4.2f / %4.2f\n"%(self.fspos, self.rspos)
+        s += "Wind = %3.1f mph (APF) %3.1f mph (Shane) \n" % (np.average(self.mon_lists['M5WIND']),np.average(self.mon_lists['M3WIND']))
+        s += "Last open time = %.2f sec\n" % (self.lastopen.binary)
+        s += "Time since opening = %6.2f sec\n" % (time.time() - self.lastopen.binary)
+        s += "M1 = %5.2f deg C M2 = %5.2f deg C Tel Avg = %5.2f deg C M2 Air = %5.2f deg C FCU3 = %5.2f deg C FCU4 = %5.2f deg C\n" % tuple(self.avgtemps)
+        s += "Dewpt = %5.2f deg C Teq Mode - %s\n" % (np.average(self.dewlist),self.teqmode)
+        s += "Too close to the dewpoint? = %s\n" % self.dew_too_close
+        s += "M2 Focus Value = % 4.3f\n" % (float(self.aafocus['binary'])*1000.0)
+        s += "M2 Focus Value = % 4.3f (focus kwd)\n" % (float(self.focus['binary'])*1000.0)
+        s += "Preferred M2 Focus Value =  % 4.3f\n" % (float(self.pred_tel_focus())*1000.0)
+        s += "Okay to open = %s -- %s\n" % (self.openOK['ascii'], self.checkapf['OPREASON'].read() )
+        s += "Current Weather = %s\n" % self.checkapf['WEATHER'].read()
+
+        isopen, what = self.is_open()
+        if isopen:
+            s += "Currently open: %s\n" % what
+        else:
+            s += "Not currently open\n"
+
+        focval = self.set_autofoc_val()
+        s += "Focus value for scriptobs = %d\n" % focval
+        windshield = self.update_windshield("auto")
+        s += "Windshield state = %s\n" % windshield
+
+        return s
+
+    def list_mon(self,keyword):
+        if keyword['populated'] == False:
+            return
+
+        name = keyword['name']
+
+        try:
+            curval = float(keyword['binary'])
+        except Exception as e:
+            apflog("Exception in list_mon: %s" % (e), level='error')
+            return
+
+        if self.mon_lists[name] == []:
+            self.mon_lists[name] = [curval]*300
+            self.avg_lists[name] = curval
+        else:
+            self.mon_lists[name].append(curval)
+            self.mon_lists[name] = self.mon_lists[name][-300:]
+            self.avg_lists[name] = np.average(self.mon_lists[name])
+
+        return
+
+    # Callback for Deadman timer
+    def dm_time_mon(self,dmtime):
+        if dmtime['populated'] == False:
+            return
+        try:
+            self.dmtime = dmtime
+        except Exception as e:
+            apflog("Exception in dm_time_mon: %s %s" % (type(e), e), level='error')
+
+        return
+
+    def dew_pt_mon(self,dew):
+        if dew['populated'] == False:
+            return
+        try:
+            dewpt = float(dew['binary'])
+        except:
+            return
+
+        if self.dewlist == []:
+            self.dewlist = [dewpt]
+        else:
+            self.dewlist.append(dewpt)
+            if len(self.dewlist) >= 300:
+                self.dewlist = self.dewlist[-300:]
+
+                dewlist = np.asarray(self.dewlist)
+
+                curdew = np.average(dewlist)
+                curm2 = np.average(np.asarray(self.mon_lists['TM2CSUR']))
+                curm2air = np.average(np.asarray(self.mon_lists['TM2CAIR']))
+
+                if self.dew_too_close:
+                    if curm2air - curdew > 3 or curm2 - curdew > 5:
+                        self.dew_too_close = False
+                else:
+                    if curm2air - curdew < 2 or curm2 - curdew < 4:
+                        self.dew_too_close = True
+                        apflog("M2 temperatures too close to dew point",echo=True,level='warning')
+
+        return
+
+    def sun_rising(self):
+        """
+        sun_rising()
+
+        Is the sun rising, ie., is it after midnight.
+
+        """
+        # the sun also rises
+        now = datetime.datetime.now()
+        if now.strftime("%p") == 'AM':
+            return True
+        else:
+            return False
+
+    def avg_tel_temps(self):
+        """
+        self.avg_tel_temps()
+        sets the APFControl.avgtemps attribute.
+        This will be a numpy array with the values in the order of:
+
+        * M1 temp (eostele.TM1S210)
+        * M2 temp (eostele.TM2CSUR)
+        * Telescope average truss temp (eostele.TAVERAGE)
+        * M2 air temp (eostele.TM2CAIR)
+        * Air temp at FCU2 (eostele.TEMPNOW3)
+        * Air temp at FCU3 (eostele.TEMPNOW4)
+
+        The values for the trusses themselves are also included.
+        This checks the values and if one is out of nominal range,
+        after taking into the offset between the truss temperature
+        and the usual average, it computes a new value for the
+        truss average using only the trusses with nominal temperatures.
+
+        """
+
+        #self.avgtemps = [self.avg_lists[nm] for nm in ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')]
+        self.avgtemps = []
+        self.avgtemps.append(self.m1tempkw.read(binary=True))
+        self.avgtemps.append(self.m2tempkw.read(binary=True))
+        self.avgtemps.append(self.taveragekw.read(binary=True))
+        self.avgtemps.append(self.m2airkw.read(binary=True))
+        self.avgtemps.append(self.temp3now.read(binary=True))
+        self.avgtemps.append(self.temp4now.read(binary=True))
+
+        # TAVERAGE is the average of the four trusses
+        # temp_names = ["TTRUS135","TTRUS225","TTRUS045","TTRUS315"]
+        # offsets = dict()
+        # offsets['TTRUS135'] = -0.18
+        # offsets['TTRUS225'] =  0.33
+        # offsets['TTRUS045'] = -0.32
+        # offsets['TTRUS315'] =  0.15
+
+        # replaceavg = 0.0
+        # n_good = 0
+        # for tnm in temp_names:
+        #     curtemp = np.average(self.mon_lists[tnm])
+        #     if np.abs(curtemp - self.avgtemps[2] - offsets[tnm]) < 1:
+        #         #bad
+        #         replaceavg += curtemp
+        #         n_good += 1
+        # if n_good < 4 and n_good > 0:
+        #     replaceavg /= n_good
+
+        self.avgtemps = np.asarray(self.avgtemps)
+        return
+
+    def pred_tel_focus(self):
+        """
+        pred_tel_focus()
+
+        Predicts the telescope focus based on the values of
+        various telescope temperatures.
+        """
+        self.avg_tel_temps()
+        # m1 m2 tavg m2air tf3 tf4
+
+        # values as of July 3 2022
+        # Final_focus_temp_fits.ipynb which (along with the data) should get checked in
+        slopes = np.asarray([-0.007930, 0.021897, 0.011436, -0.008821, 0.001830, -0.017760])
+        zeropoint_temps = np.asarray([15.549, 14.195, 14.610, 13.285, 15.716, 15.797])
+
+        predfoc = np.sum(slopes*(self.avgtemps-zeropoint_temps)) + TELFOCUSTYP
+        predfoc /= 1000.0 # convert to meters
+        return predfoc
+
+
+    # Function for checking what is currently open on the telescope
+    def is_open(self):
+        """
+        is_open()
+
+        Returns the state of checkapf.WHATSOPN as a tuple (bool, str).
+        """
+        try:
+            whatstr = str(self.whatsopn)
+            what = whatstr.split()
+        except:
+            apflog("checkapf.WHATSOPN returned a value that str.split cannot split",level='warn',echo=True)
+            return False, ''
+        if hasattr(what,'__iter__'):
+            if "DomeShutter" in what or "MirrorCover" in what or "Vents" in what:
+                return True, what
+            else:
+                return False, ''
+        else:
+            return False, ''
+
+    # Fucntion for checking what is currently open on the telescope
+
+    def is_ready_observing_direct(self):
+        what = ''
+        rv = False
+        try:
+            ismcopen = self.mcopen.read(binary=True,timeout=2)
+        except:
+            return False, ''
+        try:
+            isshutterclosed = self.shclosed.read(binary=True,timeout=2)
+        except:
+            return False, ''
+
+        if ismcopen:
+            what = what + "MirrorCover"
+            rv = True
+        if isshutterclosed == False:
+            if len(what) > 0 :
+                what = what + " DomeShutter"
+            else:
+                what = "DomeShutter"
+            if rv:
+                rv = True
+        else:
+            rv = False
+        return rv, what
+
+    def is_ready_observing(self):
+        """
+        is_ready_observing()
+
+        Returns the state of checkapf.WHATSOPN as a tuple (bool, str).
+        """
+        try:
+            whatstr = str(self.whatsopn)
+            what = whatstr.split()
+        except:
+            apflog("checkapf.WHATSOPN returned a value that str.split cannot split",level='warn',echo=True)
+            return self.is_ready_observing_direct()
+
+
+        if hasattr(what,'__iter__'):
+            if "DomeShutter" in what and "MirrorCover" in what:
+                return True, what
+            else:
+                return False, ''
+        else:
+            return self.is_ready_observing_direct()
+
+    def find_star(self):
+        """
+        find_star()
+
+        Given the telescopes current position, find the closest bright star.
+        """
+        ra = self.tel['RA'].read()
+        dec = self.tel['DEC'].read()
+        rah,ram,ras = ra.split(":")
+        decd,decm,decs = dec.split(":")
+
+        cmd = os.path.join(SCRIPTDIR,"closest")
+        cmdargs =  [cmd, rah,ram, ras, decd,decm,decs, "5","1","8"]
+        sfncat = os.path.join(LROOT,"data/apf/StarCatalog.dat")
+        try:
+            starcat = open(sfncat)
+        except:
+            apflog("Cannot open file %s" % (sfncat), level="warn",echo=True)
+            return False
+        #$line[3] $line[4] $line[5] $line[6] $line[7] 5 1 "8"] < /usr/local/lick/data/apf/StarCatalog.dat"
+        p = subprocess.Popen(cmdargs, stdin=starcat, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=os.path.curdir)
+        out, err = p.communicate()
+        ret_code = p.returncode
+        if ret_code != 0:
+            apflog(out,echo=True)
+            apflog(err, level="warn",echo=True)
+            return False
+
+        return out.split()
+
+    def slew(self,star):
+        """
+        slew(star)
+
+        Executes the slewlock script to a star (not the slew).
+        A star object is list and these are assumed to be in the format
+        of the bright star list used for pointing model acquisition.
+        So the name is the first element, the RA in radians is second,
+        the Dec in radians is third, and so forth.
+
+        """
+        cmd = os.path.join(SCRIPTDIR,'slewlock')
+        try:
+            ra = float(star[1])
+            ra *= 3.819718
+            dec = float(star[2])
+            dec *= 57.295779
+        except:
+            return False
+        cmd +=  ' %s %s %f %f %s %s %d ' % ("reference",star[0],ra, dec,star[4],star[5],210)
+        if self.test:
+            apflog("Would slew by executing %s" %(cmd), echo=True)
+            return True
+
+        apflog("Slewing by executing %s" %(cmd), echo=True)
+        result, code = apftask_do(cmd,cwd=os.path.curdir,debug=True)
+        if not result:
+            apflog("Failed at slewlock - check logs could be a slew failure or a failure to acquire: %s" %(code), level="error", echo=True)
+
+        return result
+
+    def run_focustel(self):
+        """
+        Runs the telescope focus routine.
+
+        """
+        el = self.tel['EL'].read(binary=True)
+        cfspos = self.fspos.read(binary=True)
+        crspos = self.rspos.read(binary=True)
+
+        if abs(el - cfspos) < 2.5 or abs(el - crspos) < 2.5:
+            apflog("Cannot focus, telescope too close to shutter", level="warn", echo=True)
+            return False
+
+        if self.test:
+            APFTask.waitFor(self.task, True, timeout=10)
+            apflog("Test Mode: Would be running focus_telescope.",echo=True)
+            return True
+
+        self.save_movie()
+
+        apflog("Running focus_telescope routine.",echo=True)
+        cmd = os.path.join(SCRIPTDIR,'focus_telescope -c %.3f' % (float(self.pred_tel_focus())*1000.0))
+        result, code = apftask_do(cmd,cwd=os.path.curdir)
+
+        self.stop_movie()
+
+        try:
+            self.guide['MODE'].write('Guide')
+        except:
+            apflog('Cannot modify apfguide.MODE to Guide.',level='error',echo=True)
+
+        if not result:
+            apflog("focustel failed with code %d" % code, echo=True)
+            expression="($apftask.FOCUSINSTR_STATUS != 0) and ($apftask.FOCUSINSTR_STATUS != 1) "
+            if not APFTask.waitFor(self.task,True,expression=expression,timeout=30):
+                apflog("focus_telescope failed to exit" ,echo=True)
+            return result
+
+        return True
+
+    def run_autoexposure(self,ind=5):
+        """
+        runs the autoexposure script to configure the guider
+        exposure time for the target.
+        """
+        cmd = os.path.join(SCRIPTDIR,'autoexposure')
+        istr = "%d" % (ind)
+        cmdargs = cmd
+
+        result, code = apftask_do(cmdargs,cwd=os.path.curdir)
+
+        if not result:
+            apflog("autoexposure failed with code %d" % code, echo=True)
+        return result
+
+    def run_centerup(self):
+        """
+        run_centerup()
+
+        Runs the centerup script to center up the telescope on the
+        target in the guider.
+        """
+        cmd = os.path.join(SCRIPTDIR,'centerup')
+        result, code = apftask_do(cmd,cwd=os.path.curdir)
+        if not result:
+            apflog("centerup failed with code %d" % code, echo=True)
+        return result
+
+    def find_star_focustel(self):
+        """ This finds a star in the catalog of pointing reference stars close
+        to the current position of the telescope.
+        It then runs slewlock to slew to the star, set up the guider, and center
+        the star on the slit.
+        Finally, once the star is acquired, it runs the telescope focus routine.
+        """
+        star = self.find_star()
+        if not star:
+            apflog("Cannot find star near current position!?",level='error',echo=True)
+            return False
+        apflog("Targeting telescope on %s" % star[0], echo=True)
+        try:
+            self.vmag.write(star[6])
+        except Exception as e:
+            apflog("Cannot write SCRIPTOBS_VMAG: %s" % (e), level='error',echo=True)
+        try:
+            sline = "%s %f %f pmra=%s pmdec=%s vmag=%s # end" % (star[0],float(star[1])*3.819718,float(star[2])*57.295779,star[4],star[5],star[6])
+            self.line.write(sline)
+        except Exception as e:
+            apflog("Cannot write SCRIPTOBS_LINE: %s" % (e), level='error',echo=True)
+
+        try:
+            self.robot['SCRIPTOBS_LINE_RESULT'].write(0)
+            self.robot['SCRIPTOBS_OBSERVED'].write(False)
+        except Exception as e:
+            apflog("Cannot write 0 to SCRIPTOBS_LINE_RESULT or False to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
+
+
+        predfocus  = self.pred_tel_focus()
+        self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
+        self.robot['FOCUSTEL_LASTFOCUS'].write(predfocus)
+        self.focus.write(self.pred_tel_focus(), binary=True, wait=False)
+        if self.slew(star):
+            return self.run_focustel()
+        return False
+
+
+    def set_apfteq_mode(self, mode):
+        """
+        set_apfteq_mode()
+
+        Sets the mode for APFTEQ to the commanded value.
+        Does not check if value is allowed, but does if the switch was
+        successful.
+
+        """
+
+        apflog("Setting TEQMode to %s" % mode)
+        if self.test:
+            apflog("Would be setting TEQMode to %s" % mode)
+            return
+        self.teqmode.write(mode,wait=False)
+        result = self.teqmode.waitfor('== %s' % mode, timeout=60)
+        if not result:
+            apflog("Error setting the TEQMODE.")
+            raise RuntimeError("Couldn't set TEQ mode")
+
+
+    def clear_estop(self):
+        """
+        clear_estop()
+
+        Clears the Estop state by running the clear_estop script.
+
+        """
+
+        if self.test: return True
+        if self.mv_perm.binary == False:
+            apflog("Waiting for permission to move...", echo=True)
+            chk_move = "$checkapf.MOVE_PERM == true"
+            result = APFTask.waitFor(self.task, False, chk_move, timeout=600)
+            if not result:
+                apflog("Can't open. No move permission.",echo=True)
+                return False
+
+        cmd = os.path.join(SCRIPTDIR,'clear_estop')
+        result, code = apftask_do(cmd,debug=True,cwd=os.getcwd())
+        if result:
+            try:
+                estopstate = self.dome.read('ESTOPST',binary=True)
+                if estopstate:
+                    return False
+                else:
+                    return True
+            except:
+                return False
+        else:
+            return False
+
+    def state_set(self):
+        """
+        state_set()
+
+        This checks if certain emergency stop states are set.
+
+        """
+
+        # there are three states - but we do not care about ESTOPST,
+        # that is will be cleared in openatsunset/openatnight
+        if self.dome['ECLOSEST']:
+            return True
+        if self.dome['ESECURST']:
+            return True
+        return False
+
+
+    def home_telescope(self):
+        """
+        home_telescope()
+
+        Homes the telescope using the slew script.
+        Then verifies homing occurred.
+
+        """
+        cmd = os.path.join(SCRIPTDIR,"slew") + " --home"
+        rv, rc = apftask_do(cmd)
+        try:
+            homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
+        except Exception as e:
+            apflog("cannot read apfmon keyword ELHOMERIGHTSTA: %s" % (e),level='Alert',echo=True)
+            return False
+        else:
+            if rc == 0 and homed == 2:
+                return True
+            else:
+                apflog("cannot home telescope",level='Alert',echo=True)
+                return False
+
+    def check_home(self,home=True):
+        """
+        check_home(home=True)
+
+        Checks if the telescope has been homed.
+        If not, homes if the variable home=True.
+
+        """
+        try:
+            homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
+        except Exception as e:
+            apflog("apfmon.ELHOMERIGHTSTA cannot be read: %s" % (e),level='Alert',echo=True)
+            return False
+        if homed == 2:
+            return True
+        else:
+            if homed == 5 or homed == 6:
+                if home:
+                    self.home_telescope()
+                else:
+                    apflog("Telescope needs to be homed",level='Alert',echo=True)
+                    return False
+            else:
+                apflog("apfmon.ELHOMERIGHTSTA value is %d" % (homed),level='Alert',echo=True)
+                return False
+
+        return False
+
+    def openat(self, sunset=False):
+        """
+        Function to ready the APF for observing. Calls either openatsunset or openatnight.
+           This function will attempt to open successfully twice. If both attempts
+           fail, then it will return false, allowing the master to register the error
+           and behave accodingly. Otherwise it will return True.
+        """
+        # If this is a test run, just return True
+        if self.test: return True
+
+        if not self.ok2open:
+            # This should really never happen. In case of a temporary condition, we give
+            # a short waitfor rather than immediatly exiting.
+            chk_open = "$checkapf.OPEN_OK == true"
+            result = APFTask.waitFor(self.task, False, chk_open, timeout=30)
+            if not result:
+                apflog("Tried calling openat with OPEN_OK = False. Can't open.", echo=True)
+                apflog(self.checkapf["OPREASON"].read(), echo=True)
+                return False
+
+        if float(self.sunel) > SUNEL_HOR:
+            apflog("Sun is still up. Current sunel = %4.2f. Can't open." % self.sunel, echo=True)
+            return False
+
+        if self.mv_perm.binary == False:
+            apflog("Waiting for permission to move...", echo=True)
+            chk_move = "$checkapf.MOVE_PERM == true"
+            result = APFTask.waitFor(self.task, False, chk_move, timeout=600)
+            if not result:
+                apflog("Can't open. No move permission.",echo=True)
+                return False
+
+        if self.state_set():
+            apflog("An unusal emergency state is set.", level="error",echo=True)
+            return False
+
+        # Everything seems acceptable, so lets try opening
+        if sunset:
+            cmd = os.path.join(SCRIPTDIR,'openatsunset')
+        else:
+            cmd = os.path.join(SCRIPTDIR,'openatnight')
+
+        # Make two tries at opening. If they both fail return False so the caller can act
+        # accordingly.
+        result, code = apftask_do(cmd)
+        if not result:
+            apflog("First openup attempt has failed. Exit code = %d. After a pause, will make one more attempt." % code,echo=True)
+            APFTask.waitFor(self.task, True, timeout=10)
+            result, code = apftask_do(cmd)
+            if not result:
+                apflog("Second openup attempt also failed. Exit code %d. Giving up." % code,echo=True)
+                return False
+        rv = self.check_home()
+        if rv == False:
+            return False
+        try:
+            APFLib.write("eostele.FOCUS",ktl.read("apftask","FOCUSTEL_LASTFOCUS",binary=True))
+        except:
+            apflog("Cannot move secondary focus.",level="error")
+            return False
+        return True
+
+    def power_down_telescope(self):
+        """
+        Checks that we have the proper permission and dome is closed, then resets telescope power.
+        This core is a separate script.
+        """
+        if self.test: return True
+        cmd = os.path.join(SCRIPTDIR,"power_down_telescope")
+        self.dm_reset()
+        if self.mv_perm.binary == False:
+            apflog("Waiting for permission to move")
+        chk_mv = '$checkapf.MOVE_PERM == true'
+        result = APFTask.waitFor(self.task, False, chk_mv, timeout=300)
+        if not result:
+            apflog("Didn't have move permission after 5 minutes.", echo=True)
+            return False
+        # one last check
+
+        apflog("Running power_down_telescope script")
+        result, _ = apftask_do(cmd)
+        if result:
+            return True
+
+        apflog("power_down_telescope has failed. Human intervention likely required.", level='alert', echo=True)
+        return False
+
+
+    def servo_failure(self):
+        """checks for amplifier faults
+        Checks all seven moving components.
+        """
+        servo_failed = False
+
+        estopstate = self.dome.read('ESTOPST',binary=True)
+        if estopstate:
+            return False
+
+        msg = ""
+        prefixs = ["AZ","EL","FA","FB","FC","TR" ]
+        for pr in prefixs:
+            nm = pr + "AMPFLT"
+            val = self.tel[nm].read(binary=True)
+            if val:
+                servo_failed = True
+                msg += "Error: Servo Amplifier Fault: " + str(nm) + " " + str(val) + "\n"
+                
+
+        for pr in prefixs:
+            nm = pr + "FERROR"
+            val = self.tel[nm].read(binary=True)
+            if val:
+                servo_failed = True
+                msg = "Error: Following Error Fault: " + str(nm) + " " + str(val) + "\n"
+        if msg != "":
+            apflog(msg, level='error', echo=True)
+            self.robot['MASTER_MESSAGE'].write(msg)
+
+        return servo_failed
+
+    def close(self, force=False):
+        """Checks that we have the proper permission, then runs the closeup script.
+        On failures retries, and also sends alerts. Good for waking people up.
+        """
+
+        if self.test: return True
+        cmd = os.path.join(SCRIPTDIR,"closeup")
+        if force:
+            apflog("Calling a single instance of closeup. Will return regardless of result.", echo=True)
+            result, code = apftask_do(cmd)
+            return result
+        if self.mv_perm.binary == False:
+            if self.chk_close.binary == True:
+                apflog("Waiting for checkapf to close up")
+            else:
+                apflog("Waiting for permission to move")
+        chk_mv = '$checkapf.MOVE_PERM == true'
+        result = APFTask.waitFor(self.task, False, chk_mv, timeout=1200)
+        if not result:
+            apflog("Didn't have move permission after 20 minutes. Going ahead with closeup.",\
+                    echo=True)
+            return False
+        try:
+            if self.apfmon['FRONT_SHUTTER_CLOSEUPSTA'].read(binary=True,timeout=2) != 2:
+                # this is a check to see if the front shutter got caught running
+                # away, if so do not send any more shutter commands
+                apflog("Dome Shutters maybe running away!", level='error', echo=True)
+                return False
+        except:
+            apflog("Cannot communicate with apfmon1, proceeding anyway (fingers crossed)", \
+                 level='error', echo=True)
+
+
+        apflog("Running closeup script")
+        attempts = 0
+        close_start = datetime.datetime.now()
+        while (datetime.datetime.now() - close_start).seconds < 1800 and attempts < 8:
+            result = APFTask.waitFor(self.task, False, chk_mv, timeout=300)
+            if not result:
+                apflog("Didn't have move permission after 5 minutes. ", echo=True)
+                break
+            attempts += 1
+            result, code = apftask_do(cmd)
+            if not result:
+                apflog("Closeup failed with exit code %d" % code, echo=True)
+                if self.servo_failure() or self.slew_allowed.read(binary=True) is False:
+                    apflog("Likely Servo amplifier failure, may power cycle telescope",\
+                           echo=True,level='error')
+                    rv = self.power_down_telescope()
+                    if rv:
+                        apflog("Power cycled telescope",echo=True,level="error")
+                    else:
+                        apflog("Failure power cycling telescope",echo=True,level="error")
+                if attempts == 7:
+                    lstr = "Closeup has failed %d times consecutively. Human intervention likely required." % (attempts)
+                    areopen, whatsopen = self.is_open()
+                    if areopen == True:
+                        # truly dire, the telescope is open
+                        apflog(lstr, level='Alert', echo=True)
+                    else:
+                        # telescope powered on, and possibly in the wrong place, but not open
+                        apflog(lstr, level='error', echo=True)
+                APFTask.waitFor(self.task, True, timeout=30)
+            else:
+                break
+        if result:
+            try:
+                APFTask.set(self.task, suffix='LAST_CLOSE', value=time.time())
+            except:
+                apflog("cannot write apftask.MASTER_LAST_CLOSE",level='warn',echo=True)
+            return True
+        else:
+            apflog("Closeup could not successfully complete.")
+            return False
+        return False
+
