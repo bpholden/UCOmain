@@ -73,7 +73,6 @@ class TelescopeControl:
         self.dmtimer    = self.checkapf('DMTIME')
         self.whatsopn   = self.checkapf('WHATSOPN')
         self.mv_perm    = self.checkapf('MOVE_PERM')
-        self.instr_perm = self.checkapf('INSTR_PERM')
         self.chk_close  = self.checkapf('CHK_CLOSE')
 
         self.apfmet     = ktl.Service('met3apf')
@@ -97,6 +96,8 @@ class TelescopeControl:
         self.fits3dir   = self.eosgcam('FITS3DIR')
         self.save3d     = self.eosgcam('SAVE3D')
 
+        self.guide      = ktl.Service('apfguide')
+
         self.eoscool    = ktl.Service('eoscool')
         self.dewpt      = self.eoscool('DEWPAVG3')
         self.temp3now   = self.eoscool('TEMPNOW3')
@@ -105,6 +106,8 @@ class TelescopeControl:
         self.robot        = ktl.Service('apftask')
         self.autofoc      = self.robot["SCRIPTOBS_AUTOFOC"]
         self.slew_allowed = self.robot['SLEW_ALLOWED']
+        self.line        = self.robot['SCRIPTOBS_LINE'] 
+        self.vmag        = self.robot['SCRIPTOBS_VMAG']
 
         self.apfteqsta    = self.robot['APFTEQ_STATUS']
         self.metxfersta   = self.robot['METSXFER_STATUS']
@@ -117,6 +120,8 @@ class TelescopeControl:
 
         self.apfteq     = ktl.Service('apfteq')
         self.teqmode    = self.apfteq['MODE']
+
+        self.apfmon     = ktl.Service('apfmon')
 
         self.ok2open.monitor()
         self.ok2open.callback(self.ok_mon)
@@ -1106,14 +1111,14 @@ class TelescopeControl:
             return
         self.dm_reset()
 
-        if self.calsta['binary'] < 3 or self.focussta['binary'] < 3:
+        if self.apf.calsta['binary'] < 3 or self.apf.focussta['binary'] < 3:
             log_str = 'Focusinstr and/or Calibrate are running, will skip evening star observation.'
-            log_str += ' focusinstr=%s calibrate=%s' % (self.calsta,self.focussta)
+            log_str += ' focusinstr=%s calibrate=%s' % (self.apf.calsta, self.apf.focussta)
             apflog(log_str,echo=True)
             return
 
         # check on weirdness for UCAM host post-reboot
-        self.ucam_dispatch_mon()
+        self.apf.ucam_dispatch_mon()
 
         # Call prep-obs
         apflog("Calling prep-obs.",echo=True)
@@ -1128,8 +1133,6 @@ class TelescopeControl:
                 log_str += "Targeting object has failed."
                 apflog(log_str,level='error',echo=True)
                 return
-
-        self.decker.write('W',wait=False)
 
         self.dm_reset()
         apflog("Slewing to lower el",echo=True)
