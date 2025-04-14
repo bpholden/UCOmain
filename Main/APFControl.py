@@ -114,11 +114,6 @@ class APF:
 
     apfschedule= ktl.Service('apfschedule')
 
-    guide      = ktl.Service('apfguide')
-    counts     = guide['COUNTS']
-    kcountrate     = guide['COUNTRATE']
-    avg_fwhm   = guide['AVG_FWHM']
-
     motor      = ktl.Service('apfmot')
     decker     = motor['DECKERNAM']
 #    deckerord  = motor['DECKERORD']
@@ -137,10 +132,6 @@ class APF:
     gexptime   = eosgcam('GEXPTIME')
     sumframe   = eosgcam('SUMFRAME')
 
-    apfmon     = ktl.Service('apfmon')
-    ucamd0sta  = apfmon['UCAMDSTA0STA']
-
-    apfminimon = ktl.Service('apfminimon')
 
     def __init__(self, task="example", test=False):
         """ Initilize the current state of APF. Setup the callbacks and monitors necessary for automated telescope operation."""
@@ -155,6 +146,16 @@ class APF:
         self.ncountrate = 0
         self.countrate = 0.0
         self.ccountrate = 0.0
+
+        self.guide      = ktl.Service('apfguide')
+        self.counts     = self.guide['COUNTS']
+        self.kcountrate     = self.guide['COUNTRATE']
+        self.avg_fwhm   = self.guide['AVG_FWHM']
+
+        self.apfmon     = ktl.Service('apfmon')
+        self.ucamd0sta  = self.apfmon['UCAMDSTA0STA']
+
+        self.apfminimon = ktl.Service('apfminimon')
 
         try:
             self.eosgcam['GENABLE'].write(True,binary=True)
@@ -174,6 +175,11 @@ class APF:
                 apflog("Cannot monitor keyword %s: %s" % (kwnm,e),echo=True, level='warn')
 
         # Set the callbacks and monitors
+
+        self.checkapf   = ktl.Service('checkapf')
+        self.userkind   = self.checkapf('USERKIND')
+        self.instr_perm = self.checkapf('INSTR_PERM')
+    
 
         self.kcountrate.monitor()
         self.kcountrate.callback(self.countrate_mon)
@@ -944,11 +950,7 @@ class APF:
             apflog("Error setting scriptobs_autofoc", level='error',echo=True)
             return None
 
-        # Make sure APFTEQ is in night mode for observations
-        if self.teqmode.read() != 'Night':
-            self.set_apfteq_mode('Night')
-
-            # Check the instrument focus for a reasonable value
+        # Check the instrument focus for a reasonable value
         if self.dewarfoc > DEWARMAX or self.dewarfoc < DEWARMIN:
             lastfit_dewarfoc = ktl.read("apftask","FOCUSINSTR_LASTFOCUS",binary=True)
             log_str = "Warning: The dewar focus is currently %d. " % (self.dewarfoc)
@@ -960,11 +962,6 @@ class APF:
         # check on weirdness for UCAM host post-reboot
         self.ucam_dispatch_mon()
 
-        telstate = self.tel['TELSTATE'].read()
-        if telstate == 'Disabled':
-            rv, _ = apftask_do(os.path.join(SCRIPTDIR,"slew --hold"))
-            if not rv:
-                return None
         # Start scriptobs
 
         outfile = open("robot.log", 'a')
@@ -1296,7 +1293,7 @@ class APF:
             return True
         return False
 
-if __name__ == '__main__':
+def main():
     print("Testing telescope monitors, grabbing and printing out current state.")
 
     task = 'example'
@@ -1312,4 +1309,7 @@ if __name__ == '__main__':
     while True:
         APFTask.wait(task,True,timeout=10)
         print(str(apf))
-        apf.robot['FOCUSTEL_STARTFOCUS'].write(apf.pred_tel_focus())
+
+
+if __name__ == '__main__':
+    main()
