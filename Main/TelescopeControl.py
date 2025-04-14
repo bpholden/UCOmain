@@ -18,8 +18,8 @@ except:
 
 from APFControl import apftask_do, cmd_exec
 
-windlim = 40.0
-slowlim = 100
+WINDLIM = 40.0
+SLOWLIM = 100
 WINDSHIELD_LIMIT = 10. # mph at the APF
 FOCUSTIME = 3600. # minimum time before checking telescope focus
 TEMP_LIMIT = 35. # deg F at the APF
@@ -39,11 +39,17 @@ else:
 SCRIPTDIR = os.path.join(LROOT,'bin/robot/')
 
 class TelescopeControl:
-    def __init__(self, apf=None):
+    def __init__(self, apf=None, test=False):
         self.apf = apf
-        
+        self.test = test
+        self.task = None
+        if self.apf is not None:
+            self.task = self.apf.task
+
         self.lastfocuscheck = datetime.datetime.now() - datetime.timedelta(days=1)
         self.lastfocusval = None
+
+        self.dew_too_close = False
 
         self.tel        = ktl.Service('eostele')
         self.sunel      = self.tel('SUNEL')
@@ -109,8 +115,8 @@ class TelescopeControl:
         self.focustelsta  = self.robot['FOCUSTEL_STATUS']
         self.lastopen     = self.robot['OPENUP_LAST_SUCCESS']
 
-
-
+        self.apfteq     = ktl.Service('apfteq')
+        self.teqmode    = self.apfteq['MODE']
 
         self.ok2open.monitor()
         self.ok2open.callback(self.ok_mon)
@@ -135,8 +141,11 @@ class TelescopeControl:
         self.faenable.monitor()
         self.lastopen.monitor()
 
+       # Initial Wind conditions
+        self.wslist = []
         self.mon_lists = dict()
         self.avg_lists = dict()
+        self.dewlist = []
 
         for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,\
                    self.t045kw,self.t135kw,self.t225kw,self.t315kw,self.temp3now,\
@@ -150,7 +159,7 @@ class TelescopeControl:
         self.dewpt.monitor()
         self.dewpt.callback(self.dew_pt_mon)
 
-        for kw in (self.slewsta, self.calsta, self.focussta, \
+        for kw in (self.slewsta,\
                    self.shuttersta, self.opensta, self.closesta,\
                     self.focustelsta):
             kw.monitor()
@@ -160,7 +169,6 @@ class TelescopeControl:
         self.wx.read()
         self.altwx.read()
         self.dewpt.read()
-        self.counts.read()
         self.ok2open.read()
         self.avgtemps = np.asarray([self.avg_lists[nm] for nm in \
                                      ('TM1S210','TM2CSUR','TAVERAGE',\
@@ -233,7 +241,7 @@ class TelescopeControl:
 
         return
 
-    def dew_pt_mon(self,dew):
+    def dew_pt_mon(self, dew):
         if dew['populated'] == False:
             return
         try:
@@ -263,6 +271,32 @@ class TelescopeControl:
                         apflog("M2 temperatures too close to dew point",echo=True,level='warning')
 
         return
+
+    # Callback for ok2open permission
+    # -- Check that if we fall down a logic hole we don't error out
+    def ok_mon(self,ok2open):
+        if ok2open['populated'] == False:
+            return
+        try:
+            ok = ok2open # historical
+        except Exception as e:
+            apflog("Exception in ok_mon for checkapf.OPEN_OK: %s" % (e), level='error')
+            return
+        try:
+            if self.mv_perm.read(binary=False) == False:
+                ok = False
+        except Exception as e:
+            apflog("Exception in ok_mon for checkapf.MOVE_PERM: %s" % (e), level='error')
+            return
+        try:
+            if not self.userkind.read(binary=True) == 3:
+                ok = False
+        except Exception as e:
+            apflog("Exception in ok_mon checkapf.USERKIND: %s" % (e), level='error')
+            return
+        self.openOK = ok
+        return
+
 
     def sun_rising(self):
         """
@@ -548,7 +582,7 @@ class TelescopeControl:
 
         return True
 
-    def run_autoexposure(self,ind=5):
+    def run_autoexposure(self, ind=5):
         """
         runs the autoexposure script to configure the guider
         exposure time for the target.

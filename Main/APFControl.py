@@ -114,9 +114,6 @@ class APF:
 
     apfschedule= ktl.Service('apfschedule')
 
-    apfteq     = ktl.Service('apfteq')
-    teqmode    = apfteq['MODE']
-
     guide      = ktl.Service('apfguide')
     counts     = guide['COUNTS']
     kcountrate     = guide['COUNTRATE']
@@ -159,12 +156,6 @@ class APF:
         self.countrate = 0.0
         self.ccountrate = 0.0
 
-        # Initial Wind conditions
-        self.wslist = []
-
-        self.dewlist = []
-        self.dew_too_close = False
-
         try:
             self.eosgcam['GENABLE'].write(True,binary=True)
         except:
@@ -200,8 +191,10 @@ class APF:
         self.nerase.monitor()
         self.gcam_power.monitor()
 
+        self.calsta.monitor() 
+        self.focussta.monitor() 
+
         self.counts.monitor()
-        
         self.vmag.monitor()
         self.ldone.monitor()
         self.counts.monitor()
@@ -223,8 +216,10 @@ class APF:
         s += "elapsed = %5.2f sec \n" % self.elapsed
         s += "Guider camera power is %s\n" % ("ON" if self.gcam_power.binary else "OFF")
 
+        rpid, rr = self.find_robot()
+
         if rr:
-            s += "Robot is running as %s\n" % (ripd)
+            s += "Robot is running as %s\n" % (rpid)
         else:
             s += "Robot is not running\n"
 
@@ -310,30 +305,6 @@ class APF:
         except:
             return
 
-    # Callback for ok2open permission
-    # -- Check that if we fall down a logic hole we don't error out
-    def ok_mon(self,ok2open):
-        if ok2open['populated'] == False:
-            return
-        try:
-            ok = ok2open # historical
-        except Exception as e:
-            apflog("Exception in ok_mon for checkapf.OPEN_OK: %s" % (e), level='error')
-            return
-        try:
-            if self.mv_perm.read(binary=False) == False:
-                ok = False
-        except Exception as e:
-            apflog("Exception in ok_mon for checkapf.MOVE_PERM: %s" % (e), level='error')
-            return
-        try:
-            if not self.userkind.read(binary=True) == 3:
-                ok = False
-        except Exception as e:
-            apflog("Exception in ok_mon checkapf.USERKIND: %s" % (e), level='error')
-            return
-        self.openOK = ok
-        return
 
 
 
