@@ -152,7 +152,8 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
                     ret.append(False)
                     continue
             except:
-                pass
+                ret.append(False)
+                continue
         # Everything seems to be fine, so the target is visible!
         ret.append(True)
 #	apflog( "is_visible(): done searching targets", echo=True)
