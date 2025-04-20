@@ -160,9 +160,9 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
     observer.horizon = prev_horizon
     return ret, np.array(start_elevations), np.array(scaled_elevations)
 
-
-
-if __name__ == '__main__':
+def test_main():
+    # This is a test function to check the visibility of a star
+    # It will be run when this file is executed
     # Generate a pyephem observer for the APF
     apf_obs = ephem.Observer()
     apf_obs.lat = '37:20:33.1'
@@ -179,3 +179,6 @@ if __name__ == '__main__':
     print(tret, tse, tsce)
     tret, tse, tsce = visible(apf_obs, [test_star], [400.])
     print(tret, tse, tsce)
+
+if __name__ == '__main__':
+    test_main()
