@@ -1215,23 +1215,14 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
 
     return res
 
-if __name__ == '__main__':
+def test_basic_ops(tsheet_list, RANK_TABLEN):
+    """
+    test_basic_ops()
+    """
 
-    t_dt = datetime.datetime.now()
-
-    cfn = os.path.join('.','time_left.csv')
-    if os.path.exists(cfn):
-        hour_constraints = astropy.io.ascii.read(cfn)
-    else:
-        hour_constraints = None
-
-    RANK_TABLEN='2025A_ranks_operational'
-    trank_table = make_rank_table(RANK_TABLEN, hour_constraints=hour_constraints)
-
-    thour_table = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
-
-    tsheet_list = list(trank_table['sheetn'][trank_table['rank'] > 0])
-
+    # Test the basic operations of the scheduler
+    # This is a test function to see if the basic operations work
+    # It will not be run in production
 
     try:
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 3, binary=True)
@@ -1267,6 +1258,15 @@ if __name__ == '__main__':
     print("Done")
     ot.close()
 
+    return starttime
+
+def test_failure(starttime, tsheet_list, RANK_TABLEN):
+    '''
+    test_failure(starttime, tsheet_list, RANK_TABLEN)
+    starttime - time to start the test
+    tsheet_list - list of target sheets
+    RANK_TABLEN - rank table name
+    '''
     print("Testing a failure")
     try:
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 2, binary=True)
@@ -1275,10 +1275,16 @@ if __name__ == '__main__':
     result = get_next(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
                      template=True, rank_sheetn=RANK_TABLEN)
 
+    return
 
+def test_templates(tsheet_list):
+    """
+    test_templates(tsheet_list)
+    tsheet_list - list of target sheets
+    """
     print("Testing templates")
-
-    tstar_table, tstars = ParseUCOSched.parse_UCOSched(sheetns=tsheet_list, \
+    t_dt = datetime.datetime.now()
+    tstar_table, _ = ParseUCOSched.parse_UCOSched(sheetns=tsheet_list, \
                                                      outfn='googledex.dat', outdir=".", \
                                                         config=config_defaults('public'))
     tidx, = np.asarray(tstar_table['name'] == '185144').nonzero()
@@ -1296,3 +1302,40 @@ if __name__ == '__main__':
     temp_res.append(tline + " # temp=Y")
     temp_res.append(tbline + " # temp=Y")
     out_r = [print(r) for r in temp_res]
+    print(out_r)
+    print("Done")
+
+def test_main():
+    """
+    test_main()
+    """
+
+    # Test the basic operations of the scheduler
+    # This is a test function to see if the basic operations work
+    # It will not be run in production
+
+    t_dt = datetime.datetime.now()
+    cfn = os.path.join('.','time_left.csv')
+    if os.path.exists(cfn):
+        hour_constraints = astropy.io.ascii.read(cfn)
+    else:
+        hour_constraints = None
+
+    RANK_TABLEN='2025A_ranks_operational'
+    trank_table = make_rank_table(RANK_TABLEN, hour_constraints=hour_constraints)
+
+    thour_table = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
+
+    tsheet_list = list(trank_table['sheetn'][trank_table['rank'] > 0])
+
+
+    starttime = test_basic_ops(tsheet_list, RANK_TABLEN)
+
+    print("Testing a failure")
+    test_failure(starttime, tsheet_list, RANK_TABLEN)
+    test_templates(tsheet_list)
+
+
+if __name__ == '__main__':
+
+    test_main()
