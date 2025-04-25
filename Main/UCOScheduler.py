@@ -1272,7 +1272,7 @@ def test_failure(starttime, tsheet_list, RANK_TABLEN):
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 2, binary=True)
     except:
         pass
-    result = get_next(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
+    _ = get_next(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
                      template=True, rank_sheetn=RANK_TABLEN)
 
     return
@@ -1324,7 +1324,7 @@ def test_main():
     RANK_TABLEN='2025A_ranks_operational'
     trank_table = make_rank_table(RANK_TABLEN, hour_constraints=hour_constraints)
 
-    thour_table = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
+    _ = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
 
     tsheet_list = list(trank_table['sheetn'][trank_table['rank'] > 0])
 
