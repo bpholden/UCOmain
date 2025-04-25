@@ -122,6 +122,38 @@ class hires_obsblock(ObsBlock):
     def __repr__(self):
         return f"hires_obsblock(name={self.target_name}, coversheet_id={self.coversheet_id})"
     
+    def to_dict(self):
+        """
+        Convert the hires_obsblock instance to a dictionary.
+
+        :return: A dictionary representation of the hires_obsblock.
+        """
+        data = super().to_dict()
+        data.update({
+            "iodine": self.iodine,
+            "decker": self.decker,
+            "binning": self.binning,
+            "vmag": self.vmag,
+            "bmv": self.bmv,
+            "expcount": self.expcount,
+            "do": self.do
+        })
+        return data
+    
+    def from_dict(self, data):
+        """
+        Populate the hires_obsblock instance from a dictionary.
+        :param data: A dictionary containing the hires_obsblock data.
+        """
+        super().from_dict(data)
+        self.iodine = data.get("iodine")
+        self.decker = data.get("decker")
+        self.binning = data.get("binning")
+        self.vmag = data.get("vmag")
+        self.bmv = data.get("bmv")
+        self.expcount = data.get("expcount")
+        self.do = data.get("do")
+        
     def make_scriptobs_line(self, foc, uth, utm, comment=""):
         """
         Create a script observation line for the high-resolution spectrometer.
