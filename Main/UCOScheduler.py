@@ -1239,7 +1239,7 @@ def test_basic_ops(tsheet_list, RANK_TABLEN):
         ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
 
-    for i in range(5):
+    for _ in range(5):
 
         result = get_next(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
                          template=True, rank_sheetn=RANK_TABLEN)
