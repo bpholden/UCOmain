@@ -122,13 +122,14 @@ class hires_obsblock(ObsBlock):
     def __repr__(self):
         return f"hires_obsblock(name={self.target_name}, coversheet_id={self.coversheet_id})"
     
-    def make_scriptobs_line(self, foc, comment=""):
+    def make_scriptobs_line(self, foc, uth, utm, comment=""):
         """
         Create a script observation line for the high-resolution spectrometer.
         """
         line = f"{self.target_name} {self.ra} {self.dec} pm_ra={self.pm_ra} pm_dec={self.pm_dec} "
+        line += f"I2={self.iodine} lamp=none uth{uth} utm={utm} "
         line += f"vmag={self.vmag} texp={self.exposure_time} nexp={self.number_of_exposures} foc={foc} "
-        line += f"decker={self.decker} binning={self.binning} iodine={self.iodine} "
+        line += f"decker={self.decker} binning={self.binning} "
         line += f"do={self.do} owner={self.coversheet_id} "
         line += f"{comment}"
 
