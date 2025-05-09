@@ -324,6 +324,7 @@ class APF:
                                      ('TM1S210','TM2CSUR','TAVERAGE',\
                                       'TM2CAIR','TEMPNOW3','TEMPNOW4')])
 
+        self.check_sanity()
 
 
     def __str__(self):
@@ -654,6 +655,41 @@ class APF:
 
     ## these are various methods, there are a LOT of them
     ##
+
+    def check_sanity(self):
+        """
+        check_sanity()
+
+        Checks the sanity of the APF system.  This includes checking
+        the weather, the dew point, and the wind speed.
+
+        """
+    
+        ret_val = True
+        # check the sanity of the EOS dispatchers
+        pc_keywords = ['PC_EOSCOOLSTA',
+                        'PC_EOSCTRLSTA',
+                        'PC_EOSDOMESTA',
+                        'PC_EOSGCAMSTA',
+                        'PC_EOSMETSSTA',
+                        'PC_EOSTDIOSTA',
+                        'PC_EOSTELESTA',
+                        'PC_EOSTI8KSTA',
+                        ]
+
+        for kw in pc_keywords:
+            try:
+                pc_kw = ktl.Service('apfmon')[kw]
+                kw_val = pc_kw.read(binary=True)
+                if kw_val > 4:
+                    # this is a warning or error
+                    apflog("PC keyword %s has value %d" % (kw,kw_val),level='error',echo=True)
+                    ret_val = False
+            except Exception as e:
+                apflog("Cannot monitor keyword %s: %s" % (kw,e),echo=True, level='warn')
+                ret_val = False
+
+        return ret_val
 
     def sun_rising(self):
         """
