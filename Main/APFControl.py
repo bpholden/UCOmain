@@ -586,8 +586,8 @@ class APF:
 
     def restart(self,name,host):
         apfcmd = os.path.join(LROOT,"bin/apf")
-        restart = '%s restart %s' % (apfcmd,name)
-        cmdlist = ["ssh", "-f", host, restart]
+        restart_str = '%s restart %s' % (apfcmd,name)
+        cmdlist = ["ssh", "-f", host, restart_str]
         try:
             p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
         except Exception as e:
@@ -683,7 +683,9 @@ class APF:
                 kw_val = pc_kw.read(binary=True)
                 if kw_val > 4:
                     # this is a warning or error
-                    apflog("PC keyword %s has value %d" % (kw,kw_val),level='error',echo=True)
+                    apflog("PC keyword %s has value %s, recommend restarting" % (kw,pc_kw['ascii']),level='Crit',echo=True)
+                    srv_name = kw[3:-3]
+                    self.restart(srv_name,host="hamburg")
                     ret_val = False
             except Exception as e:
                 apflog("Cannot monitor keyword %s: %s" % (kw,e),echo=True, level='warn')
