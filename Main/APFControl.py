@@ -656,6 +656,65 @@ class APF:
     ## these are various methods, there are a LOT of them
     ##
 
+    def restart_server(self, service):
+        """
+        restart_server(service)
+
+        Restarts the server given by the service name.
+
+        """
+        servers = {
+            'eosgcam': 'CameraServer',
+            'eostele': 'TelescopeServer',
+            'eosdome': 'DomeServer',
+            'eoscool': 'CANServerCooling',
+            'eosctrl' :'CANServerControls',
+            'eosmets': 'MetServer',
+            'eostdio': 'DIOServer',
+            'eosti8k': 'i8000TemperatureServer',
+        }
+        if service not in servers:
+            apflog("Cannot restart %s, not in the list of servers" % (service),level='error',echo=True)
+            return False
+        
+        locs = {
+            'eosgcam': 'Guider',
+            'eostele': 'Telescope',
+            'eosdome': 'Dome',
+            'eoscool': 'Dome',
+            'eosctrl' :'Dome',
+            'eosmets': 'Observatory',
+            'eostdio': 'Telescope',
+            'eosti8k': 'Telescope',
+        }
+
+        telleos_str = "telleos -s eossysm DeviceServer.Commands.StopServer "
+        telleos_str += '"" '
+        telleos_str += "'name '"
+        telleos_str += '"%s" ' % (servers[service])
+        telleos_str += 'location "%s" ' % (locs[service])
+        telleos_str += "force false '"
+
+        try:
+            p = subprocess.check_output(telleos_str, shell=True, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            apflog("Cannot stop %s: %s" % (service,e),level='error',echo=True)
+            return False
+        time.sleep(3)
+        telleos_str = "telleos -s eossysm DeviceServer.Commands.StartServer "
+        telleos_str += '"" '
+        telleos_str += "'name '"
+        telleos_str += '"%s" ' % (servers[service])
+        telleos_str += 'location "%s" ' % (locs[service])
+        telleos_str += "force false '"
+        try:
+            p = subprocess.check_output(telleos_str, shell=True, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            apflog("Cannot start %s: %s" % (service,e),level='error',echo=True)
+            return False
+            
+        return True
+
     def check_sanity(self):
         """
         check_sanity()
