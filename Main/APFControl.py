@@ -679,7 +679,7 @@ class APF:
 
         for kw in pc_keywords:
             try:
-                pc_kw = ktl.Service('apfmon')[kw]
+                pc_kw = self.apfmon[kw]
                 kw_val = pc_kw.read(binary=True)
                 if kw_val > 4:
                     # this is a warning or error
