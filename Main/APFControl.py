@@ -795,9 +795,10 @@ class APF:
         #self.avgtemps = [self.avg_lists[nm] for nm in ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')]
         self.avgtemps = []
 
-        tel_avg = self.t045kw.read(binary=True) + self.t225kw.read(binary=True) + \
-             self.t315kw.read(binary=True)
-        tel_avg /= 3.0
+        #tel_avg = self.t045kw.read(binary=True) + self.t225kw.read(binary=True) + \
+        #     self.t315kw.read(binary=True)
+        #tel_avg /= 3.0
+        tel_avg = self.taveragekw.read(binary=True)
 
         self.avgtemps.append(self.m1tempkw.read(binary=True))
         self.avgtemps.append(self.m2tempkw.read(binary=True))
