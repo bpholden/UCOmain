@@ -1863,7 +1863,7 @@ class APF:
             return 0
 
         predfocus  = self.pred_tel_focus()
-        self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
+        #self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         focus_diff = math.fabs(predfocus - self.focus['binary'])
         focus_diff *= 1e3
 
