@@ -448,6 +448,10 @@ class Observe(threading.Thread):
                 apflog("get_target(): Error setting hatch position.", level='Alert')
                 return
 
+            if self.apf.check_sanity() is False:
+                apflog("get_target(): Error in sanity check.", level='Alert')
+                return
+
             if self.apf.init_guide_cam() is False:
                 apflog("get_target(): Error initializing guide camera.", echo=True, level='warn')
                 if not self.apf.gcam_power.binary:
