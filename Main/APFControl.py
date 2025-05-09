@@ -271,7 +271,7 @@ class APF:
         self.avg_lists = dict()
 
         for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,\
-                   self.t045kw,self.t135kw,self.t225kw,self.t315kw,self.temp3now,\
+                   self.t045kw,self.t225kw,self.t315kw,self.temp3now,\
                     self.temp4now,self.wx,self.altwx,self.airtemp):
             self.mon_lists[kw['name']] = []
             self.avg_lists[kw['name']] = None
@@ -794,9 +794,14 @@ class APF:
 
         #self.avgtemps = [self.avg_lists[nm] for nm in ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')]
         self.avgtemps = []
+
+        tel_avg = self.t045kw.read(binary=True) + self.t225kw.read(binary=True) + \
+             self.t315kw.read(binary=True)
+        tel_avg /= 3.0
+
         self.avgtemps.append(self.m1tempkw.read(binary=True))
         self.avgtemps.append(self.m2tempkw.read(binary=True))
-        self.avgtemps.append(self.taveragekw.read(binary=True))
+        self.avgtemps.append(tel_avg)
         self.avgtemps.append(self.m2airkw.read(binary=True))
         self.avgtemps.append(self.temp3now.read(binary=True))
         self.avgtemps.append(self.temp4now.read(binary=True))
