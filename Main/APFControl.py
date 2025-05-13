@@ -584,7 +584,7 @@ class APF:
         return
 
 
-    def restart(self,name,host):
+    def restart(self, name, host):
         apfcmd = os.path.join(LROOT,"bin/apf")
         restart_str = '%s restart %s' % (apfcmd,name)
         cmdlist = ["ssh", "-f", host, restart_str]
@@ -690,7 +690,7 @@ class APF:
 
         telleos_str = "telleos -s eossysm DeviceServer.Commands.StopServer "
         telleos_str += '"" '
-        telleos_str += "'name '"
+        telleos_str += "'name "
         telleos_str += '"%s" ' % (servers[service])
         telleos_str += 'location "%s" ' % (locs[service])
         telleos_str += "force false '"
@@ -699,11 +699,12 @@ class APF:
             p = subprocess.check_output(telleos_str, shell=True, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             apflog("Cannot stop %s: %s" % (service,e),level='error',echo=True)
-            return False
+            # this can happen if the server is not running
+            # we will press on
         time.sleep(3)
         telleos_str = "telleos -s eossysm DeviceServer.Commands.StartServer "
         telleos_str += '"" '
-        telleos_str += "'name '"
+        telleos_str += "'name "
         telleos_str += '"%s" ' % (servers[service])
         telleos_str += 'location "%s" ' % (locs[service])
         telleos_str += "force false '"
@@ -754,7 +755,7 @@ class APF:
                 if kw_val > 4:
                     # this is a warning or error
                     apflog("PC keyword %s has value %s, recommend restarting" % (kw,pc_kw['ascii']),level='Crit',echo=True)
-                    srv_name = kw[3:-3]
+                    srv_name = kw[3:-3].lower()
                     self.restart(srv_name,host=pc_servers[srv_name.lower()])
                     ret_val = False
             except Exception as e:
