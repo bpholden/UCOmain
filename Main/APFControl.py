@@ -707,7 +707,7 @@ class APF:
         telleos_str += "'name "
         telleos_str += '"%s" ' % (servers[service])
         telleos_str += 'location "%s" ' % (locs[service])
-        telleos_str += "force false '"
+        telleos_str += " '"
         try:
             p = subprocess.check_output(telleos_str, shell=True, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
