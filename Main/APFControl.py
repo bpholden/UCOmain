@@ -393,6 +393,17 @@ class APF:
             return
 
         return
+    
+    def ucam_nerase_mon(self):
+        if self.nerase['populated'] == False:
+            return
+        try:
+            if self.nerase['binary'] != 2:
+                self.nerase.write(2)
+        except:
+            return
+
+        return
 
     def count_mon(self, counts):
         if counts['populated'] == False:
