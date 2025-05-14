@@ -456,9 +456,10 @@ class Observe(threading.Thread):
                 apflog("get_target(): Error initializing guide camera.", echo=True, level='warn')
                 if not self.apf.gcam_power.binary:
                     return
+
             self.apf.update_windshield(self.windshield_mode)
             self.focval = self.apf.set_autofoc_val()
-
+            self.apf.ucam_nerase_mon()
             # setup a B star observation if needed
             # if not B star observation, look at current stack of
             # observations and see if anything is left
