@@ -456,6 +456,13 @@ class Observe(threading.Thread):
                 apflog("get_target(): Error initializing guide camera.", echo=True, level='warn')
                 if not self.apf.gcam_power.binary:
                     return
+                
+            if self.apf.apfmon['READYSTA'].read(binary=True) > 4:
+                # this will only be run if there readysta reports at
+                # least an error (which is 5)
+                # the ADC not being ready often is reported as a warning
+                # until a slew is finished, so this will ignore that
+                self.apf.run_prepobs()
 
             self.apf.update_windshield(self.windshield_mode)
             self.focval = self.apf.set_autofoc_val()
