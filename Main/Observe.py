@@ -459,7 +459,7 @@ class Observe(threading.Thread):
 
             self.apf.update_windshield(self.windshield_mode)
             self.focval = self.apf.set_autofoc_val()
-            self.apf.ucam_nerase_mon()
+
             # setup a B star observation if needed
             # if not B star observation, look at current stack of
             # observations and see if anything is left
