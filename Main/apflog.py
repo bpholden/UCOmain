@@ -121,7 +121,7 @@ def main():
     body = "This is a test message."
     body += "Error messages from the APF observe script will be sent with this function."
     subject = "[APF] Test"
-    to_val = ['holden@ucolick.org', '8314211210@txt.att.net']
+    to_val = ['holden@ucolick.org']
     to_val_mod = to_val[0:1]
     sendmail(subject, body, to=to_val)
     time.sleep(3)

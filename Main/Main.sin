@@ -402,7 +402,7 @@ def main():
     apf = APFControl.APF(task=parent, test=debug)
     APFTask.waitFor(parent, True, timeout=5)
     apf.init_guide_cam()
-
+    apf.check_sanity()
     possible_list = ''
     try:
         possible_list = apftask.read('MASTER_STARLIST',timeout=5)

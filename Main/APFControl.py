@@ -253,7 +253,7 @@ class APF:
             return
 
         return
-
+    
     def count_mon(self, counts):
         if counts['populated'] == False:
             return
@@ -357,10 +357,10 @@ class APF:
         return
 
 
-    def restart(self,name,host):
+    def restart(self, name, host):
         apfcmd = os.path.join(LROOT,"bin/apf")
-        restart = '%s restart %s' % (apfcmd,name)
-        cmdlist = ["ssh", "-f", host, restart]
+        restart_str = '%s restart %s' % (apfcmd,name)
+        cmdlist = ["ssh", "-f", host, restart_str]
         try:
             p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
         except Exception as e:
@@ -880,16 +880,6 @@ class APF:
             APFTask.waitFor(self.task, True, timeout=10)
             msg = "Test Mode: Would be running focusinstr."
             return True, msg
-
-        supplies = ('PS1_48V_ENA', 'PS2_48V_ENA')
-        for keyword in supplies:
-            try:
-                value = self.motor[keyword].read(binary=True,timeout=2)
-                if value != 1:
-                    self.motor[keyword].write('Enabled', wait=False)
-            except Exception as e:
-                apflog("Cannot read status of PS's:  %s"  % e,level='alert', echo=True)
-                return False, "Cannot read status of PS's:  %s" % (e)
 
         apflog("Running focusinstr routine.",echo=True)
 
