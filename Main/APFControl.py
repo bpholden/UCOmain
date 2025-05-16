@@ -1377,16 +1377,6 @@ class APF:
             msg = "Test Mode: Would be running focusinstr."
             return True, msg
 
-        supplies = ('PS1_48V_ENA', 'PS2_48V_ENA')
-        for keyword in supplies:
-            try:
-                value = self.motor[keyword].read(binary=True,timeout=2)
-                if value != 1:
-                    self.motor[keyword].write('Enabled', wait=False)
-            except Exception as e:
-                apflog("Cannot read status of PS's:  %s"  % e,level='alert', echo=True)
-                return False, "Cannot read status of PS's:  %s" % (e)
-
         apflog("Running focusinstr routine.",echo=True)
 
         execstr = " ".join(['focusinstr',flags])
