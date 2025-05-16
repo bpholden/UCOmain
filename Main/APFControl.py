@@ -271,7 +271,7 @@ class APF:
         self.avg_lists = dict()
 
         for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,\
-                   self.t045kw,self.t135kw,self.t225kw,self.t315kw,self.temp3now,\
+                   self.t045kw,self.t225kw,self.t315kw,self.temp3now,\
                     self.temp4now,self.wx,self.altwx,self.airtemp):
             self.mon_lists[kw['name']] = []
             self.avg_lists[kw['name']] = None
@@ -324,6 +324,7 @@ class APF:
                                      ('TM1S210','TM2CSUR','TAVERAGE',\
                                       'TM2CAIR','TEMPNOW3','TEMPNOW4')])
 
+        self.check_sanity()
 
 
     def __str__(self):
@@ -392,7 +393,7 @@ class APF:
             return
 
         return
-
+    
     def count_mon(self, counts):
         if counts['populated'] == False:
             return
@@ -583,10 +584,10 @@ class APF:
         return
 
 
-    def restart(self,name,host):
+    def restart(self, name, host):
         apfcmd = os.path.join(LROOT,"bin/apf")
-        restart = '%s restart %s' % (apfcmd,name)
-        cmdlist = ["ssh", "-f", host, restart]
+        restart_str = '%s restart %s' % (apfcmd,name)
+        cmdlist = ["ssh", "-f", host, restart_str]
         try:
             p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
         except Exception as e:
@@ -654,6 +655,114 @@ class APF:
 
     ## these are various methods, there are a LOT of them
     ##
+
+    def restart_server(self, service):
+        """
+        restart_server(service)
+
+        Restarts the server given by the service name.
+
+        """
+        servers = {
+            'eosgcam': 'CameraServer',
+            'eostele': 'TelescopeServer',
+            'eosdome': 'DomeServer',
+            'eoscool': 'CANServerCooling',
+            'eosctrl' :'CANServerControls',
+            'eosmets': 'MetServer',
+            'eostdio': 'DIOServer',
+            'eosti8k': 'i8000TemperatureServer',
+        }
+        if service not in servers:
+            apflog("Cannot restart %s, not in the list of servers" % (service),level='error',echo=True)
+            return False
+        
+        locs = {
+            'eosgcam': 'Guider',
+            'eostele': 'Telescope',
+            'eosdome': 'Dome',
+            'eoscool': 'Dome',
+            'eosctrl' :'Dome',
+            'eosmets': 'Observatory',
+            'eostdio': 'Telescope',
+            'eosti8k': 'Telescope',
+        }
+
+        telleos_str = "telleos -s eossysm DeviceServer.Commands.StopServer "
+        telleos_str += '"" '
+        telleos_str += "'name "
+        telleos_str += '"%s" ' % (servers[service])
+        telleos_str += 'location "%s" ' % (locs[service])
+        telleos_str += "force false '"
+
+        try:
+            p = subprocess.check_output(telleos_str, shell=True, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            apflog("Cannot stop %s: %s" % (service,e),level='error',echo=True)
+            # this can happen if the server is not running
+            # we will press on
+        time.sleep(3)
+        telleos_str = "telleos -s eossysm DeviceServer.Commands.StartServer "
+        telleos_str += '"" '
+        telleos_str += "'name "
+        telleos_str += '"%s" ' % (servers[service])
+        telleos_str += 'location "%s" ' % (locs[service])
+        telleos_str += " '"
+        try:
+            p = subprocess.check_output(telleos_str, shell=True, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            apflog("Cannot start %s: %s" % (service,e),level='error',echo=True)
+            return False
+            
+        return True
+
+    def check_sanity(self):
+        """
+        check_sanity()
+
+        Checks the sanity of the APF system.  This includes checking
+        the weather, the dew point, and the wind speed.
+
+        """
+    
+        ret_val = True
+        # check the sanity of the EOS dispatchers
+        pc_keywords = ['PC_EOSCOOLSTA',
+                        'PC_EOSCTRLSTA',
+                        'PC_EOSDOMESTA',
+                        'PC_EOSGCAMSTA',
+                        'PC_EOSMETSSTA',
+                        'PC_EOSTDIOSTA',
+                        'PC_EOSTELESTA',
+                        'PC_EOSTI8KSTA',
+                        ]
+        
+        pc_servers = {
+            'eosgcam': 'dresden',
+            'eostele': 'hamburg',
+            'eosdome': 'hamburg',
+            'eoscool': 'hamburg',
+            'eosctrl' :'hamburg',
+            'eosmets': 'hamburg',
+            'eostdio': 'hamburg',
+            'eosti8k': 'hamburg',
+        }
+
+        for kw in pc_keywords:
+            try:
+                pc_kw = self.apfmon[kw]
+                kw_val = pc_kw.read(binary=True)
+                if kw_val > 4:
+                    # this is a warning or error
+                    apflog("PC keyword %s has value %s, recommend restarting" % (kw,pc_kw['ascii']),level='Crit',echo=True)
+                    srv_name = kw[3:-3].lower()
+                    self.restart(srv_name,host=pc_servers[srv_name.lower()])
+                    ret_val = False
+            except Exception as e:
+                apflog("Cannot monitor keyword %s: %s" % (kw,e),echo=True, level='warn')
+                ret_val = False
+
+        return ret_val
 
     def sun_rising(self):
         """
@@ -794,9 +903,15 @@ class APF:
 
         #self.avgtemps = [self.avg_lists[nm] for nm in ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')]
         self.avgtemps = []
+
+        #tel_avg = self.t045kw.read(binary=True) + self.t225kw.read(binary=True) + \
+        #     self.t315kw.read(binary=True)
+        #tel_avg /= 3.0
+        tel_avg = self.taveragekw.read(binary=True)
+
         self.avgtemps.append(self.m1tempkw.read(binary=True))
         self.avgtemps.append(self.m2tempkw.read(binary=True))
-        self.avgtemps.append(self.taveragekw.read(binary=True))
+        self.avgtemps.append(tel_avg)
         self.avgtemps.append(self.m2airkw.read(binary=True))
         self.avgtemps.append(self.temp3now.read(binary=True))
         self.avgtemps.append(self.temp4now.read(binary=True))
@@ -1261,16 +1376,6 @@ class APF:
             APFTask.waitFor(self.task, True, timeout=10)
             msg = "Test Mode: Would be running focusinstr."
             return True, msg
-
-        supplies = ('PS1_48V_ENA', 'PS2_48V_ENA')
-        for keyword in supplies:
-            try:
-                value = self.motor[keyword].read(binary=True,timeout=2)
-                if value != 1:
-                    self.motor[keyword].write('Enabled', wait=False)
-            except Exception as e:
-                apflog("Cannot read status of PS's:  %s"  % e,level='alert', echo=True)
-                return False, "Cannot read status of PS's:  %s" % (e)
 
         apflog("Running focusinstr routine.",echo=True)
 
@@ -1858,7 +1963,7 @@ class APF:
             return 0
 
         predfocus  = self.pred_tel_focus()
-        self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
+        #self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         focus_diff = math.fabs(predfocus - self.focus['binary'])
         focus_diff *= 1e3
 
@@ -1952,6 +2057,30 @@ class APF:
                         pass
 
         return
+    
+    def run_prepobs(self, evening=False):
+        """
+        run_prepobs()
+        Runs the prep-obs script to prepare the telescope for observing.
+
+        evening: If True, run prep-obs with the --evening flag.
+        """
+        apflog("Calling prep-obs.",echo=True)
+        prepobs = os.path.join(SCRIPTDIR,'prep-obs')
+        if evening:
+            prepobs += " --evening"
+        result, ret_code = apftask_do(prepobs)
+        if result == False:
+            # try again
+            self.dm_reset()
+            result, ret_code = apftask_do(prepobs)
+            if result is False:
+                log_str = "Prep-obs returned error code %d. " % (ret_code)
+                log_str += "Targeting object has failed."
+                apflog(log_str,level='error',echo=True)
+                return
+        return
+
 
     def evening_star(self):
         """Aim the APF at the desired target. This calls prep-obs, slewlock, and focus-telescope."""
@@ -1970,19 +2099,7 @@ class APF:
         self.ucam_dispatch_mon()
 
         # Call prep-obs
-        apflog("Calling prep-obs.",echo=True)
-        prepobs = os.path.join(SCRIPTDIR,'prep-obs') + ' --evening'
-        result, ret_code = apftask_do(prepobs)
-        if result == False:
-            # try again
-            self.dm_reset()
-            result, ret_code = apftask_do(prepobs)
-            if result is False:
-                log_str = "Prep-obs returned error code %d. " % (ret_code)
-                log_str += "Targeting object has failed."
-                apflog(log_str,level='error',echo=True)
-                return
-
+        self.run_prepobs(evening=True)
         self.decker.write('W',wait=False)
 
         self.dm_reset()
