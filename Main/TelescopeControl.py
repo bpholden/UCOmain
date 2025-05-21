@@ -12,11 +12,10 @@ try:
     import ktl
     import APF as APFLib
     import APFTask
-    import Exposure
 except:
     from fake_apflog import *
 
-from APFControl import apftask_do, cmd_exec
+from APFControl import apftask_do, cmd_exec, APF
 
 WINDLIM = 40.0
 SLOWLIM = 100
@@ -1204,3 +1203,24 @@ class TelescopeControl:
         except Exception as e:
             ostr = "Error: cannot touch DM Timer: %s " %( e)
             apflog(ostr,level='error',echo=True)
+def main():
+    print("Testing telescope monitors, grabbing and printing out current state.")
+
+    task = 'example'
+
+    APFTask.establish(task, os.getpid())
+    apf = APF(task=task,test=False)
+    tel = TelescopeControl(apf, test=False)
+
+    # Give the monitors some time to start up
+    APFTask.waitFor(task, True,timeout=2)
+
+    print(str(tel))
+
+    while True:
+        APFTask.wait(task,True,timeout=10)
+        print(str(tel))
+
+
+if __name__ == '__main__':
+    main()
