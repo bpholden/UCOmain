@@ -1284,7 +1284,7 @@ class APF:
         return False
 
 def main():
-    print("Testing telescope monitors, grabbing and printing out current state.")
+    print("Testing APF monitors, grabbing and printing out current state.")
 
     task = 'example'
 
