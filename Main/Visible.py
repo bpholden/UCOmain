@@ -71,6 +71,7 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
         cur_el = np.degrees(star.alt)
         cur_az = np.degrees(star.az)
         start_elevations.append(cur_el)
+        in_east = cur_az < 180
 
         in_east = cur_az < 180
 
