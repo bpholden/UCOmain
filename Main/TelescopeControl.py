@@ -1104,6 +1104,28 @@ class TelescopeControl:
 
         return
 
+    def run_prepobs(self, evening=False):
+        """
+        run_prepobs()
+        Runs the prep-obs script to prepare the telescope for observing.
+
+        evening: If True, run prep-obs with the --evening flag.
+        """
+        apflog("Calling prep-obs.",echo=True)
+        prepobs = os.path.join(SCRIPTDIR,'prep-obs')
+        if evening:
+            prepobs += " --evening"
+        result, ret_code = apftask_do(prepobs)
+        if result is False:
+            # try again
+            self.dm_reset()
+            result, ret_code = apftask_do(prepobs)
+            if result is False:
+                log_str = "Prep-obs returned error code %d. " % (ret_code)
+                log_str += "Targeting object has failed."
+                apflog(log_str,level='error',echo=True)
+                return
+        return
 
 
     def evening_star(self):
@@ -1121,6 +1143,7 @@ class TelescopeControl:
 
         # check on weirdness for UCAM host post-reboot
         self.apf.ucam_dispatch_mon()
+        self.run_prepobs(evening=True)
 
         self.dm_reset()
         apflog("Slewing to lower el",echo=True)
