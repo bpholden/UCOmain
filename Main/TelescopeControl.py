@@ -1104,6 +1104,8 @@ class TelescopeControl:
 
         return
 
+
+
     def evening_star(self):
         """Aim the APF at the desired target. This calls prep-obs, slewlock, and focus-telescope."""
         if self.is_open()[0] == False:
@@ -1119,20 +1121,6 @@ class TelescopeControl:
 
         # check on weirdness for UCAM host post-reboot
         self.apf.ucam_dispatch_mon()
-
-        # Call prep-obs
-        apflog("Calling prep-obs.",echo=True)
-        prepobs = os.path.join(SCRIPTDIR,'prep-obs') + ' --evening'
-        result, ret_code = apftask_do(prepobs)
-        if result == False:
-            # try again
-            self.dm_reset()
-            result, ret_code = apftask_do(prepobs)
-            if result is False:
-                log_str = "Prep-obs returned error code %d. " % (ret_code)
-                log_str += "Targeting object has failed."
-                apflog(log_str,level='error',echo=True)
-                return
 
         self.dm_reset()
         apflog("Slewing to lower el",echo=True)
