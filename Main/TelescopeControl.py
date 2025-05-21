@@ -214,7 +214,7 @@ class TelescopeControl:
         return s
 
     def list_mon(self,keyword):
-        if keyword['populated'] == False:
+        if keyword['populated'] is False:
             return
 
         name = keyword['name']
@@ -237,7 +237,7 @@ class TelescopeControl:
 
     # Callback for Deadman timer
     def dm_time_mon(self,dmtime):
-        if dmtime['populated'] == False:
+        if dmtime['populated'] is False:
             return
         try:
             self.dmtime = dmtime
@@ -247,7 +247,7 @@ class TelescopeControl:
         return
 
     def dew_pt_mon(self, dew):
-        if dew['populated'] == False:
+        if dew['populated'] is False:
             return
         try:
             dewpt = float(dew['binary'])
@@ -280,7 +280,7 @@ class TelescopeControl:
     # Callback for ok2open permission
     # -- Check that if we fall down a logic hole we don't error out
     def ok_mon(self,ok2open):
-        if ok2open['populated'] == False:
+        if ok2open['populated'] is False:
             return
         try:
             ok = ok2open # historical
@@ -520,7 +520,7 @@ class TelescopeControl:
             apflog("Failed at slewlock - check logs could be a slew failure or a failure to acquire: %s" %(code), level="error", echo=True)
 
         return result
-    
+
 
     def save_movie(self):
         """
@@ -568,7 +568,8 @@ class TelescopeControl:
         self.save_movie()
 
         apflog("Running focus_telescope routine.",echo=True)
-        cmd = os.path.join(SCRIPTDIR,'focus_telescope -c %.3f' % (float(self.pred_tel_focus())*1000.0))
+        focus_tel_str = "focus_telescope -c %.3f" % (float(self.pred_tel_focus())*1000.0)
+        cmd = os.path.join(SCRIPTDIR,focus_tel_str)
         result, code = apftask_do(cmd,cwd=os.path.curdir)
 
         self.stop_movie()
@@ -683,7 +684,7 @@ class TelescopeControl:
         """
 
         if self.test: return True
-        if self.mv_perm.binary == False:
+        if self.mv_perm.binary is False:
             apflog("Waiting for permission to move...", echo=True)
             chk_move = "$checkapf.MOVE_PERM == true"
             result = APFTask.waitFor(self.task, False, chk_move, timeout=600)
@@ -796,7 +797,7 @@ class TelescopeControl:
             apflog("Sun is still up. Current sunel = %4.2f. Can't open." % self.sunel, echo=True)
             return False
 
-        if self.mv_perm.binary == False:
+        if self.mv_perm.binary is False:
             apflog("Waiting for permission to move...", echo=True)
             chk_move = "$checkapf.MOVE_PERM == true"
             result = APFTask.waitFor(self.task, False, chk_move, timeout=600)
@@ -825,7 +826,7 @@ class TelescopeControl:
                 apflog("Second openup attempt also failed. Exit code %d. Giving up." % code,echo=True)
                 return False
         rv = self.check_home()
-        if rv == False:
+        if rv is False:
             return False
         try:
             APFLib.write("eostele.FOCUS",ktl.read("apftask","FOCUSTEL_LASTFOCUS",binary=True))
@@ -842,7 +843,7 @@ class TelescopeControl:
         if self.test: return True
         cmd = os.path.join(SCRIPTDIR,"power_down_telescope")
         self.dm_reset()
-        if self.mv_perm.binary == False:
+        if self.mv_perm.binary is False:
             apflog("Waiting for permission to move")
         chk_mv = '$checkapf.MOVE_PERM == true'
         result = APFTask.waitFor(self.task, False, chk_mv, timeout=300)
@@ -856,7 +857,8 @@ class TelescopeControl:
         if result:
             return True
 
-        apflog("power_down_telescope has failed. Human intervention likely required.", level='alert', echo=True)
+        apflog("power_down_telescope has failed. Human intervention likely required.",
+                level='alert', echo=True)
         return False
 
 
@@ -878,7 +880,6 @@ class TelescopeControl:
             if val:
                 servo_failed = True
                 msg += "Error: Servo Amplifier Fault: " + str(nm) + " " + str(val) + "\n"
-                
 
         for pr in prefixs:
             nm = pr + "FERROR"
@@ -1026,7 +1027,8 @@ class TelescopeControl:
 
     def update_windshield(self, state):
         """Checks the current windshielding mode.
-        If the input state is auto, makes sure the mode is set properly based on wind speed and temperature.
+        If the input state is auto, makes sure the mode is set properly 
+        based on wind speed and temperature.
         Otherwise, the input state defines the mode.
         """
         currMode = self.robot["SCRIPTOBS_WINDSHIELD"].read().strip().lower()
@@ -1130,7 +1132,7 @@ class TelescopeControl:
 
     def evening_star(self):
         """Aim the APF at the desired target. This calls prep-obs, slewlock, and focus-telescope."""
-        if self.is_open()[0] == False:
+        if self.is_open()[0] is False:
             apflog("APF is not open. Can't target a star while closed.",level='error',echo=True)
             return
         self.dm_reset()
@@ -1148,7 +1150,7 @@ class TelescopeControl:
         self.dm_reset()
         apflog("Slewing to lower el",echo=True)
         result, ret_code = apftask_do('slew -e 75')
-        if result == False:
+        if result is False:
             apflog("Slew returned error code %d. Targeting object has failed." % (ret_code),level='error',echo=True)
             return
         # Slew to the specified RA and DEC, set guide camera settings, and centerup( Slewlock )
@@ -1202,4 +1204,3 @@ class TelescopeControl:
         except Exception as e:
             ostr = "Error: cannot touch DM Timer: %s " %( e)
             apflog(ostr,level='error',echo=True)
-
