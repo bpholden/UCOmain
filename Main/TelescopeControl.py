@@ -38,6 +38,11 @@ else:
 SCRIPTDIR = os.path.join(LROOT,'bin/robot/')
 
 class TelescopeControl:
+    '''
+    TelescopeControl
+    This class is used to control the telescope and its associated
+    equipment.
+    '''
     def __init__(self, apf=None, test=False):
         self.apf = apf
         self.test = test
@@ -49,6 +54,7 @@ class TelescopeControl:
         self.lastfocusval = None
 
         self.dew_too_close = False
+        self.openOK = False
 
         self.tel        = ktl.Service('eostele')
         self.sunel      = self.tel('SUNEL')
@@ -126,7 +132,6 @@ class TelescopeControl:
         self.ok2open.callback(self.ok_mon)
 
         self.dmtimer.monitor()
-        self.dmtimer.callback(self.dm_time_mon)
 
         self.teqmode.monitor()
         self.down.monitor()
@@ -196,7 +201,7 @@ class TelescopeControl:
         s += "M2 Focus Value = % 4.3f\n" % (float(self.aafocus['binary'])*1000.0)
         s += "M2 Focus Value = % 4.3f (focus kwd)\n" % (float(self.focus['binary'])*1000.0)
         s += "Preferred M2 Focus Value =  % 4.3f\n" % (float(self.pred_tel_focus())*1000.0)
-        s += "Okay to open = %s -- %s\n" % (self.openOK['ascii'], self.checkapf['OPREASON'].read() )
+        s += "Okay to open = %s -- %s\n" % (self.openOK, self.checkapf['OPREASON'].read() )
         s += "Current Weather = %s\n" % self.checkapf['WEATHER'].read()
 
         isopen, what = self.is_open()
@@ -213,6 +218,13 @@ class TelescopeControl:
         return s
 
     def list_mon(self,keyword):
+        """
+        list_mon(keyword)
+        This is a callback function for the monitor keyword
+        keyword. It is called when the keyword changes.
+        It updates the list of values for the keyword and
+        computes the average value for the keyword.
+        """
         if keyword['populated'] is False:
             return
 
@@ -234,18 +246,13 @@ class TelescopeControl:
 
         return
 
-    # Callback for Deadman timer
-    def dm_time_mon(self,dmtime):
-        if dmtime['populated'] is False:
-            return
-        try:
-            self.dmtime = dmtime
-        except Exception as e:
-            apflog("Exception in dm_time_mon: %s %s" % (type(e), e), level='error')
-
-        return
-
     def dew_pt_mon(self, dew):
+        '''
+        dew_pt_mon(dew)
+        This is a callback function for the dew point.
+        If the mirror temp is too close, logs that and
+        sets the dew_too_close flag.
+        '''
         if dew['populated'] is False:
             return
         try:
@@ -278,7 +285,13 @@ class TelescopeControl:
 
     # Callback for ok2open permission
     # -- Check that if we fall down a logic hole we don't error out
-    def ok_mon(self,ok2open):
+    def ok_mon(self, ok2open):
+        """
+        ok_mon(ok2open)
+        This is a callback function for the ok2open keyword.
+        It also monitors other keywords as a unified check
+        on whether or not it is ok to open the telescope.
+        """
         if ok2open['populated'] is False:
             return
         try:
@@ -287,7 +300,7 @@ class TelescopeControl:
             apflog("Exception in ok_mon for checkapf.OPEN_OK: %s" % (e), level='error')
             return
         try:
-            if self.mv_perm.read(binary=False) == False:
+            if self.mv_perm.read(binary=False) is False:
                 ok = False
         except Exception as e:
             apflog("Exception in ok_mon for checkapf.MOVE_PERM: %s" % (e), level='error')
@@ -903,8 +916,8 @@ class TelescopeControl:
             apflog("Calling a single instance of closeup. Will return regardless of result.", echo=True)
             result, code = apftask_do(cmd)
             return result
-        if self.mv_perm.binary == False:
-            if self.chk_close.binary == True:
+        if self.mv_perm.binary is False:
+            if self.chk_close.binary is True:
                 apflog("Waiting for checkapf to close up")
             else:
                 apflog("Waiting for permission to move")
@@ -947,8 +960,8 @@ class TelescopeControl:
                         apflog("Failure power cycling telescope",echo=True,level="error")
                 if attempts == 7:
                     lstr = "Closeup has failed %d times consecutively. Human intervention likely required." % (attempts)
-                    areopen, whatsopen = self.is_open()
-                    if areopen == True:
+                    areopen, _ = self.is_open()
+                    if areopen is True:
                         # truly dire, the telescope is open
                         apflog(lstr, level='Alert', echo=True)
                     else:
@@ -963,9 +976,8 @@ class TelescopeControl:
             except:
                 apflog("cannot write apftask.MASTER_LAST_CLOSE",level='warn',echo=True)
             return True
-        else:
-            apflog("Closeup could not successfully complete.")
-            return False
+
+        apflog("Closeup could not successfully complete.")
         return False
 
 
@@ -1203,7 +1215,11 @@ class TelescopeControl:
         except Exception as e:
             ostr = "Error: cannot touch DM Timer: %s " %( e)
             apflog(ostr,level='error',echo=True)
+
 def main():
+    """
+    Main function to test the telescope monitors.
+    """
     print("Testing telescope monitors, grabbing and printing out current state.")
 
     task = 'example'
