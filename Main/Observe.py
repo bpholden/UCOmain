@@ -1111,7 +1111,7 @@ if __name__ == "__main__":
     APFTask.waitFor(parent, True, timeout=2)
     print(str(t_apf))
 
-    t_tel = TelescopeControl.Telescope(task=parent, test=True)
+    t_tel = TelescopeControl.TelescopeControl(t_apf, test=True)
     APFTask.waitFor(parent, True, timeout=2)
     print(str(t_tel))
 
