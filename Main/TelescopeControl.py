@@ -314,6 +314,52 @@ class TelescopeControl:
         self.openOK = ok
         return
 
+    def check_sanity(self):
+        """
+        check_sanity()
+
+        Checks the sanity of the APF system.  This includes checking
+        the weather, the dew point, and the wind speed.
+
+        """
+        ret_val = True
+        # check the sanity of the EOS dispatchers
+        pc_keywords = ['PC_EOSCOOLSTA',
+                        'PC_EOSCTRLSTA',
+                        'PC_EOSDOMESTA',
+                        'PC_EOSGCAMSTA',
+                        'PC_EOSMETSSTA',
+                        'PC_EOSTDIOSTA',
+                        'PC_EOSTELESTA',
+                        'PC_EOSTI8KSTA',]
+
+        pc_servers = {
+            'eosgcam': 'dresden',
+            'eostele': 'hamburg',
+            'eosdome': 'hamburg',
+            'eoscool': 'hamburg',
+            'eosctrl' :'hamburg',
+            'eosmets': 'hamburg',
+            'eostdio': 'hamburg',
+            'eosti8k': 'hamburg',
+        }
+
+        for kw in pc_keywords:
+            try:
+                pc_kw = self.apfmon[kw]
+                kw_val = pc_kw.read(binary=True)
+                if kw_val > 4:
+                    # this is a warning or error
+                    apflog("PC keyword %s has value %s, recommend restarting" % (kw,pc_kw['ascii']),level='Crit',echo=True)
+                    srv_name = kw[3:-3].lower()
+                    self.restart(srv_name,host=pc_servers[srv_name.lower()])
+                ret_val = False
+            except Exception as e:
+                apflog("Cannot monitor keyword %s: %s" % (kw,e),echo=True, level='warn')
+                ret_val = False
+
+        return ret_val
+
 
     def sun_rising(self):
         """

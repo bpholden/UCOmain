@@ -29,6 +29,7 @@ except:
     pass
 
 import APFControl
+import TelescopeControl
 import ParseUCOSched
 import UCOScheduler as ds
 from apflog import apflog, logpush
@@ -400,9 +401,10 @@ def main():
     # Aquire an instance of the APF class, which holds
     # wrapper functions for controlling the telescope
     apf = APFControl.APF(task=parent, test=debug)
+    tel = TelescopeControl.TelescopeControl(apf)
     APFTask.waitFor(parent, True, timeout=5)
     apf.init_guide_cam()
-    apf.check_sanity()
+    tel.check_sanity()
     possible_list = ''
     try:
         possible_list = apftask.read('MASTER_STARLIST',timeout=5)
@@ -470,7 +472,7 @@ def main():
         calibrate = None
 
     # Start the main watcher thread
-    observe = Observe.Observe(apf, opt)
+    observe = Observe.Observe(apf, tel, opt)
     _ = getUCOTargets.getUCOTargets(opt, task=parent, wait_time=target_time)
 
     apf.instr_permit()
@@ -504,7 +506,7 @@ def main():
                 err_str = "Observe thread has died. Will attempt to restart."
                 apflog(err_str, level='error', echo=True)
 
-                observe = Observe.Observe(apf,opt)
+                observe = Observe.Observe(apf, tel, opt)
                 observe.task = parent
 
                 observe.start()
@@ -547,8 +549,8 @@ def main():
         apflog(msg, level='Info', echo=True)
 
     # We have finished taking data, and presumably it is the morning.
-    apf.set_apfteq_mode('Morning')
-    apf.close(force=True)
+    tel.set_apfteq_mode('Morning')
+    tel.close(force=True)
 
     # Keep a copy of observed_targets around for a bit just in case
     if os.path.exists(os.path.join(os.getcwd(),"observed_targets")):
@@ -579,7 +581,7 @@ def main():
             logpush(os.path.join(os.getcwd(), fn))
 
     try:
-        apf.ok2open.monitor(start=False)
+        tel.ok2open.monitor(start=False)
     except Exception as e:
         apflog("Note: Cannot stop monitoring ok2open. %s" % (e), level="warn", echo=True)
     # 5) Take morning calibrations
@@ -612,7 +614,7 @@ def main():
 
     # We have done everything we needed to, so leave
     # the telescope in day mode to allow it to start thermalizing to the next night.
-    apf.set_apfteq_mode('Day')
+    tel.set_apfteq_mode('Day')
 
     # Update the last observation number to account for the morning calibration shots.
 
