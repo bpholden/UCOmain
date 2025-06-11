@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     dt = datetime.utcfromtimestamp(int(time.time()))
     for arg in args.target:
-        arg = arg.strip()
+        arg = ParseUCOSched.parse_starname(arg.strip())
         if arg in star_table['name']:
             a_idx, = np.where(star_table['name'] == arg)
             idx = a_idx[0]
