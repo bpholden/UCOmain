@@ -58,3 +58,8 @@ if __name__ == "__main__":
             fp.write(bline + " # temp=Y\n")
             fp.write(line + " # temp=Y\n")
             fp.write(bfinline + " # temp=Y end\n")
+        else:
+            print("Target %s not found in %s" % (arg, OUTFN))
+            continue
+    fp.close()
+    print("Template entries for %s written to tonight.lst" % (args.target))
