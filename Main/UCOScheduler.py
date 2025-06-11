@@ -481,6 +481,8 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
         ret += 'texp=%d ' % int(star_table_row['texp'])
 
     # I2
+    if temp:
+        I2 = 'N'
     ret += 'I2=%s ' % (I2)
     # lamp
     ret += 'lamp=none '
@@ -495,6 +497,10 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
     else:
         ret += 'expcount=%.3g ' % (star_table_row['expcount'])
     # Decker
+    if temp and star_table_row['Vmag'] > 9:
+        decker = 'W'
+    elif temp and star_table_row['Vmag'] <= 9:
+        decker = 'N'
     ret += 'decker=%s ' % (decker)
     # do flag
     if star_table_row['do']:
