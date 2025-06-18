@@ -803,7 +803,7 @@ class Observe(threading.Thread):
                        echo=True)
                 closing()
 
-            self.apf.userkind.read(timeout=1)
+            self.apf.userkind.read(timeout=5)
             if self.apf.userkind.binary != 3:
                 if do_msg == 0:
                     msg = "checkapf.USERKIND is no longer Robotic, instead %s" % (self.apf.userkind.ascii)
