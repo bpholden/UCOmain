@@ -804,7 +804,7 @@ class Observe(threading.Thread):
                 closing()
 
             try:
-                self.apf.userkind.read(timeout=5)
+                self.apf.userkind.read(timeout=1)
                 userkind_read = True
             except ktl.TimeoutException:
                 apflog("Timeout reading userkind, trying to recover", echo=True, level='error')
