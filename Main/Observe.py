@@ -803,8 +803,13 @@ class Observe(threading.Thread):
                        echo=True)
                 closing()
 
-            self.apf.userkind.read(timeout=5)
-            if self.apf.userkind.binary != 3:
+            try:
+                self.apf.userkind.read(timeout=5)
+                userkind_read = True
+            except ktl.TimeoutException:
+                apflog("Timeout reading userkind, trying to recover", echo=True, level='error')
+                userkind_read = False
+            if userkind_read and self.apf.userkind.binary != 3:
                 if do_msg == 0:
                     msg = "checkapf.USERKIND is no longer Robotic, instead %s" % (self.apf.userkind.ascii)
                     apflog(msg, echo=True, level='error')
