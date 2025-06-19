@@ -803,24 +803,6 @@ class Observe(threading.Thread):
                        echo=True)
                 closing()
 
-            try:
-                self.apf.userkind.read(timeout=1)
-                userkind_read = True
-            except ktl.TimeoutException:
-                apflog("Timeout reading userkind, trying to recover", echo=True, level='error')
-                userkind_read = False
-            if userkind_read and self.apf.userkind.binary != 3:
-                if do_msg == 0:
-                    msg = "checkapf.USERKIND is no longer Robotic, instead %s" % (self.apf.userkind.ascii)
-                    apflog(msg, echo=True, level='error')
-                    APFTask.set(self.task, suffix="MESSAGE", value=msg, wait=False)
-                    do_msg += 1
-                APFTask.waitFor(self.task, True, timeout=60)
-                continue
-            elif self.apf.userkind.binary == 3:
-                do_msg = 0
-
-
             # Check the slowdown factor to close for clouds
             if self.VMAG is not None and self.BV is not None and False:
                 slow = calc_slowdown()
