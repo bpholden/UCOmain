@@ -94,6 +94,7 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
     cadence_check = ephem.julian_date(cur_dt) - star_table['lastobs']
     good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
+    really_bad_candence = cadence_check < .7
 
     started_doubles = star_table['night_cad'] > 0
     started_doubles = started_doubles & (star_table['night_obs'] > 0)
@@ -122,11 +123,13 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
             if sheetn not in done_sheets:
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += rank_table['rank'][rank_table['sheetn'] == sheetn]
-                new_pri[cur & bad_cadence] += bad_pri[(cur & bad_cadence)]
+                new_pri[cur & bad_cadence] += 2*bad_pri[(cur & bad_cadence)]
+                new_pri[cur & really_bad_candence] += bad_pri[(cur & really_bad_candence)]
             else:
                 cur = star_table['sheetn'] == sheetn
                 new_pri[cur & good_cadence] += 100
-                new_pri[cur & bad_cadence] += bad_pri[(cur & bad_cadence)]
+                new_pri[cur & bad_cadence] += 2*bad_pri[(cur & bad_cadence)]
+                new_pri[cur & really_bad_candence] += bad_pri[(cur & really_bad_candence)]
 
     done_all = (star_table['nobs'] >= star_table['totobs']) & (star_table['totobs'] > 0)
     new_pri[done_all] = 0
