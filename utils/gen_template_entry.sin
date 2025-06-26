@@ -26,17 +26,25 @@ if __name__ == "__main__":
         nargs="+",
         help="Name of the target to generate the template entry for"
     )
+    parser.add_argument(
+        "-g","--googledex",
+        metavar="googledex.dat",
+        type=str,
+        default="googledex.dat",
+        help="Path to the googledex.dat file"
+    )
     args =  parser.parse_args()
 
-    OUTDIR = "."
-    OUTFN = "googledex.dat"
-    if os.path.exists(os.path.join(OUTDIR, OUTFN)) is False:
-        print("No %s, no worky" % (OUTFN))
+    if os.path.exists(args.googledex) is False:
+        print("No %s, no worky" % (args.googledex))
         sys.exit()
 
-
-    fp = open("tonight.lst", "a+")
-    star_table, stars  = ParseUCOSched.parse_UCOSched(outfn=OUTFN,outdir=OUTDIR)
+    outdir = os.path.dirname(args.googledex)
+    if outdir == "":
+        outdir = "."
+    fp = open("tonight.lst", "a+", encoding="utf-8")
+    star_table, stars  = ParseUCOSched.parse_UCOSched(outfn=os.path.basename(args.googledex),
+                                                      outdir=outdir)
     bstars = star_table['Bstar'] == "Y"
 
     dt = datetime.utcfromtimestamp(int(time.time()))
@@ -59,7 +67,7 @@ if __name__ == "__main__":
             fp.write(line + " # temp=Y\n")
             fp.write(bfinline + " # temp=Y end\n")
         else:
-            print("Target %s not found in %s" % (arg, OUTFN))
+            print("Target %s not found in %s" % (arg, args.googledex))
             continue
     fp.close()
     print("Template entries for %s written to tonight.lst" % (args.target))
