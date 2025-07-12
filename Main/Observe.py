@@ -577,7 +577,7 @@ class Observe(threading.Thread):
                 apflog("opening hasn't successfully opened. Current sunel = %4.2f" % (float(sunel)), level='warn', echo=True)
                 if float(sunel) < SchedulerConsts.SUNEL_ENDLIM:
                     result = self.tel.openat(sunset=sunset)
-                    if not result and self.tel.openOK['binary']:
+                    if not result and self.tel.openOK:
                         apflog("Error: opening has failed twice, likely needs intervention.", level='Alert', echo=True)
                         self.tel.close()
                         self.can_open = False
@@ -788,7 +788,7 @@ class Observe(threading.Thread):
             self.tel.check_FCUs(check_apfmon=True)
             # Check and close for weather
 
-            self.bad_weather = self.tel.dew_too_close or not self.tel.openOK \
+            self.bad_weather = self.tel.dew_too_close \
                 or not self.apf.gcam_power.binary
 
             if self.tel.is_open()[0] and self.bad_weather:
@@ -796,8 +796,8 @@ class Observe(threading.Thread):
                 APFTask.set(self.task, suffix="MESSAGE", \
                             value="Closing for weather or instrument issues", wait=False)
                 apflog("No longer ok to open: %s." % (closetime), echo=True)
-                apflog("OPREASON: " + self.tel.checkapf["OPREASON"].read(), echo=True)
-                apflog("WEATHER: " + self.tel.checkapf['WEATHER'].read(), echo=True)
+                apflog("OPREASON: " + str(self.tel.checkapf["OPREASON"].read()), echo=True)
+                apflog("WEATHER: " + str(self.tel.checkapf['WEATHER'].read()), echo=True)
                 apflog("CLOSE TO DEW POINT: %s" % (str(self.tel.dew_too_close)), echo=True)
                 apflog("Guider camera power: %s" % ("ON" if self.apf.gcam_power.binary else "OFF"), \
                        echo=True)
@@ -910,7 +910,7 @@ class Observe(threading.Thread):
                                                          expression=chk_done, \
                                                             timeout=60)
                                 self.tel.dm_reset()
-                                if self.tel.openOK['binary'] is False:
+                                if self.tel.openOK is False:
                                     closetime = datetime.datetime.now()
                                     APFTask.set(self.task, suffix="MESSAGE",\
                                                  value="Closing for weather", wait=False)

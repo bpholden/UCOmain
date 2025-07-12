@@ -295,7 +295,7 @@ class TelescopeControl:
         if ok2open['populated'] is False:
             return
         try:
-            ok = ok2open # historical
+            ok = ok2open['binary'] # historical
         except Exception as e:
             apflog("Exception in ok_mon for checkapf.OPEN_OK: %s" % (e), level='error')
             return
