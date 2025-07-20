@@ -7,9 +7,21 @@ import ObservedLog
 import ParseUCOSched
 
 if __name__ == "__main__":
+
+    helptext = """
+    This script updates the Google Sheets with the latest observed targets and their corresponding data.
+    It requires two input files:
+    1. The list of observed targets (observed_targets)
+    2. A local copy of the star table (googledex.dat)
+
+    The newest saved versions will have a .1 suffix added to the filename.
+    """
+
     if len(sys.argv) <= 2:
-        print("needs the list of observed targets (observed_targets) and a local copy of the star table (googledex.dat)")
-        print("The newewst saved versions will have a .1 suffix added to the filename.")
+        print(helptext)
+        sys.exit()
+    if '--help' in sys.argv or '-h' in sys.argv:
+        print(helptext)
         sys.exit()
     fn = sys.argv[1]
     outfn = sys.argv[2]
