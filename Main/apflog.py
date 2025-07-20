@@ -83,7 +83,7 @@ def timed_alert(subject, msg, to_pre, to_post):
 def apflog(msg, level='Notice', echo=True):
     """Wraps the APF.log function. Messages are logged as 'master'."""
 
-    to_val = ['holden@ucolick.org', 'jrees@ucolick.org']
+    to_val = ['holden@ucolick.org']
     alert_to_val = ['holden@ucolick.org', 'jrees@ucolick.org']
     if level in ['error']:
         subject = "[APF] An Error has occured"
