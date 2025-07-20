@@ -8,7 +8,8 @@ import ParseUCOSched
 
 if __name__ == "__main__":
     if len(sys.argv) <= 2:
-        print("needs a observed log and a local copy of the star table")
+        print("needs the list of observed targets (observed_targets) and a local copy of the star table (googledex.dat)")
+        print("The newewst saved versions will have a .1 suffix added to the filename.")
         sys.exit()
     fn = sys.argv[1]
     outfn = sys.argv[2]
