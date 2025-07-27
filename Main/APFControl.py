@@ -1178,7 +1178,7 @@ class APF:
             return False
 
         nv = self.combo_ps.waitFor(" == Ok",timeout=30)
-        
+
         if nv:
             apflog("UCAM software combo_ps keyword OK",echo=True)
             self.obsnum.monitor()
