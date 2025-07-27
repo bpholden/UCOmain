@@ -1145,6 +1145,11 @@ class APF:
         ucamstat = apftask['UCAMLAUNCHER_UCAM_STATUS']
 
         try:
+            ktl.write("detectormon","APFUCAMDIS",600,wait=False,binary=True)
+        except:
+            apflog("Cannot write to detectormon.APFUCAMDIS",level='error',echo=True)
+
+        try:
             command.write("Stop")
             apflog("Stopping UCAM software",echo=True)
 
@@ -1173,18 +1178,24 @@ class APF:
             return False
 
         nv = self.combo_ps.waitFor(" == Ok",timeout=30)
-        apflog("UCAM software combo_ps keyword OK",echo=True)
+        
         if nv:
-            return nv
+            apflog("UCAM software combo_ps keyword OK",echo=True)
+            self.obsnum.monitor()
+            self.obsnum.callback(self.update_last_obs)
+
+            self.event.monitor()
+            self.event.callback(self.event_mon)
+            try:
+                ktl.write("detectormon","APFUCAMDIS",0,wait=False,binary=True)
+            except:
+                apflog("Cannot write to detectormon.APFUCAMDIS",level='error',echo=True)
+
+            return True
 
         apflog("UCAM host reboot failure, combo_ps still not ok" , level="alert", echo=True)
 
-        self.obsnum.monitor()
-        self.obsnum.callback(self.update_last_obs)
-
-        self.event.monitor()
-        self.event.callback(self.event_mon)
-
+        return False
 
     def ucam_restart(self, fake=False):
         """
@@ -1198,13 +1209,23 @@ class APF:
             return True
 
         try:
+            ktl.write("detectormon","APFUCAMDIS",120,wait=False,binary=True)
+        except:
+            apflog("Cannot write to detectormon.APFUCAMDIS",level='error',echo=True)
+
+        try:
             apflog("Stop and restarting UCAM software",echo=True)
             ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
             if self.combo_ps.waitFor(" == MissingProcesses",timeout=30):
                 ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
                 nv = self.combo_ps.waitFor(" == Ok",timeout=30)
                 if nv:
-                    return True    
+                    try:
+                        ktl.write("detectormon","APFUCAMDIS",0,wait=False,binary=True)
+                    except:
+                        apflog("Cannot write to detectormon.APFUCAMDIS",level='error',echo=True)
+
+                    return True
                 apflog("UCAM  restart failure, combo_ps still not ok" , level="error", echo=True)
         except:
             apflog("UCAM status bad, cannot restart",level='alert')
