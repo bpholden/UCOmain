@@ -19,7 +19,7 @@ from APFControl import apftask_do, cmd_exec, APF
 
 WINDLIM = 40.0
 SLOWLIM = 100
-WINDSHIELD_LIMIT = 10. # mph at the APF
+WINDSHIELD_LIMIT = 4.5 # mps at the APF
 FOCUSTIME = 3600. # minimum time before checking telescope focus
 TEMP_LIMIT = 35. # deg F at the APF
 wxtimeout = datetime.timedelta(seconds=1800)
@@ -80,11 +80,11 @@ class TelescopeControl:
         self.mv_perm    = self.checkapf('MOVE_PERM')
         self.chk_close  = self.checkapf('CHK_CLOSE')
 
-        self.apfmet     = ktl.Service('met3apf')
-        self.wx         = self.apfmet('M5WIND')
-        self.airtemp    = self.apfmet('M5OUTEMP')
-        self.down       = self.apfmet('M5DOWN')
-        self.altwx      = self.apfmet('M3WIND')
+        self.apfmet     = ktl.Service('apftempest')
+        self.wx         = self.apfmet('APFWIND_AVG')
+        self.airtemp    = self.apfmet('APFAIR_TEMPERATURE')
+        self.down       = self.apfmet('APFSTATUS')
+        
 
         self.eosti8k    = ktl.Service('eosti8k')
         self.m2tempkw   = self.eosti8k('TM2CSUR')
@@ -158,7 +158,7 @@ class TelescopeControl:
 
         for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,\
                    self.t045kw,self.t135kw,self.t225kw,self.t315kw,self.temp3now,\
-                    self.temp4now,self.wx,self.altwx,self.airtemp):
+                    self.temp4now,self.wx,self.airtemp):
             self.mon_lists[kw['name']] = []
             self.avg_lists[kw['name']] = None
             kw.monitor()
@@ -192,7 +192,7 @@ class TelescopeControl:
         s += "Sun elevation = %4.2f %s\n" % (self.sunel, "Rising" if self.sun_rising() else "Setting")
         s += "Telescope -- AZ=%4.2f  EL=%4.2f \n" % (self.aaz, self.ael)
         s += "Front/Rear Shutter=%4.2f / %4.2f\n"%(self.fspos, self.rspos)
-        s += "Wind = %3.1f mph (APF) %3.1f mph (Shane) \n" % (np.average(self.mon_lists['M5WIND']),np.average(self.mon_lists['M3WIND']))
+        s += "Wind = %3.1f mps (APF)  \n" % (np.average(self.mon_lists['APFWIND_AVG']))
         s += "Last open time = %.2f sec\n" % (self.lastopen.binary)
         s += "Time since opening = %6.2f sec\n" % (time.time() - self.lastopen.binary)
         s += "M1 = %5.2f deg C M2 = %5.2f deg C Tel Avg = %5.2f deg C M2 Air = %5.2f deg C FCU3 = %5.2f deg C FCU4 = %5.2f deg C\n" % tuple(self.avgtemps)
@@ -1108,18 +1108,18 @@ class TelescopeControl:
             #if self.down > 0:
             #    wvel = self.avg_lists['M3WIND']
             #else:
-            wvel = self.avg_lists['M5WIND']
+            wvel = self.avg_lists['APFWIND_AVG']
 
             apflog("Current median wind speed is %.2f with the limit %.2f" % \
                    (wvel,WINDSHIELD_LIMIT), level='debug')
             if currMode == 'enable' and wvel <= WINDSHIELD_LIMIT and \
-                float(self.avg_lists['M5OUTEMP']) > TEMP_LIMIT:
+                float(self.avg_lists['APFAIR_TEMPERATURE']) > TEMP_LIMIT:
                 apflog("Setting scriptobs_windshield to Disable")
                 rv = "Disable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
 
             if currMode == 'disable' and (wvel > WINDSHIELD_LIMIT or \
-                                          float(self.avg_lists['M5OUTEMP']) < TEMP_LIMIT):
+                                          float(self.avg_lists['APFAIR_TEMPERATURE']) < TEMP_LIMIT):
                 apflog("Setting scriptobs_windshield to Enable")
                 rv = "Enable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
