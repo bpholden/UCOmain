@@ -1,31 +1,51 @@
 from __future__ import print_function
 import sys
-from optparse import OptionParser
+import argparse
 from datetime import datetime
 import time
-import os
-import pickle
-import re
 
 import numpy as np
-import ephem
 
 sys.path.append("../Main")
-import UCSCScheduler_V2 as ds
-from  fake_apflog import *
-import Coords
-import ParseGoogledex
-import SchedulerConsts as sc
+import ParseUCOSched
 
 
 if __name__ == "__main__":
 
     dt = datetime.utcfromtimestamp(int(time.time()))
 
-    parser = OptionParser()
-    (options, args) = parser.parse_args()    
-    allnames, star_table, flags, stars = ParseGoogledex.parseGoogledex()
-    for i in range(len(stars)):
-        if star_table[i, sc.DS_APFPRI] > 5 and flags['template'][i] == 'N':
-            row = star_table[i,:]
-            print ( allnames[i], flags['owner'][i], star_table[i, sc.DS_APFPRI])
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-g","--googledex",
+        metavar="googledex.dat",
+        type=str,
+        default="googledex.dat",
+        help="Path to the googledex.dat file"
+    )
+    parser.add_argument(
+        "-r","--rank_table",
+        metavar="rank_table.dat",
+        type=str,
+        default="2025B_ranks",
+        help="Name of the rank table"
+    )
+    args = parser.parse_args()
+    if args.googledex:
+        star_table, stars = ParseUCOSched.parse_UCOSched(outfn=args.googledex)
+    elif args.rank_table:
+        sheetns, rank, frac, too = ParseUCOSched.parse_rank_table(sheet_table_name=args.rank_table)
+        star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns)
+    else:
+        sys.exit("No googledex or rank table specified")
+
+    need = (star_table['Template'] == 'N') & (star_table['I2'] == 'Y')
+    need = need & (star_table['Bstar'] == 'N')
+    need = need & (star_table['pri'] > 0)
+    names = star_table['name'][need]
+    for i in range(len(names)):
+        ostr = names[i].strip() + " "
+        ostr += star_table['sheetn'][need][i].strip() + " "
+        ra = star_table['RA hr'][need][i] + ":" + star_table['RA min'][need][i] + ":" + star_table['RA sec'][need][i]
+        dec = star_table['Dec deg'][need][i] + ":" + star_table['Dec min'][need][i] + ":" + star_table['Dec sec'][need][i]
+        ostr += ra + " " + dec
+        print(ostr)
