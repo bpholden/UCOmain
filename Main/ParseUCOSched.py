@@ -598,9 +598,9 @@ def gen_stars(star_table):
 
 
 
-def parse_UCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.dat",
-                   outdir=None,config={'I2': 'Y', 'decker': 'W',  'Bstar' : 'N' },
-                   force_download=False,prilim=0.5,hour_constraints=None):
+def parse_UCOSched(sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, outfn="sched.dat",
+                   outdir=None, config={'I2': 'Y', 'decker': 'W',  'Bstar' : 'N' },
+                   force_download=False, prilim=0.5, hour_constraints=None):
     """ parse_UCOSched parses google sheets and returns the output as a tuple
     This routine downloads the data if needed and saves the output to a file.
     If the file exists, it just reads in the file.
@@ -646,7 +646,7 @@ def parse_UCOSched(sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,outfn="sched.
     stars = gen_stars(star_table)
 
     if len(stars) > 0:
-        astropy.io.ascii.write(star_table,outfn, format='ecsv', overwrite=True)
+        astropy.io.ascii.write(star_table, outfn, format='ecsv', overwrite=True)
     else:
         star_table = None
         stars = None
