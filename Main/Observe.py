@@ -32,7 +32,7 @@ class Observe(threading.Thread):
     """
     def __init__(self, apf, tel, opt, tot_temps=4, task='master'):
         threading.Thread.__init__(self)
-        self.setDaemon(True)
+        self.daemon = True
         self.apf = apf
         self.tel = tel
         self.task = task
