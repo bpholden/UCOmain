@@ -66,6 +66,9 @@ class getUCOTargets(threading.Thread):
 
         if self.signal is False:
             return
+        
+        if self.rank_table is None and self.sheets is None:
+            return
 
         hour_constraints = None
         if os.path.exists(self.time_left):
