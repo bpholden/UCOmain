@@ -340,6 +340,41 @@ def init_phase(opt, apf, parent):
 
     return opt
 
+def establish_master(parent, apftask):
+    ''' Establish this as the only running 
+        apftask main script.
+        Allow values are "master" or "example"
+
+    '''
+
+    ps_state = apftask[parent.upper() + '_PS_STATE']
+    task_status = apftask[parent.upper() + '_STATUS']
+    pid_value = apftask[parent.upper() + '_PID']
+    ps_state.read()
+    task_status.read()
+    pid_value.read()
+    if ps_state.ascii != '' and task_status.binary > 2:
+        # the task is not running, but APFTask sort of thinks
+        # it is.
+        try:
+            ps_state.write('')
+        except:
+            apflog("Cannot write apftask.%s" % (parent.upper() + '_PS_STATE'),\
+                    level='crit', echo=True)
+        v=pid_value.waitFor("<0", timeout=2)
+        if v is False:
+            apflog("Cannot reset apftask.%s" % (parent.upper() + '_PID'),\
+                    level='crit', echo=True)
+
+    try:
+        apflog("Attempting to establish apftask as %s" % parent)
+        APFTask.establish(parent, os.getpid())
+    except:
+        apflog("Cannot establish as name %s." % (parent), echo=True)
+        shutdown()
+
+    return
+
 def main():
     '''
     main()
@@ -374,17 +409,9 @@ def main():
         parent = 'master'
 
 
-    # Establish this as the only running main script ( Or example task in test mode )
-    try:
-        apflog("Attempting to establish apftask as %s" % parent)
-        APFTask.establish(parent, os.getpid())
-    except Exception as e:
-        apflog("Cannot establish as name %s: %s." % (parent,e), echo=True)
-        shutdown()
-    else:
-        # Set up monitoring of the current phase
-        phase = apftask("%s_PHASE" % parent)
-        phase.monitor()
+    establish_master(parent)
+    phase = apftask("%s_PHASE" % parent)
+    phase.monitor()
 
     # Set preliminary signal and tripwire conditions
     apflog("Setting APFTask signal and tripwire.")
