@@ -985,7 +985,7 @@ class Observe(threading.Thread):
             # If we are open and scriptobs isn't running, start it up
             if self.tel.is_ready_observing()[0] and not running \
                 and float(cursunel) <= sunel_lim and self.tel.openOK:
-                focusing = self.apf.focussta['binary'] < 3
+                focusing = self.tel.focussta['binary'] < 3
                 if focusing:
                     apflog("Focusing in progress, waiting for it to finish", echo=True)
                     APFTask.waitFor(self.task, True, timeout=60)
@@ -1050,16 +1050,16 @@ class Observe(threading.Thread):
 
 
             # Keep an eye on the deadman timer if we are open
-            if self.apf.is_open()[0] and self.apf.dmtime <= DMLIM:
-                self.apf.dm_reset()
+            if self.tel.is_open()[0] and self.tel.dmtime <= DMLIM:
+                self.tel.dm_reset()
 
-            if not self.apf.is_open()[0] and not rising:
+            if not self.tel.is_open()[0] and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
                 APFTask.waitFor(self.task, True, timeout=5)
 
-            if  self.apf.is_open()[0] and float(cursunel) > sunel_lim and not rising:
+            if  self.tel.is_open()[0] and float(cursunel) > sunel_lim and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
