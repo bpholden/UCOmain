@@ -81,9 +81,9 @@ class TelescopeControl:
         self.chk_close  = self.checkapf('CHK_CLOSE')
 
         self.apfmet     = ktl.Service('apftempest')
-        self.wx         = self.apfmet('APFWIND_AVG')
-        self.airtemp    = self.apfmet('APFAIR_TEMPERATURE')
-        self.down       = self.apfmet('APFSTATUS')
+        self.wx         = self.apfmet('WINDAV')
+        self.airtemp    = self.apfmet('TEMP')
+        self.down       = self.apfmet('STATUS')
         
 
         self.eosti8k    = ktl.Service('eosti8k')
