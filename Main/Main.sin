@@ -409,7 +409,7 @@ def main():
         parent = 'master'
 
 
-    establish_master(parent)
+    establish_master(parent, apftask)
     phase = apftask("%s_PHASE" % parent)
     phase.monitor()
 
