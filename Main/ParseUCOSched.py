@@ -524,6 +524,8 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
 
         # another case where the column name is not consistent with the scriptobs name
         check = check_flag("Close Companion", didx, ls, r"\A(y|Y)","")
+        if "do" in didx:
+            check = check_flag("do", didx, ls, r"\A(y|Y)","")
         if check == "Y" or check == "y" :
             star_table['do'].append(check)
         else:
