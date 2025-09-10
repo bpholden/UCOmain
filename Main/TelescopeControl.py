@@ -176,7 +176,7 @@ class TelescopeControl:
         # Grab some initial values for the state of the telescope
 
         self.wx.read()
-        self.altwx.read()
+        #self.altwx.read()
         self.dewpt.read()
         self.ok2open.read()
         self.avgtemps = np.asarray([self.avg_lists[nm] for nm in \
