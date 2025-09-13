@@ -192,7 +192,7 @@ class TelescopeControl:
         s += "Sun elevation = %4.2f %s\n" % (self.sunel, "Rising" if self.sun_rising() else "Setting")
         s += "Telescope -- AZ=%4.2f  EL=%4.2f \n" % (self.aaz, self.ael)
         s += "Front/Rear Shutter=%4.2f / %4.2f\n"%(self.fspos, self.rspos)
-        s += "Wind = %3.1f mps (APF)  \n" % (np.average(self.mon_lists['APFWIND_AVG']))
+        s += "Wind = %3.1f mps (APF)  \n" % (np.average(self.mon_lists['WINDAV']))
         s += "Last open time = %.2f sec\n" % (self.lastopen.binary)
         s += "Time since opening = %6.2f sec\n" % (time.time() - self.lastopen.binary)
         s += "M1 = %5.2f deg C M2 = %5.2f deg C Tel Avg = %5.2f deg C M2 Air = %5.2f deg C FCU3 = %5.2f deg C FCU4 = %5.2f deg C\n" % tuple(self.avgtemps)
