@@ -1113,13 +1113,13 @@ class TelescopeControl:
             apflog("Current median wind speed is %.2f with the limit %.2f" % \
                    (wvel,WINDSHIELD_LIMIT), level='debug')
             if currMode == 'enable' and wvel <= WINDSHIELD_LIMIT and \
-                float(self.avg_lists['APFAIR_TEMPERATURE']) > TEMP_LIMIT:
+                float(self.avg_lists['TEMP']) > TEMP_LIMIT:
                 apflog("Setting scriptobs_windshield to Disable")
                 rv = "Disable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
 
             if currMode == 'disable' and (wvel > WINDSHIELD_LIMIT or \
-                                          float(self.avg_lists['APFAIR_TEMPERATURE']) < TEMP_LIMIT):
+                                          float(self.avg_lists['TEMP']) < TEMP_LIMIT):
                 apflog("Setting scriptobs_windshield to Enable")
                 rv = "Enable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
