@@ -1050,7 +1050,7 @@ class Observe(threading.Thread):
 
 
             # Keep an eye on the deadman timer if we are open
-            if self.tel.is_open()[0] and self.tel.dmtime <= DMLIM:
+            if self.tel.is_open()[0] and self.tel.dmtimer <= DMLIM:
                 self.tel.dm_reset()
 
             if not self.tel.is_open()[0] and not rising:
