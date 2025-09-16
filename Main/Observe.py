@@ -804,7 +804,7 @@ class Observe(threading.Thread):
                 closing()
 
             if not self.tel.is_open()[0] and not self.tel.openOK and \
-                self.tel.tel_state == 'Tracking':
+                self.tel.telstate in ['Tracking', 'Slewing']:
                 # we are closed and not ok to open, but the telescope is tracking
                 # this is bad, so close the telescope
                 apflog("Telescope is tracking but dome is closed, closing telescope",\
