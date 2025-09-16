@@ -84,7 +84,6 @@ class TelescopeControl:
         self.wx         = self.apfmet('WINDAV')
         self.airtemp    = self.apfmet('TEMP')
         self.down       = self.apfmet('STATUS')
-        
 
         self.eosti8k    = ktl.Service('eosti8k')
         self.m2tempkw   = self.eosti8k('TM2CSUR')
