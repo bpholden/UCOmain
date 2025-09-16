@@ -63,6 +63,7 @@ class TelescopeControl:
         self.aafocus    = self.tel('AAFOCUS')
         self.focus      = self.tel('FOCUS')
         self.faenable   = self.tel('FAENABLE')
+        self.telstate   = self.tel('TELSTATE')
 
         self.dome       = ktl.Service('eosdome')
         self.rspos      = self.dome('RSCURPOS')
