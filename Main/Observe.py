@@ -458,7 +458,7 @@ class Observe(threading.Thread):
                 apflog("get_target(): Error initializing guide camera.", echo=True, level='warn')
                 if not self.apf.gcam_power.binary:
                     return
-                
+
             if self.apf.apfmon['READYSTA'].read(binary=True) > 4:
                 # this will only be run if there readysta reports at
                 # least an error (which is 5)
@@ -802,6 +802,14 @@ class Observe(threading.Thread):
                 apflog("Guider camera power: %s" % ("ON" if self.apf.gcam_power.binary else "OFF"), \
                        echo=True)
                 closing()
+
+            if not self.tel.is_open()[0] and not self.tel.openOK and \
+                self.tel.tel_state == 'Tracking':
+                # we are closed and not ok to open, but the telescope is tracking
+                # this is bad, so close the telescope
+                apflog("Telescope is tracking but dome is closed, closing telescope",\
+                        level='info', echo=True)
+                self.tel.close(force=False)
 
             # Check the slowdown factor to close for clouds
             if self.VMAG is not None and self.BV is not None and False:
