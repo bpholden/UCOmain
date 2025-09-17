@@ -809,7 +809,7 @@ class Observe(threading.Thread):
                 # this is bad, so close the telescope
                 apflog("Telescope is tracking but dome is closed, closing telescope",\
                         level='info', echo=True)
-                self.tel.close(force=False)
+                closing()
 
             # Check the slowdown factor to close for clouds
             if self.VMAG is not None and self.BV is not None and False:
