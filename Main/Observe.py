@@ -291,6 +291,8 @@ class Observe(threading.Thread):
             return True
         if ct < self.start_time and self.start_time - ct < 180:
             return True
+        if ct - self.start_time > 3600:
+            self.start_time = None
         return False
 
 
@@ -438,7 +440,7 @@ class Observe(threading.Thread):
 
             # Check for a valid seeing measurment. If there isn't one, use a default
             if self.apf.avg_fwhm == 0.:
-                ostr = "get_target(): Warning AVG_FWHM is 0." 
+                ostr = "get_target(): Warning AVG_FWHM is 0."
                 ostr += " A default value of 15 will be used in its place."
                 apflog(ostr, echo=True)
                 seeing = 15
