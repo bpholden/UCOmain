@@ -493,7 +493,7 @@ class Observe(threading.Thread):
 
             if self.target is None:
                 log_str = "No acceptable target was found. "
-                log_str += "Since there does not seem to be anything to observe"
+                log_str += "Since there does not seem to be anything to observe, "
                 log_str += "%s will now shut down." % (self.name)
                 apflog(log_str, echo=True)
                 # Send scriptobs EOF to finish execution -
