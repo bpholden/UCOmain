@@ -382,8 +382,9 @@ def time_check(star_table, totexptimes, dt, start_time=None):
         # JFC, this is a mess
         utc_offset = datetime.datetime.utcnow() - datetime.datetime.now()
         curr_time = float(dt.strftime('%s')) - utc_offset.total_seconds()
-        maxexptime = start_time - curr_time
-        maxfaintexptime = start_time - curr_time
+        if curr_time < start_time:
+            maxexptime = start_time - curr_time
+            maxfaintexptime = start_time - curr_time
 
     if maxexptime < SchedulerConsts.TARGET_EXPOSURE_TIME_MIN:
         maxexptime = SchedulerConsts.TARGET_EXPOSURE_TIME_MIN
@@ -1283,7 +1284,11 @@ def test_failure(starttime, tsheet_list, RANK_TABLEN):
         pass
     result = get_next(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
                      template=True, rank_sheetn=RANK_TABLEN)
-
+    print(result)
+    print("Nonsensical start time")
+    result = get_next(starttime, 7.99, 0.4, bstar=True, sheetns=tsheet_list, \
+                     template=True, rank_sheetn=RANK_TABLEN, start_time=1)
+    print(result)
     return
 
 def test_templates(tsheet_list):
@@ -1330,17 +1335,16 @@ def test_main():
     else:
         hour_constraints = None
 
-    RANK_TABLEN='2025A_ranks_operational'
+    RANK_TABLEN='2025B_ranks_operational'
     trank_table = make_rank_table(RANK_TABLEN, hour_constraints=hour_constraints)
 
-    thour_table = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
+    _ = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
 
     tsheet_list = list(trank_table['sheetn'][trank_table['rank'] > 0])
 
 
     starttime = test_basic_ops(tsheet_list, RANK_TABLEN)
 
-    print("Testing a failure")
     test_failure(starttime, tsheet_list, RANK_TABLEN)
     test_templates(tsheet_list)
 
