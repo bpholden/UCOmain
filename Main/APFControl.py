@@ -5,10 +5,7 @@ import subprocess
 import time
 import os
 import os.path
-import math
 import datetime
-
-import numpy as np
 
 try:
     from apflog import apflog
@@ -179,7 +176,6 @@ class APF:
         self.checkapf   = ktl.Service('checkapf')
         self.userkind   = self.checkapf('USERKIND')
         self.instr_perm = self.checkapf('INSTR_PERM')
-    
 
         self.kcountrate.monitor()
         self.kcountrate.callback(self.countrate_mon)
@@ -197,8 +193,8 @@ class APF:
         self.nerase.monitor()
         self.gcam_power.monitor()
 
-        self.calsta.monitor() 
-        self.focussta.monitor() 
+        self.calsta.monitor()
+        self.focussta.monitor()
 
         self.counts.monitor()
         self.vmag.monitor()
@@ -241,7 +237,7 @@ class APF:
     ## these are always running
 
     def ucam_dispatch_mon(self):
-        if self.ucamd0sta['populated'] == False:
+        if self.ucamd0sta['populated'] is False:
             return
         try:
             apfmon_stat = self.ucamd0sta['binary']
@@ -253,9 +249,9 @@ class APF:
             return
 
         return
-    
+
     def count_mon(self, counts):
-        if counts['populated'] == False:
+        if counts['populated'] is False:
             return
         try:
             cnts = counts['binary']
@@ -273,7 +269,7 @@ class APF:
 
 
     def countrate_mon(self, kcountrate):
-        if kcountrate['populated'] == False:
+        if kcountrate['populated'] is False:
             return
 
         try:
@@ -287,7 +283,7 @@ class APF:
         return
 
     def event_mon(self, event):
-        if event['populated'] == False:
+        if event['populated'] is False:
             return
 
         try:
@@ -311,11 +307,8 @@ class APF:
         except:
             return
 
-
-
-
     def apftask_mon(self, status):
-        if status['populated'] == False:
+        if status['populated'] is False:
             return
         try:
             status_val = status['binary']
@@ -324,7 +317,7 @@ class APF:
 
         hosts = dict()
         hosts['METSXFER'] = 'frankfurt.ucolick.org'
-        hosts['APFTEQ'] = 'hamburg.ucolick.org'
+        hosts['APFTEQ'] = 'bremen.ucolick.org'
 
 
         if status_val > 0:
@@ -358,6 +351,10 @@ class APF:
 
 
     def restart(self, name, host):
+        '''
+        restart(name, host)
+        Restart the apfmon service name on host.
+        '''
         apfcmd = os.path.join(LROOT,"bin/apf")
         restart_str = '%s restart %s' % (apfcmd,name)
         cmdlist = ["ssh", "-f", host, restart_str]
@@ -368,8 +365,14 @@ class APF:
         return
 
 
-    def mini_mon_mon(self,sta,host="hamburg"):
-        if sta['populated'] == False:
+    def mini_mon_mon(self, sta, host="bremen"):
+        '''
+        mini_mon_mon(sta, host="bremen")
+        Callback for the apfminimon keywords.
+        If the status is warning or higher, restart the appropriate
+        apfmon service on the host specified (default bremen).
+        '''
+        if sta['populated'] is False:
             return
         try:
             sta_val = sta['binary']
@@ -379,29 +382,18 @@ class APF:
         if sta_val > 3:
             # warning or higher
             nmsta = sta['name'].lower()
-            name = nmsta[0:7] # this relies on the fact that all of the STA 
+            name = nmsta[0:7] # this relies on the fact that all of the STA
             # variables are serviceSTA and service is
-            self.restart(name,host)
-        return
-
-    def apfmon_mon(self,sta,host="shadow"):
-        if sta['populated'] == False:
-            return
-        try:
-            sta_val = sta['binary']
-        except:
-            return
-
-        if sta_val > 3:
-            # warning or higher
-            nmsta = sta['name'].lower()
-            name = "apf" + nmsta[0:7]
-            # this relies on the fact that all of the STA
-            # variables are serviceSTA and service is
-            self.restart(name,host)
+            self.restart(name, host)
         return
 
     def apftask_status_mon(self,sta):
+        '''
+        apftask_status_mon(sta)
+        Callback for the apftask status keywords.
+        If the status is exited, check the pid and if it is
+        non-zero, clear the PS state keyword.
+        '''
         if sta['populated'] is False:
             return
         try:
@@ -700,7 +692,7 @@ class APF:
         This function tries to fix that by closing the hatch and then
         opening the hatch again.
         '''
-        if self.hatchpos['populated'] == False:
+        if self.hatchpos['populated'] is False:
             return
 
         try:
@@ -762,7 +754,8 @@ class APF:
         self.validate_UCAM_outputs()
 
         lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal","useref"])
-        if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
+        if float(lastfocus_dict["lastfocus"]) > DEWARMAX or\
+              float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
         if bool(lastfocus_dict["useref"]) is False:
             self.robot['FOCUSINSTR_USEREF'].write(True,binary=True)
@@ -784,7 +777,13 @@ class APF:
         dewarfocraw = self.dewarfoc.read(binary=True)
 
         if  (dewarfocraw > DEWARMAX or dewarfocraw < DEWARMIN):
-            apflog("Focusinstr has failed, result = %s, current focus is value = %d, and last value was %s." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
+            logstr = "Focusinstr has failed, result = %s, " % ( str(result))
+            logstr += "but dewar focus is %d which is outside the " % (dewarfocraw)
+            logstr += "acceptable range of %d to %d. "\
+                      % (DEWARMIN, DEWARMAX)
+            logstr += "Setting dewar focus to last good value of %s. "\
+                  % (lastfocus_dict["lastfocus"])
+            apflog(logstr, level='error', echo=True)
             APFLib.write("apfmot.DEWARFOCRAW", lastfocus_dict["lastfocus"])
             return False
 
@@ -828,7 +827,8 @@ class APF:
                 ip = self.instr_perm.read()
             except:
                 ip = 'Unknown'
-            apflog("Cannot enable instrument to move stages but instr_perm is %s" % (ip), level='alert',echo=True)
+            apflog("Cannot enable instrument to move stages but instr_perm is %s" \
+                   % (ip), level='alert',echo=True)
             return rv
 
         try:
@@ -1000,6 +1000,10 @@ class APF:
                 apflog(errstr,level="Warn",echo=True)
 
     def turn_on_ucam(self):
+        """
+        turn_on_ucam()
+        Turns on the UCAM power supply and starts the UCAM software.
+        """
 
         self.ucampower.write('On',wait=False)
         rv = self.ucampower.waitFor('== On',timeout=30)
@@ -1281,7 +1285,7 @@ class APF:
                 return False
 
         return True
-    
+
     def ucam_watchdir(self):
         '''
         
@@ -1305,6 +1309,9 @@ class APF:
         return False
 
 def main():
+    """
+    Main function to test the APF monitors.
+    """
     print("Testing APF monitors, grabbing and printing out current state.")
 
     task = 'example'
