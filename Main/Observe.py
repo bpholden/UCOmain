@@ -615,6 +615,8 @@ class Observe(threading.Thread):
             self.tel.check_FCUs()
             ds.zero_last_objs_attempted()
             self.star_failures = 0
+            self.can_open = True
+
             return
 
 
