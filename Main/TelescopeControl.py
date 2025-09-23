@@ -111,7 +111,7 @@ class TelescopeControl:
         self.robot        = ktl.Service('apftask')
         self.autofoc      = self.robot["SCRIPTOBS_AUTOFOC"]
         self.slew_allowed = self.robot['SLEW_ALLOWED']
-        self.line        = self.robot['SCRIPTOBS_LINE'] 
+        self.line        = self.robot['SCRIPTOBS_LINE']
         self.vmag        = self.robot['SCRIPTOBS_VMAG']
 
         self.apfteqsta    = self.robot['APFTEQ_STATUS']
@@ -471,6 +471,13 @@ class TelescopeControl:
     # Fucntion for checking what is currently open on the telescope
 
     def is_ready_observing_direct(self):
+        '''
+        
+        is_ready_observing_direct()
+        Checks the state of the mirror cover and dome shutter
+        to determine if the telescope is ready for observing.
+        Queries the keywords directly rather than going
+        through checkapf.WHATSOPN.'''
         what = ''
         rv = False
         try:
@@ -839,7 +846,8 @@ class TelescopeControl:
            and behave accodingly. Otherwise it will return True.
         """
         # If this is a test run, just return True
-        if self.test: return True
+        if self.test: 
+            return True
 
         if not self.ok2open:
             # This should really never happen. In case of a temporary condition, we give
@@ -864,7 +872,7 @@ class TelescopeControl:
                 return False
 
         if self.state_set():
-            apflog("An unusal emergency state is set.", level="error",echo=True)
+            apflog("An unusual emergency state is set.", level="alert",echo=True)
             return False
 
         # Everything seems acceptable, so lets try opening
@@ -956,7 +964,8 @@ class TelescopeControl:
         On failures retries, and also sends alerts. Good for waking people up.
         """
 
-        if self.test: return True
+        if self.test: 
+            return True
         cmd = os.path.join(SCRIPTDIR,"closeup")
         if force:
             apflog("Calling a single instance of closeup. Will return regardless of result.", echo=True)
