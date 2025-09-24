@@ -596,7 +596,7 @@ class Observe(threading.Thread):
 
             self.append_selected("closing")
 
-            APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
+            APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
 
             rv = self.apf.disable_inst()
             rv = self.tel.close(force=force)
@@ -699,7 +699,7 @@ class Observe(threading.Thread):
             '''
             # Update the last obs file
 
-            APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
+            APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
             self.apf.validate_UCAM_outputs()
             self.apf.apftask_mon(self.tel.metxfersta)
             self.apf.apftask_mon(self.tel.apfteqsta)

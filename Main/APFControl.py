@@ -517,10 +517,10 @@ class APF:
                    (self.desired_outfile, self.outfile),level='error',echo=True)
             self.outfile.write(self.outfile)
 
-        if self.obsnum < self.robot["MASTER_LAST_OBS_UCSC"]:
+        if self.obsnum < self.robot["MASTER_LAST_OBS"]:
             apflog("Output file number is %s which is less than the last logged value %s"\
-                    % (self.obsnum, self.robot["MASTER_LAST_OBS_UCSC"]),level='error',echo=True)
-            self.obsnum.write(self.robot["MASTER_LAST_OBS_UCSC"])
+                    % (self.obsnum, self.robot["MASTER_LAST_OBS"]),level='error',echo=True)
+            self.obsnum.write(self.robot["MASTER_LAST_OBS"])
 
         return
 
@@ -917,7 +917,7 @@ class APF:
 
         if obsnum['populated']:
             if obsnum >= 10000:
-                APFLib.write(self.robot["MASTER_LAST_OBS_UCSC"], obsnum)
+                APFLib.write(self.robot["MASTER_LAST_OBS"], obsnum)
 
         return
 
