@@ -16,7 +16,7 @@ import datetime
 import astropy.io.ascii
 import astropy.time
 
-# UCSC script for the task that runs everything
+# Script for the task that runs everything
 # Monitors and operates the APF for an observing night
 
 
@@ -313,7 +313,7 @@ def set_obs_defaults(opt):
     opt.owner = 'public'
     if opt.obsnum is None:
         apflog("Figuring out what the observation number should be.", echo=True)
-        opt.obsnum = find_obs_num(int(ktl.read('apftask','MASTER_LAST_OBS_UCSC', binary=True)))
+        opt.obsnum = find_obs_num(int(ktl.read('apftask','MASTER_LAST_OBS', binary=True)))
     else:
         opt.obsnum = int(opt.obsnum)
 
@@ -624,7 +624,7 @@ def main():
             APFTask.set(parent, suffix="MESSAGE",value="Calibrate Post failed twice",wait=False)
 
     if not debug:
-        APFTask.set(parent, suffix="LAST_OBS_UCSC", value=apf.ucam["OBSNUM"].read())
+        APFTask.set(parent, suffix="LAST_OBS", value=apf.ucam["OBSNUM"].read())
 
     bin_str = "%d,%d" % (1,1)
     apf.ucam['BINNING'].write(bin_str)
@@ -646,7 +646,7 @@ def main():
     # Update the last observation number to account for the morning calibration shots.
 
     if not debug:
-        APFTask.set(parent, suffix="LAST_OBS_UCSC", value=apf.ucam["OBSNUM"].read())
+        APFTask.set(parent, suffix="LAST_OBS", value=apf.ucam["OBSNUM"].read())
         ostr = "Updating last observation number to %s" % (apf.ucam["OBSNUM"].read())
         APFTask.set(parent, suffix="MESSAGE",value=ostr,wait=False)
         apftask('MASTER_STARLIST').write('',wait=False)
