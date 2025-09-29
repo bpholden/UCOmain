@@ -121,7 +121,6 @@ class Observe(threading.Thread):
                 self.sheetn = ["RECUR_A100",]
 
         self.can_open = True
-        self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
 
     def append_selected(self, curstr):
         """
@@ -582,7 +581,6 @@ class Observe(threading.Thread):
                         apflog("Error: opening has failed twice, likely needs intervention.", level='Alert', echo=True)
                         self.tel.close()
                         self.can_open = False
-                        self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
 
             self.tel.check_FCUs()
             self.tel.dm_reset()
@@ -618,7 +616,6 @@ class Observe(threading.Thread):
             ds.zero_last_objs_attempted()
             self.star_failures = 0
             self.can_open = True
-            self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
 
             return
 
