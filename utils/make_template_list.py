@@ -45,6 +45,7 @@ if __name__ == "__main__":
     for i in range(len(names)):
         ostr = names[i].strip() + " "
         ostr += star_table['sheetn'][need][i].strip() + " "
+        ostr += str(star_table['Vmag'][need][i]) + " "
         ra = star_table['RA hr'][need][i] + ":" + star_table['RA min'][need][i] + ":" + star_table['RA sec'][need][i]
         dec = star_table['Dec deg'][need][i] + ":" + star_table['Dec min'][need][i] + ":" + star_table['Dec sec'][need][i]
         ostr += ra + " " + dec
