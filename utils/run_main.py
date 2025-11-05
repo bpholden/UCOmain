@@ -68,7 +68,7 @@ def read_config(configfile,runstr):
     program = programs[srun]
     program_config = remap_config(config.items(program))
     
-    last = int(ktl.read('apftask','MASTER_LAST_OBS_UCSC',binary=True))
+    last = int(ktl.read('apftask','MASTER_LAST_OBS',binary=True))
 
     if program_config['obsnum'] == "ucsc":
         program_config['obsnum'] = findUCSCObsNum(last)
@@ -101,7 +101,7 @@ def findAPFObsNum(last):
 
 
 def findUCSCObsNum():
-    last = int(ktl.read('apftask','MASTER_LAST_OBS_UCSC',binary=True))
+    last = int(ktl.read('apftask','MASTER_LAST_OBS',binary=True))
         
     last += 100 - (last % 100)
 

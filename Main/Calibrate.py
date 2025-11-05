@@ -109,7 +109,7 @@ class Calibrate(threading.Thread):
         result = self.apf.focusinstr()
         apflog("Focus has finished.",echo=True)
 
-        APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
+        APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
 
         return result
 
@@ -142,7 +142,7 @@ class Calibrate(threading.Thread):
             return False
 
         result = self.apf.calibrate(script = self.calfile, time = ctime)
-        APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
+        APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
 
         if result is False:
             sunel = float(eostele["sunel"].read())

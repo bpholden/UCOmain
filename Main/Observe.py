@@ -54,8 +54,8 @@ class Observe(threading.Thread):
         self.signal = True
         self.scriptobs = None
 
-        self.BV = None
-        self.VMAG = None
+        self.bmv = None
+        self.vmag = None
         self.blank = False
         self.decker = "W"
 
@@ -121,6 +121,7 @@ class Observe(threading.Thread):
                 self.sheetn = ["RECUR_A100",]
 
         self.can_open = True
+        self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
 
     def append_selected(self, curstr):
         """
@@ -310,13 +311,13 @@ class Observe(threading.Thread):
             if self.blank:
                 return self.apf.robot["MASTER_SLOWDOWN"].read()
 
-            if self.BV is None:
+            if self.bmv is None:
                 ostr = "Warning!: Ended up in get_target() with no B Magnitude value, "
                 ostr += "color will be guessed."
                 apflog(ostr, echo=True)
-                self.BV = 0.6 # use a default average
+                self.bmv = 0.6 # use a default average
 
-            if self.VMAG is None:
+            if self.vmag is None:
                 ostr = "Warning!: Ended up in get_target() with no V magnitude, "
                 ostr += "assumed a slowdown of 5."
                 return 5
@@ -333,10 +334,10 @@ class Observe(threading.Thread):
 
             slowdown = 1
             apflog("Calculating expected counts")
-            apflog("self.VMAG [%4.2f] - self.BV [%4.2f] - self.apf.ael [%4.2f]"\
-                    % (self.VMAG, self.BV, self.tel.ael))
-            exp_cnts_sec = ExposureCalculations.getEXPMeter_Rate(self.VMAG, \
-                                                                 self.BV, self.tel.ael, \
+            apflog("self.vmag [%4.2f] - self.bmv [%4.2f] - self.apf.ael [%4.2f]"\
+                    % (self.vmag, self.bmv, self.tel.ael))
+            exp_cnts_sec = ExposureCalculations.getEXPMeter_Rate(self.vmag, \
+                                                                 self.bmv, self.tel.ael, \
                                                                     self.apf.avg_fwhm, \
                                                                         self.decker)
             try:
@@ -525,8 +526,8 @@ class Observe(threading.Thread):
 
 
             # Set the Vmag and B-V mag of the latest target
-            self.VMAG = self.target["VMAG"]
-            self.BV = self.target["BV"]
+            self.vmag = self.target["VMAG"]
+            self.bmv = self.target["BV"]
             self.decker = self.target["DECKER"]
             istemp = str(self.target['isTemp'])
             if self.target["mode"] == 'B' or self.target["mode"] == 'A':
@@ -535,7 +536,7 @@ class Observe(threading.Thread):
                 self.blank = False
 
             apflog("get_target(): V=%.2f  B-V=%.2f Pri=%.2f "\
-                    % (self.VMAG, self.BV, self.target["PRI"]))
+                    % (self.vmag, self.bmv, self.target["PRI"]))
             apflog("get_target(): FWHM=%.2f  Slowdown=%.2f  Countrate=%.2f"\
                     % (self.apf.avg_fwhm, slowdown, self.apf.countrate))
 
@@ -557,6 +558,7 @@ class Observe(threading.Thread):
             if self.tel.robot["SLEW_ALLOWED"].read(binary=True) == False:
                 apflog("Opening: Slewing not allowed, so not opening", echo=True)
                 self.can_open = False
+                self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
                 return False
             when = "night"
             if sunset:
@@ -581,6 +583,7 @@ class Observe(threading.Thread):
                         apflog("Error: opening has failed twice, likely needs intervention.", level='Alert', echo=True)
                         self.tel.close()
                         self.can_open = False
+                        self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
 
             self.tel.check_FCUs()
             self.tel.dm_reset()
@@ -596,7 +599,7 @@ class Observe(threading.Thread):
 
             self.append_selected("closing")
 
-            APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
+            APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
 
             rv = self.apf.disable_inst()
             rv = self.tel.close(force=force)
@@ -615,6 +618,8 @@ class Observe(threading.Thread):
             self.tel.check_FCUs()
             ds.zero_last_objs_attempted()
             self.star_failures = 0
+            self.can_open = True
+            self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
             return
 
 
@@ -697,7 +702,7 @@ class Observe(threading.Thread):
             '''
             # Update the last obs file
 
-            APFTask.set(self.task, suffix="LAST_OBS_UCSC", value=self.apf.ucam["OBSNUM"].read())
+            APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
             self.apf.validate_UCAM_outputs()
             self.apf.apftask_mon(self.tel.metxfersta)
             self.apf.apftask_mon(self.tel.apfteqsta)
@@ -745,12 +750,10 @@ class Observe(threading.Thread):
                     self.fixed_list = None
 
             else:
-                if self.BV is None:
+                if self.bmv is None:
                     apflog("No B-V value at the moment", echo=True)
-                    #self.BV = 0.028
-                if self.VMAG is None:
+                if self.vmag is None:
                     apflog("No VMag value at the moment", echo=True)
-                    #self.VMAG = None
                 # We wish to observe with the dynamic scheduler
             _, running = self.apf.find_robot()
             if running is False:
@@ -812,7 +815,7 @@ class Observe(threading.Thread):
                 closing()
 
             # Check the slowdown factor to close for clouds
-            if self.VMAG is not None and self.BV is not None and False:
+            if self.vmag is not None and self.bmv is not None and False:
                 slow = calc_slowdown()
                 APFTask.set(self.task, suffix="MESSAGE", value="FWHM = %.2f and slowdown %.2f" % (self.apf.avg_fwhm, slow), wait=False)
                 if slow > 16:
@@ -821,8 +824,8 @@ class Observe(threading.Thread):
                     apflog("Slowdown factor of %.2f is too high. Waiting 30 min to check again." % slow, echo=True)
                     closing()
                     APFTask.waitfor(self.task, True, timeout=60*30)
-                    self.VMAG = None
-                    self.BV = None
+                    self.vmag = None
+                    self.bmv = None
                     self.apf.countrate = 0
 
 
