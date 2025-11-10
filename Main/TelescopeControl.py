@@ -28,7 +28,8 @@ TELFOCUSMIN = -0.00096
 TELFOCUSMAX = -0.00060
 # this value comes an average over many measurements of the telescope focus
 #TELFOCUSTYP = -0.83529
-TELFOCUSTYP = -0.76529
+#TELFOCUSTYP = -0.76529
+TELFOCUSTYP = -0.69029
 TELFOCUSMAXOFF = 0.00002
 
 if "LROOT" in os.environ:
