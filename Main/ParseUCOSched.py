@@ -710,9 +710,10 @@ def parse_TOO(too_sheetns=None, outfn='googledex.dat', outdir=None, certificate=
 def update_local_starlist(intime, observed_file="observed_targets", outfn='parsesched.dat', toofn='too.dat', outdir=None):
     """
         Update the local copy of the googledex with the last observed star time.
+
         update_local_starlist(time,googledex_file="googledex.dat", observed_file="observed_targets")
 
-    opens googledex_file and inputs date of last observation from observed_file
+        opens googledex_file and inputs date of last observation from observed_file
         in principle can use timestamps as well as scriptobs uth and utm values
     """
 
@@ -857,31 +858,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
     nupdates = 0
     n_temps = 0
 
-    try:
-        nmcol = worksheet_vals[0].index('Star Name')
-    except ValueError:
-        apflog("Cannot find 'Star Name' in the column names for sheet %s" % (sheetn),echo=True,level="error")
-        return 0
-    try:
-        col = worksheet_vals[0].index("lastobs")
-    except ValueError:
-        apflog("Cannot find 'lastobs' in the column names for sheet %s" % (sheetn),echo=True,level="error")
-        return 0
-    try:
-        nobscol = worksheet_vals[0].index("Nobs")
-    except ValueError:
-        apflog("Cannot find 'Nobs' in the column names for sheet %s" % (sheetn),echo=True,level="error")
-        return 0
-
-    try:
-        tempcol = worksheet_vals[0].index("Template")
-    except ValueError:
-        tempcol = -1
-
-    try:
-        nightobscol = worksheet_vals[0].index('night_obs')
-    except ValueError:
-        nightobscol = -1
+    didx = find_columns(worksheet_vals[0], ['Star Name', 'lastobs', 'Nobs', 'Template', 'night_obs','pri','Total Obs'])
 
     for i, v in enumerate(worksheet_vals):
         # Starting at the top of vals is important.
@@ -890,7 +867,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
         # The columns that are updated are assigned above
 
         # Did we observe this target tonight?
-        local_name = parse_starname(v[nmcol])
+        local_name = parse_starname(v[didx['Star Name']])
 
         if local_name in obslog.names:
             # We observed this target, so update the cell in the worksheet
@@ -908,27 +885,38 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                     star_table_row = None
 
                 jd = observed_JD(star_table_row, otime, ctime)
+                # this will skip a done target
+                # this is done in case a target was observed
+                # and the target appears in the sheet more than once
+                if v[didx['pri']] is not None:
+                    pri = int_default(v[didx['pri']])
+                    if pri < 0:
+                        continue
+                if v[didx['Total Obs']] is not None:
+                    total_obs = int_default(v[didx['Total Obs']])
+                    if total_obs > 0 and int_default(v[didx['Nobs']]) >= total_obs:
+                        continue
 
                 try:
-                    pastdate = float(v[col])
+                    pastdate = float(v[didx['lastobs']])
                 except:
                     pastdate = 0.0
 
                 try:
-                    nobs = int(v[nobscol])
+                    nobs = int(v[didx['Nobs']])
                 except:
                     nobs = 0
 
-                if tempcol > 0:
+                if didx['Template'] > 0:
                     try:
-                        have_temp = v[tempcol]
+                        have_temp = v[didx['Template']]
                         if taketemp and have_temp == "N" and curowner == sheetn:
-                            worksheet.update_cell(i+1, tempcol+1, "Y")
+                            worksheet.update_cell(i+1, didx['Template']+1, "Y")
                             nupdates += 1
                             n_temps += 1
-                            apflog( "Updated %s to having a template in %s" % (v[0],sheetn),echo=True)
+                            apflog( "Updated %s to having a template in %s" % (v[didx['Star Name']],sheetn),echo=True)
                     except:
-                        apflog( "Error logging template obs for %s" % (v[0]),echo=True,level='error')
+                        apflog( "Error logging template obs for %s" % (v[didx['Star Name']]),echo=True,level='error')
                 else:
                     pass
 
@@ -936,26 +924,18 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                 # update_cell(row, col, val) - col and row are 1 indexed
                 try:
                     if round(jd, 3) > pastdate and curowner == sheetn and not taketemp:
-                        worksheet.update_cell(i+1, col+1, round(jd, 3) )
-                        worksheet.update_cell(i+1, nobscol+1, new_nobs )
-                        if nightobscol >= 0:
-                            worksheet.update_cell(i+1, nightobscol+1, n_appear+1)
+                        worksheet.update_cell(i+1, didx['lastobs']+1, round(jd, 3) )
+                        worksheet.update_cell(i+1, didx['Nobs']+1, new_nobs )
+                        if didx['night_obs'] >= 0:
+                            worksheet.update_cell(i+1, didx['night_obs']+1, n_appear+1)
                             nupdates += 1
-                        log_str = "Updated %s from %.4f " % (v[0],pastdate)
+                        log_str = "Updated %s from %.4f " % (v[didx['Star Name']],pastdate)
                         log_str += "to %.4f and %d in %s"  % (round(jd, 3),new_nobs,sheetn)
                         nupdates += 2
                         apflog(log_str, echo=True)
                 except:
-                    apflog("Error updating %s in %s" % (v[0],sheetn),echo=True,level='error')
-                    apflog("Cannot update %s to %.4f and %d in %s" % (v[0],round(jd,3),1,sheetn),echo=True)
-
-                # if nightobscol >= 0:
-                #     if i > 0:
-                #         worksheet.update_cell(i+1, nightobscol+1, 0)
-                #         apflog( "Updated %s (in columnd %d) to have %d" % \
-                #             (v[0],nightobscol+1,0),echo=True)
-                #         nupdates += 1
-            # bottom of loop
+                    apflog("Error updating %s in %s" % (v[didx['Star Name']],sheetn),echo=True,level='error')
+                    apflog("Cannot update %s to %.4f and %d in %s" % (v[didx['Star Name']],round(jd,3),1,sheetn),echo=True)
 
     return nupdates, n_temps
 
