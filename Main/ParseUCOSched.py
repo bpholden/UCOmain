@@ -498,8 +498,8 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
 
         # cal_star and need_cal are flags for whether or not a target is a calibrator
         # or if the star needs to have a calibrator observed the same night
-        cal_star_val = check_flag("cal_star",didx,ls,"\A(y|Y)","N")
-        need_cal_val = check_flag("need_cal",didx,ls,"\A(y|Y)","N")
+        cal_star_val = check_flag("cal_star", didx, ls, r"\A(y|Y)","N")
+        need_cal_val = check_flag("need_cal", didx, ls, r"\A(y|Y)","N")
         star_table['cal_star'].append(cal_star_val.upper())
         star_table['need_cal'].append(need_cal_val.upper())
 
