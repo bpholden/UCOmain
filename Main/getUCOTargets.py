@@ -121,7 +121,7 @@ class getUCOTargets(threading.Thread):
 
         tab = None
         try:
-            tab, _ = ParseUCOSched.parse_UCOSched(sheetns=self.sheets,outfn=self.star_tab,
+            tab, _ = ParseUCOSched.parse_UCOSched(sheetns=self.sheets, outfn=self.star_tab,
                                                         outdir=os.getcwd(),
                                                         prilim=self.prilim,
                                                         certificate=self.certificate)
@@ -161,10 +161,10 @@ if __name__ == "__main__":
 
 
     task = 'example'
-    APFTask.establish(task,os.getpid())
+    APFTask.establish(task, os.getpid())
     opt = Opt()
     opt.test = True
     opt.time_left = "/home/holden/time_left.csv"
-    opt.rank_table = '2025A_ranks_operational'
+    opt.rank_table = '2025B_ranks_operational'
 
     get_targs = getUCOTargets(opt, task=task)
