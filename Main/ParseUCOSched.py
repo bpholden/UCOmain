@@ -892,7 +892,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                     pri = int_default(v[didx['pri']])
                     if pri < 0:
                         continue
-                if v[didx['Total Obs']] is not None:
+                if 'Total Obs' in didx and v[didx['Total Obs']] is not None:
                     total_obs = int_default(v[didx['Total Obs']])
                     if total_obs > 0 and int_default(v[didx['Nobs']]) >= total_obs:
                         continue
@@ -907,7 +907,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                 except:
                     nobs = 0
 
-                if didx['Template'] > 0:
+                if 'Template' in didx:
                     try:
                         have_temp = v[didx['Template']]
                         if taketemp and have_temp == "N" and curowner == sheetn:
@@ -926,7 +926,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                     if round(jd, 3) > pastdate and curowner == sheetn and not taketemp:
                         worksheet.update_cell(i+1, didx['lastobs']+1, round(jd, 3) )
                         worksheet.update_cell(i+1, didx['Nobs']+1, new_nobs )
-                        if didx['night_obs'] >= 0:
+                        if 'night_obs' in didx and didx['night_obs'] >= 0:
                             worksheet.update_cell(i+1, didx['night_obs']+1, n_appear+1)
                             nupdates += 1
                         log_str = "Updated %s from %.4f " % (v[didx['Star Name']],pastdate)
