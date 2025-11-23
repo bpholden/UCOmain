@@ -979,8 +979,9 @@ def update_online_sheets(observed_file,ctime=None, outfn='parsesched.dat', outdi
             c_updates, c_temps = update_a_sheet(sheetn, obslog, star_table, ctime)
             nupdates += c_updates
             n_temps += c_temps
-        except:
-            apflog("Error updating sheet %s" % (sheetn),echo=True,level='error')
+        except Exception as e:
+            apflog("Error updating sheet %s: %s %s" % (sheetn, type(e), str(e)),echo=True,level='error')
+            
             continue
 
     return nupdates, n_temps
