@@ -849,7 +849,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
     if ctime is None:
         ctime = datetime.datetime.utcfromtimestamp(int(time.time()))
 
-    worksheet, worksheet_vals = get_spreadsheet(sheetn=sheetn,certificate=DEFAULT_CERT)
+    worksheet, worksheet_vals = get_spreadsheet(sheetn=sheetn, certificate=DEFAULT_CERT)
     if worksheet is None:
         return 0
     # Google does not like too many requests at once
