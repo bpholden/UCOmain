@@ -317,7 +317,59 @@ def init_star_table(col_list):
 
     return star_table
 
-def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,sleep=True,
+def find_finished_programs(hour_constraints):
+    '''
+    find_finished_programs(hour_constraints)
+
+    hour_constraints - astropy table of hour constraints, if None, no constraints are applied
+
+    returns a list of sheet names that are finished
+    '''
+    if hour_constraints is None:
+        return []
+    else:
+        return list(hour_constraints['runname'][hour_constraints['left'] < 0])
+    
+
+def check_star_finished(ls, didx, done_names, prilim):
+    """
+    check_star_finished(ls, didx, done_names)
+
+    ls - list of values for the current row
+    didx - dictionary of column indices
+    done_names - list of sheet names that are finished
+    """
+
+    finished = False
+
+    # Get the priority, we get this early to avoid parsing the rest of the line
+    # if the priority is too low
+    if "pri" in didx and ls[didx["pri"]] is not None:
+        apfpri = int_default(ls[didx["pri"]], default=-1)
+    else:
+        apfpri = int_default(ls[didx["APFpri"]], default=-1)
+
+    # if the nobs >= total obs, we are done with this target
+    nobs = int_default(ls[didx["Nobs"]])
+    totobs = int_default(ls[didx["Total Obs"]], default=-1)
+
+    # if the sheet name is in the done list, we will skip this target
+    csheetn = check_flag("sheetn", didx, ls,r"\A(.*)", 'RECUR_A100')
+    owner = None
+    if 'owner' in didx:
+        owner = check_flag("owner", didx, ls, r"\A(.*)", csheetn)
+
+    # these are all the conditions that will cause us to skip this target
+    if totobs > 0 and nobs >= totobs:
+        finished = True
+    if apfpri < prilim:
+        finished = True
+    if csheetn in done_names or owner in done_names:
+        finished = True
+
+    return finished
+
+def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim=1, sleep=True,
                 hour_constraints=None):
     '''
     star_table = parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,
@@ -354,37 +406,16 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
     didx = find_columns(col_names, req_cols)
     star_table = init_star_table(req_cols)
 
-    if hour_constraints is not None:
-        done_names = hour_constraints['runname'][hour_constraints['left'] < 0]
-    else:
-        done_names = []
-
+    done_names = find_finished_programs(hour_constraints)
     # Go line by line through the list of lists that represents the google sheet
     for ls in codex:
         if ls[0] == '':
             continue
-        # Get the priority, we get this early to avoid parsing the rest of the line
-        # if the priority is too low
-        if "pri" in didx and ls[didx["pri"]] is not None:
-            apfpri = int_default(ls[didx["pri"]],default=-1)
-        else:
-            apfpri = int_default(ls[didx["APFpri"]],default=-1)
 
-        # if the nobs >= total obs, we are done with this target
-        nobs = int_default(ls[didx["Nobs"]])
-        totobs = int_default(ls[didx["Total Obs"]],default=-1)
-
-        # if the sheet name is in the done list, we will skip this target
-        csheetn = check_flag("sheetn",didx,ls,r"\A(.*)", 'RECUR_A100')
-        if 'owner' in didx:
-            owner = check_flag("owner",didx,ls,r"\A(.*)", csheetn)
-
-        # these are all the conditions that will cause us to skip this target
-        if totobs > 0 and nobs >= totobs: continue
-        if apfpri < prilim: continue
-        if csheetn in done_names: continue
-
-        if apfpri > MAX_PRI: apfpri = MAX_PRI
+        if check_star_finished(ls, didx, done_names, prilim):
+            continue
+        # we parse this early so we can log in what sheet the error occurs
+        csheetn = check_flag("sheetn", didx, ls,r"\A(.*)", 'RECUR_A100')
 
         # star names that are allowed in Google sheets may not work
         # in the actual star list sent to scroptobs
@@ -438,7 +469,6 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
 
         for coln in ("pmRA", "pmDEC"):
             star_table[coln].append(float_default(ls[didx[coln]]))
-
 
         star_table['Vmag'].append(float_default(ls[didx["Vmag"]], default=10.0))
         star_table['texp'].append(float_default(ls[didx["texp"]], default=1200))
@@ -503,7 +533,16 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         star_table['cal_star'].append(cal_star_val.upper())
         star_table['need_cal'].append(need_cal_val.upper())
 
+        apfpri = int_default(ls[didx["pri"]], default=-1)
+        if 'APFpri' in didx:
+            # historical
+            apfpri = int_default(ls[didx["APFpri"]], default=-1)
+            
+        # self-defense
+        if apfpri > MAX_PRI:
+            apfpri = MAX_PRI
         star_table['pri'].append(apfpri)
+
         star_table["lastobs"].append(float_default(ls[didx["lastobs"]], default=0))
 
         inval = float_default(ls[didx["B-V"]], default=0.7)
@@ -514,9 +553,10 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         star_table['B-V'].append(inval)
 
         # Nobs - number of observations
-        star_table['nobs'].append(nobs)
+        star_table['nobs'].append(int_default(ls[didx["Nobs"]]))
 
         # Total Obs
+        totobs = int_default(ls[didx["Total Obs"]], default=-1)
         if totobs >= 0:
             star_table['totobs'].append(totobs)
         else:
@@ -525,7 +565,9 @@ def parse_codex(config,sheetns=["RECUR_A100"],certificate=DEFAULT_CERT,prilim=1,
         # another case where the column name is not consistent with the scriptobs name
         check = check_flag("Close Companion", didx, ls, r"\A(y|Y)","")
         if "do" in didx:
+            # historical
             check = check_flag("do", didx, ls, r"\A(y|Y)","")
+
         if check == "Y" or check == "y" :
             star_table['do'].append(check)
         else:
