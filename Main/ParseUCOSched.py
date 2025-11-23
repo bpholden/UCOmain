@@ -858,16 +858,19 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
     nupdates = 0
     n_temps = 0
 
-    didx = find_columns(worksheet_vals[0], ['Star Name', 'lastobs', 'Nobs', 'Template', 'night_obs','pri','Total Obs'])
+    didx = find_columns(worksheet_vals[0], \
+                        ['Star Name', 'lastobs', 'Nobs', 'Template', 'night_obs','pri','Total Obs'])
 
-    for i, v in enumerate(worksheet_vals):
+    for i, cur_row in enumerate(worksheet_vals):
         # Starting at the top of vals is important.
-        # the i is the row in the list of lists.
-        # v is the current row in the list.
+        # the i is the index of the row in the list of lists.
+        # cur_row is the current row in the list.
         # The columns that are updated are assigned above
+        # We need both because the update_cell method 
+        # requires row and column indices.
 
         # Did we observe this target tonight?
-        local_name = parse_starname(v[didx['Star Name']])
+        local_name = parse_starname(cur_row[didx['Star Name']])
 
         if local_name in obslog.names:
             # We observed this target, so update the cell in the worksheet
@@ -888,35 +891,35 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                 # this will skip a done target
                 # this is done in case a target was observed
                 # and the target appears in the sheet more than once
-                if v[didx['pri']] is not None:
-                    pri = int_default(v[didx['pri']])
+                if cur_row[didx['pri']] is not None:
+                    pri = int_default(cur_row[didx['pri']])
                     if pri < 0:
                         continue
-                if 'Total Obs' in didx and v[didx['Total Obs']] is not None:
-                    total_obs = int_default(v[didx['Total Obs']])
-                    if total_obs > 0 and int_default(v[didx['Nobs']]) >= total_obs:
+                if 'Total Obs' in didx and cur_row[didx['Total Obs']] is not None:
+                    total_obs = int_default(cur_row[didx['Total Obs']])
+                    if total_obs > 0 and int_default(cur_row[didx['Nobs']]) >= total_obs:
                         continue
 
                 try:
-                    pastdate = float(v[didx['lastobs']])
+                    pastdate = float(cur_row[didx['lastobs']])
                 except:
                     pastdate = 0.0
 
                 try:
-                    nobs = int(v[didx['Nobs']])
+                    nobs = int(cur_row[didx['Nobs']])
                 except:
                     nobs = 0
 
                 if 'Template' in didx:
                     try:
-                        have_temp = v[didx['Template']]
+                        have_temp = cur_row[didx['Template']]
                         if taketemp and have_temp == "N" and curowner == sheetn:
                             worksheet.update_cell(i+1, didx['Template']+1, "Y")
                             nupdates += 1
                             n_temps += 1
-                            apflog( "Updated %s to having a template in %s" % (v[didx['Star Name']],sheetn),echo=True)
+                            apflog( "Updated %s to having a template in %s" % (cur_row[didx['Star Name']],sheetn),echo=True)
                     except:
-                        apflog( "Error logging template obs for %s" % (v[didx['Star Name']]),echo=True,level='error')
+                        apflog( "Error logging template obs for %s" % (cur_row[didx['Star Name']]),echo=True,level='error')
                 else:
                     pass
 
@@ -929,13 +932,13 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
                         if 'night_obs' in didx and didx['night_obs'] >= 0:
                             worksheet.update_cell(i+1, didx['night_obs']+1, n_appear+1)
                             nupdates += 1
-                        log_str = "Updated %s from %.4f " % (v[didx['Star Name']],pastdate)
+                        log_str = "Updated %s from %.4f " % (cur_row[didx['Star Name']],pastdate)
                         log_str += "to %.4f and %d in %s"  % (round(jd, 3),new_nobs,sheetn)
                         nupdates += 2
                         apflog(log_str, echo=True)
                 except:
-                    apflog("Error updating %s in %s" % (v[didx['Star Name']],sheetn),echo=True,level='error')
-                    apflog("Cannot update %s to %.4f and %d in %s" % (v[didx['Star Name']],round(jd,3),1,sheetn),echo=True)
+                    apflog("Error updating %s in %s" % (cur_row[didx['Star Name']],sheetn),echo=True,level='error')
+                    apflog("Cannot update %s to %.4f and %d in %s" % (cur_row[didx['Star Name']],round(jd,3),1,sheetn),echo=True)
 
     return nupdates, n_temps
 
