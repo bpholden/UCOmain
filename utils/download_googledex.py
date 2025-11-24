@@ -27,6 +27,7 @@ if __name__ == "__main__":
     if os.path.exists(os.path.join(outdir,outfn)):
         os.unlink(os.path.join(outdir,outfn))
 
+    sheet_list = None
 
     config = dict()
     config['I2'] = 'Y'
