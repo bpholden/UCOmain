@@ -389,7 +389,7 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
                     "lastobs", "B-V", \
                     "cad", "pri", "nexp", "count", "binning", \
                     "night_cad", "night_obs", "night_nexp", "DaysNew", \
-                    "Template", "Nobs", "Total Obs", "Bstar", "Only Template", \
+                    "Template", "Nobs", "Total Obs", "Bstar", "only_template", \
 #                    "mode", "raoff", "decoff",  "obsblock",\
                     "need_cal", "cal_star",
                     'sheetn', 'owner' \
@@ -467,21 +467,45 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
 #        star_table['raoff'].append(check_flag("raoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["raoff"]))
 #        star_table['decoff'].append(check_flag("decoff",didx,ls,"\A((\+|\-)?\d+\.?\d*)",config["decoff"]))
 
-        for coln in ("pmRA", "pmDEC"):
-            star_table[coln].append(float_default(ls[didx[coln]]))
+        float_defaults = dict()
+        float_defaults["pmRA"] = 0.0
+        float_defaults["pmDEC"] = 0.0
+        float_defaults["Vmag"] = 10.0
+        float_defaults["texp"] = 1200.0
+        float_defaults["cad"] = 0.7
+        float_defaults["lastobs"] = 0.0
+        float_defaults["B-V"] = 0.7
 
-        star_table['Vmag'].append(float_default(ls[didx["Vmag"]], default=10.0))
-        star_table['texp'].append(float_default(ls[didx["texp"]], default=1200))
+        for keyn, default_val in float_defaults.items():
+            coln = keyn
+            if keyn in didx and ls[didx[keyn]] is not None:
+                if coln == 'cad' and float_default(ls[didx[keyn]], default=default_val) <= 0:
+                    star_table[coln].append(0.7)
+                else:
+                    star_table[coln].append(float_default(ls[didx[keyn]], default=default_val))
+
         expcount = float_default(ls[didx["expcount"]],default=1e9)
         expcount = min(expcount,EXP_LIM)
-
         star_table['expcount'].append(expcount)
-        if "nexp" in didx and ls[didx["nexp"]] is not None:
-            star_table['nexp'].append(int_default(ls[didx["nexp"]], default=1))
-        elif "count" in didx and ls[didx['count']] is not None:
-            star_table['nexp'].append(int_default(ls[didx["count"]], default=1))
-        else:
-            star_table['nexp'].append(int_default(ls[didx["APFnshots"]], default=1))
+
+        int_defaults = dict()
+        int_defaults["nexp"] = 1
+        int_defaults['count'] = 1
+        int_defaults['pri'] = -1
+        int_defaults['nobs'] = 0
+        int_defaults['totobs'] = 0
+
+        for keyn, default_val in int_defaults.items():
+            coln = keyn
+            if 'APFpri' in didx and keyn == 'pri':
+                keyn = 'APFpri'
+            if 'Nobs' in didx and keyn == 'nobs':
+                keyn = 'Nobs'
+            if 'Total Obs' in didx and keyn == 'totobs':
+                keyn = 'Total Obs'
+            if keyn in didx and ls[didx[keyn]] is not None:
+                star_table[coln].append(int_default(ls[didx[keyn]], default=default_val))
+
 
         # most programs do not have binning, so we default to 1,1
         if "binning" in didx and ls[didx["binning"]] is not None:
@@ -503,18 +527,6 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
         else:
             star_table['moon'].append(1.0)
 
-        # scheduler specific, cadence is the time between exposures
-        # in nights, there are two different allowed column headings
-        if "cad" in didx and ls[didx['cad']] is not None:
-            cad_value = float_default(ls[didx["cad"]], default=0.7)
-        else:
-            cad_value = float_default(ls[didx["APFcad"]], default=0.7)
-
-        if cad_value > 0:
-            star_table['cad'].append(cad_value)
-        else:
-            star_table['cad'].append(0.7)
-
         # night_cad is how often per night a target can be observed
         # night_obs is how many times it has been observed in the current night
         night_cad = float_default(ls[didx["night_cad"]], default=-1.0)
@@ -526,66 +538,38 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
         star_table['night_obs'].append(0)
         star_table['night_nexp'].append(night_nexp)
 
-        # cal_star and need_cal are flags for whether or not a target is a calibrator
-        # or if the star needs to have a calibrator observed the same night
-        cal_star_val = check_flag("cal_star", didx, ls, r"\A(y|Y)","N")
-        need_cal_val = check_flag("need_cal", didx, ls, r"\A(y|Y)","N")
-        star_table['cal_star'].append(cal_star_val.upper())
-        star_table['need_cal'].append(need_cal_val.upper())
+        str_defaults = dict()
+        str_defaults["decker"] = config["decker"]
+        str_defaults["I2"] = config["I2"]
+        str_defaults["Template"] = 'Y'
+        str_defaults["only_template"] = 'N'
+        str_defaults['cal_star'] = 'N'
+        str_defaults['need_cal'] = 'N'
+        str_defaults['sheetn'] = csheetn
+        str_defaults['Close Companion'] = ''
 
-        apfpri = int_default(ls[didx["pri"]], default=-1)
-        if 'APFpri' in didx:
-            # historical
-            apfpri = int_default(ls[didx["APFpri"]], default=-1)
-            
-        # self-defense
-        if apfpri > MAX_PRI:
-            apfpri = MAX_PRI
-        star_table['pri'].append(apfpri)
+        str_regexps = dict()
+        str_regexps["decker"] = r"\A(W|N|T|S|O|K|L|M|B)"
+        str_regexps["I2"] = r"\A(n|N)"
+        str_regexps["Template"] = r"\A(n|N)"
+        str_regexps["only_template"] = r"\A(y|Y)"
+        str_regexps['cal_star'] = r"\A(y|Y)"
+        str_regexps['need_cal'] = r"\A(y|Y)"
+        str_regexps['sheetn'] = r"\A(\w+)"
+        str_regexps['Close Companion'] = r"\A(y|Y)"
 
-        star_table["lastobs"].append(float_default(ls[didx["lastobs"]], default=0))
+        for keyn, default_val in str_defaults.items():
+            coln = keyn
+            if keyn == 'Close Companion' and 'Close Companion' in didx:
+                coln = 'do'
+            elif coln in didx and ls[didx[coln]] is not None:
+                val = check_flag(coln, didx, ls, str_regexps[keyn], default_val)
+                star_table[coln].append(val.upper())
+            else:
+                star_table[coln].append(default_val.upper())
 
-        inval = float_default(ls[didx["B-V"]], default=0.7)
-        if inval < 0:
-            inval = 1.
-        if coln == 'B-V' and inval > 2:
-            inval = 1
-        star_table['B-V'].append(inval)
-
-        # Nobs - number of observations
-        star_table['nobs'].append(int_default(ls[didx["Nobs"]]))
-
-        # Total Obs
-        totobs = int_default(ls[didx["Total Obs"]], default=-1)
-        if totobs >= 0:
-            star_table['totobs'].append(totobs)
-        else:
-            star_table['totobs'].append(0)
-
-        # another case where the column name is not consistent with the scriptobs name
-        check = check_flag("Close Companion", didx, ls, r"\A(y|Y)","")
-        if "do" in didx:
-            # historical
-            check = check_flag("do", didx, ls, r"\A(y|Y)","")
-
-        if check == "Y" or check == "y" :
-            star_table['do'].append(check)
-        else:
-            star_table['do'].append("")
-
-        # details about the spectrometer configuration
-        decker_name = check_flag("decker", didx, ls, r"\A(W|N|T|S|O|K|L|M|B)", config["decker"])
-        star_table['decker'].append(decker_name)
-        i2select = check_flag("I2", didx, ls, r"\A(n|N)", config["I2"])
-        star_table['I2'].append(i2select.upper())
-        tempselect = check_flag("Template",didx,ls,r"\A(n|N)",'Y')
-        star_table['Template'].append(tempselect.upper())
-        tempselect = check_flag("Only Template",didx,ls,r"\A(y|Y)",'N')
-        star_table['only_template'].append(tempselect.upper())
 #        star_table['obsblock'].append(check_flag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
 #        star_table['inst'].append(check_flag("inst",didx,ls,"(levy|darts)",config['inst']).lower())
-
-        # need to check raoff and decoff values and alarm on failure
 
         # a Bstar is a specific calibration star, so has its own flag
         if 'Bstar' in didx:
