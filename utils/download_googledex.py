@@ -50,7 +50,7 @@ if __name__ == "__main__":
         sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
     if opt.sheetn is not None:
-        sheet_list = opt.sheetn.split(",")
+        sheet_list = [str(s) for s in opt.sheetn.split(",")]
 
     if sheet_list:
         ParseUCOSched.parse_UCOSched(sheetns=sheet_list,outfn=outfn,outdir=outdir,config=config)
