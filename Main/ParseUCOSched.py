@@ -500,6 +500,8 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
                 keyn = 'Total Obs'
             if keyn in didx and ls[didx[keyn]] is not None:
                 star_table[coln].append(int_default(ls[didx[keyn]], default=default_val))
+            else:
+                star_table[coln].append(default_val)
 
 
         # most programs do not have binning, so we default to 1,1
