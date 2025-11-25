@@ -344,10 +344,7 @@ def check_star_finished(ls, didx, done_names, prilim):
 
     # Get the priority, we get this early to avoid parsing the rest of the line
     # if the priority is too low
-    if "pri" in didx and ls[didx["pri"]] is not None:
-        apfpri = int_default(ls[didx["pri"]], default=-1)
-    else:
-        apfpri = int_default(ls[didx["APFpri"]], default=-1)
+    apfpri = int_default(ls[didx["pri"]], default=-1)
 
     # if the nobs >= total obs, we are done with this target
     nobs = int_default(ls[didx["Nobs"]])
@@ -494,11 +491,9 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
         int_defaults['pri'] = -1
         int_defaults['nobs'] = 0
         int_defaults['totobs'] = 0
-
+        # tot obs is broken
         for keyn, default_val in int_defaults.items():
             coln = keyn
-            if 'APFpri' in didx and keyn == 'pri':
-                keyn = 'APFpri'
             if 'Nobs' in didx and keyn == 'nobs':
                 keyn = 'Nobs'
             if 'Total Obs' in didx and keyn == 'totobs':
@@ -545,7 +540,6 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
         str_defaults["only_template"] = 'N'
         str_defaults['cal_star'] = 'N'
         str_defaults['need_cal'] = 'N'
-        str_defaults['sheetn'] = csheetn
         str_defaults['Close Companion'] = ''
 
         str_regexps = dict()
@@ -555,18 +549,20 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
         str_regexps["only_template"] = r"\A(y|Y)"
         str_regexps['cal_star'] = r"\A(y|Y)"
         str_regexps['need_cal'] = r"\A(y|Y)"
-        str_regexps['sheetn'] = r"\A(\w+)"
         str_regexps['Close Companion'] = r"\A(y|Y)"
+
+        # do is broken
 
         for keyn, default_val in str_defaults.items():
             coln = keyn
             if keyn == 'Close Companion' and 'Close Companion' in didx:
                 coln = 'do'
-            elif coln in didx and ls[didx[coln]] is not None:
-                val = check_flag(coln, didx, ls, str_regexps[keyn], default_val)
-                star_table[coln].append(val.upper())
+                val = check_flag(keyn, didx, ls, str_regexps[keyn], default_val.upper())
+            elif keyn in didx and ls[didx[keyn]] is not None:
+                val = check_flag(keyn, didx, ls, str_regexps[keyn], default_val.upper())
             else:
-                star_table[coln].append(default_val.upper())
+                val = default_val.upper()
+            star_table[coln].append(val.upper())
 
 #        star_table['obsblock'].append(check_flag("obsblock",didx,ls,"\A(\w+)",config["obsblock"]))
 #        star_table['inst'].append(check_flag("inst",didx,ls,"(levy|darts)",config['inst']).lower())
