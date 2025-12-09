@@ -594,7 +594,7 @@ def make_APF_obs(dt, horizon=str(SchedulerConsts.TARGET_ELEVATION_MIN)):
     apf_obs = make_APF_obs(dt, horizon=str(TARGET_ELEVATION_MIN))
     dt - datetime object
     horizon - string of horizon in degrees
-    apf_obs - ephem.Observer object for the time dt with the horizon set to horizon
+    apf_obs - returns ephem.Observer object for the time dt with the horizon set to horizon
     '''
     # Generate a pyephem observer for the APF
     apf_obs = ephem.Observer()
@@ -610,7 +610,9 @@ def make_APF_obs(dt, horizon=str(SchedulerConsts.TARGET_ELEVATION_MIN)):
 def compute_sunset_rise(dt, horizon='0'):
     '''
     sunset, sunrise = compute_sunset_rise(dt, horizon='0')
-    computes time in seconds before sunset
+    dt - datetime object
+    horizon - string of horizon in degrees
+    computes time in seconds before sunset and next sunrise from dt
     '''
     apf_obs = make_APF_obs(dt, horizon=horizon)
     sunset = apf_obs.next_setting(ephem.Sun())
@@ -625,6 +627,8 @@ def compute_sunset_rise(dt, horizon='0'):
 def compute_sunset(dt, horizon='0'):
     '''
     sunset = compute_sunset(dt, horizon='0')
+    dt - datetime object
+    horizon - string of horizon in degrees
     helper to compute just sunset, calls compute_sunset_rise
     '''
     sunset, _ = compute_sunset_rise(dt, horizon=horizon)
@@ -633,6 +637,8 @@ def compute_sunset(dt, horizon='0'):
 def compute_sunrise(dt, horizon='0'):
     '''
     sunrise = compute_sunrise(dt, horizon='0')
+    dt - datetime object
+    horizon - string of horizon in degrees
     helper to compute just sunrise, calls compute_sunset_rise
     '''
     _, sunrise = compute_sunset_rise(dt, horizon=horizon)
