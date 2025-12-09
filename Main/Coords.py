@@ -19,6 +19,14 @@ def make_strs(deg,mn,sec,neg=False):
     return sdeg, smn, ssec
 
 def get_RA_rad(hr, mn, sec):
+    '''
+    Docstring for get_RA_rad
+    
+    :param hr: hour value
+    :param mn: minute value
+    :param sec: second value
+    :return: tuple (ra in radians, hr string, mn string, sec string)
+    '''
     rv = None, "-1", "0", "0"
     try:
         hr = float(hr)
@@ -40,6 +48,15 @@ def get_RA_rad(hr, mn, sec):
         return rv
 
 def get_dec_rad(deg, mn, sec, neg=False):
+    '''
+    Docstring for get_dec_rad
+    
+    :param deg: Degree value
+    :param mn: Minute value
+    :param sec: Second value
+    :param neg: Boolean indicating if the value is negative
+    :return: tuple (dec in radians, deg string, mn string, sec string)
+    '''
     rv = (None, "-90", "0", "0")
     try:
         deg = float(deg)
@@ -72,11 +89,17 @@ def get_dec_rad(deg, mn, sec, neg=False):
     return dec, sdeg, smn, ssec
 
 
-def get_coord_str(floatval,isRA=False):
-
+def get_coord_str(floatval,is_ra=False):
+    '''
+    Docstring for get_coord_str
+    
+    :param floatval: the data value to convert
+    :param is_ra: boolean indicating if the value is Right Ascension (True) or Declination (False)
+    :return: string in the format "deg/hr min sec"
+    '''
     neg = False
     nround = 2
-    if isRA:
+    if is_ra:
         floatval /= 15.
         nround = 3
     if floatval < 0:
@@ -116,8 +139,6 @@ def get_LST(date, longitude):
     lst = 100.46 + 0.985647 * d + lng + 15*ut
     return lst % 360.
 
-
-        
 def get_ElAz(ra, dec, lat, lng, time):
     """Given RA, DEC, Latitude, and a time, returns the corresponding elevation and azimuth angles
        Works with single values, or numpy arrays
