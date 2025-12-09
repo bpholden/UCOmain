@@ -1,4 +1,5 @@
 import numpy as np
+import ephem
 
 def make_strs(deg,mn,sec,neg=False):
     """
@@ -87,42 +88,6 @@ def get_dec_rad(deg, mn, sec, neg=False):
     sdeg, smn, ssec = make_strs(abs(deg),abs(mn),abs(sec),neg=neg)
 
     return dec, sdeg, smn, ssec
-
-
-def get_coord_str(floatval, is_ra=False):
-    '''
-    Docstring for get_coord_str
-    
-    :param floatval: the data value to convert
-    :param is_ra: boolean indicating if the value is Right Ascension (True) or Declination (False)
-    :return: string in the format "deg/hr min sec"
-    '''
-    neg = False
-    nround = 2
-    if is_ra:
-        floatval /= 15.
-        nround = 3
-    if floatval < 0:
-        neg = True
-    floatval = abs(floatval)
-    deghrval = int(floatval)
-    minval = (floatval % 1) * 60.0 
-    secval = round( (minval % 1) *60.0, nround)
-
-    if neg and deghrval != 0:
-        ret = "-" + str(deghrval) + ' '
-    else:
-        ret = str(deghrval) + ' '
-    if neg and deghrval == 0 and minval != 0:
-        ret += "-" + str(int(minval)) + ' '
-    else:
-        ret += str(int(minval)) + ' '
-    if neg and deghrval == 0 and minval == 0:
-        ret += "-" + str(secval)
-    else:
-        ret += str(secval)
-    return ret
-
 
 def get_LST(date, longitude):
     """Take a datetime and longitude and calculate the Local Sidereal Time."""
