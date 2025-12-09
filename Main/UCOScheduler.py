@@ -894,6 +894,9 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
     res['BINNING'] = star_table['binning'][idx]
     res['isTemp'] = False
     res['isBstar'] = bstar
+    res['isTOO'] = False
+    if star_table['too'][idx] == 'Y':
+        res['isTOO'] = True
     res['mode'] = ''
     res['owner'] = star_table['sheetn'][idx]
 
@@ -1123,6 +1126,11 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
         apflog("get_next(): Culling B stars", echo=True)
         available = available & np.logical_not(bstars)
         shiftwest = True
+
+    if do_too is False:
+        apflog("get_next(): Selecting TOO targets", echo=True)
+        not_too = star_table['TOO'] == 'N'
+        available = available & not_too
 
     # Is the exposure time too long?
     apflog("get_next(): Removing really long exposures", echo=True)
