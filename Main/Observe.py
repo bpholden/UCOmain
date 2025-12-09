@@ -210,6 +210,7 @@ class Observe(threading.Thread):
             The variable OBSBSTAR still overrides
         """
         self.obs_B_star = ktl.read('apftask', 'MASTER_OBSBSTAR', binary=True)
+        self.do_too = ktl.read('apftask', 'MASTER_OBSTOO', binary=True)
 
         if haveobserved and self.last_obs_success:
             self.obs_B_star = False
