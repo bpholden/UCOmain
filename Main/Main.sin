@@ -653,6 +653,7 @@ def main():
         apftask('MASTER_STARLIST').write('',wait=False)
         apftask('MASTER_UTSTARTLIST').write('',wait=False)
         apftask["MASTER_OBSBSTAR"].write(True,binary=True,wait=False)
+        apftask["MASTER_OBSTOO"].write(True,binary=True,wait=False)
 
     _ = apf.turn_off_inst()
     APFTask.set(parent, suffix="MESSAGE",value="Turning off the motors",wait=False)
