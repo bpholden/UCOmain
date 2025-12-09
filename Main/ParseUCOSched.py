@@ -433,15 +433,6 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
             apflog("Error in Dec coordinates for %s: %s" %(name, csheetn),level='warn',echo=True)
             continue
 
-        # why are we doing this you may ask?
-        # we use Google sheets which cannot have -0 for a value
-        # but if we pass a value like 00:-16:00 to eostele, it generates
-        # an incorrect declination value
-        # so, we move the - to the front of the sexagesimal string
-        # the radian values above are only used for the scheduler, we still
-        # command the telescope in the raw units
-
-
         if name and raval and decval:
             star_table["name"].append(name)
 
