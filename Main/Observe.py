@@ -280,8 +280,6 @@ class Observe(threading.Thread):
             err_str = "Cannot copy %s to %s: %s %s" % (backup, fullpath, type(e), e)
             apflog(err_str, echo=True, level='error')
 
-        return
-
     def should_start_list(self):
         """ Observe.should_start_list()
             should we start a fixed observing list or not? true if start 
@@ -411,7 +409,6 @@ class Observe(threading.Thread):
                 while len(self.target["SCRIPTOBS"]) > 0:
                     self.target["SCRIPTOBS"].pop()
 
-            return
 
         # This is called when an observation finishes, and selects the next target
         def get_target():
@@ -554,8 +551,6 @@ class Observe(threading.Thread):
                 self.do_too = False
                 APFLib.write(self.apf.robot["MASTER_OBSTOO"], False, binary=True)
 
-            return
-
         # opens the dome & telescope, if sunset is True calls open at sunset, else open at night
         def opening(sunel, sunset=False):
             if self.can_open is False:
@@ -626,8 +621,6 @@ class Observe(threading.Thread):
             self.star_failures = 0
             self.can_open = True
             self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
-            return
-
 
         def check_tel_state():
             slewing = '$eostele.AZSSTATE == Slewing  or  $eostele.ELSSTATE == Slewing'
@@ -769,9 +762,6 @@ class Observe(threading.Thread):
                 APFTask.waitFor(self.task, True, timeout=10)
 
             return
-
-
-
 
         ###############################
 
