@@ -89,7 +89,7 @@ def get_dec_rad(deg, mn, sec, neg=False):
     return dec, sdeg, smn, ssec
 
 
-def get_coord_str(floatval,is_ra=False):
+def get_coord_str(floatval, is_ra=False):
     '''
     Docstring for get_coord_str
     
