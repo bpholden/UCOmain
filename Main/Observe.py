@@ -93,6 +93,7 @@ class Observe(threading.Thread):
         else:
             self.debug = False
         self.do_temp = True
+        self.do_too = True
         self.n_temps = 0
         self.focval = 0
         self.tot_temps = tot_temps
@@ -487,7 +488,7 @@ class Observe(threading.Thread):
             self.check_files()
 
             self.target = ds.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, \
-                                         sheetns=self.sheetn, owner=self.owner,  \
+                                         do_too=self.do_too, sheetns=self.sheetn, owner=self.owner,  \
                                          template=self.do_temp, focval=self.focval, \
                                          rank_sheetn=self.rank_tablen,\
                                          start_time=self.start_time)

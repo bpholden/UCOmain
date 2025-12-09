@@ -999,7 +999,7 @@ def config_defaults(owner):
     return config
 
 def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
-                sheetns=["RECUR_A100",], owner='public', \
+                do_too=False, sheetns=["RECUR_A100",], owner='public', \
                 outfn="googledex.dat", toofn="too.dat", \
                 outdir=None, focval=0, inst='', \
                 rank_sheetn='rank_table', start_time=None):
