@@ -549,6 +549,10 @@ class Observe(threading.Thread):
                 if self.n_temps >= self.tot_temps:
                     self.do_temp = False
 
+            if self.target['too']:
+                self.do_too = False
+                APFLib.write(self.apf.robot["MASTER_OBSTOO"], False, binary=True)
+
             return
 
         # opens the dome & telescope, if sunset is True calls open at sunset, else open at night
