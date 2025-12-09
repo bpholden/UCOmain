@@ -336,6 +336,7 @@ def init_phase(opt, apf, parent):
     apflog("Setting SCRIPTOBS_LINES_DONE to 0")
     APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
     APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)
+    APFLib.write(apf.robot["MASTER_OBSTOO"], True,binary=True)
     apflog("Initialization finished")
 
     return opt
