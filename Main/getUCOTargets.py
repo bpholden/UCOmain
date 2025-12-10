@@ -57,6 +57,18 @@ class getUCOTargets(threading.Thread):
             return True
         return False
 
+    def append_too_column(self, tab, rank_table):
+        if tab is None or rank_table is None:
+            return
+        if 'too' not in rank_table.columns:
+            return
+        too_sheets =  rank_table['sheetn'][rank_table['too']]
+
+        tab['too'] = np.zeros(len(tab), dtype=bool)
+        for sn in too_sheets:
+            idxs = tab['sheetn'] == sn
+            tab['too'][idxs] = True
+
     def run(self):
 
         expression = '$eostele.SUNEL < -0.0'
@@ -127,6 +139,8 @@ class getUCOTargets(threading.Thread):
                                                         certificate=self.certificate)
         except Exception as e:
             apflog("Error: Cannot download googledex?! %s %s" % (type(e), e),level="error")
+
+        self.append_too_column(tab, rank_table)
 
         if tab is None:
             self.copy_backup(self.star_tab)
