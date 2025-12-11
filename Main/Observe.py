@@ -547,7 +547,7 @@ class Observe(threading.Thread):
                 if self.n_temps >= self.tot_temps:
                     self.do_temp = False
 
-            if self.target['too']:
+            if self.target['isTOO']:
                 self.do_too = False
                 APFLib.write(self.apf.robot["MASTER_OBSTOO"], False, binary=True)
 
