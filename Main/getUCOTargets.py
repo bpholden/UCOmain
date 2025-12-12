@@ -3,6 +3,7 @@ import datetime
 import os
 import threading
 
+import numpy as np
 import ktl
 import APFTask
 

@@ -1,4 +1,8 @@
 import os
+import shutil
+
+import astropy.io.ascii
+import numpy as np
 
 import ParseUCOSched
 import SchedulerConsts
