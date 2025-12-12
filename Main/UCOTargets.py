@@ -6,6 +6,7 @@ import numpy as np
 
 import ParseUCOSched
 import SchedulerConsts
+import UCOScheduler as ds
 
 try: 
     from apflog import apflog
@@ -34,8 +35,8 @@ class UCOTargets(object):
         else:
             self.debug = False
 
-        if self.rank_table is None and self.sheets is None:
-            apflog("Error: no rank table and no sheet list provided", level='error')
+        if self.rank_table_name is None:
+            apflog("Error: no rank table provided", level='error')
             return
 
     def copy_backup(self, file_name):
@@ -52,20 +53,19 @@ class UCOTargets(object):
 
     def append_too_column(self):
         '''
-        Append a 'too' column to self.tab based on rank_table info.
+        Append a 'too' column to star table based on rank_table info.
         
         '''
-        if self.tab is None or self.rank_table is None:
+        if self.star_tab is None or self.rank_table is None:
             return
         if 'too' not in self.rank_table.columns:
             return
         too_sheets =  self.rank_table['sheetn'][self.rank_table['too']]
 
-        self.tab['too'] = np.zeros(len(self.tab), dtype=bool)
+        self.star_tab['too'] = np.zeros(len(self.star_tab), dtype=bool)
         for sn in too_sheets:
-            idxs = self.tab['sheetn'] == sn
-            self.tab['too'][idxs] = True
-
+            idxs = self.star_tab['sheetn'] == sn
+            self.star_tab['too'][idxs] = True
 
     def make_hour_constraints(self):
         '''
@@ -130,3 +130,24 @@ class UCOTargets(object):
                                                         certificate=self.certificate)
                 except Exception as e:
                     apflog("Error: Cannot reuse googledex?! %s" % (e),level="error" )
+
+
+def main():
+    class Opts:
+        def __init__(self):
+            self.rank_table = '2025B_ranks_operational'
+            self.time_left = '/home/holden/time_left.csv'
+            self.test = True
+    opt = Opts()
+    uco_targets = UCOTargets(opt)
+    uco_targets.make_hour_constraints()
+    print("Hour constraints:", uco_targets.hour_constraints)
+    uco_targets.get_rank_table()
+    print("Rank table:", uco_targets.rank_table)
+    uco_targets.get_star_table()
+    print("Star table:", uco_targets.star_tab[0])
+    uco_targets.append_too_column()
+    print("Star table:", uco_targets.star_tab[0])
+
+if __name__ == "__main__":
+    main()
