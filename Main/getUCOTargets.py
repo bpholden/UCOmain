@@ -133,14 +133,12 @@ class getUCOTargets(threading.Thread):
 
         tab = None
         try:
-            tab, _ = ParseUCOSched.parse_UCOSched(sheetns=self.sheets, outfn=self.star_tab,
+            tab, _ = ParseUCOSched.parse_UCOSched(rank_table, outfn=self.star_tab,
                                                         outdir=os.getcwd(),
                                                         prilim=self.prilim,
                                                         certificate=self.certificate)
         except Exception as e:
             apflog("Error: Cannot download googledex?! %s %s" % (type(e), e),level="error")
-
-        self.append_too_column(tab, rank_table)
 
         if tab is None:
             self.copy_backup(self.star_tab)
