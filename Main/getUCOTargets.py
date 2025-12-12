@@ -46,7 +46,7 @@ class getUCOTargets(threading.Thread):
         if self.signal is False:
             return
 
-        self.uco_targets.get_rank_table()
+        self.uco_targets.make_rank_table()
  
         if self.signal is False:
             return
@@ -70,7 +70,7 @@ class getUCOTargets(threading.Thread):
         if self.signal is False:
             return
 
-        self.uco_targets.get_star_table()
+        self.uco_targets.make_star_table()
 
         if self.signal is False:
             return

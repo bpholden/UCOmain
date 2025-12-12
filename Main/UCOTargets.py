@@ -99,7 +99,7 @@ class UCOTargets(object):
             apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
 
 
-    def get_rank_table(self):
+    def make_rank_table(self):
         '''
         Get the rank table google sheet if available.
         if not, try to use a backup copy.
@@ -123,7 +123,7 @@ class UCOTargets(object):
                     apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
 
 
-    def get_star_table(self):
+    def make_star_table(self):
         '''
         Get the star table google sheet if available.
         if not, try to use a backup copy.
@@ -160,11 +160,11 @@ def main():
     uco_targets = UCOTargets(opt)
     uco_targets.make_hour_constraints()
     print("Hour constraints:", uco_targets.hour_constraints)
-    uco_targets.get_rank_table()
+    uco_targets.make_rank_table()
     print("Rank table:", uco_targets.rank_table)
     uco_targets.make_hour_table()
     print("Hour table:", uco_targets.hour_table)
-    uco_targets.get_star_table()
+    uco_targets.make_star_table()
     print("Star table:", uco_targets.star_tab[0])
     uco_targets.append_too_column()
     print("Star table:", uco_targets.star_tab[0])
