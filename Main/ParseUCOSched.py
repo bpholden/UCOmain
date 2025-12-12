@@ -615,7 +615,7 @@ def gen_stars(star_table):
 
 
 
-def parse_UCOSched(sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, outfn="sched.dat",
+def parse_UCOSched(rank_table, certificate=DEFAULT_CERT, outfn="sched.dat",
                    outdir=None, config={'I2': 'Y', 'decker': 'W',  'Bstar' : 'N' },
                    force_download=False, prilim=0.5, hour_constraints=None):
     """ parse_UCOSched parses google sheets and returns the output as a tuple
@@ -639,6 +639,7 @@ def parse_UCOSched(sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, outfn="sche
 
     """
 
+    sheetns = list(rank_table['sheetn'])
 
     stars = None
     # Downloading all the values is going slowly.
