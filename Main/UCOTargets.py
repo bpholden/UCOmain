@@ -1,5 +1,6 @@
 import os
 import shutil
+import datetime
 
 import astropy.io.ascii
 import numpy as np
@@ -22,6 +23,7 @@ class UCOTargets(object):
         self.star_tab_name = 'googledex.dat' # historical
         self.star_tab = None
         self.rank_table = None
+        self.hour_table = None
         self.too = None
         self.sheets = None
         self.hour_constraints = None
@@ -80,6 +82,22 @@ class UCOTargets(object):
                 self.hour_constraints = astropy.io.ascii.read(self.time_left_name)
             except Exception as e:
                 apflog("Error: Cannot read file of time left %s : %s" % (self.time_left_name, e))
+
+
+    def make_hour_table(self):
+        '''
+        Make hour table from rank table and hour constraints.
+        
+        '''
+        if self.rank_table is None:
+            return
+
+        try:
+            self.hour_table = ds.make_hour_table(self.rank_table,datetime.datetime.now(),
+                                            hour_constraints=self.hour_constraints)
+        except Exception as e:
+            apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
+
 
     def get_rank_table(self):
         '''
@@ -144,6 +162,8 @@ def main():
     print("Hour constraints:", uco_targets.hour_constraints)
     uco_targets.get_rank_table()
     print("Rank table:", uco_targets.rank_table)
+    uco_targets.make_hour_table()
+    print("Hour table:", uco_targets.hour_table)
     uco_targets.get_star_table()
     print("Star table:", uco_targets.star_tab[0])
     uco_targets.append_too_column()
