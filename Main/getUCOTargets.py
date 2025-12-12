@@ -75,11 +75,9 @@ class getUCOTargets(threading.Thread):
         if self.signal is False:
             return
         
-        try:
-            _ = ds.make_hour_table(self.uco_targets.rank_table,datetime.datetime.now(),
-                                            hour_constraints=self.uco_targets.hour_constraints)
-        except Exception as e:
-            apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
+        self.uco_targets.make_hour_table()
+
+        self.uco_targets.append_too_column()
 
         while self.signal and self.too is not None and not self.debug and False:
 
