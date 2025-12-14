@@ -204,7 +204,7 @@ def fixed_start_time(opt, apftask):
     saved_time = ''
     if opt.fixed is not None:
         try:
-            saved_time = apftask.read('MASTER_UTSTARTLIST',timeout=5)
+            saved_time = apftask.read('MASTER_UTSTARTLIST', binary=True, timeout=5)
         except Exception as e:
             apflog("Cannot read apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
 
@@ -216,7 +216,7 @@ def fixed_start_time(opt, apftask):
             mn = int(mtch.group(2))
             opt.start = get_start_time(hr,mn)
             try:
-                apftask.write("MASTER_UTSTARTLIST", opt.start, wait=False)
+                apftask.write("MASTER_UTSTARTLIST", opt.start, binary=True, wait=False)
             except Exception as e:
                 apflog("Cannot write apftask.MASTER_UTSTARTLIST: %s" % (e), level='warn', echo=True)
 
@@ -649,9 +649,9 @@ def main():
         APFTask.set(parent, suffix="LAST_OBS", value=apf.ucam["OBSNUM"].read())
         ostr = "Updating last observation number to %s" % (apf.ucam["OBSNUM"].read())
         APFTask.set(parent, suffix="MESSAGE",value=ostr,wait=False)
-        apftask('MASTER_STARLIST').write('',wait=False)
-        apftask('MASTER_UTSTARTLIST').write('',wait=False)
-        apftask["MASTER_OBSBSTAR"].write(True,binary=True,wait=False)
+        apftask('MASTER_STARLIST').write('', wait=False)
+        apftask('MASTER_UTSTARTLIST').write(0, binary=True, wait=False)
+        apftask["MASTER_OBSBSTAR"].write(True, binary=True, wait=False)
 
     _ = apf.turn_off_inst()
     APFTask.set(parent, suffix="MESSAGE",value="Turning off the motors",wait=False)
