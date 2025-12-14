@@ -205,20 +205,15 @@ class Observe(threading.Thread):
             checks to see if the starlist keywords have been updated
         """
         starlist = self.apftask['MASTER_STARLIST'].read().strip()
-        utstartlist = self.apftask['MASTER_UTSTARTLIST'].read().strip()
+        utstartlist = self.apftask['MASTER_UTSTARTLIST'].read(binary=True)
 
         if starlist != "" and starlist != self.fixed_list:
             self.fixed_list = starlist
             apflog("New starlist %s detected" % (self.fixed_list), echo=True)
 
-        if utstartlist != "":
-            try:
-                utstarttime = float(utstartlist)
-            except ValueError as e:
-                apflog("ValueError: %s" % (e), echo=True, level='error')
-                utstarttime = None
-            if utstarttime is not None and utstarttime != self.start_time:
-                self.start_time = utstarttime
+        if utstartlist > 0:
+            if utstartlist != self.start_time:
+                self.start_time = utstartlist
                 apflog("New UT start time %s detected" % (str(self.start_time)), echo=True)
 
     def check_star(self, haveobserved):
@@ -749,7 +744,7 @@ class Observe(threading.Thread):
                     self.fixed_list = None
                     self.start_time = None
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
-                    APFLib.write(self.apf.robot["MASTER_UTSTARTLIST"], "")
+                    APFLib.write(self.apf.robot["MASTER_UTSTARTLIST"], 0, binary=True)
 
                 # this reads in the list and appends it to self.target
 
@@ -757,7 +752,7 @@ class Observe(threading.Thread):
 
                 if self.apf.ldone == tot:
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
-                    APFLib.write(self.apf.robot["MASTER_UTSTARTLIST"], "")
+                    APFLib.write(self.apf.robot["MASTER_UTSTARTLIST"], 0, binary=True)
                     self.fixed_list = None
                     self.start_time = None
                     self.target = None
