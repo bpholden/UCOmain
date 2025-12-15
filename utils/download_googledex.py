@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--time_left', dest='time_left', default=None, help='Use an existing time_left file')
     opt = parser.parse_args()
 
-    if opt.rank_sheet is None:
+    if opt.rank_table is None:
         print("Needs a rank table")
         sys.exit(0)
 
