@@ -14,7 +14,7 @@ import UCOTargets
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Set default options")
-    parser.add_argument('-r', '--rank_table', dest='rank_sheet', default=None, help='Rank table, will make sheet list')
+    parser.add_argument('-r', '--rank_table', dest='rank_table', default=None, help='Rank table, will make sheet list')
     parser.add_argument('-t', '--time_left', dest='time_left', default=None, help='Use an existing time_left file')
     opt = parser.parse_args()
 
