@@ -650,8 +650,8 @@ def main():
         ostr = "Updating last observation number to %s" % (apf.ucam["OBSNUM"].read())
         APFTask.set(parent, suffix="MESSAGE",value=ostr,wait=False)
         apftask('MASTER_STARLIST').write('',wait=False)
-        apftask('MASTER_UTSTARTLIST').write('',wait=False)
-        apftask["MASTER_OBSBSTAR"].write(True,binary=True,wait=False)
+        apftask('MASTER_WHENSTARTLIST').write(0, binary=True, wait=False)
+        apftask["MASTER_OBSBSTAR"].write(True, binary=True, wait=False)
 
     _ = apf.turn_off_inst()
     APFTask.set(parent, suffix="MESSAGE",value="Turning off the motors",wait=False)
