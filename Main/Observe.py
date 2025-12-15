@@ -205,16 +205,16 @@ class Observe(threading.Thread):
             checks to see if the starlist keywords have been updated
         """
         starlist = self.apftask['MASTER_STARLIST'].read().strip()
-        utstartlist = self.apftask['MASTER_WHENSTARTLIST'].read(binary=True)
+        start_time = self.apftask['MASTER_WHENSTARTLIST'].read(binary=True)
 
         if starlist != "" and starlist != self.fixed_list:
             self.fixed_list = starlist
             apflog("New starlist %s detected" % (self.fixed_list), echo=True)
 
-        if utstartlist > 0:
-            if utstartlist != self.start_time:
-                self.start_time = utstartlist
-                apflog("New UT start time %s detected" % (str(self.start_time)), echo=True)
+        if start_time > 0:
+            if start_time != self.start_time:
+                self.start_time = start_time
+                apflog("New start time %s detected" % (str(self.start_time)), echo=True)
 
     def check_star(self, haveobserved):
         """ Observe.obsBstar(haveobserved)
