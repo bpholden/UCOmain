@@ -205,7 +205,7 @@ class Observe(threading.Thread):
             checks to see if the starlist keywords have been updated
         """
         starlist = self.apftask['MASTER_STARLIST'].read().strip()
-        utstartlist = self.apftask['MASTER_UTSTARTLIST'].read(binary=True)
+        utstartlist = self.apftask['MASTER_WHENSTARTLIST'].read(binary=True)
 
         if starlist != "" and starlist != self.fixed_list:
             self.fixed_list = starlist
@@ -744,7 +744,7 @@ class Observe(threading.Thread):
                     self.fixed_list = None
                     self.start_time = None
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
-                    APFLib.write(self.apf.robot["MASTER_UTSTARTLIST"], 0, binary=True)
+                    APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
 
                 # this reads in the list and appends it to self.target
 
@@ -752,7 +752,7 @@ class Observe(threading.Thread):
 
                 if self.apf.ldone == tot:
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
-                    APFLib.write(self.apf.robot["MASTER_UTSTARTLIST"], 0, binary=True)
+                    APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
                     self.fixed_list = None
                     self.start_time = None
                     self.target = None
