@@ -200,6 +200,21 @@ class Observe(threading.Thread):
             retval = True
         return retval
 
+    def check_starlist(self):
+        """ Observe.check_starlist()
+            checks to see if the starlist keywords have been updated
+        """
+        starlist = self.apftask['MASTER_STARLIST'].read().strip()
+        utstartlist = self.apftask['MASTER_UTSTARTLIST'].read(binary=True)
+
+        if starlist != "" and starlist != self.fixed_list:
+            self.fixed_list = starlist
+            apflog("New starlist %s detected" % (self.fixed_list), echo=True)
+
+        if utstartlist > 0:
+            if utstartlist != self.start_time:
+                self.start_time = utstartlist
+                apflog("New UT start time %s detected" % (str(self.start_time)), echo=True)
 
     def check_star(self, haveobserved):
         """ Observe.obsBstar(haveobserved)
@@ -737,7 +752,7 @@ class Observe(threading.Thread):
 
                 if self.apf.ldone == tot:
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
-                    APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], "")
+                    APFLib.write(self.apf.robot["MASTER_UTSTARTLIST"], "")
                     self.fixed_list = None
                     self.start_time = None
                     self.target = None
@@ -774,7 +789,6 @@ class Observe(threading.Thread):
         self.tel.dm_zero()
         haveobserved = False
         failstart = 0
-        do_msg = 0
 
         while self.signal:
             # Check on everything
@@ -828,6 +842,8 @@ class Observe(threading.Thread):
                     self.bmv = None
                     self.apf.countrate = 0
 
+            # check starlist
+            self.check_starlist()
 
             # If scriptobs is running and waiting for input, give it a target
             if running and (float(cursunel) < sunel_lim) and (self.apf.sop.read().strip() == "Input"):
