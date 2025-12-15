@@ -16,6 +16,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Set default options")
     parser.add_argument('-r', '--rank_table', dest='rank_table', default=None, help='Rank table, will make sheet list')
     parser.add_argument('-t', '--time_left', dest='time_left', default=None, help='Use an existing time_left file')
+    parser.add_argument('--test', dest='test', default=None, help='Use test mode for downloads and parsing')
     opt = parser.parse_args()
 
     if opt.rank_table is None:
