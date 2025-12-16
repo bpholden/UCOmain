@@ -41,6 +41,10 @@ class UCOTargets(object):
             apflog("Error: no rank table provided", level='error')
             return
 
+    def __repr__(self):
+        return "<UCOTargets rank_table=%s star_tab=%s>" % (self.rank_table_name, self.star_tab_name)
+
+
     def copy_backup(self, file_name):
         '''
         Copy a backup file if it exists.
@@ -131,7 +135,7 @@ class UCOTargets(object):
         '''
 
         try:
-            self.star_tab, _ = ParseUCOSched.parse_UCOSched(None, outfn=self.star_tab_name,
+            self.star_tab, _ = ParseUCOSched.parse_UCOSched(self.rank_table, outfn=self.star_tab_name,
                                                         outdir=os.getcwd(),
                                                         prilim=self.prilim,
                                                         certificate=self.certificate)
@@ -142,7 +146,7 @@ class UCOTargets(object):
             # goto backup
             if self.copy_backup(self.star_tab_name):
                 try:
-                    self.star_tab, _ = ParseUCOSched.parse_UCOSched(None, outfn=self.star_tab_name,
+                    self.star_tab, _ = ParseUCOSched.parse_UCOSched(self.rank_table, outfn=self.star_tab_name,
                                                         outdir=os.getcwd(),
                                                         prilim=self.prilim,
                                                         certificate=self.certificate)
