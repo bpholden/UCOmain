@@ -5,10 +5,7 @@ import subprocess
 import time
 import os
 import os.path
-import math
 import datetime
-
-import numpy as np
 
 try:
     from apflog import apflog
@@ -20,22 +17,11 @@ except:
     from fake_apflog import *
 
 
-windlim = 40.0
 slowlim = 100
-WINDSHIELD_LIMIT = 4.5 # mps at the APF
-FOCUSTIME = 3600. # minimum time before checking telescope focus
-TEMP_LIMIT = 2. # deg C at the APF
 wxtimeout = datetime.timedelta(seconds=1800)
-SUNEL_HOR = -3.2
 DEWARMAX = 8600
 DEWARMIN = 8300
-TELFOCUSMIN = -0.00096
-TELFOCUSMAX = -0.00060
-# this value comes an average over many measurements of the telescope focus
-#TELFOCUSTYP = -0.83529
-#TELFOCUSTYP = -0.76529
-TELFOCUSTYP = -0.69029
-TELFOCUSMAXOFF = 0.00002
+
 
 if "LROOT" in os.environ:
     LROOT = os.environ["LROOT"]
@@ -87,71 +73,8 @@ class APF:
 
     # Initial seeing conditions
 
-    cwd        = os.getcwd()
-    slowdown   = 0.0
-    ncountrate = 0
-    countrate = 0.0
-    ccountrate = 0.0
-
-    # Initial Wind conditions
-    wslist = []
-
-    # Initial temps
-
-
-    dewlist = []
-    dew_too_close = False
 
     # KTL Services and Keywords
-    tel        = ktl.Service('eostele')
-    sunel      = tel('SUNEL')
-    ael        = tel('AEL')
-    aaz        = tel('AAZ')
-    aafocus    = tel('AAFOCUS')
-    focus      = tel('FOCUS')
-    faenable   = tel('FAENABLE')
-    telstate   = tel('TELSTATE')
-
-    dome       = ktl.Service('eosdome')
-    rspos      = dome('RSCURPOS')
-    fspos      = dome('FSCURPOS')
-    shclosed   = dome('SHCLOSED')
-
-    eostdio    = ktl.Service('eostdio')
-    mcopen     = eostdio('MCOPEN')
-
-    checkapf   = ktl.Service('checkapf')
-    ok2open    = checkapf('OPEN_OK')
-    userkind   = checkapf('USERKIND')
-    dmtimer    = checkapf('DMTIME')
-    whatsopn   = checkapf('WHATSOPN')
-    mv_perm    = checkapf('MOVE_PERM')
-    instr_perm = checkapf('INSTR_PERM')
-    chk_close  = checkapf('CHK_CLOSE')
-
-    apfmet     = ktl.Service('met3apf')
-    altwx      = apfmet('M3WIND')
-    apftemp    = ktl.Service('apftempest')
-    wx         = apftemp('WINDAV')
-    airtemp    = apftemp('TEMP')
-    down       = apftemp('DOWN')
-
-    eosti8k    = ktl.Service('eosti8k')
-    m2tempkw   = eosti8k('TM2CSUR')
-    m2airkw    = eosti8k('TM2CAIR')
-    m1tempkw   = eosti8k('TM1S210')
-    taveragekw = eosti8k('TAVERAGE')
-    t045kw     = eosti8k('TTRUS045')
-    t135kw     = eosti8k('TTRUS135')
-    t225kw     = eosti8k('TTRUS225')
-    t315kw     = eosti8k('TTRUS315')
-
-
-    eoscool    = ktl.Service('eoscool')
-    dewpt      = eoscool('DEWPAVG3')
-    temp3now   = eoscool('TEMPNOW3')
-    temp4now   = eoscool('TEMPNOW4')
-
     robot        = ktl.Service('apftask')
     vmag         = robot['SCRIPTOBS_VMAG']
     ldone        = robot['SCRIPTOBS_LINES_DONE']
@@ -188,14 +111,6 @@ class APF:
 
     apfschedule= ktl.Service('apfschedule')
 
-    apfteq     = ktl.Service('apfteq')
-    teqmode    = apfteq['MODE']
-
-    guide      = ktl.Service('apfguide')
-    counts     = guide['COUNTS']
-    kcountrate     = guide['COUNTRATE']
-    avg_fwhm   = guide['AVG_FWHM']
-
     motor      = ktl.Service('apfmot')
     decker     = motor['DECKERNAM']
 #    deckerord  = motor['DECKERORD']
@@ -214,10 +129,6 @@ class APF:
     gexptime   = eosgcam('GEXPTIME')
     sumframe   = eosgcam('SUMFRAME')
 
-    apfmon     = ktl.Service('apfmon')
-    ucamd0sta  = apfmon['UCAMDSTA0STA']
-
-    apfminimon = ktl.Service('apfminimon')
 
     def __init__(self, task="example", test=False):
         """ Initilize the current state of APF. Setup the callbacks and monitors necessary for automated telescope operation."""
@@ -226,6 +137,22 @@ class APF:
         self.task = task
         self.desired_outfile = None
         self.old_size = 0
+
+        self.cwd        = os.getcwd()
+        self.slowdown   = 0.0
+        self.ncountrate = 0
+        self.countrate = 0.0
+        self.ccountrate = 0.0
+
+        self.guide      = ktl.Service('apfguide')
+        self.counts     = self.guide['COUNTS']
+        self.kcountrate     = self.guide['COUNTRATE']
+        self.avg_fwhm   = self.guide['AVG_FWHM']
+
+        self.apfmon     = ktl.Service('apfmon')
+        self.ucamd0sta  = self.apfmon['UCAMDSTA0STA']
+
+        self.apfminimon = ktl.Service('apfminimon')
 
         try:
             self.eosgcam['GENABLE'].write(True,binary=True)
@@ -245,11 +172,10 @@ class APF:
                 apflog("Cannot monitor keyword %s: %s" % (kwnm,e),echo=True, level='warn')
 
         # Set the callbacks and monitors
-        self.ok2open.monitor()
-        self.ok2open.callback(self.ok_mon)
 
-        self.dmtimer.monitor()
-        self.dmtimer.callback(self.dm_time_mon)
+        self.checkapf   = ktl.Service('checkapf')
+        self.userkind   = self.checkapf('USERKIND')
+        self.instr_perm = self.checkapf('INSTR_PERM')
 
         self.kcountrate.monitor()
         self.kcountrate.callback(self.countrate_mon)
@@ -267,112 +193,37 @@ class APF:
         self.nerase.monitor()
         self.gcam_power.monitor()
 
-        self.down.monitor()
-        self.whatsopn.monitor()
-
-        self.mon_lists = dict()
-        self.avg_lists = dict()
-
-        for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,\
-                   self.t045kw,self.t225kw,self.t315kw,self.temp3now,\
-                    self.temp4now,self.wx,self.altwx,self.airtemp):
-            self.mon_lists[kw['name']] = []
-            self.avg_lists[kw['name']] = None
-            kw.monitor()
-            kw.callback(self.list_mon)
-            kw.read()
-
-        self.dewpt.monitor()
-        self.dewpt.callback(self.dew_pt_mon)
-
-        for kw in (self.slewsta, self.calsta, self.focussta, \
-                   self.shuttersta, self.opensta, self.closesta,\
-                    self.focustelsta):
-            kw.monitor()
+        self.calsta.monitor()
+        self.focussta.monitor()
 
         self.counts.monitor()
-        self.teqmode.monitor()
         self.vmag.monitor()
         self.ldone.monitor()
         self.counts.monitor()
         self.decker.monitor()
         self.avg_fwhm.monitor()
         self.dewarfoc.monitor()
-        self.mv_perm.monitor()
-        self.chk_close.monitor()
-        self.slew_allowed.monitor()
-
-        self.sunel.monitor()
-        self.aaz.monitor()
-        self.ael.monitor()
-        self.fspos.monitor()
-        self.rspos.monitor()
-        self.focus.monitor()
-        self.aafocus.monitor()
-        self.faenable.monitor()
-        self.telstate.monitor()
-
         self.apfteqsta.monitor()
         self.metxfersta.monitor()
-
-        self.lastopen.monitor()
-
-        # Grab some initial values for the state of the telescope
-
-        self.wx.read()
-        self.altwx.read()
-        self.dewpt.read()
-        self.counts.read()
-        self.ok2open.read()
-        self.avgtemps = np.asarray([self.avg_lists[nm] for nm in \
-                                     ('TM1S210','TM2CSUR','TAVERAGE',\
-                                      'TM2CAIR','TEMPNOW3','TEMPNOW4')])
-
-        self.check_sanity()
-
 
     def __str__(self):
         # Determine if the sun rising / setting check is working
         now = datetime.datetime.now()
-        self.avg_tel_temps()
         s = ''
-        s += "At %s state of telescope is:\n" % str(now)
-        s += "Sun elevation = %4.2f %s\n" % (self.sunel, "Rising" if self.sun_rising() else "Setting")
-        s += 'Telescope state = %s\n' % (self.telstate)
-        s += "Telescope -- AZ=%4.2f  EL=%4.2f \n" % (self.aaz, self.ael)
-        s += "Front/Rear Shutter=%4.2f / %4.2f\n"%(self.fspos, self.rspos)
-        s += "Wind = %3.1f mps (APF) %3.1f mps (Shane) \n" % (np.average(self.mon_lists['WINDAV']),np.average(self.mon_lists['M3WIND'])/2.24)
+        s += "At %s state of system is:\n" % str(now)
         s += "Slowdown = %5.2f x\n" % self.slowdown
-        s += "Last open time = %.2f sec\n" % (self.lastopen.binary)
-        s += "Time since opening = %6.2f sec\n" % (time.time() - self.lastopen.binary)
         s += "countrate = %5.2g cts/s\n" % self.countrate
         s += "kcountrate = %5.2g cts/s\n" % self.kcountrate
         s += "ncountrate = %d frames \n" % self.ncountrate
         s += "elapsed = %5.2f sec \n" % self.elapsed
-        s += "M1 = %5.2f deg C M2 = %5.2f deg C Tel Avg = %5.2f deg C M2 Air = %5.2f deg C FCU3 = %5.2f deg C FCU4 = %5.2f deg C\n" % tuple(self.avgtemps)
-        s += "Dewpt = %5.2f deg C Teq Mode - %s\n" % (np.average(self.dewlist),self.teqmode)
-        s += "Too close to the dewpoint? = %s\n" % self.dew_too_close
         s += "Guider camera power is %s\n" % ("ON" if self.gcam_power.binary else "OFF")
-        s += "M2 Focus Value = % 4.3f\n" % (float(self.aafocus['binary'])*1000.0)
-        s += "M2 Focus Value = % 4.3f (focus kwd)\n" % (float(self.focus['binary'])*1000.0)
-        s += "Preferred M2 Focus Value =  % 4.3f\n" % (float(self.pred_tel_focus())*1000.0)
-        s += "Okay to open = %s -- %s\n" % (self.openOK['ascii'], self.checkapf['OPREASON'].read() )
-        s += "Current Weather = %s\n" % self.checkapf['WEATHER'].read()
 
-        isopen, what = self.is_open()
-        if isopen:
-            s += "Currently open: %s\n" % what
-        else:
-            s += "Not currently open\n"
-        ripd, rr = self.find_robot()
+        rpid, rr = self.find_robot()
+
         if rr:
-            s += "Robot is running as %s\n" % (ripd)
+            s += "Robot is running as %s\n" % (rpid)
         else:
             s += "Robot is not running\n"
-        focval = self.set_autofoc_val()
-        s += "Focus value for scriptobs = %d\n" % focval
-        windshield = self.update_windshield("auto")
-        s += "Windshield state = %s\n" % windshield
 
         stasum = ''
         for kw in self.apfstas:
@@ -398,7 +249,7 @@ class APF:
             return
 
         return
-    
+
     def count_mon(self, counts):
         if counts['populated'] is False:
             return
@@ -456,96 +307,6 @@ class APF:
         except:
             return
 
-    # Callback for ok2open permission
-    # -- Check that if we fall down a logic hole we don't error out
-    def ok_mon(self,ok2open):
-        if ok2open['populated'] is False:
-            return
-        try:
-            ok = ok2open # historical
-        except Exception as e:
-            apflog("Exception in ok_mon for checkapf.OPEN_OK: %s" % (e), level='error')
-            return
-        try:
-            if self.mv_perm.read(binary=False) is False:
-                ok = False
-        except Exception as e:
-            apflog("Exception in ok_mon for checkapf.MOVE_PERM: %s" % (e), level='error')
-            return
-        try:
-            if not self.userkind.read(binary=True) == 3:
-                ok = False
-        except Exception as e:
-            apflog("Exception in ok_mon checkapf.USERKIND: %s" % (e), level='error')
-            return
-        self.openOK = ok
-        return
-
-    def list_mon(self,keyword):
-        if keyword['populated'] is False:
-            return
-
-        name = keyword['name']
-
-        try:
-            curval = float(keyword['binary'])
-        except Exception as e:
-            apflog("Exception in list_mon: %s" % (e), level='error')
-            return
-
-        if self.mon_lists[name] == []:
-            self.mon_lists[name] = [curval]*300
-            self.avg_lists[name] = curval
-        else:
-            self.mon_lists[name].append(curval)
-            self.mon_lists[name] = self.mon_lists[name][-300:]
-            self.avg_lists[name] = np.average(self.mon_lists[name])
-
-        return
-
-    # Callback for Deadman timer
-    def dm_time_mon(self,dmtime):
-        if dmtime['populated'] is False:
-            return
-        try:
-            self.dmtime = dmtime
-        except Exception as e:
-            apflog("Exception in dm_time_mon: %s %s" % (type(e), e), level='error')
-
-        return
-
-    def dew_pt_mon(self,dew):
-        if dew['populated'] is False:
-            return
-        try:
-            dewpt = float(dew['binary'])
-        except:
-            return
-
-        if self.dewlist == []:
-            self.dewlist = [dewpt]
-        else:
-            self.dewlist.append(dewpt)
-            if len(self.dewlist) >= 300:
-                self.dewlist = self.dewlist[-300:]
-
-                dewlist = np.asarray(self.dewlist)
-
-                curdew = np.average(dewlist)
-                curm2 = np.average(np.asarray(self.mon_lists['TM2CSUR']))
-                curm2air = np.average(np.asarray(self.mon_lists['TM2CAIR']))
-
-                if self.dew_too_close:
-                    if curm2air - curdew > 3 or curm2 - curdew > 5:
-                        self.dew_too_close = False
-                else:
-                    if curm2air - curdew < 2 or curm2 - curdew < 4:
-                        self.dew_too_close = True
-                        apflog("M2 temperatures too close to dew point",echo=True,level='warning')
-
-        return
-
-
     def apftask_mon(self, status):
         if status['populated'] is False:
             return
@@ -590,6 +351,10 @@ class APF:
 
 
     def restart(self, name, host):
+        '''
+        restart(name, host)
+        Restart the apfmon service name on host.
+        '''
         apfcmd = os.path.join(LROOT,"bin/apf")
         restart_str = '%s restart %s' % (apfcmd,name)
         cmdlist = ["ssh", "-f", host, restart_str]
@@ -601,6 +366,12 @@ class APF:
 
 
     def mini_mon_mon(self, sta, host="bremen"):
+        '''
+        mini_mon_mon(sta, host="bremen")
+        Callback for the apfminimon keywords.
+        If the status is warning or higher, restart the appropriate
+        apfmon service on the host specified (default bremen).
+        '''
         if sta['populated'] is False:
             return
         try:
@@ -611,29 +382,18 @@ class APF:
         if sta_val > 3:
             # warning or higher
             nmsta = sta['name'].lower()
-            name = nmsta[0:7] # this relies on the fact that all of the STA 
+            name = nmsta[0:7] # this relies on the fact that all of the STA
             # variables are serviceSTA and service is
-            self.restart(name,host)
-        return
-
-    def apfmon_mon(self,sta,host="shadow"):
-        if sta['populated'] is False:
-            return
-        try:
-            sta_val = sta['binary']
-        except:
-            return
-
-        if sta_val > 3:
-            # warning or higher
-            nmsta = sta['name'].lower()
-            name = "apf" + nmsta[0:7]
-            # this relies on the fact that all of the STA
-            # variables are serviceSTA and service is
-            self.restart(name,host)
+            self.restart(name, host)
         return
 
     def apftask_status_mon(self,sta):
+        '''
+        apftask_status_mon(sta)
+        Callback for the apftask status keywords.
+        If the status is exited, check the pid and if it is
+        non-zero, clear the PS state keyword.
+        '''
         if sta['populated'] is False:
             return
         try:
@@ -661,127 +421,6 @@ class APF:
     ## these are various methods, there are a LOT of them
     ##
 
-    def restart_server(self, service):
-        """
-        restart_server(service)
-
-        Restarts the server given by the service name.
-
-        """
-        servers = {
-            'eosgcam': 'CameraServer',
-            'eostele': 'TelescopeServer',
-            'eosdome': 'DomeServer',
-            'eoscool': 'CANServerCooling',
-            'eosctrl' :'CANServerControls',
-            'eosmets': 'MetServer',
-            'eostdio': 'DIOServer',
-            'eosti8k': 'i8000TemperatureServer',
-        }
-        if service not in servers:
-            apflog("Cannot restart %s, not in the list of servers" % (service),level='error',echo=True)
-            return False
-        
-        locs = {
-            'eosgcam': 'Guider',
-            'eostele': 'Telescope',
-            'eosdome': 'Dome',
-            'eoscool': 'Dome',
-            'eosctrl' :'Dome',
-            'eosmets': 'Observatory',
-            'eostdio': 'Telescope',
-            'eosti8k': 'Telescope',
-        }
-
-        telleos_str = "telleos -s eossysm DeviceServer.Commands.StopServer "
-        telleos_str += '"" '
-        telleos_str += "'name "
-        telleos_str += '"%s" ' % (servers[service])
-        telleos_str += 'location "%s" ' % (locs[service])
-        telleos_str += "force false '"
-
-        try:
-            p = subprocess.check_output(telleos_str, shell=True, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            apflog("Cannot stop %s: %s" % (service,e),level='error',echo=True)
-            # this can happen if the server is not running
-            # we will press on
-        time.sleep(3)
-        telleos_str = "telleos -s eossysm DeviceServer.Commands.StartServer "
-        telleos_str += '"" '
-        telleos_str += "'name "
-        telleos_str += '"%s" ' % (servers[service])
-        telleos_str += 'location "%s" ' % (locs[service])
-        telleos_str += " '"
-        try:
-            p = subprocess.check_output(telleos_str, shell=True, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            apflog("Cannot start %s: %s" % (service,e),level='error',echo=True)
-            return False
-            
-        return True
-
-    def check_sanity(self):
-        """
-        check_sanity()
-
-        Checks the sanity of the APF system.  This includes checking
-        the weather, the dew point, and the wind speed.
-
-        """
-    
-        ret_val = True
-        # check the sanity of the EOS dispatchers
-        pc_keywords = ['PC_EOSCOOLSTA',
-                        'PC_EOSCTRLSTA',
-                        'PC_EOSDOMESTA',
-                        'PC_EOSGCAMSTA',
-                        'PC_EOSMETSSTA',
-                        'PC_EOSTDIOSTA',
-                        'PC_EOSTELESTA',
-                        'PC_EOSTI8KSTA',
-                        ]
-        
-        pc_servers = {
-            'eosgcam': 'dresden',
-            'eostele': 'hamburg',
-            'eosdome': 'hamburg',
-            'eoscool': 'hamburg',
-            'eosctrl' :'hamburg',
-            'eosmets': 'hamburg',
-            'eostdio': 'hamburg',
-            'eosti8k': 'hamburg',
-        }
-
-        for kw in pc_keywords:
-            try:
-                pc_kw = self.apfmon[kw]
-                kw_val = pc_kw.read(binary=True)
-                if kw_val > 4:
-                    # this is a warning or error
-                    apflog("PC keyword %s has value %s, recommend restarting" % (kw,pc_kw['ascii']),level='Crit',echo=True)
-                    srv_name = kw[3:-3].lower()
-                    self.restart(srv_name,host=pc_servers[srv_name.lower()])
-                    ret_val = False
-            except Exception as e:
-                apflog("Cannot monitor keyword %s: %s" % (kw,e),echo=True, level='warn')
-                ret_val = False
-
-        return ret_val
-
-    def sun_rising(self):
-        """
-        sun_rising()
-
-        Is the sun rising, ie., is it after midnight.
-
-        """
-        # the sun also rises
-        now = datetime.datetime.now()
-        if now.strftime("%p") == 'AM':
-            return True
-        else:
-            return False
 
 
     def init_keyword(self, keyword, value, timeout=None):
@@ -885,154 +524,6 @@ class APF:
 
         return
 
-    def avg_tel_temps(self):
-        """
-        self.avg_tel_temps()
-        sets the APFControl.avgtemps attribute.
-        This will be a numpy array with the values in the order of:
-
-        * M1 temp (eostele.TM1S210)
-        * M2 temp (eostele.TM2CSUR)
-        * Telescope average truss temp (eostele.TAVERAGE)
-        * M2 air temp (eostele.TM2CAIR)
-        * Air temp at FCU2 (eostele.TEMPNOW3)
-        * Air temp at FCU3 (eostele.TEMPNOW4)
-
-        The values for the trusses themselves are also included.
-        This checks the values and if one is out of nominal range,
-        after taking into the offset between the truss temperature
-        and the usual average, it computes a new value for the
-        truss average using only the trusses with nominal temperatures.
-
-        """
-
-        #self.avgtemps = [self.avg_lists[nm] for nm in ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')]
-        self.avgtemps = []
-
-        #tel_avg = self.t045kw.read(binary=True) + self.t225kw.read(binary=True) + \
-        #     self.t315kw.read(binary=True)
-        #tel_avg /= 3.0
-        tel_avg = self.taveragekw.read(binary=True)
-
-        self.avgtemps.append(self.m1tempkw.read(binary=True))
-        self.avgtemps.append(self.m2tempkw.read(binary=True))
-        self.avgtemps.append(tel_avg)
-        self.avgtemps.append(self.m2airkw.read(binary=True))
-        self.avgtemps.append(self.temp3now.read(binary=True))
-        self.avgtemps.append(self.temp4now.read(binary=True))
-
-        # TAVERAGE is the average of the four trusses
-        # temp_names = ["TTRUS135","TTRUS225","TTRUS045","TTRUS315"]
-        # offsets = dict()
-        # offsets['TTRUS135'] = -0.18
-        # offsets['TTRUS225'] =  0.33
-        # offsets['TTRUS045'] = -0.32
-        # offsets['TTRUS315'] =  0.15
-
-        # replaceavg = 0.0
-        # n_good = 0
-        # for tnm in temp_names:
-        #     curtemp = np.average(self.mon_lists[tnm])
-        #     if np.abs(curtemp - self.avgtemps[2] - offsets[tnm]) < 1:
-        #         #bad
-        #         replaceavg += curtemp
-        #         n_good += 1
-        # if n_good < 4 and n_good > 0:
-        #     replaceavg /= n_good
-
-        self.avgtemps = np.asarray(self.avgtemps)
-        return
-
-    def pred_tel_focus(self):
-        """
-        pred_tel_focus()
-
-        Predicts the telescope focus based on the values of
-        various telescope temperatures.
-        """
-        self.avg_tel_temps()
-        # m1 m2 tavg m2air tf3 tf4
-
-        # values as of July 3 2022
-        # Final_focus_temp_fits.ipynb which (along with the data) should get checked in
-        slopes = np.asarray([-0.007930, 0.021897, 0.011436, -0.008821, 0.001830, -0.017760])
-        zeropoint_temps = np.asarray([15.549, 14.195, 14.610, 13.285, 15.716, 15.797])
-
-        predfoc = np.sum(slopes*(self.avgtemps-zeropoint_temps)) + TELFOCUSTYP
-        predfoc /= 1000.0 # convert to meters
-        return predfoc
-
-
-    # Function for checking what is currently open on the telescope
-    def is_open(self):
-        """
-        is_open()
-
-        Returns the state of checkapf.WHATSOPN as a tuple (bool, str).
-        """
-        try:
-            whatstr = str(self.whatsopn)
-            what = whatstr.split()
-        except:
-            apflog("checkapf.WHATSOPN returned a value that str.split cannot split",level='warn',echo=True)
-            return False, ''
-        if hasattr(what,'__iter__'):
-            if "DomeShutter" in what or "MirrorCover" in what or "Vents" in what:
-                return True, what
-            else:
-                return False, ''
-        else:
-            return False, ''
-
-    # Fucntion for checking what is currently open on the telescope
-
-    def is_ready_observing_direct(self):
-        what = ''
-        rv = False
-        try:
-            ismcopen = self.mcopen.read(binary=True,timeout=2)
-        except:
-            return False, ''
-        try:
-            isshutterclosed = self.shclosed.read(binary=True,timeout=2)
-        except:
-            return False, ''
-
-        if ismcopen:
-            what = what + "MirrorCover"
-            rv = True
-        if isshutterclosed is False:
-            if len(what) > 0 :
-                what = what + " DomeShutter"
-            else:
-                what = "DomeShutter"
-            if rv:
-                rv = True
-        else:
-            rv = False
-        return rv, what
-
-    def is_ready_observing(self):
-        """
-        is_ready_observing()
-
-        Returns the state of checkapf.WHATSOPN as a tuple (bool, str).
-        """
-        try:
-            whatstr = str(self.whatsopn)
-            what = whatstr.split()
-        except:
-            apflog("checkapf.WHATSOPN returned a value that str.split cannot split",level='warn',echo=True)
-            return self.is_ready_observing_direct()
-
-
-        if hasattr(what,'__iter__'):
-            if "DomeShutter" in what and "MirrorCover" in what:
-                return True, what
-            else:
-                return False, ''
-        else:
-            return self.is_ready_observing_direct()
 
     def set_observer_info(self, num=10000, name='Robot', owner='public'):
         """
@@ -1263,7 +754,8 @@ class APF:
         self.validate_UCAM_outputs()
 
         lastfocus_dict = APFTask.get("focusinstr", ["lastfocus","nominal","useref"])
-        if float(lastfocus_dict["lastfocus"]) > DEWARMAX or float(lastfocus_dict["lastfocus"]) < DEWARMIN:
+        if float(lastfocus_dict["lastfocus"]) > DEWARMAX or\
+              float(lastfocus_dict["lastfocus"]) < DEWARMIN:
             lastfocus_dict["lastfocus"] =  lastfocus_dict["nominal"]
         if bool(lastfocus_dict["useref"]) is False:
             self.robot['FOCUSINSTR_USEREF'].write(True,binary=True)
@@ -1285,7 +777,13 @@ class APF:
         dewarfocraw = self.dewarfoc.read(binary=True)
 
         if  (dewarfocraw > DEWARMAX or dewarfocraw < DEWARMIN):
-            apflog("Focusinstr has failed, result = %s, current focus is value = %d, and last value was %s." % ( str(result),dewarfocraw,lastfocus_dict["lastfocus"]), level='error', echo=True)
+            logstr = "Focusinstr has failed, result = %s, " % ( str(result))
+            logstr += "but dewar focus is %d which is outside the " % (dewarfocraw)
+            logstr += "acceptable range of %d to %d. "\
+                      % (DEWARMIN, DEWARMAX)
+            logstr += "Setting dewar focus to last good value of %s. "\
+                  % (lastfocus_dict["lastfocus"])
+            apflog(logstr, level='error', echo=True)
             APFLib.write("apfmot.DEWARFOCRAW", lastfocus_dict["lastfocus"])
             return False
 
@@ -1329,7 +827,8 @@ class APF:
                 ip = self.instr_perm.read()
             except:
                 ip = 'Unknown'
-            apflog("Cannot enable instrument to move stages but instr_perm is %s" % (ip), level='alert',echo=True)
+            apflog("Cannot enable instrument to move stages but instr_perm is %s" \
+                   % (ip), level='alert',echo=True)
             return rv
 
         try:
@@ -1382,16 +881,6 @@ class APF:
             msg = "Test Mode: Would be running focusinstr."
             return True, msg
 
-        supplies = ('PS1_48V_ENA', 'PS2_48V_ENA')
-        for keyword in supplies:
-            try:
-                value = self.motor[keyword].read(binary=True,timeout=2)
-                if value != 1:
-                    self.motor[keyword].write('Enabled', wait=False)
-            except Exception as e:
-                apflog("Cannot read status of PS's:  %s"  % e,level='alert', echo=True)
-                return False, "Cannot read status of PS's:  %s" % (e)
-
         apflog("Running focusinstr routine.",echo=True)
 
         execstr = " ".join(['focusinstr',flags])
@@ -1419,511 +908,6 @@ class APF:
         return result, msg
 
 
-    def find_star(self):
-        """
-        find_star()
-
-        Given the telescopes current position, find the closest bright star.
-        """
-        ra = self.tel['RA'].read()
-        dec = self.tel['DEC'].read()
-        rah,ram,ras = ra.split(":")
-        decd,decm,decs = dec.split(":")
-
-        cmd = os.path.join(SCRIPTDIR,"closest")
-        cmdargs =  [cmd, rah,ram, ras, decd,decm,decs, "5","1","8"]
-        sfncat = os.path.join(LROOT,"data/apf/StarCatalog.dat")
-        try:
-            starcat = open(sfncat)
-        except:
-            apflog("Cannot open file %s" % (sfncat), level="warn",echo=True)
-            return False
-        #$line[3] $line[4] $line[5] $line[6] $line[7] 5 1 "8"] < /usr/local/lick/data/apf/StarCatalog.dat"
-        p = subprocess.Popen(cmdargs, stdin=starcat, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=os.path.curdir)
-        out, err = p.communicate()
-        ret_code = p.returncode
-        if ret_code != 0:
-            apflog(out,echo=True)
-            apflog(err, level="warn",echo=True)
-            return False
-
-        return out.split()
-
-    def slew(self,star):
-        """
-        slew(star)
-
-        Executes the slewlock script to a star (not the slew).
-        A star object is list and these are assumed to be in the format
-        of the bright star list used for pointing model acquisition.
-        So the name is the first element, the RA in radians is second,
-        the Dec in radians is third, and so forth.
-
-        """
-        cmd = os.path.join(SCRIPTDIR,'slewlock')
-        try:
-            ra = float(star[1])
-            ra *= 3.819718
-            dec = float(star[2])
-            dec *= 57.295779
-        except:
-            return False
-        cmd +=  ' %s %s %f %f %s %s %d ' % ("reference",star[0],ra, dec,star[4],star[5],210)
-        if self.test:
-            apflog("Would slew by executing %s" %(cmd), echo=True)
-            return True
-
-        apflog("Slewing by executing %s" %(cmd), echo=True)
-        result, code = apftask_do(cmd,cwd=os.path.curdir,debug=True)
-        if not result:
-            apflog("Failed at slewlock - check logs could be a slew failure or a failure to acquire: %s" %(code), level="error", echo=True)
-
-        return result
-
-    def save_movie(self):
-        """
-        save_movie()
-
-        Starts the recording of a guider move.
-
-        """
-        now = datetime.datetime.now()
-        self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day, self.tel['TARGNAME'].read()))
-        self.fits3dir.write('/data/apfguide')
-        self.save3d.write(True)
-        return
-
-    def stop_movie(self):
-        """
-        stop_movie()
-
-        Stops recording a guider movie.
-
-        """
-        self.save3d.write(False)
-        self.fits3dir.write('/tmp/')
-        return
-
-    def run_focustel(self):
-        """
-        Runs the telescope focus routine.
-
-        """
-        el = self.tel['EL'].read(binary=True)
-        cfspos = self.fspos.read(binary=True)
-        crspos = self.rspos.read(binary=True)
-
-        if abs(el - cfspos) < 2.5 or abs(el - crspos) < 2.5:
-            apflog("Cannot focus, telescope too close to shutter", level="warn", echo=True)
-            return False
-
-        if self.test:
-            APFTask.waitFor(self.task, True, timeout=10)
-            apflog("Test Mode: Would be running focus_telescope.",echo=True)
-            return True
-
-        self.save_movie()
-
-        apflog("Running focus_telescope routine.",echo=True)
-        cmd = os.path.join(SCRIPTDIR,'focus_telescope -c %.3f' % (float(self.pred_tel_focus())*1000.0))
-        result, code = apftask_do(cmd,cwd=os.path.curdir)
-
-        self.stop_movie()
-
-        try:
-            self.guide['MODE'].write('Guide')
-        except:
-            apflog('Cannot modify apfguide.MODE to Guide.',level='error',echo=True)
-
-        if not result:
-            apflog("focustel failed with code %d" % code, echo=True)
-            expression="($apftask.FOCUSINSTR_STATUS != 0) and ($apftask.FOCUSINSTR_STATUS != 1) "
-            if not APFTask.waitFor(self.task,True,expression=expression,timeout=30):
-                apflog("focus_telescope failed to exit" ,echo=True)
-            return result
-
-        return True
-
-    def run_autoexposure(self,ind=5):
-        """
-        runs the autoexposure script to configure the guider
-        exposure time for the target.
-        """
-        cmd = os.path.join(SCRIPTDIR,'autoexposure')
-        istr = "%d" % (ind)
-        cmdargs = cmd
-
-        result, code = apftask_do(cmdargs,cwd=os.path.curdir)
-
-        if not result:
-            apflog("autoexposure failed with code %d" % code, echo=True)
-        return result
-
-    def run_centerup(self):
-        """
-        run_centerup()
-
-        Runs the centerup script to center up the telescope on the
-        target in the guider.
-        """
-        cmd = os.path.join(SCRIPTDIR,'centerup')
-        result, code = apftask_do(cmd,cwd=os.path.curdir)
-        if not result:
-            apflog("centerup failed with code %d" % code, echo=True)
-        return result
-
-    def find_star_focustel(self):
-        """ This finds a star in the catalog of pointing reference stars close
-        to the current position of the telescope.
-        It then runs slewlock to slew to the star, set up the guider, and center
-        the star on the slit.
-        Finally, once the star is acquired, it runs the telescope focus routine.
-        """
-        star = self.find_star()
-        if not star:
-            apflog("Cannot find star near current position!?",level='error',echo=True)
-            return False
-        apflog("Targeting telescope on %s" % star[0], echo=True)
-        try:
-            self.vmag.write(star[6])
-        except Exception as e:
-            apflog("Cannot write SCRIPTOBS_VMAG: %s" % (e), level='error',echo=True)
-        try:
-            sline = "%s %f %f pmra=%s pmdec=%s vmag=%s # end" % (star[0],float(star[1])*3.819718,float(star[2])*57.295779,star[4],star[5],star[6])
-            self.line.write(sline)
-        except Exception as e:
-            apflog("Cannot write SCRIPTOBS_LINE: %s" % (e), level='error',echo=True)
-
-        try:
-            self.robot['SCRIPTOBS_LINE_RESULT'].write(0)
-            self.robot['SCRIPTOBS_OBSERVED'].write(False)
-        except Exception as e:
-            apflog("Cannot write 0 to SCRIPTOBS_LINE_RESULT or False to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
-
-
-        predfocus  = self.pred_tel_focus()
-        self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
-        self.robot['FOCUSTEL_LASTFOCUS'].write(predfocus)
-        self.focus.write(self.pred_tel_focus(), binary=True, wait=False)
-        if self.slew(star):
-            return self.run_focustel()
-        return False
-
-
-    def set_apfteq_mode(self, mode):
-        """
-        set_apfteq_mode()
-
-        Sets the mode for APFTEQ to the commanded value.
-        Does not check if value is allowed, but does if the switch was
-        successful.
-
-        """
-
-        apflog("Setting TEQMode to %s" % mode)
-        if self.test:
-            apflog("Would be setting TEQMode to %s" % mode)
-            return
-        self.teqmode.write(mode,wait=False)
-        result = self.teqmode.waitfor('== %s' % mode, timeout=60)
-        if not result:
-            apflog("Error setting the TEQMODE.")
-            raise RuntimeError("Couldn't set TEQ mode")
-
-
-    def clear_estop(self):
-        """
-        clear_estop()
-
-        Clears the Estop state by running the clear_estop script.
-
-        """
-
-        if self.test: return True
-        if self.mv_perm.binary is False:
-            apflog("Waiting for permission to move...", echo=True)
-            chk_move = "$checkapf.MOVE_PERM == true"
-            result = APFTask.waitFor(self.task, False, chk_move, timeout=600)
-            if not result:
-                apflog("Can't open. No move permission.",echo=True)
-                return False
-
-        cmd = os.path.join(SCRIPTDIR,'clear_estop')
-        result, code = apftask_do(cmd,debug=True,cwd=os.getcwd())
-        if result:
-            try:
-                estopstate = self.dome.read('ESTOPST',binary=True)
-                if estopstate:
-                    return False
-                else:
-                    return True
-            except:
-                return False
-        else:
-            return False
-
-    def state_set(self):
-        """
-        state_set()
-
-        This checks if certain emergency stop states are set.
-
-        """
-
-        # there are three states - but we do not care about ESTOPST,
-        # that is will be cleared in openatsunset/openatnight
-        if self.dome['ECLOSEST']:
-            return True
-        if self.dome['ESECURST']:
-            return True
-        return False
-
-
-    def home_telescope(self):
-        """
-        home_telescope()
-
-        Homes the telescope using the slew script.
-        Then verifies homing occurred.
-
-        """
-        cmd = os.path.join(SCRIPTDIR,"slew") + " --home"
-        rv, rc = apftask_do(cmd)
-        try:
-            homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
-        except Exception as e:
-            apflog("cannot read apfmon keyword ELHOMERIGHTSTA: %s" % (e),level='Alert',echo=True)
-            return False
-        else:
-            if rc == 0 and homed == 2:
-                return True
-            else:
-                apflog("cannot home telescope",level='Alert',echo=True)
-                return False
-
-    def check_home(self,home=True):
-        """
-        check_home(home=True)
-
-        Checks if the telescope has been homed.
-        If not, homes if the variable home=True.
-
-        """
-        try:
-            homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
-        except Exception as e:
-            apflog("apfmon.ELHOMERIGHTSTA cannot be read: %s" % (e),level='Alert',echo=True)
-            return False
-        if homed == 2:
-            return True
-        else:
-            if homed == 5 or homed == 6:
-                if home:
-                    self.home_telescope()
-                else:
-                    apflog("Telescope needs to be homed",level='Alert',echo=True)
-                    return False
-            else:
-                apflog("apfmon.ELHOMERIGHTSTA value is %d" % (homed),level='Alert',echo=True)
-                return False
-
-        return False
-
-    def openat(self, sunset=False):
-        """
-        Function to ready the APF for observing. Calls either openatsunset or openatnight.
-           This function will attempt to open successfully twice. If both attempts
-           fail, then it will return false, allowing the master to register the error
-           and behave accodingly. Otherwise it will return True.
-        """
-        # If this is a test run, just return True
-        if self.test: return True
-
-        if not self.ok2open:
-            # This should really never happen. In case of a temporary condition, we give
-            # a short waitfor rather than immediatly exiting.
-            chk_open = "$checkapf.OPEN_OK == true"
-            result = APFTask.waitFor(self.task, False, chk_open, timeout=30)
-            if not result:
-                apflog("Tried calling openat with OPEN_OK = False. Can't open.", echo=True)
-                apflog(self.checkapf["OPREASON"].read(), echo=True)
-                return False
-
-        if float(self.sunel) > SUNEL_HOR:
-            apflog("Sun is still up. Current sunel = %4.2f. Can't open." % self.sunel, echo=True)
-            return False
-
-        if self.mv_perm.binary is False:
-            apflog("Waiting for permission to move...", echo=True)
-            chk_move = "$checkapf.MOVE_PERM == true"
-            result = APFTask.waitFor(self.task, False, chk_move, timeout=600)
-            if not result:
-                apflog("Can't open. No move permission.",echo=True)
-                return False
-
-        if self.state_set():
-            apflog("An unusal emergency state is set.", level="error",echo=True)
-            return False
-
-        # Everything seems acceptable, so lets try opening
-        if sunset:
-            cmd = os.path.join(SCRIPTDIR,'openatsunset')
-        else:
-            cmd = os.path.join(SCRIPTDIR,'openatnight')
-
-        # Make two tries at opening. If they both fail return False so the caller can act
-        # accordingly.
-        result, code = apftask_do(cmd)
-        if not result:
-            apflog("First openup attempt has failed. Exit code = %d. After a pause, will make one more attempt." % code,echo=True)
-            APFTask.waitFor(self.task, True, timeout=10)
-            result, code = apftask_do(cmd)
-            if not result:
-                apflog("Second openup attempt also failed. Exit code %d. Giving up." % code,echo=True)
-                return False
-        rv = self.check_home()
-        if rv is False:
-            return False
-        try:
-            APFLib.write("eostele.FOCUS",ktl.read("apftask","FOCUSTEL_LASTFOCUS",binary=True))
-        except:
-            apflog("Cannot move secondary focus.",level="error")
-            return False
-        return True
-
-    def power_down_telescope(self):
-        """
-        Checks that we have the proper permission and dome is closed, then resets telescope power.
-        This core is a separate script.
-        """
-        if self.test: return True
-        cmd = os.path.join(SCRIPTDIR,"power_down_telescope")
-        self.dm_reset()
-        if self.mv_perm.binary is False:
-            apflog("Waiting for permission to move")
-        chk_mv = '$checkapf.MOVE_PERM == true'
-        result = APFTask.waitFor(self.task, False, chk_mv, timeout=300)
-        if not result:
-            apflog("Didn't have move permission after 5 minutes.", echo=True)
-            return False
-        # one last check
-
-        apflog("Running power_down_telescope script")
-        result, _ = apftask_do(cmd)
-        if result:
-            return True
-
-        apflog("power_down_telescope has failed. Human intervention likely required.", level='alert', echo=True)
-        return False
-
-
-    def servo_failure(self):
-        """checks for amplifier faults
-        Checks all seven moving components.
-        """
-        servo_failed = False
-
-        estopstate = self.dome.read('ESTOPST',binary=True)
-        if estopstate:
-            return False
-
-        msg = ""
-        prefixs = ["AZ","EL","FA","FB","FC","TR" ]
-        for pr in prefixs:
-            nm = pr + "AMPFLT"
-            val = self.tel[nm].read(binary=True)
-            if val:
-                servo_failed = True
-                msg += "Error: Servo Amplifier Fault: " + str(nm) + " " + str(val) + "\n"
-                
-
-        for pr in prefixs:
-            nm = pr + "FERROR"
-            val = self.tel[nm].read(binary=True)
-            if val:
-                servo_failed = True
-                msg = "Error: Following Error Fault: " + str(nm) + " " + str(val) + "\n"
-        if msg != "":
-            apflog(msg, level='error', echo=True)
-            self.robot['MASTER_MESSAGE'].write(msg)
-
-        return servo_failed
-
-    def close(self, force=False):
-        """Checks that we have the proper permission, then runs the closeup script.
-        On failures retries, and also sends alerts. Good for waking people up.
-        """
-
-        if self.test: return True
-        cmd = os.path.join(SCRIPTDIR,"closeup")
-        if force:
-            apflog("Calling a single instance of closeup. Will return regardless of result.", echo=True)
-            result, code = apftask_do(cmd)
-            return result
-        if self.mv_perm.binary is False:
-            if self.chk_close.binary == True:
-                apflog("Waiting for checkapf to close up")
-            else:
-                apflog("Waiting for permission to move")
-        chk_mv = '$checkapf.MOVE_PERM == true'
-        result = APFTask.waitFor(self.task, False, chk_mv, timeout=1200)
-        if not result:
-            apflog("Didn't have move permission after 20 minutes. Going ahead with closeup.",\
-                    echo=True)
-            return False
-        try:
-            if self.apfmon['FRONT_SHUTTER_CLOSEUPSTA'].read(binary=True,timeout=2) != 2:
-                # this is a check to see if the front shutter got caught running
-                # away, if so do not send any more shutter commands
-                apflog("Dome Shutters maybe running away!", level='error', echo=True)
-                return False
-        except:
-            apflog("Cannot communicate with apfmon1, proceeding anyway (fingers crossed)", \
-                 level='error', echo=True)
-
-
-        apflog("Running closeup script")
-        attempts = 0
-        close_start = datetime.datetime.now()
-        while (datetime.datetime.now() - close_start).seconds < 1800 and attempts < 8:
-            result = APFTask.waitFor(self.task, False, chk_mv, timeout=300)
-            if not result:
-                apflog("Didn't have move permission after 5 minutes. ", echo=True)
-                break
-            attempts += 1
-            result, code = apftask_do(cmd)
-            if not result:
-                apflog("Closeup failed with exit code %d" % code, echo=True)
-                if self.servo_failure() or self.slew_allowed is False:
-                    apflog("Likely Servo amplifier failure, may power cycle telescope",\
-                           echo=True,level='error')
-                    rv = self.power_down_telescope()
-                    if rv:
-                        apflog("Power cycled telescope",echo=True,level="error")
-                    else:
-                        apflog("Failure power cycling telescope",echo=True,level="error")
-                if attempts == 7:
-                    lstr = "Closeup has failed %d times consecutively. Human intervention likely required." % (attempts)
-                    areopen, whatsopen = self.is_open()
-                    if areopen == True:
-                        # truly dire, the telescope is open
-                        apflog(lstr, level='Alert', echo=True)
-                    else:
-                        # telescope powered on, and possibly in the wrong place, but not open
-                        apflog(lstr, level='error', echo=True)
-                APFTask.waitFor(self.task, True, timeout=30)
-            else:
-                break
-        if result:
-            try:
-                APFTask.set(self.task, suffix='LAST_CLOSE', value=time.time())
-            except:
-                apflog("cannot write apftask.MASTER_LAST_CLOSE",level='warn',echo=True)
-            return True
-        else:
-            apflog("Closeup could not successfully complete.")
-            return False
-        return False
 
     def update_last_obs(self,obsnum):
         """ If the last observation was a success,
@@ -1937,253 +921,6 @@ class APF:
 
         return
 
-
-    def set_tel_foc(self):
-        """
-        Sets the telescope focus to the predicted value returned by
-        pred_tel_focus()
-        """
-
-        predfocus  = self.pred_tel_focus()
-        self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
-
-        if self.mv_perm and self.faenable['binary'] == 1:
-            try:
-                self.focus.write(predfocus,binary=True,wait=False)
-                self.robot['MASTER_MESSAGE'].write("Wrote %f to eostele.Focus" % (predfocus*1000.) )
-            except Exception as e:
-                apflog("Cannot write eostele.FOCUS: %s" % (e), level="error", echo=True)
-
-    def set_autofoc_val(self):
-        """ APFControl.set_autofoc_val()
-            tests when the last time the telescope was focused,
-            if more than FOCUSTIME enable focus check
-        """
-
-        # check last telescope focus
-        lastfoc = self.robot['FOCUSTEL_LAST_SUCCESS'].read(binary=True)
-
-        if self.sun_rising() and (self.sunel.read(binary=True) < -20):
-            self.autofoc.write("robot_autofocus_disable")
-            return 0
-
-        lastopen = self.robot['OPENUP_LAST_SUCCESS'].read(binary=True)
-
-        if lastfoc < lastopen:
-            self.autofoc.write("robot_autofucs_enable")
-            return 2
-
-        if time.time() - lastfoc < 3600:
-            self.autofoc.write("robot_autofocus_disable")
-            return 0
-
-        predfocus  = self.pred_tel_focus()
-        #self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
-        focus_diff = math.fabs(predfocus - self.focus['binary'])
-        focus_diff *= 1e3
-
-        #self.focus.write(predfocus,binary=True,wait=False)
-        predfocus *= 1e3
-        self.autofoc.write("robot_autofocus_enable")
-        focval = 1
-
-        ostr = "Current telescope focus more than %5.3f mm" % focus_diff
-        ostr += "from predicted, setting to %5.3f." % predfocus
-        APFTask.set(self.task, suffix="MESSAGE", value=ostr, wait=False)
-
-        return focval
-
-    def update_windshield(self, state):
-        """Checks the current windshielding mode.
-        If the input state is auto, makes sure the mode is set properly based on wind speed and temperature.
-        Otherwise, the input state defines the mode.
-        """
-        currMode = self.robot["SCRIPTOBS_WINDSHIELD"].read().strip().lower()
-        rv = currMode
-        if state == 'on':
-            if currMode != 'enable':
-                apflog("Setting scriptobs_windshield to Enable")
-                rv = "Enable"
-                APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
-        elif state == 'off':
-            if currMode != 'disable':
-                apflog("Setting scriptobs_windshield to Disable")
-                rv = "Disable"
-                APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
-
-        else:
-            # State must be auto, so check wind and temperature.
-            # This state enables or disables windshielding based on the 
-            # wind speed and the outside temperature
-            #if self.down > 0:
-            #    wvel = self.avg_lists['M3WIND']
-            #else:
-            wvel = self.avg_lists['WINDAV']
-
-            apflog("Current median wind speed is %.2f with the limit %.2f" % \
-                   (wvel,WINDSHIELD_LIMIT), level='debug')
-            if currMode == 'enable' and wvel <= WINDSHIELD_LIMIT and \
-                float(self.avg_lists['TEMP']) > TEMP_LIMIT:
-                apflog("Setting scriptobs_windshield to Disable")
-                rv = "Disable"
-                APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
-
-            if currMode == 'disable' and (wvel > WINDSHIELD_LIMIT or \
-                                          float(self.avg_lists['TEMP']) < TEMP_LIMIT):
-                apflog("Setting scriptobs_windshield to Enable")
-                rv = "Enable"
-                APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
-
-        return rv
-
-
-    def check_FCUs(self, check_apfmon=False):
-        """
-        If the dome is open the FCs should be off. Sometimes they are commanded 
-        off but do not turn off.
-        This will attempt to fix that by checking if the dome is open, checking 
-        if the FCs are on, and then turning them on, then off. Which is the only
-        way to turn them off.
-        """
-
-        if check_apfmon:
-            status_value = self.apfmon['FC_STATUSSTA'].read(binary=True)
-            if status_value < 4:
-                return
-
-        for fc in ('FC2','FC3'):
-            if 'Vents' in self.whatsopn['ascii'] or 'DomeShutter' in self.whatsopn['ascii']:
-                # fcs should be off
-                if self.dome[fc].read(binary=True):
-                    try:
-                        self.dome[fc + 'CMD'].write(True)
-                        time.sleep(.1)
-                        self.dome[fc + 'CMD'].write(False)
-                    except:
-                        pass
-            else:
-                # fcs should be on
-                if self.dome[fc].read(binary=False):
-                    try:
-                        self.dome[fc + 'CMD'].write(False)
-                        time.sleep(.1)
-                        self.dome[fc + 'CMD'].write(True)
-                    except:
-                        pass
-
-        return
-    
-    def run_prepobs(self, evening=False):
-        """
-        run_prepobs()
-        Runs the prep-obs script to prepare the telescope for observing.
-
-        evening: If True, run prep-obs with the --evening flag.
-        """
-        apflog("Calling prep-obs.",echo=True)
-        prepobs = os.path.join(SCRIPTDIR,'prep-obs')
-        if evening:
-            prepobs += " --evening"
-        result, ret_code = apftask_do(prepobs)
-        if result is False:
-            # try again
-            self.dm_reset()
-            result, ret_code = apftask_do(prepobs)
-            if result is False:
-                log_str = "Prep-obs returned error code %d. " % (ret_code)
-                log_str += "Targeting object has failed."
-                apflog(log_str,level='error',echo=True)
-                return
-        return
-
-
-    def evening_star(self):
-        """Aim the APF at the desired target. This calls prep-obs, slewlock, and focus-telescope."""
-        if self.is_open()[0] is False:
-            apflog("APF is not open. Can't target a star while closed.",level='error',echo=True)
-            return
-        self.dm_reset()
-
-        if self.calsta['binary'] < 3 or self.focussta['binary'] < 3:
-            log_str = 'Focusinstr and/or Calibrate are running, will skip evening star observation.'
-            log_str += ' focusinstr=%s calibrate=%s' % (self.calsta,self.focussta)
-            apflog(log_str,echo=True)
-            return
-
-        # check on weirdness for UCAM host post-reboot
-        self.ucam_dispatch_mon()
-
-        # Call prep-obs
-        self.run_prepobs(evening=True)
-        self.decker.write('W',wait=False)
-
-        self.dm_reset()
-        apflog("Slewing to lower el",echo=True)
-        result, ret_code = apftask_do('slew -e 75')
-        if result is False:
-            apflog("Slew returned error code %d. Targeting object has failed." % (ret_code),level='error',echo=True)
-            return
-        # Slew to the specified RA and DEC, set guide camera settings, and centerup( Slewlock )
-        # Focus the telescope - all of this, including finding the star, is done in focusTel
-        self.dm_reset()
-        if self.find_star_focustel():
-            try:
-                self.robot['SCRIPTOBS_LINE_RESULT'].write(3)
-                self.robot['SCRIPTOBS_OBSERVED'].write(True)
-                self.guide['CLEARSUMS'].write('now')
-                self.guide['CLEARSUMS'].write('gstate')
-            except Exception as e:
-                log_str = "Cannot write 3 to SCRIPTOBS_LINE_RESULT or True"
-                log_str += " to SCRIPTOBS_OBSERVED: %s" % (e)
-                apflog(log_str, level='warn', echo=True)
-            return True
-        else:
-            try:
-                self.robot['SCRIPTOBS_LINE_RESULT'].write(2)
-            except Exception as e:
-                apflog("Cannot write 2 to SCRIPTOBS_LINE_RESULT: %s" % (e), level='warn', echo=True)
-            return False
-
-    def dm_reset(self):
-        """
-        dm_reset()
-
-        Writes to ROBOSTATE keyword, effecitively tapping the deadman switch.
-
-        """
-        try:
-            APFLib.write(self.checkapf['ROBOSTATE'], "master operating",timeout=10)
-        except Exception as e:
-            try:
-                ukind = self.userkind.read()
-            except:
-                ukind = "Unknown"
-            ostr = "Error: Cannot write to ROBOSTATE, USERKIND = %s, reason: %s" % (ukind,e)
-            apflog(ostr,level='error',echo=True)
-
-    def dm_zero(self):
-        """
-        dm_zero()
-
-        Sets deadman timer to 0 (-1).
-        If the telescope or dome is open, checkapf will force it closed.
-        """
-        try:
-            if self.checkapf['DMTIME'].read(binary=True) < 1:
-                APFLib.write(self.dmtimer, -1,timeout=10)
-        except Exception as e:
-            ostr = "Error: cannot touch DM Timer: %s " %( e)
-            apflog(ostr,level='error',echo=True)
-
-    def find_robot(self):
-        """Trys to find a running instance of scriptobs.
-            Returns the PID along with a boolean representing
-            if the robot was succesfully found."""
-        rpid = self.robot['SCRIPTOBS_PID'].read(binary=True)
-        if rpid == '' or rpid == -1:
-            return rpid, False
-
-        return rpid, True
 
     def start_robot(self,observation=None,skip=False,raster=False):
         """Start an instance of scriptobs. Returns the result from subprocess.Popen()."""
@@ -2203,11 +940,7 @@ class APF:
             apflog("Error setting scriptobs_autofoc", level='error',echo=True)
             return None
 
-        # Make sure APFTEQ is in night mode for observations
-        if self.teqmode.read() != 'Night':
-            self.set_apfteq_mode('Night')
-
-            # Check the instrument focus for a reasonable value
+        # Check the instrument focus for a reasonable value
         if self.dewarfoc > DEWARMAX or self.dewarfoc < DEWARMIN:
             lastfit_dewarfoc = ktl.read("apftask","FOCUSINSTR_LASTFOCUS",binary=True)
             log_str = "Warning: The dewar focus is currently %d. " % (self.dewarfoc)
@@ -2219,11 +952,6 @@ class APF:
         # check on weirdness for UCAM host post-reboot
         self.ucam_dispatch_mon()
 
-        telstate = self.tel['TELSTATE'].read()
-        if telstate == 'Disabled':
-            rv, _ = apftask_do(os.path.join(SCRIPTDIR,"slew --hold"))
-            if not rv:
-                return None
         # Start scriptobs
 
         outfile = open("robot.log", 'a')
@@ -2240,6 +968,15 @@ class APF:
 
         return p
 
+    def find_robot(self):
+        """Trys to find a running instance of scriptobs.
+            Returns the PID along with a boolean representing
+            if the robot was succesfully found."""
+        rpid = self.robot['SCRIPTOBS_PID'].read(binary=True)
+        if rpid == '' or rpid == -1:
+            return rpid, False
+
+        return rpid, True
 
     def kill_robot(self, now=False):
         """ In case during an exposure there is a need to stop the robot and close up."""
@@ -2262,6 +999,35 @@ class APF:
                 errstr = "Cannot abort scriptobs: %s" % (e)
                 apflog(errstr,level="Warn",echo=True)
 
+    def turn_on_ucam(self):
+        """
+        turn_on_ucam()
+        Turns on the UCAM power supply and starts the UCAM software.
+        """
+
+        self.ucampower.write('On',wait=False)
+        rv = self.ucampower.waitFor('== On',timeout=30)
+        APFTask.wait(self.task, True, timeout=5)
+        if rv is False:
+            apflog('Cannot power on UCam',level='Alert',echo=True)
+            return False
+
+        ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
+        APFTask.wait(self.task, True, timeout=1)
+        ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
+        APFTask.wait(self.task, True, timeout=1)
+        rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
+        if rv == 0:
+            apflog("UCAM software did not start, trying again",echo=True,level='Warn')
+            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
+            APFTask.wait(self.task, True, timeout=1)
+            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
+            APFTask.wait(self.task, True, timeout=1)
+            rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
+            if rv == 0:
+                apflog("UCAM software did not start",echo=True,level='Alert')
+                return False
+        return True
 
     def test_bias(self):
         """
@@ -2274,37 +1040,19 @@ class APF:
         """
 
         if self.ucampower is False:
-            self.ucampower.write('On',wait=False)
-            rv = self.ucampower.waitFor('== On',timeout=30)
-            APFTask.wait(self.task, True, timeout=5)
+            rv = self.turn_on_ucam()
             if rv is False:
-                apflog('Cannot power on UCam',level='Alert',echo=True)
+                apflog("Cannot power on UCAM",level='alert')
                 return False
-
-            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
-            APFTask.wait(self.task, True, timeout=1)
-            ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
-            APFTask.wait(self.task, True, timeout=1)
-            rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
-            if rv == 0:
-                apflog("UCAM software did not start, trying again",echo=True,level='Warn')
-                ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
-                APFTask.wait(self.task, True, timeout=1)
-                ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
-                APFTask.wait(self.task, True, timeout=1)
-                rv = ktl.read("apftask","UCAMLAUNCHER_UCAM_STATUS",binary=True)
-                if rv == 0:
-                    apflog("UCAM software did not start",echo=True,level='Alert')
-                    return False
 
         apfschedule = ktl.Service('apfschedule')
         # check if the focusinstr or calibrate tasks are already running
         if ktl.read('apftask','FOCUSINSTR_PID',binary=True) > 0:
-            return None
+            return False
         if ktl.read('apftask','CALIBRATE_PID',binary=True) > 0:
-            return None
+            return False
         if ktl.read('apftask','SCRIPTOBS_PID',binary=True) > 0:
-            return None
+            return False
         # create exposure object
         exp = Exposure.Exposure(0,"bias",count=1,record="yes",parent=self.task,dark=True)
 
@@ -2400,7 +1148,10 @@ class APF:
         command = apftask['UCAMLAUNCHER_UCAM_COMMAND']
         ucamstat = apftask['UCAMLAUNCHER_UCAM_STATUS']
 
-        ktl.write('detectormon','apfucamdis',600,wait=False,binary=True)
+        try:
+            ktl.write("detectormon","APFUCAMDIS",600,wait=False,binary=True)
+        except:
+            apflog("Cannot write to detectormon.APFUCAMDIS",level='error',echo=True)
 
         try:
             command.write("Stop")
@@ -2431,19 +1182,24 @@ class APF:
             return False
 
         nv = self.combo_ps.waitFor(" == Ok",timeout=30)
-        apflog("UCAM software combo_ps keyword OK",echo=True)
-        if nv:
 
-            ktl.write('detectormon','apfucamdis',0,wait=False,binary=True)
+        if nv:
+            apflog("UCAM software combo_ps keyword OK",echo=True)
             self.obsnum.monitor()
             self.obsnum.callback(self.update_last_obs)
 
             self.event.monitor()
             self.event.callback(self.event_mon)
+            try:
+                ktl.write("detectormon","APFUCAMDIS",0,wait=False,binary=True)
+            except:
+                apflog("Cannot write to detectormon.APFUCAMDIS",level='error',echo=True)
 
-            return nv
+            return True
 
         apflog("UCAM host reboot failure, combo_ps still not ok" , level="alert", echo=True)
+
+        return False
 
     def ucam_restart(self, fake=False):
         """
@@ -2456,7 +1212,11 @@ class APF:
             apflog("Would have restarted UCAM software ")
             return True
 
-        ktl.write('detectormon','apfucamdis',120,wait=False,binary=True)
+        try:
+            ktl.write("detectormon","APFUCAMDIS",120,wait=False,binary=True)
+        except:
+            apflog("Cannot write to detectormon.APFUCAMDIS",level='error',echo=True)
+
         try:
             apflog("Stop and restarting UCAM software",echo=True)
             ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","stop")
@@ -2464,8 +1224,12 @@ class APF:
                 ktl.write("apftask","UCAMLAUNCHER_UCAM_COMMAND","run")
                 nv = self.combo_ps.waitFor(" == Ok",timeout=30)
                 if nv:
-                    ktl.write('detectormon','apfucamdis',0,wait=False,binary=True)
-                    return True    
+                    try:
+                        ktl.write("detectormon","APFUCAMDIS",0,wait=False,binary=True)
+                    except:
+                        apflog("Cannot write to detectormon.APFUCAMDIS",level='error',echo=True)
+
+                    return True
                 apflog("UCAM  restart failure, combo_ps still not ok" , level="error", echo=True)
         except:
             apflog("UCAM status bad, cannot restart",level='alert')
@@ -2521,7 +1285,7 @@ class APF:
                 return False
 
         return True
-    
+
     def ucam_watchdir(self):
         '''
         
@@ -2544,8 +1308,11 @@ class APF:
             return True
         return False
 
-if __name__ == '__main__':
-    print("Testing telescope monitors, grabbing and printing out current state.")
+def main():
+    """
+    Main function to test the APF monitors.
+    """
+    print("Testing APF monitors, grabbing and printing out current state.")
 
     task = 'example'
 
@@ -2560,4 +1327,7 @@ if __name__ == '__main__':
     while True:
         APFTask.wait(task,True,timeout=10)
         print(str(apf))
-        apf.robot['FOCUSTEL_STARTFOCUS'].write(apf.pred_tel_focus())
+
+
+if __name__ == '__main__':
+    main()
