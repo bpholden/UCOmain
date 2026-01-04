@@ -161,7 +161,7 @@ class Observe(threading.Thread):
                 return False
 
         mtch = re.search("ERR/WIND", message)
-        if mtch and self.apf.ok2open is True:
+        if mtch and self.tel.ok2open is True:
             # uh oh
             apflog("scriptobs has failed - checking servos", level="error", echo=True)
             rv = self.check_servos()
@@ -259,10 +259,10 @@ class Observe(threading.Thread):
         result = APFTask.waitFor(self.task, True, expression=chk_done, timeout=600)
         if result:
 
-            rv = self.apf.servo_failure()
+            rv = self.tel.servo_failure()
             if rv:
 
-                rv = self.apf.power_down_telescope()
+                rv = self.tel.power_down_telescope()
                 if rv:
                     apflog("Power cycled telescope", echo=True)
                 else:
@@ -273,11 +273,11 @@ class Observe(threading.Thread):
             apflog("No current servo faults", echo=True)
             return True
 
-        elif result is False and "DomeShutter" in self.apf.is_open()[1]:
+        elif result is False and "DomeShutter" in self.tel.is_open()[1]:
             ostr = "Error: After 10 min move permission did not return, "
             ostr += "and the dome is still open."
             apflog(ostr, level='error', echo=True)
-            self.apf.close(force=True)
+            self.tel.close(force=True)
             return False
 
     def check_files(self, outfn='googledex.dat'):
@@ -353,10 +353,10 @@ class Observe(threading.Thread):
 
             slowdown = 1
             apflog("Calculating expected counts")
-            apflog("self.VMAG [%4.2f] - self.BV [%4.2f] - self.apf.ael [%4.2f]"\
-                    % (self.VMAG, self.BV, self.apf.ael))
+            apflog("self.VMAG [%4.2f] - self.BV [%4.2f] - self.tel.ael [%4.2f]"\
+                    % (self.VMAG, self.BV, self.tel.ael))
             exp_cnts_sec = ExposureCalculations.getEXPMeter_Rate(self.VMAG, \
-                                                                 self.BV, self.apf.ael, \
+                                                                 self.BV, self.tel.ael, \
                                                                     self.apf.avg_fwhm, \
                                                                         self.decker)
             try:
@@ -486,7 +486,7 @@ class Observe(threading.Thread):
                 # until a slew is finished, so this will ignore that
                 self.apf.run_prepobs()
 
-            self.apf.update_windshield(self.windshield_mode)
+            self.tel.update_windshield(self.windshield_mode)
             self.focval = self.apf.set_autofoc_val()
 
             # setup a B star observation if needed
