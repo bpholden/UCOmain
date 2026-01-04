@@ -179,7 +179,7 @@ class Observe(threading.Thread):
         if self.lineresult.binary == 3:
             retval = True
         else:
-            if "ERR/WIND"  in self.apf.robot["MASTER_MESSAGE"].read():
+            if "ERR/WIND"  in self.tel.robot["MASTER_MESSAGE"].read():
                 apflog("Windshield error, check for faults", echo=True, level='error')
                 return retval
             if self.lineresult.binary == 2:
@@ -194,8 +194,8 @@ class Observe(threading.Thread):
         """
         retval = False
 
-        mtch = re.search("end\Z", self.apf.line.read())
-        if self.apf.ldone.read(binary=True) == 0 or mtch:
+        mtch = re.search("end\Z", self.tel.line.read())
+        if self.tel.ldone.read(binary=True) == 0 or mtch:
             retval = True
         return retval
 
@@ -328,7 +328,7 @@ class Observe(threading.Thread):
         def calc_slowdown():
 
             if self.blank:
-                return self.apf.robot["MASTER_SLOWDOWN"].read()
+                return self.tel.robot["MASTER_SLOWDOWN"].read()
 
             if self.BV is None:
                 ostr = "Warning!: Ended up in get_target() with no B Magnitude value, "
@@ -341,7 +341,7 @@ class Observe(threading.Thread):
                 ostr += "assumed a slowdown of 5."
                 return 5
 
-            if self.apf.line_result.read(binary=True) < 3:
+            if self.tel.line_result.read(binary=True) < 3:
                 # this means that the previous observation failed, so will assume
                 # a big slowdown
                 return 5
@@ -519,9 +519,9 @@ class Observe(threading.Thread):
                 # Send scriptobs EOF to finish execution -
                 # wouldn't want to leave a zombie scriptobs running
                 self.scriptobs.stdin.close()
-                self.apf.close()
+                self.tel.close()
                 if self.fixed_list is None:
-                    APFLib.write(self.apf.ldone, 0)
+                    APFLib.write(self.tel.ldone, 0)
                 self.apf.countrate = -1.0
                 # sleep for a half hour to see if the clouds blow by
                 APFTask.waitfor(self.task, True, timeout=60*30)
@@ -584,25 +584,24 @@ class Observe(threading.Thread):
                 apflog("UCAM OK", echo=True)
 
             apflog("Running open at %s as sunel = %4.2f" % (when, float(sunel)), echo=True)
-            apfopen, _ = self.apf.is_open()
+            apfopen, _ = self.tel.is_open()
             if apfopen:
-                self.apf.dm_reset()
+                self.tel.dm_reset()
             else:
-                self.apf.dm_zero()
-
-            result = self.apf.openat(sunset=sunset)
+                self.tel.dm_zero()
+            result = self.tel.openat(sunset=sunset)
             apflog("opening completed with result %s" % (result), echo=True)
             if result is False:
                 apflog("opening hasn't successfully opened. Current sunel = %4.2f" % (float(sunel)), level='warn', echo=True)
                 if float(sunel) < SchedulerConsts.SUNEL_ENDLIM:
-                    result = self.apf.openat(sunset=sunset)
-                    if not result and self.apf.openOK['binary']:
+                    result = self.tel.openat(sunset=sunset)
+                    if not result and self.tel.openOK['binary']:
                         apflog("Error: opening has failed twice, likely needs intervention.", level='Alert', echo=True)
-                        self.apf.close()
+                        self.tel.close()
                         self.can_open = False
                         self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
-            self.apf.check_FCUs()
-            self.apf.dm_reset()
+            self.tel.check_FCUs()
+            self.tel.dm_reset()
             empty_queue()
 
             return result
@@ -618,20 +617,20 @@ class Observe(threading.Thread):
             APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
 
             rv = self.apf.disable_inst()
-            rv = self.apf.close(force=force)
+            rv = self.tel.close(force=force)
             if rv:
                 return
-            rv = self.apf.servo_failure()
+            rv = self.tel.servo_failure()
             if rv:
                 ostr = "Servo failure detected, power cycling telescope"
                 apflog(ostr, level="timed_alert", echo=True)
-                rv = self.apf.power_down_telescope()
+                rv = self.tel.power_down_telescope()
                 if rv:
                     apflog("Power cycled telescope", echo=True)
                 else:
                     apflog("Failure power cycling telescope", echo=True, level="alert")
 
-            self.apf.check_FCUs()
+            self.tel.check_FCUs()
             ds.zero_last_objs_attempted()
             self.star_failures = 0
             self.can_open = True
@@ -708,7 +707,7 @@ class Observe(threading.Thread):
                 self.start_time = None
                 self.target = None
             else:
-                apflog("%d total starlist lines and %d lines done." % (tot, self.apf.ldone))
+                apflog("%d total starlist lines and %d lines done." % (tot, self.tel.ldone))
 
             return tot
 
@@ -722,8 +721,8 @@ class Observe(threading.Thread):
             APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
             self.apf.validate_UCAM_outputs()
             self.apf.update_windshield(self.windshield_mode)
-            self.apf.apftask_mon(self.apf.metxfersta)
-            self.apf.apftask_mon(self.apf.apfteqsta)
+            self.tel.apftask_mon(self.tel.metxfersta)
+            self.tel.apftask_mon(self.tel.apfteqsta)
             self.apf.status_clear()
 
             _, running = self.apf.find_robot()
@@ -791,14 +790,14 @@ class Observe(threading.Thread):
 
         # Actual Watching loop
         apflog("Beginning observing process....", echo=True)
-        self.apf.dm_zero()
+        self.tel.dm_zero()
         haveobserved = False
         failstart = 0
         do_msg = 0
 
         while self.signal:
             # Check on everything
-            if self.apf.sun_rising():
+            if self.tel.sun_rising():
                 rising = True
                 sunel_lim = SchedulerConsts.SUNEL_ENDLIM
             else:
@@ -806,28 +805,28 @@ class Observe(threading.Thread):
                 sunel_lim = SchedulerConsts.SUNEL_STARTLIM
 
             _, running = self.apf.find_robot()
-            cursunel = self.apf.sunel
+            cursunel = self.tel.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
-            self.apf.check_FCUs(check_apfmon=True)
+            self.tel.check_FCUs(check_apfmon=True)
             # Check and close for weather
 
-            self.bad_weather = self.apf.dew_too_close \
+            self.bad_weather = self.tel.dew_too_close \
                 or not self.apf.gcam_power.binary
 
-            if self.apf.is_open()[0] and self.bad_weather:
+            if self.tel.is_open()[0] and self.bad_weather:
                 closetime = datetime.datetime.now()
                 APFTask.set(self.task, suffix="MESSAGE", \
                             value="Closing for weather or instrument issues", wait=False)
                 apflog("No longer ok to open: %s." % (closetime), echo=True)
-                apflog("OPREASON: " + str(self.apf.checkapf["OPREASON"].read()), echo=True)
-                apflog("WEATHER: " + str(self.apf.checkapf['WEATHER'].read()), echo=True)
-                apflog("CLOSE TO DEW POINT: %s" % (str(self.apf.dew_too_close)), echo=True)
+                apflog("OPREASON: " + str(self.tel.checkapf["OPREASON"].read()), echo=True)
+                apflog("WEATHER: " + str(self.tel.checkapf['WEATHER'].read()), echo=True)
+                apflog("CLOSE TO DEW POINT: %s" % (str(self.tel.dew_too_close)), echo=True)
                 apflog("Guider camera power: %s" % ("ON" if self.apf.gcam_power.binary else "OFF"), \
                        echo=True)
                 closing()
 
-            if not self.apf.is_open()[0] and not self.apf.openOK and \
-                self.apf.telstate in ['Tracking', 'Slewing']:
+            if not self.tel.is_open()[0] and not self.tel.openOK and \
+                self.tel.telstate in ['Tracking', 'Slewing']:
                 # we are closed and not ok to open, but the telescope is tracking
                 # this is bad, so close the telescope
                 logstr = "Telescope is tracking but dome is closed, closing telescope"
@@ -901,27 +900,27 @@ class Observe(threading.Thread):
                 outstr = "Closing due to sun elevation. Sunel = % 4.2f" % float(cursunel)
                 apflog(outstr, echo=True)
                 APFTask.set(self.task, suffix="MESSAGE", value=outstr, wait=False)
-                if self.apf.is_open()[0]:
+                if self.tel.is_open()[0]:
                     msg = "APF is open, closing due to sun elevation = %4.2f" % float(cursunel)
                     closing()
                 else:
                     msg = "Telescope was already closed when sun got to %4.2f" % float(cursunel)
 
-                if self.apf.is_open()[0]:
+                if self.tel.is_open()[0]:
                     apflog("Error: Closeup did not succeed", level='error', echo=True)
 
                 self.exit_message = msg
                 self.stop()
 
             # Open
-            if self.apf.openOK and self.can_open and not self.bad_weather:
-                if not self.apf.is_ready_observing()[0] and \
+            if self.tel.openOK and self.can_open and not self.bad_weather:
+                if not self.tel.is_ready_observing()[0] and \
                     float(cursunel) < SchedulerConsts.SUNEL_HOR:
                     if float(cursunel) > sunel_lim and not rising:
                         APFTask.set(self.task, suffix="MESSAGE", value="Open at sunset", wait=False)
                         success = opening(cursunel, sunset=True)
                         if success is False:
-                            if self.apf.openOK:
+                            if self.tel.openOK:
                                 apflog("Error: Cannot open the dome", level="timed_alert", \
                                        echo=True)
                             else:
@@ -930,7 +929,7 @@ class Observe(threading.Thread):
                                         level="error", echo=True)
 
                         else:
-                            rv = self.apf.evening_star()
+                            rv = self.tel.evening_star()
                             if not rv:
                                 apflog("evening star targeting and telescope focus did not work",\
                                         level='warn', echo=True)
@@ -944,15 +943,15 @@ class Observe(threading.Thread):
                                 result = APFTask.waitFor(self.task, True, \
                                                          expression=chk_done, \
                                                             timeout=60)
-                                self.apf.dm_reset()
-                                if self.apf.openOK['binary'] is False:
+                                self.tel.dm_reset()
+                                if self.tel.openOK['binary'] is False:
                                     closetime = datetime.datetime.now()
                                     APFTask.set(self.task, suffix="MESSAGE",\
                                                  value="Closing for weather", wait=False)
                                     apflog("No longer ok to open.", echo=True)
-                                    apflog("OPREASON: " + self.apf.checkapf["OPREASON"].read(),\
+                                    apflog("OPREASON: " + self.tel.checkapf["OPREASON"].read(),\
                                             echo=True)
-                                    apflog("WEATHER: " + self.apf.checkapf['WEATHER'].read(),\
+                                    apflog("WEATHER: " + self.tel.checkapf['WEATHER'].read(),\
                                             echo=True)
                                     closing()
                                     break
@@ -966,8 +965,8 @@ class Observe(threading.Thread):
                     else:
                         success = True
                     if success is False:
-                        self.apf.close()
-                        if self.apf.openOK:
+                        self.tel.close()
+                        if self.tel.openOK:
                             omsg = "Error: Cannot open the dome"
                             APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
                             apflog(omsg, echo=True, level='error')
@@ -975,28 +974,28 @@ class Observe(threading.Thread):
                             apflog("Error: Lost permission during opening", echo=True)
 
                 # If we can open, try to set stuff up so the vent doors can be controlled by apfteq
-                if not rising and not self.apf.is_open()[0] and \
+                if not rising and not self.tel.is_open()[0] and \
                     float(cursunel) > SchedulerConsts.SUNEL_HOR:
                     APFTask.set(self.task, suffix="MESSAGE", \
                                 value="Powering up for APFTeq", \
                                     wait=False)
-                    if self.apf.clear_estop():
+                    if self.tel.clear_estop():
                         try:
-                            APFLib.write(self.apf.dome['AZENABLE'], 'enable', timeout=10)
+                            APFLib.write(self.tel.dome['AZENABLE'], 'enable', timeout=10)
                         except:
                             apflog("Error: Cannot enable AZ drive", level="error")
 
-                        self.apf.set_apfteq_mode('Evening')
+                        self.tel.set_apfteq_mode('Evening')
                         vent_open = "$eosdome.VD4STATE = VENT_OPENED"
                         result = APFTask.waitfor(self.task, True, expression=vent_open, timeout=180)
                         if result:
                             try:
-                                APFLib.write(self.apf.dome['AZENABLE'], 'disable', timeout=10)
+                                APFLib.write(self.tel.dome['AZENABLE'], 'disable', timeout=10)
                             except:
                                 apflog("Error: Cannot disable AZ drive", level="warn", echo=True)
 
                         else:
-                            if self.apf.openOK:
+                            if self.tel.openOK:
                                 ostr = "Error: Vent doors did not open, is apfteq"
                                 ostr += " and eosdome running correctly?"
                                 apflog(ostr, level='info', echo=True)
@@ -1012,14 +1011,14 @@ class Observe(threading.Thread):
                 pass
 
             # Check for servo errors
-            if not self.apf.slew_allowed.read(binary=True) and self.apf.is_ready_observing()[0]:
+            if not self.tel.slew_allowed.read(binary=True) and self.tel.is_ready_observing()[0]:
                 apflog("Likely amplifier failure, may power cycle telescope",\
                         echo=True, level='error')
                 rv = self.check_servos()
 
             # If we are open and scriptobs isn't running, start it up
-            if self.apf.is_ready_observing()[0] and not running \
-                and float(cursunel) <= sunel_lim and self.apf.openOK:
+            if self.tel.is_ready_observing()[0] and not running \
+                and float(cursunel) <= sunel_lim and self.tel.openOK:
                 focusing = self.apf.focussta['binary'] < 3
                 if focusing:
                     apflog("Focusing in progress, waiting for it to finish", echo=True)
@@ -1085,16 +1084,16 @@ class Observe(threading.Thread):
 
 
             # Keep an eye on the deadman timer if we are open
-            if self.apf.is_open()[0] and self.apf.dmtime <= DMLIM:
-                self.apf.dm_reset()
+            if self.tel.is_open()[0] and self.tel.dmtime <= DMLIM:
+                self.tel.dm_reset()
 
-            if not self.apf.is_open()[0] and not rising:
+            if not self.tel.is_open()[0] and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
                 APFTask.waitFor(self.task, True, timeout=5)
 
-            if  self.apf.is_open()[0] and float(cursunel) > sunel_lim and not rising:
+            if  self.tel.is_open()[0] and float(cursunel) > sunel_lim and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
