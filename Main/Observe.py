@@ -29,10 +29,11 @@ class Observe(threading.Thread):
         The Observe class is a thread
         that runs the observing process.
     """
-    def __init__(self, apf, opt, tot_temps=4, task='master'):
+    def __init__(self, apf, tel, opt, tot_temps=4, task='master'):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.apf = apf
+        self.tel = tel
         self.task = task
         if opt.name:
             self.user = opt.name
