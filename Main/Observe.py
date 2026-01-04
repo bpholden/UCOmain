@@ -181,7 +181,7 @@ class Observe(threading.Thread):
         if self.lineresult.binary == 3:
             retval = True
         else:
-            if "ERR/WIND"  in self.apf.robot["MASTER_MESSAGE"].read():
+            if "ERR/WIND"  in self.tel.robot["MASTER_MESSAGE"].read():
                 apflog("Windshield error, check for faults", echo=True, level='error')
                 return retval
             if self.lineresult.binary == 2:
@@ -196,8 +196,8 @@ class Observe(threading.Thread):
         """
         retval = False
 
-        mtch = re.search("end\Z", self.apf.line.read())
-        if self.apf.ldone.read(binary=True) == 0 or mtch:
+        mtch = re.search("end\Z", self.tel.line.read())
+        if self.tel.ldone.read(binary=True) == 0 or mtch:
             retval = True
         return retval
 
@@ -328,7 +328,7 @@ class Observe(threading.Thread):
         def calc_slowdown():
 
             if self.blank:
-                return self.apf.robot["MASTER_SLOWDOWN"].read()
+                return self.tel.robot["MASTER_SLOWDOWN"].read()
 
             if self.bmv is None:
                 ostr = "Warning!: Ended up in get_target() with no B Magnitude value, "
@@ -341,7 +341,7 @@ class Observe(threading.Thread):
                 ostr += "assumed a slowdown of 5."
                 return 5
 
-            if self.apf.line_result.read(binary=True) < 3:
+            if self.tel.line_result.read(binary=True) < 3:
                 # this means that the previous observation failed, so will assume
                 # a big slowdown
                 return 5
@@ -485,7 +485,7 @@ class Observe(threading.Thread):
                 # until a slew is finished, so this will ignore that
                 self.apf.run_prepobs()
 
-            self.apf.update_windshield(self.windshield_mode)
+            self.tel.update_windshield(self.windshield_mode)
             self.focval = self.apf.set_autofoc_val()
 
             # setup a B star observation if needed
@@ -520,7 +520,7 @@ class Observe(threading.Thread):
                 self.scriptobs.stdin.close()
                 self.tel.close()
                 if self.fixed_list is None:
-                    APFLib.write(self.apf.ldone, 0)
+                    APFLib.write(self.tel.ldone, 0)
                 self.apf.countrate = -1.0
                 # sleep for a half hour to see if the clouds blow by
                 APFTask.waitfor(self.task, True, timeout=60*30)
@@ -604,7 +604,6 @@ class Observe(threading.Thread):
                         self.tel.close()
                         self.can_open = False
                         self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
-
             self.tel.check_FCUs()
             self.tel.dm_reset()
             empty_queue()
@@ -709,7 +708,7 @@ class Observe(threading.Thread):
                 self.start_time = None
                 self.target = None
             else:
-                apflog("%d total starlist lines and %d lines done." % (tot, self.apf.ldone))
+                apflog("%d total starlist lines and %d lines done." % (tot, self.tel.ldone))
 
             return tot
 
@@ -800,7 +799,7 @@ class Observe(threading.Thread):
                 sunel_lim = SchedulerConsts.SUNEL_STARTLIM
 
             _, running = self.apf.find_robot()
-            cursunel = self.tel.sunel
+            cursunel = self.apf.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
             self.tel.check_FCUs(check_apfmon=True)
             # Check and close for weather

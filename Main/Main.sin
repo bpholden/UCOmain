@@ -42,12 +42,12 @@ os.umask(0o007)
 PARENT = 'master'
 
 # global
-paused = False
+
 success = False
 
 POSSIBLE_PHASES = ["Init", "Focus", "Cal-Pre", "Watching", "Cal-Post", "Focus-Post"]
 
-def control_watch(keyword,parent):
+def control_watch(keyword):
     '''
     control_watch(keyword,parent)
 
@@ -57,31 +57,12 @@ def control_watch(keyword,parent):
     '''
     if keyword['populated'] is False:
         return
-    try:
-        value = keyword['ascii']
-        global paused
-        if value == "Abort":
-            APFTask.set(parent, suffix='STATUS', value='Exited/Failure')
-            apflog("Aborted by APFTask")
-            shutdown()
-        elif value == "Pause" and not paused:
-            try:
-                APFTask.set(parent, suffix='STATUS', value='PAUSED')
-                paused = True
-            except:
-                apflog("Failure to set STATUS in APFTask", level="error")
-                shutdown()
 
-        else:
-            try:
-                APFTask.set(parent, suffix='STATUS', value='Running')
-                paused = False
-            except:
-                apflog("Failure to set STATUS in APFTask", level='error')
-                shutdown()
+    value = keyword['ascii']
 
-    except:
-        return
+    if value == "Abort" or value == "Pause":
+        apflog("Aborted by APFTask")
+        shutdown()
 
 
 def signal_shutdown(signal, frame):
@@ -420,8 +401,7 @@ def main():
     APFTask.set(parent, "TRIPWIRE", "TASK_ABORT")
 
     control = apftask[parent + '_CONTROL']
-    cw = functools.partial(control_watch, parent=parent)
-    control.callback(cw)
+    control.callback(control_watch)
     control.monitor(wait=False)
 
     apflog("Initiallizing APF monitors.", echo=True)
