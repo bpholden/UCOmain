@@ -94,19 +94,21 @@ class getUCOTargets(threading.Thread):
                 self.reading = False
 
 
-if __name__ == "__main__":
+def main():
 
     class Opt:
-        pass
+        def __init__(self):
+            self.test = True
+            self.time_left = "/home/holden/time_left.csv"
+            self.rank_table = '2025B_ranks_operational'
 
 
     task = 'example'
     APFTask.establish(task, os.getpid())
     opt = Opt()
-    opt.test = True
-    opt.time_left = "/home/holden/time_left.csv"
-    opt.rank_table = '2025B_ranks_operational'
-
     uco_targets = UCOTargets.UCOTargets(opt)
 
-    get_targs = getUCOTargets(uco_targets, task=task)
+    _ = getUCOTargets(uco_targets, task=task)
+
+if __name__ == "__main__":
+    main()
