@@ -20,8 +20,8 @@ class UCOTargets(object):
         self.rank_table_name = opt.rank_table
         self.time_left_name = opt.time_left
         self.debug = opt.test
-        self.star_tab_name = 'googledex.dat' # historical
-        self.star_tab = None
+        self.star_table_name = 'googledex.dat' # historical
+        self.star_table = None
         self.rank_table = None
         self.hour_table = None
         self.too = None
@@ -42,7 +42,7 @@ class UCOTargets(object):
             return
 
     def __repr__(self):
-        return "<UCOTargets rank_table=%s star_tab=%s>" % (self.rank_table_name, self.star_tab_name)
+        return "<UCOTargets rank_table=%s star_table=%s>" % (self.rank_table_name, self.star_table_name)
 
 
     def copy_backup(self, file_name):
@@ -62,16 +62,16 @@ class UCOTargets(object):
         Append a 'too' column to star table based on rank_table info.
         
         '''
-        if self.star_tab is None or self.rank_table is None:
+        if self.star_table is None or self.rank_table is None:
             return
         if 'too' not in self.rank_table.columns:
             return
         too_sheets =  self.rank_table['sheetn'][self.rank_table['too']]
 
-        self.star_tab['too'] = np.zeros(len(self.star_tab), dtype=bool)
+        self.star_table['too'] = np.zeros(len(self.star_table), dtype=bool)
         for sn in too_sheets:
-            idxs = self.star_tab['sheetn'] == sn
-            self.star_tab['too'][idxs] = True
+            idxs = self.star_table['sheetn'] == sn
+            self.star_table['too'][idxs] = True
 
     def make_hour_constraints(self):
         '''
@@ -135,18 +135,18 @@ class UCOTargets(object):
         '''
 
         try:
-            self.star_tab, _ = ParseUCOSched.parse_UCOSched(self.rank_table, outfn=self.star_tab_name,
+            self.star_table, _ = ParseUCOSched.parse_UCOSched(self.rank_table, outfn=self.star_table_name,
                                                         outdir=os.getcwd(),
                                                         prilim=self.prilim,
                                                         certificate=self.certificate)
         except Exception as e:
             apflog("Error: Cannot download googledex?! %s" % (e),level="error")
 
-        if self.star_tab is None:
+        if self.star_table is None:
             # goto backup
-            if self.copy_backup(self.star_tab_name):
+            if self.copy_backup(self.star_table_name):
                 try:
-                    self.star_tab, _ = ParseUCOSched.parse_UCOSched(self.rank_table, outfn=self.star_tab_name,
+                    self.star_table, _ = ParseUCOSched.parse_UCOSched(self.rank_table, outfn=self.star_table_name,
                                                         outdir=os.getcwd(),
                                                         prilim=self.prilim,
                                                         certificate=self.certificate)
@@ -169,9 +169,9 @@ def main():
     uco_targets.make_hour_table()
     print("Hour table:", uco_targets.hour_table)
     uco_targets.make_star_table()
-    print("Star table:", uco_targets.star_tab[0])
+    print("Star table:", uco_targets.star_table[0])
     uco_targets.append_too_column()
-    print("Star table:", uco_targets.star_tab[0])
+    print("Star table:", uco_targets.star_table[0])
 
 if __name__ == "__main__":
     main()

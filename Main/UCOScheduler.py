@@ -670,7 +670,7 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
     res['BINNING'] = star_table['binning'][idx]
     res['isTemp'] = False
     res['isBstar'] = bstar
-    res['isTOO'] = star_table['TOO'][idx]
+    res['isTOO'] = star_table['too'][idx]
     res['mode'] = ''
     res['owner'] = star_table['sheetn'][idx]
 
@@ -814,28 +814,25 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
             ptime = datetime.datetime.utcfromtimestamp(int(time.time()))
 
     apflog("get_next(): Updating star list with previous observations", echo=True)
-    observed, star_table = ParseUCOSched.update_local_starlist(ptime,\
+    observed, ucotargets.star_table = ParseUCOSched.update_local_starlist(ptime,\
                                                                outfn=outfn, toofn=toofn, \
                                                                 observed_file="observed_targets")
 
     ucotargets.make_rank_table()
     ucotargets.make_hour_table()
-    ucotargets.append_too_column()
 
     if ucotargets.hour_table is not None:
         ucotargets.hour_table = update_hour_table(ucotargets.hour_table, observed, ptime)
     # Parse the Googledex
     # Note -- RA and Dec are returned in Radians
 
-    if star_table is None:
+    if ucotargets.star_table is None:
         apflog("get_next(): Parsing the star list", echo=True)
         ucotargets.make_star_table()
-        star_table = ucotargets.star_table
     else:
-        stars = ParseUCOSched.gen_stars(star_table)
+        stars = ParseUCOSched.gen_stars(ucotargets.star_table)
     targ_num = len(stars)
-
-    # List of targets already observed
+    ucotargets.append_too_column()
 
     last_failure = last_attempted()
     if last_failure is not None:
@@ -858,14 +855,14 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
 
     apflog("get_next(): Will attempt templates = %s" % str(do_templates) ,echo=True)
     # Note which of these are B-Stars for later.
-    bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
+    bstars = (ucotargets.star_table['Bstar'] == 'Y')|(ucotargets.star_table['Bstar'] == 'y')
 
     if bstar and np.any(bstars) is False:
         apflog("get_next(): No B stars listed in target sheets!", label='Error', echo=True)
         return None
 
     apflog("get_next(): Computing exposure times", echo=True)
-    totexptimes = tot_exp_times(star_table, targ_num)
+    totexptimes = tot_exp_times(ucotargets.star_table, targ_num)
 
     available = np.ones(targ_num, dtype=bool)
     cur_elevations = np.zeros(targ_num, dtype=float)
@@ -873,22 +870,22 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
 
     # Is the target behind the moon?
 
-    moon_check = behind_moon(moon, star_table['ra'], star_table['dec'])
+    moon_check = behind_moon(moon, ucotargets.star_table['ra'], ucotargets.star_table['dec'])
     available = available & moon_check
     log_str = "get_next(): Moon visibility check - stars rejected = "
-    log_str += "%s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)]))
+    log_str += "%s" % ( np.asarray(ucotargets.star_table['name'][np.logical_not(moon_check)]))
     apflog(log_str, echo=True)
 
-    sun_el_good = SunPos.sun_el_check(star_table, apf_obs, horizon='-18')
+    sun_el_good = SunPos.sun_el_check(ucotargets.star_table, apf_obs, horizon='-18')
     available = available & sun_el_good
 
     # other condition cuts (seeing, transparency, moon phase)
-    cuts = condition_cuts(moon, seeing, slowdown, star_table)
+    cuts = condition_cuts(moon, seeing, slowdown, ucotargets.star_table)
     available = available & cuts
 
     if len(last_objs_attempted)>0:
         for n in last_objs_attempted:
-            attempted = star_table['name'] == n
+            attempted = ucotargets.star_table['name'] == n
             available = available & np.logical_not(attempted) # Available and not observed
 
     if bstar:
@@ -903,12 +900,12 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
 
     if do_too is False:
         apflog("get_next(): Selecting TOO targets", echo=True)
-        not_too = star_table['TOO'] == False
+        not_too = ucotargets.star_table['too'] == False
         available = available & not_too
 
     # Is the exposure time too long?
     apflog("get_next(): Removing really long exposures", echo=True)
-    time_good = time_check(star_table, totexptimes, dt, start_time=start_time)
+    time_good = time_check(ucotargets.star_table, totexptimes, dt, start_time=start_time)
 
     available = available & time_good
     if np.any(available) is False:
@@ -935,20 +932,19 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     scaled_elevations[available] += scaled_els[vis]
 
     if slowdown > SchedulerConsts.SLOWDOWN_THRESH or seeing > SchedulerConsts.SEEING_THRESH:
-        bright_enough = star_table['Vmag'] < SchedulerConsts.SLOWDOWN_VMAG_LIM
+        bright_enough = ucotargets.star_table['Vmag'] < SchedulerConsts.SLOWDOWN_VMAG_LIM
         available = available & bright_enough
 
     if not do_templates:
-        available = available & (star_table['only_template'] == 'N')
-
+        available = available & (ucotargets.star_table['only_template'] == 'N') 
     # Now just sort by priority, then cadence. Return top target
-    if len(star_table['name'][available]) < 1:
+    if len(ucotargets.star_table['name'][available]) < 1:
         apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
         return None
 
-    final_priorities = compute_priorities(star_table,dt,
-                                             rank_table=rank_table,
-                                             hour_table=hour_table)
+    final_priorities = compute_priorities(ucotargets.star_table,dt,
+                                             rank_table=ucotargets.rank_table,
+                                             hour_table=ucotargets.hour_table)
 
     try:
         pri = max(final_priorities[available])
@@ -966,15 +962,15 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     allidx, = np.where(sort_i)
     idx = allidx[sort_j][0]
 
-    t_n = star_table['name'][idx]
-    o_n = star_table['sheetn'][idx]
+    t_n = ucotargets.star_table['name'][idx]
+    o_n = ucotargets.star_table['sheetn'][idx]
     p_n = final_priorities[idx]
 
     apflog("get_next(): selected target %s for program %s at priority %.0f" % (t_n, o_n, p_n) )
-    nmstr= "get_next(): star names %s" % (np.asarray(star_table['name'][sort_i][sort_j]))
+    nmstr= "get_next(): star names %s" % (np.asarray(ucotargets.star_table['name'][sort_i][sort_j]))
     pristr= "get_next(): star priorities %s" % (np.asarray(final_priorities[sort_i][sort_j]))
     mxpristr= "get_next(): max priority %d" % (pri)
-    shstr= "get_next(): star sheet names %s" % (np.asarray(star_table['sheetn'][sort_i][sort_j]))
+    shstr= "get_next(): star sheet names %s" % (np.asarray(ucotargets.star_table['sheetn'][sort_i][sort_j]))
     if bstar:
         elstr= "get_next(): Bstar current elevations %s" % (cur_elevations[sort_i][sort_j])
     else:
@@ -987,29 +983,29 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
 
     stars[idx].compute(apf_obs)
 
-    take_template = do_templates and star_table['Template'][idx] == 'N' \
-        and star_table['I2'][idx] == 'Y'
-    if star_table['only_template'][idx] == 'Y' and do_templates:
+    take_template = do_templates and ucotargets.star_table['Template'][idx] == 'N' \
+        and ucotargets.star_table['I2'][idx] == 'Y'
+    if ucotargets.star_table['only_template'][idx] == 'Y' and do_templates:
         take_template = True
 
-    res =  make_result(stars, star_table, totexptimes, final_priorities, dt, \
+    res =  make_result(stars, ucotargets.star_table, totexptimes, final_priorities, dt, \
                        idx, focval=focval, bstar=bstar, mode=config['mode'])
     if take_template and bstar is False:
-        bidx, bfinidx = find_Bstars(star_table, idx, bstars)
+        bidx, bfinidx = find_Bstars(ucotargets.star_table, idx, bstars)
 
-        if enough_time_templates(star_table,stars,idx,apf_obs,dt):
-            bline = make_scriptobs_line(star_table[bstars][bidx], dt, \
+        if enough_time_templates(ucotargets.star_table,stars,idx,apf_obs,dt):
+            bline = make_scriptobs_line(ucotargets.star_table[bstars][bidx], dt, \
                                         decker="N", I2="Y", owner=res['owner'], focval=2)
-            line  = make_scriptobs_line(star_table[idx], \
+            line  = make_scriptobs_line(ucotargets.star_table[idx], \
                                         dt, decker="N", I2="N", owner=res['owner'], temp=True)
-            bfinline = make_scriptobs_line(star_table[bstars][bfinidx], dt,\
+            bfinline = make_scriptobs_line(ucotargets.star_table[bstars][bfinidx], dt,\
                                             decker="N", I2="Y", owner=res['owner'], focval=0)
             res['SCRIPTOBS'] = []
             res['SCRIPTOBS'].append(bfinline + " # temp=Y end")
             res['SCRIPTOBS'].append(line + " # temp=Y")
             res['SCRIPTOBS'].append(bline + " # temp=Y")
             res['isTemp'] = True
-            apflog("Attempting template observation of %s" % (star_table['name'][idx]), echo=True)
+            apflog("Attempting template observation of %s" % (ucotargets.star_table['name'][idx]), echo=True)
 
     return res
 
