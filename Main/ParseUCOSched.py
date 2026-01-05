@@ -17,7 +17,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 import Coords
 import ObservedLog
-
+import UCOScheduler as ds
 from SchedulerConsts import EXP_LIM, MAX_PRI, DEFAULT_CERT
 
 try:
@@ -371,7 +371,7 @@ def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constr
     hour_table = astropy.table.Table([rank_table['sheetn'], \
                                       rank_table['frac']], names=['sheetn','frac'])
 
-    sunset,sunrise = compute_sunset_rise(dt,horizon='-9')
+    sunset,sunrise = ds.compute_sunset_rise(dt, horizon='-9')
     if sunrise < sunset:
         sunrise += 86400
     tot = sunrise - sunset
