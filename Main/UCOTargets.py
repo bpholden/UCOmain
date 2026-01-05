@@ -19,7 +19,7 @@ class UCOTargets(object):
 
         self.rank_table_name = opt.rank_table
         self.time_left_name = opt.time_left
-        self.debug = opt.test
+        self.debug = opt.test if hasattr(opt, 'test') else False
         self.star_table_name = 'googledex.dat' # historical
         self.star_table = None
         self.rank_table = None
@@ -30,12 +30,6 @@ class UCOTargets(object):
 
         self.prilim = prilim
         self.certificate = SchedulerConsts.DEFAULT_CERT
-
-
-        if opt.test:
-            self.debug = opt.test
-        else:
-            self.debug = False
 
         if self.rank_table_name is None:
             apflog("Error: no rank table provided", level='error')
