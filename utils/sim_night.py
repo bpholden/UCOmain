@@ -39,6 +39,7 @@ def parse_options():
     parser.add_option("-o","--outfile",dest="outfile",default=None)
     parser.add_option("-b","--bstar",dest="bstar",default=True,action="store_false")
     parser.add_option("-s","--start_time",dest="start_time",default=None)
+    parser.add_option("--tleftfile",dest="time_left",default="time_left.csv")
     (options, args) = parser.parse_args()
 
     return options, args
