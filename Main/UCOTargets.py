@@ -7,7 +7,6 @@ import numpy as np
 
 import ParseUCOSched
 import SchedulerConsts
-import UCOScheduler as ds
 
 try: 
     from apflog import apflog
@@ -98,7 +97,7 @@ class UCOTargets(object):
             return
 
         try:
-            self.hour_table = ds.make_hour_table(self.rank_table, datetime.datetime.now(),
+            self.hour_table = ParseUCOSched.make_hour_table(self.rank_table, datetime.datetime.now(),
                                             hour_constraints=self.hour_constraints)
         except Exception as e:
             apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
@@ -112,7 +111,7 @@ class UCOTargets(object):
         '''
 
         try:
-            self.rank_table = ds.make_rank_table(self.rank_table_name, outdir=os.getcwd(),\
+            self.rank_table = ParseUCOSched.make_rank_table(self.rank_table_name, outdir=os.getcwd(),\
                                hour_constraints=self.hour_constraints)
         except Exception as e:
             apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
@@ -121,7 +120,7 @@ class UCOTargets(object):
             # goto backup
             if self.copy_backup(self.rank_table_name):
                 try:
-                    self.rank_table = ds.make_rank_table(self.rank_table_name,
+                    self.rank_table = ParseUCOSched.make_rank_table(self.rank_table_name,
                                                     outdir=os.getcwd(),
                                                     hour_constraints=self.hour_constraints)
                 except Exception as e:
