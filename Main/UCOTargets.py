@@ -87,9 +87,12 @@ class UCOTargets(object):
         Make hour table from rank table and hour constraints.
         
         '''
-        if self.rank_table is None:
+        if self.rank_table_name is None:
             return
         
+        if self.rank_table is None:
+            self.make_rank_table()
+
         self.make_hour_constraints()
 
         try:
