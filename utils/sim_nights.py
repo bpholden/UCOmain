@@ -126,6 +126,7 @@ def parse_args():
     parser.add_option("-b","--bstar",dest="bstar",default=True,action="store_false")
     parser.add_option("-o","--outdir",dest="outdir",default=".")        
     parser.add_option("--rank_table",dest="rank_sheet",default="2025B_ranks_operational")
+    parser.add_option("--tleftfile",dest="time_left",default="time_left.csv")
 
     parser.add_option("-m","--masterfile",dest="master",default="sim_master.simout")
     (options, args) = parser.parse_args()
@@ -251,7 +252,7 @@ def main():
 
         print ("sun rose")
         if ucotargets.hour_constraints:
-            update_hour_constraints(tleftfn)
+            update_hour_constraints(options.time_left)
         update_constraints(os.path.join(options.outdir,options.infile))
 
         if os.path.isfile(otfn):
