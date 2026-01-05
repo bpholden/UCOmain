@@ -109,7 +109,6 @@ def main():
         sys.exit()
 
     outfp = make_outfile(options.outfile, datestr)
-    
 
     if os.path.exists('hour_table'):
         os.remove('hour_table')
@@ -119,11 +118,11 @@ def main():
         hour_constraints = astropy.io.ascii.read(tleftfn)
     else:
         hour_constraints = None
-   
 
-    rank_table = ds.make_rank_table(options.rank_sheetn)
+
+    rank_table = ParseUCOSched.make_rank_table(options.rank_sheetn)
     sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
-        
+
     star_table, stars  = ParseUCOSched.parse_UCOSched(sheetns=sheet_list,outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
 
     fwhms = NightSim.gen_seeing(val=1.0) # good conditions
@@ -137,16 +136,16 @@ def main():
     observing = True
     curtime, endtime, apf_obs = NightSim.sun_times(datestr)
     bstar = options.bstar
-    doTemp = True
+    do_temp = True
     tempcount = 0
 
-    _ = ds.make_hour_table(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
+    _ = ParseUCOSched.make_hour_table(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
 
     while observing:
         curtime = ephem.Date(curtime)
 
         result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, bstar=bstar, \
-                             outfn=options.infile,template=doTemp,sheetns=sheet_list,\
+                             outfn=options.infile,template=do_temp,sheetns=sheet_list,\
                                 outdir=outdir,rank_sheetn=options.rank_sheetn,\
                                     start_time=start_time)
         if result:
@@ -155,7 +154,7 @@ def main():
             if result['isTemp']:
                 tempcount = tempcount + 1
             if tempcount == 2:
-                doTemp=False # two per night
+                do_temp=False # two per night
             curtime += 70./86400 # acquisition time
             (idx,) = np.where(star_table['name'] == result['NAME'])
             idx = idx[0]
@@ -172,8 +171,8 @@ def main():
             lastfwhm = 15
         if curtime > endtime:
             observing = False
-        
-        
+
+
     print("Updating star list with final observations")
     curtime = ephem.Date(curtime)
     _, star_table = ParseUCOSched.update_local_starlist(curtime.datetime(),outfn=options.infile,observed_file=otfn)

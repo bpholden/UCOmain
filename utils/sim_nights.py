@@ -196,7 +196,7 @@ def main():
     bstar = options.bstar
     masterfp, star_strs, star_dates = prep_master(options.outdir,options.master)
 
-    rank_table = ds.make_rank_table(options.rank_sheetn)
+    rank_table = ParseUCOSched.make_rank_table(options.rank_sheetn)
     sheetns = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
     for datestr in datelist:
@@ -212,7 +212,7 @@ def main():
 
         curtime, endtime, apf_obs = NightSim.sun_times(datestr)
 
-        _ = ds.make_hour_table(rank_table, curtime.datetime(),\
+        _ = ParseUCOSched.make_hour_table(rank_table, curtime.datetime(),\
                                         hour_constraints=hour_constraints)
 
         star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns,\
@@ -222,7 +222,7 @@ def main():
         fwhms = NightSim.gen_seeing()
         slowdowns = NightSim.gen_clouds()
 
-        doTemp = True
+        do_temp = True
         lastslow = 5
         lastfwhm = 15
         otfn = os.path.join(options.outdir,"observed_targets")
@@ -231,7 +231,7 @@ def main():
         observing = True
         while observing:
 
-            result = ds.get_next(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=doTemp,
+            result = ds.get_next(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=do_temp,
                                     sheetns=sheetns,outdir=options.outdir,rank_sheetn=options.rank_sheetn)
             if result:
                 if bstar:
