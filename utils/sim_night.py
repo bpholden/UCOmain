@@ -15,6 +15,7 @@ import UCOScheduler as ds
 
 import NightSim 
 import ParseUCOSched
+import UCOTargets
 
 def get_start_time(hr_mn, datestr):
     '''
@@ -104,6 +105,8 @@ def main():
 
     options.fixed = find_fixed(options.fixed)
 
+    ucotargets = UCOTargets.UCOTargets(options)
+
     if not NightSim.checkdate(datestr):
         print ("%s is not an acceptable date string" % (datestr))
         sys.exit()
@@ -113,17 +116,11 @@ def main():
     if os.path.exists('hour_table'):
         os.remove('hour_table')
 
-    tleftfn = 'time_left.csv'
-    if os.path.exists(tleftfn):
-        hour_constraints = astropy.io.ascii.read(tleftfn)
-    else:
-        hour_constraints = None
-
-
-    rank_table = ParseUCOSched.make_rank_table(options.rank_sheetn)
-    sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
-
-    star_table, stars  = ParseUCOSched.parse_UCOSched(sheetns=sheet_list,outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
+    ucotargets.make_rank_table()
+    ucotargets.make_hour_table()
+    ucotargets.make_hour_constraints()
+    ucotargets.make_star_table()
+    ucotargets.append_too_column()
 
     fwhms = NightSim.gen_seeing(val=1.0) # good conditions
     slowdowns = NightSim.gen_clouds(val=.6) # typical conditions
@@ -144,10 +141,9 @@ def main():
     while observing:
         curtime = ephem.Date(curtime)
 
-        result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, bstar=bstar, \
-                             outfn=options.infile,template=do_temp,sheetns=sheet_list,\
-                                outdir=outdir,rank_sheetn=options.rank_sheetn,\
-                                    start_time=start_time)
+        result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, ucotargets,\
+                             bstar=bstar, outfn=options.infile, template=do_temp,\
+                                outdir=outdir, start_time=start_time)
         if result:
             if bstar:
                 bstar = False

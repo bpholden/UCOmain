@@ -16,7 +16,7 @@ sys.path.insert(1,"../Main")
 import NightSim
 import UCOScheduler as ds
 import ParseUCOSched
-
+import UCOTargets
 
 
 def read_datefile(datefn):
@@ -196,28 +196,20 @@ def main():
     bstar = options.bstar
     masterfp, star_strs, star_dates = prep_master(options.outdir,options.master)
 
-    rank_table = ParseUCOSched.make_rank_table(options.rank_sheetn)
-    sheetns = list(rank_table['sheetn'][rank_table['rank'] > 0])
+    ucotargets = UCOTargets.UCOTargets(options)
+    ucotargets.make_rank_table()
 
     for datestr in datelist:
 
         if os.path.exists('hour_table'):
             os.remove('hour_table')
 
-        tleftfn = 'time_left.csv'
-        if os.path.exists(tleftfn):
-            hour_constraints = astropy.io.ascii.read(tleftfn)
-        else:
-            hour_constraints = None
+        ucotargets.make_hour_table()
+        ucotargets.make_hour_constraints()
+        ucotargets.make_star_table()
+        ucotargets.append_too_column()
 
         curtime, endtime, apf_obs = NightSim.sun_times(datestr)
-
-        _ = ParseUCOSched.make_hour_table(rank_table, curtime.datetime(),\
-                                        hour_constraints=hour_constraints)
-
-        star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns,\
-                                                         outfn=options.infile,\
-                                                            outdir=options.outdir)
 
         fwhms = NightSim.gen_seeing()
         slowdowns = NightSim.gen_clouds()
@@ -231,18 +223,19 @@ def main():
         observing = True
         while observing:
 
-            result = ds.get_next(curtime, lastfwhm, lastslow, bstar=bstar, outfn=options.infile,template=do_temp,
-                                    sheetns=sheetns,outdir=options.outdir,rank_sheetn=options.rank_sheetn)
+            result = ds.get_next(curtime, lastfwhm, lastslow, ucotargets,\
+                                    bstar=bstar, outfn=options.infile,template=do_temp,
+                                    outdir=options.outdir)
             if result:
                 if bstar:
                     bstar = False
 
                 curtime += 70./86400 # acquisition time
-                (idx,) = np.where(star_table['name'] == result['NAME'])
+                (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
                 idx = idx[0]
 
                 for i in range(0,int(result['NEXP'])):
-                    (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
+                    (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,ucotargets.stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
                     sim_results(outstr,star_strs,star_dates)
                     masterfp.write("%s\n" % (outstr))
 
@@ -259,7 +252,7 @@ def main():
             curtime = ephem.Date(curtime)
 
         print ("sun rose")
-        if hour_constraints:
+        if ucotargets.hour_constraints:
             update_hour_constraints(tleftfn)
         update_constraints(os.path.join(options.outdir,options.infile))
 
