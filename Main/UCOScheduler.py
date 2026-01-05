@@ -1001,7 +1001,7 @@ def config_defaults(owner):
     return config
 
 def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
-                do_too=False, sheetns=["RECUR_A100",], owner='public', \
+                do_too=False, owner='public', \
                 outfn="googledex.dat", toofn="too.dat", \
                 outdir=None, focval=0, inst='', \
                 rank_sheetn='rank_table', start_time=None):
@@ -1238,7 +1238,7 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
 
     return res
 
-def test_basic_ops(tsheet_list, RANK_TABLEN):
+def test_basic_ops(rank_table_name):
     """
     test_basic_ops()
     """
@@ -1257,15 +1257,15 @@ def test_basic_ops(tsheet_list, RANK_TABLEN):
     ot = open(OTFN, "w")
     starttime = time.time()
     result = get_next(starttime, 7.99, 0.4, bstar=True, \
-                      sheetns=tsheet_list, rank_sheetn=RANK_TABLEN)
+                      rank_sheetn=rank_table_name)
     while len(result['SCRIPTOBS']) > 0:
         ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
 
     for i in range(5):
 
-        result = get_next(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
-                         template=True, rank_sheetn=RANK_TABLEN)
+        result = get_next(starttime, 7.99, 0.4, bstar=False, \
+                         template=True, rank_sheetn=rank_table_name)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
         if result is None:
@@ -1283,24 +1283,23 @@ def test_basic_ops(tsheet_list, RANK_TABLEN):
 
     return starttime
 
-def test_failure(starttime, tsheet_list, RANK_TABLEN):
+def test_failure(starttime, rank_table_name):
     '''
-    test_failure(starttime, tsheet_list, RANK_TABLEN)
+    test_failure(starttime, rank_table_name)
     starttime - time to start the test
-    tsheet_list - list of target sheets
-    RANK_TABLEN - rank table name
+    rank_table_name - rank table name
     '''
     print("Testing a failure")
     try:
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 2, binary=True)
     except:
         pass
-    result = get_next(starttime, 7.99, 0.4, bstar=False, sheetns=tsheet_list, \
-                     template=True, rank_sheetn=RANK_TABLEN)
+    result = get_next(starttime, 7.99, 0.4, bstar=False, \
+                     template=True, rank_sheetn=rank_table_name)
     print(result)
     print("Nonsensical start time")
-    result = get_next(starttime, 7.99, 0.4, bstar=True, sheetns=tsheet_list, \
-                     template=True, rank_sheetn=RANK_TABLEN, start_time=1)
+    result = get_next(starttime, 7.99, 0.4, bstar=True, \
+                     template=True, rank_sheetn=rank_table_name, start_time=1)
     print(result)
     return
 
@@ -1363,11 +1362,10 @@ def test_main():
     # this calls make_hour_table from UCOScheduler
     uco_targets.make_hour_table()
 
-    starttime = test_basic_ops(tsheet_list, RANK_TABLEN)
+    starttime = test_basic_ops(uco_targets.rank_table)
 
-    test_failure(starttime, tsheet_list, RANK_TABLEN)
-    test_templates(trank_table)
-
+    test_failure(starttime, uco_targets.rank_table)
+    test_templates(uco_targets.rank_table)
 
 if __name__ == '__main__':
 
