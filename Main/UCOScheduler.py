@@ -590,7 +590,6 @@ def num_template_exp(vmag):
     elif vmag  < 8:
         count = 5
 
-
     return count
 
 def enough_time_templates(star_table, stars, idx, apf_obs, dt):
