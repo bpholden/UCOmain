@@ -37,6 +37,7 @@ import Calibrate
 import getUCOTargets
 import UCOTargets
 import Observe
+import SunPos
 
 os.umask(0o007)
 
@@ -138,7 +139,7 @@ def calc_focus_start_time():
     # computes time before sunset
     udt = datetime.datetime.utcnow()
     dt = datetime.datetime.now()
-    time_to_sunset = ds.compute_sunset(udt)
+    time_to_sunset = SunPos.compute_sunset(udt)
     if time_to_sunset > 36000:
         # the sun has already set
         start_time = -1.

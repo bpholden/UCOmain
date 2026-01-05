@@ -7,12 +7,11 @@ import datetime
 import subprocess
 
 import numpy as np
-import astropy
-import astropy.io
-import astropy.table
 import ephem
+
 import ParseUCOSched
 import SchedulerConsts
+import SunPos
 import UCOTargets
 
 try:
@@ -227,8 +226,8 @@ def time_check(star_table, totexptimes, dt, start_time=None):
     time_check - numpy array of booleans
     values are determined by whether or not the target can be observed in the time left
     """
-    maxexptime = compute_sunrise(dt,horizon='-9')
-    maxfaintexptime = compute_sunrise(dt,horizon='-18')
+    maxexptime = SunPos.compute_sunrise(dt,horizon='-9')
+    maxfaintexptime = SunPos.compute_sunrise(dt,horizon='-18')
     if maxfaintexptime > maxexptime:
         maxfaintexptime = 0
 
@@ -278,31 +277,6 @@ def time_check(star_table, totexptimes, dt, start_time=None):
     time_good[faint] = time_good_faint[faint]
 
     return time_good
-
-def sun_el_check(star_table, apf_obs, horizon='-18'):
-    '''
-    sun_el_check = sun_el_check(star_table, stars, idx, apf_obs, dt, horizon='0')
-    star_table - astropy table of targets
-    stars - list of ephem.FixedBody objects
-    idx - index of target in star_table
-    apf_obs - ephem.Observer object
-    dt - datetime object
-    horizon - string of horizon in degrees
-    sun_el_check - boolean
-    '''
-    bright_enough = np.ones(len(star_table['Vmag']), dtype=bool)
-
-    sun = ephem.Sun()
-    sun.compute(apf_obs)
-    sun_el = np.degrees(sun.alt)
-
-    faint = star_table['Vmag'] > SchedulerConsts.SLOWDOWN_VMAG_LIM
-
-    if sun_el > float(horizon):
-        bright_enough[faint] = False
-
-    return bright_enough
-
 
 def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='', temp=False):
     """ given a name, a row in a star table and a do_flag, will generate
@@ -445,60 +419,6 @@ def compute_datetime(ctime):
     return dt
 
 
-def make_APF_obs(dt, horizon=str(SchedulerConsts.TARGET_ELEVATION_MIN)):
-    '''
-    apf_obs = make_APF_obs(dt, horizon=str(TARGET_ELEVATION_MIN))
-    dt - datetime object
-    horizon - string of horizon in degrees
-    apf_obs - returns ephem.Observer object for the time dt with the horizon set to horizon
-    '''
-    # Generate a pyephem observer for the APF
-    apf_obs = ephem.Observer()
-    apf_obs.lat  = '37:20:33.1'
-    apf_obs.long = '-121:38:17.7'
-    apf_obs.elevation = 1274
-    # Minimum observation to observe things at
-    apf_obs.horizon = horizon
-    apf_obs.date = dt
-
-    return apf_obs
-
-def compute_sunset_rise(dt, horizon='0'):
-    '''
-    sunset, sunrise = compute_sunset_rise(dt, horizon='0')
-    dt - datetime object
-    horizon - string of horizon in degrees
-    computes time in seconds before sunset and next sunrise from dt
-    '''
-    apf_obs = make_APF_obs(dt, horizon=horizon)
-    sunset = apf_obs.next_setting(ephem.Sun())
-    sunset -= ephem.Date(dt)
-    sunset *= 86400.0 # convert to seconds
-
-    sunrise = apf_obs.next_rising(ephem.Sun())
-    sunrise -= ephem.Date(dt)
-    sunrise *= 86400.0 # convert to seconds
-    return sunset, sunrise
-
-def compute_sunset(dt, horizon='0'):
-    '''
-    sunset = compute_sunset(dt, horizon='0')
-    dt - datetime object
-    horizon - string of horizon in degrees
-    helper to compute just sunset, calls compute_sunset_rise
-    '''
-    sunset, _ = compute_sunset_rise(dt, horizon=horizon)
-    return sunset
-
-def compute_sunrise(dt, horizon='0'):
-    '''
-    sunrise = compute_sunrise(dt, horizon='0')
-    dt - datetime object
-    horizon - string of horizon in degrees
-    helper to compute just sunrise, calls compute_sunset_rise
-    '''
-    _, sunrise = compute_sunset_rise(dt, horizon=horizon)
-    return sunrise
 
 
 def condition_cuts(moon, seeing, slowdown, star_table):
@@ -614,7 +534,7 @@ def enough_time_templates(star_table, stars, idx, apf_obs, dt):
     tot_time += 210 + (2*40 + 40*(star_table['nexp'][idx]-1)) + 2400 
     # two B star exposures + three 70 second acquisitions and the actual observation readout times
     vis, _, _ = Visible.visible(apf_obs, [stars[idx]], [tot_time])
-    time_left_before_sunrise = compute_sunrise(dt, horizon='-18')
+    time_left_before_sunrise = SunPos.compute_sunrise(dt, horizon='-18')
 
     try:
         apflog("enough_time_templates(): time for obs= %.1f  time until sunrise= %.1f " % (tot_time, time_left_before_sunrise),echo=True)
@@ -958,7 +878,7 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
     log_str += "%s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)]))
     apflog(log_str, echo=True)
 
-    sun_el_good = sun_el_check(star_table, apf_obs, horizon='-18')
+    sun_el_good = SunPos.sun_el_check(star_table, apf_obs, horizon='-18')
     available = available & sun_el_good
 
     # other condition cuts (seeing, transparency, moon phase)
