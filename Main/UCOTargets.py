@@ -98,7 +98,7 @@ class UCOTargets(object):
             return
 
         try:
-            self.hour_table = ds.make_hour_table(self.rank_table,datetime.datetime.now(),
+            self.hour_table = ds.make_hour_table(self.rank_table, datetime.datetime.now(),
                                             hour_constraints=self.hour_constraints)
         except Exception as e:
             apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
