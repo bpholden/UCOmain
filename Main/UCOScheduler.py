@@ -13,6 +13,7 @@ import astropy.table
 import ephem
 import ParseUCOSched
 import SchedulerConsts
+import UCOTargets
 
 try:
     from apflog import *
@@ -1340,7 +1341,6 @@ def test_main():
     # This is a test function to see if the basic operations work
     # It will not be run in production
 
-    t_dt = datetime.datetime.now()
     cfn = os.path.join('.','time_left.csv')
     if os.path.exists(cfn):
         hour_constraints = astropy.io.ascii.read(cfn)
@@ -1348,12 +1348,20 @@ def test_main():
         hour_constraints = None
 
     RANK_TABLEN='2025B_ranks_operational'
-    trank_table = make_rank_table(RANK_TABLEN, hour_constraints=hour_constraints)
 
-    _ = make_hour_table(trank_table, t_dt, hour_constraints=hour_constraints)
+    class Opt:
+        def __init__(self):
+            self.test = True
+            self.time_left = "/home/holden/time_left.csv"
+            self.rank_table = RANK_TABLEN
 
-    tsheet_list = list(trank_table['sheetn'][trank_table['rank'] > 0])
+    uco_targets = UCOTargets.UCOTargets(Opt())
 
+    # this calls make_rank_table from UCOScheduler
+    uco_targets.make_rank_table()
+    uco_targets.make_hour_constraints()
+    # this calls make_hour_table from UCOScheduler
+    uco_targets.make_hour_table()
 
     starttime = test_basic_ops(tsheet_list, RANK_TABLEN)
 
