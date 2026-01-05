@@ -505,7 +505,8 @@ class Observe(threading.Thread):
 
             self.check_files()
 
-            self.target = ds.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, \
+            self.target = ds.get_next(time.time(), seeing, slowdown, self.uco_targets,\
+                                         bstar=self.obs_B_star, \
                                          do_too=self.do_too, sheetns=self.sheetn, owner=self.owner,  \
                                          template=self.do_temp, focval=self.focval, \
                                          rank_sheetn=self.rank_tablen,\
