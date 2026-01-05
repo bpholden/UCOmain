@@ -20,6 +20,7 @@ class UCOTargets(object):
 
         self.rank_table_name = opt.rank_table
         self.time_left_name = opt.time_left
+        self.debug = opt.test
         self.star_tab_name = 'googledex.dat' # historical
         self.star_tab = None
         self.rank_table = None
