@@ -35,6 +35,7 @@ import UCOScheduler as ds
 from apflog import apflog, logpush
 import Calibrate
 import getUCOTargets
+import UCOTargets
 import Observe
 
 os.umask(0o007)
@@ -481,7 +482,8 @@ def main():
 
     # Start the main watcher thread
     observe = Observe.Observe(apf, tel, opt)
-    _ = getUCOTargets.getUCOTargets(opt, task=parent, wait_time=target_time)
+    uco_targets = UCOTargets.UCOTargets(opt)
+    _ = getUCOTargets.getUCOTargets(uco_targets, task=parent, wait_time=target_time)
 
     apf.instr_permit()
     apflog("Starting the main watcher." ,echo=True)
