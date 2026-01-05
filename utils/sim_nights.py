@@ -125,7 +125,7 @@ def parse_args():
     parser.add_option("--seed",dest="seed",default=None)
     parser.add_option("-b","--bstar",dest="bstar",default=True,action="store_false")
     parser.add_option("-o","--outdir",dest="outdir",default=".")        
-    parser.add_option("--rank_table",dest="rank_sheetn",default="2023A_ranks")
+    parser.add_option("--rank_table",dest="rank_sheet",default="2025B_ranks_operational")
 
     parser.add_option("-m","--masterfile",dest="master",default="sim_master.simout")
     (options, args) = parser.parse_args()
