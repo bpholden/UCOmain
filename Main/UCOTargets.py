@@ -89,6 +89,8 @@ class UCOTargets(object):
         '''
         if self.rank_table is None:
             return
+        
+        self.make_hour_constraints()
 
         try:
             self.hour_table = ParseUCOSched.make_hour_table(self.rank_table, datetime.datetime.now(),
@@ -146,7 +148,7 @@ class UCOTargets(object):
                                                         certificate=self.certificate)
                 except Exception as e:
                     apflog("Error: Cannot reuse googledex?! %s" % (e),level="error" )
-
+        self.append_too_column()
 
 def main():
     class Opts:
@@ -163,8 +165,6 @@ def main():
     uco_targets.make_hour_table()
     print("Hour table:", uco_targets.hour_table)
     uco_targets.make_star_table()
-    print("Star table:", uco_targets.star_table[0])
-    uco_targets.append_too_column()
     print("Star table:", uco_targets.star_table[0])
 
 if __name__ == "__main__":

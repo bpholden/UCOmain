@@ -205,9 +205,7 @@ def main():
             os.remove('hour_table')
 
         ucotargets.make_hour_table()
-        ucotargets.make_hour_constraints()
         ucotargets.make_star_table()
-        ucotargets.append_too_column()
 
         curtime, endtime, apf_obs = NightSim.sun_times(datestr)
 

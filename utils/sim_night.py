@@ -136,7 +136,8 @@ def main():
     do_temp = True
     tempcount = 0
 
-    _ = ParseUCOSched.make_hour_table(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
+    ucotargets.make_hour_table()
+    ucotargets.make_star_table()
 
     while observing:
         curtime = ephem.Date(curtime)

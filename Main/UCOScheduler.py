@@ -829,10 +829,9 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     if ucotargets.star_table is None:
         apflog("get_next(): Parsing the star list", echo=True)
         ucotargets.make_star_table()
-    else:
-        stars = ParseUCOSched.gen_stars(ucotargets.star_table)
+
+    stars = ParseUCOSched.gen_stars(ucotargets.star_table)
     targ_num = len(stars)
-    ucotargets.append_too_column()
 
     last_failure = last_attempted()
     if last_failure is not None:
