@@ -1,4 +1,7 @@
 import ephem
+import numpy as np
+
+import SchedulerConsts
 
 def make_APF_obs(dt, horizon=str(SchedulerConsts.TARGET_ELEVATION_MIN)):
     '''

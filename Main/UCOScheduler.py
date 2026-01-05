@@ -775,11 +775,12 @@ def config_defaults(owner):
 
     return config
 
-def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
+def get_next(ctime, seeing, slowdown, ucotargets, \
+                bstar=False, template=False, \
                 do_too=False, owner='public', \
                 outfn="googledex.dat", toofn="too.dat", \
                 outdir=None, focval=0, inst='', \
-                rank_sheetn='rank_table', start_time=None):
+                start_time=None):
     """ Determine the best target to observe for the given input.
         Takes the time, seeing, and slowdown factor.
         Returns a dict with target RA, DEC, Total Exposure time, and scritobs line
@@ -817,8 +818,9 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
                                                                outfn=outfn, toofn=toofn, \
                                                                 observed_file="observed_targets")
 
-    rank_table = ParseUCOSched.make_rank_table(rank_sheetn)
-    hour_table = ParseUCOSched.make_hour_table(rank_table, ptime)
+    rank_table = ucotargets.make_rank_table()
+    hour_table = ucotargets.make_hour_table()
+    ucotargets.append_too_column()
 
     if hour_table is not None:
         hour_table = update_hour_table(hour_table, observed, ptime)
@@ -847,7 +849,7 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
     # timedelta = now - uth,utm : minus current JD?
     ###
 
-    apf_obs = make_APF_obs(dt)
+    apf_obs = SunPos.make_APF_obs(dt)
 
     # Calculate the moon's location
     moon = ephem.Moon()
