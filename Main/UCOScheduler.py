@@ -1052,7 +1052,7 @@ def get_next(ctime, seeing, slowdown, bstar=False, template=False, \
 
     if star_table is None:
         apflog("get_next(): Parsing the star list", echo=True)
-        star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns, \
+        star_table, stars = ParseUCOSched.parse_UCOSched(rank_table, \
                                                          outfn=outfn, outdir=outdir, \
                                                             config=config)
     else:
@@ -1303,14 +1303,14 @@ def test_failure(starttime, tsheet_list, RANK_TABLEN):
     print(result)
     return
 
-def test_templates(tsheet_list):
+def test_templates(rank_table):
     """
-    test_templates(tsheet_list)
-    tsheet_list - list of target sheets
+    test_templates(rank_table)
+    rank_table - rank table
     """
     print("Testing templates")
     t_dt = datetime.datetime.now()
-    tstar_table, _ = ParseUCOSched.parse_UCOSched(sheetns=tsheet_list, \
+    tstar_table, _ = ParseUCOSched.parse_UCOSched(rank_table, \
                                                      outfn='googledex.dat', outdir=".", \
                                                         config=config_defaults('public'))
     tidx, = np.asarray(tstar_table['name'] == '185144').nonzero()
@@ -1358,7 +1358,7 @@ def test_main():
     starttime = test_basic_ops(tsheet_list, RANK_TABLEN)
 
     test_failure(starttime, tsheet_list, RANK_TABLEN)
-    test_templates(tsheet_list)
+    test_templates(trank_table)
 
 
 if __name__ == '__main__':
