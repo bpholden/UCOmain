@@ -117,12 +117,6 @@ def main():
     if os.path.exists('hour_table'):
         os.remove('hour_table')
 
-    ucotargets.make_rank_table()
-    ucotargets.make_hour_table()
-    ucotargets.make_hour_constraints()
-    ucotargets.make_star_table()
-    ucotargets.append_too_column()
-
     fwhms = NightSim.gen_seeing(val=1.0) # good conditions
     slowdowns = NightSim.gen_clouds(val=.6) # typical conditions
 
