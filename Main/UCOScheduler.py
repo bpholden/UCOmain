@@ -818,20 +818,19 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
                                                                outfn=outfn, toofn=toofn, \
                                                                 observed_file="observed_targets")
 
-    rank_table = ucotargets.make_rank_table()
-    hour_table = ucotargets.make_hour_table()
+    ucotargets.make_rank_table()
+    ucotargets.make_hour_table()
     ucotargets.append_too_column()
 
-    if hour_table is not None:
-        hour_table = update_hour_table(hour_table, observed, ptime)
+    if ucotargets.hour_table is not None:
+        ucotargets.hour_table = update_hour_table(ucotargets.hour_table, observed, ptime)
     # Parse the Googledex
     # Note -- RA and Dec are returned in Radians
 
     if star_table is None:
         apflog("get_next(): Parsing the star list", echo=True)
-        star_table, stars = ParseUCOSched.parse_UCOSched(rank_table, \
-                                                         outfn=outfn, outdir=outdir, \
-                                                            config=config)
+        ucotargets.make_star_table()
+        star_table = ucotargets.star_table
     else:
         stars = ParseUCOSched.gen_stars(star_table)
     targ_num = len(stars)
@@ -1014,7 +1013,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
 
     return res
 
-def test_basic_ops(rank_table_name):
+def test_basic_ops(ucotargets):
     """
     test_basic_ops()
     """
@@ -1032,16 +1031,16 @@ def test_basic_ops(rank_table_name):
     OTFN = "observed_targets"
     ot = open(OTFN, "w")
     starttime = time.time()
-    result = get_next(starttime, 7.99, 0.4, bstar=True, \
-                      rank_sheetn=rank_table_name)
+    result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=True, \
+                      template=False)
     while len(result['SCRIPTOBS']) > 0:
         ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
 
     for i in range(5):
 
-        result = get_next(starttime, 7.99, 0.4, bstar=False, \
-                         template=True, rank_sheetn=rank_table_name)
+        result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=False, \
+                         template=False)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
         if result is None:
@@ -1059,34 +1058,34 @@ def test_basic_ops(rank_table_name):
 
     return starttime
 
-def test_failure(starttime, rank_table_name):
+def test_failure(starttime, ucotargets):
     '''
-    test_failure(starttime, rank_table_name)
+    test_failure(starttime, ucotargets)
     starttime - time to start the test
-    rank_table_name - rank table name
+    ucotargets - UCOTargets object
     '''
     print("Testing a failure")
     try:
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 2, binary=True)
     except:
         pass
-    result = get_next(starttime, 7.99, 0.4, bstar=False, \
-                     template=True, rank_sheetn=rank_table_name)
+    result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=False, \
+                     template=True, )
     print(result)
     print("Nonsensical start time")
-    result = get_next(starttime, 7.99, 0.4, bstar=True, \
-                     template=True, rank_sheetn=rank_table_name, start_time=1)
+    result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=True, \
+                     template=True, start_time=1)
     print(result)
     return
 
-def test_templates(rank_table):
+def test_templates(ucotargets):
     """
-    test_templates(rank_table)
-    rank_table - rank table
+    test_templates(ucotargets)
+    ucotargets - UCOTargets object
     """
     print("Testing templates")
     t_dt = datetime.datetime.now()
-    tstar_table, _ = ParseUCOSched.parse_UCOSched(rank_table, \
+    tstar_table, _ = ParseUCOSched.parse_UCOSched(ucotargets.rank_table, \
                                                      outfn='googledex.dat', outdir=".", \
                                                         config=config_defaults('public'))
     tidx, = np.asarray(tstar_table['name'] == '185144').nonzero()
@@ -1132,10 +1131,10 @@ def test_main():
     # this calls make_hour_table 
     uco_targets.make_hour_table()
 
-    starttime = test_basic_ops(uco_targets.rank_table)
+    starttime = test_basic_ops(uco_targets)
 
-    test_failure(starttime, uco_targets.rank_table)
-    test_templates(uco_targets.rank_table)
+    test_failure(starttime, uco_targets)
+    test_templates(uco_targets)
 
 if __name__ == '__main__':
 
