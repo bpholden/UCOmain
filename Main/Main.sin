@@ -481,11 +481,10 @@ def main():
         calibrate = None
 
     # Start the main watcher thread
-    observe = Observe.Observe(apf, tel, opt)
     uco_targets = UCOTargets.UCOTargets(opt)
     _ = getUCOTargets.getUCOTargets(uco_targets, task=parent, wait_time=target_time)
+    observe = Observe.Observe(apf, tel, opt, uco_targets, task=parent)
 
-    apf.instr_permit()
     apflog("Starting the main watcher." ,echo=True)
     mstart = astropy.time.Time(ktl.read("apftask","master_last_start",binary=True),format='unix')
 
