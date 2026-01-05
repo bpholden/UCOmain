@@ -28,10 +28,10 @@ class UCOTargets(object):
         self.too = None
         self.sheets = None
         self.hour_constraints = None
-        
+
         self.prilim = prilim
         self.certificate = SchedulerConsts.DEFAULT_CERT
-        
+
 
         if opt.test:
             self.debug = opt.test
