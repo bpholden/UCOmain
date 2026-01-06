@@ -60,6 +60,8 @@ class UCOTargets(object):
             return
         if 'too' not in self.rank_table.columns:
             return
+        if 'too' in self.star_table.columns:
+            return
         too_sheets =  self.rank_table['sheetn'][self.rank_table['too']]
 
         self.star_table['too'] = np.zeros(len(self.star_table), dtype=bool)
@@ -82,11 +84,14 @@ class UCOTargets(object):
                 apflog("Error: Cannot read file of time left %s : %s" % (self.time_left_name, e))
 
 
-    def make_hour_table(self):
+    def make_hour_table(self, obs_datetime=None):
         '''
         Make hour table from rank table and hour constraints.
         
         '''
+
+        req_datetime = obs_datetime if obs_datetime is not None else datetime.datetime.utcnow()
+
         if self.rank_table_name is None:
             return
         
@@ -96,7 +101,7 @@ class UCOTargets(object):
         self.make_hour_constraints()
 
         try:
-            self.hour_table = ParseUCOSched.make_hour_table(self.rank_table, datetime.datetime.now(),
+            self.hour_table = ParseUCOSched.make_hour_table(self.rank_table, req_datetime,
                                             hour_constraints=self.hour_constraints)
         except Exception as e:
             apflog("Error: Cannot make hour_table?! %s" % (e),level="error")
