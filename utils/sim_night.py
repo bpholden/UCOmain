@@ -131,8 +131,10 @@ def main():
     do_temp = True
     tempcount = 0
 
-    ucotargets.make_hour_table()
+    ucotargets.make_hour_table(obs_datetime=curtime.datetime())
     ucotargets.make_star_table()
+
+    stars = ParseUCOSched.gen_stars(ucotargets.star_table)
 
     while observing:
         curtime = ephem.Date(curtime)
@@ -148,7 +150,7 @@ def main():
             if tempcount == 2:
                 do_temp=False # two per night
             curtime += 70./86400 # acquisition time
-            (idx,) = np.where(star_table['name'] == result['NAME'])
+            (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
             idx = idx[0]
             for i in range(0,int(result['NEXP'])):
                 (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
@@ -167,7 +169,7 @@ def main():
 
     print("Updating star list with final observations")
     curtime = ephem.Date(curtime)
-    _, star_table = ParseUCOSched.update_local_starlist(curtime.datetime(),outfn=options.infile,observed_file=otfn)
+    _, _ = ParseUCOSched.update_local_starlist(curtime.datetime(),outfn=options.infile,observed_file=otfn)
     print ("sun rose")
     outfp.close()
 
