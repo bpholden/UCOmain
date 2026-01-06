@@ -22,7 +22,7 @@ def sun_times(datestr):
     apf_obs.date = datestr
     sunset = apf_obs.next_setting(ephem.Sun())
     sunrise = apf_obs.next_rising(ephem.Sun())
-    return sunset,sunrise, apf_obs
+    return sunset, sunrise, apf_obs
     
 def make_obs_sample(fn):
     slow,fwhm = np.loadtxt(fn,unpack=True)
