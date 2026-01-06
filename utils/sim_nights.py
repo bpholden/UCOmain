@@ -207,6 +207,7 @@ def main():
 
         ucotargets.make_hour_table()
         ucotargets.make_star_table()
+        stars = ParseUCOSched.gen_stars(ucotargets.star_table)
 
         curtime, endtime, apf_obs = NightSim.sun_times(datestr)
 
