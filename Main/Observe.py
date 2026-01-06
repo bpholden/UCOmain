@@ -801,7 +801,7 @@ class Observe(threading.Thread):
                 sunel_lim = SchedulerConsts.SUNEL_STARTLIM
 
             _, running = self.apf.find_robot()
-            cursunel = self.apf.sunel
+            cursunel = self.tel.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
             self.tel.check_FCUs(check_apfmon=True)
             # Check and close for weather
