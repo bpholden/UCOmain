@@ -207,6 +207,7 @@ def main():
 
         ucotargets.make_hour_table()
         ucotargets.make_star_table()
+        stars = ParseUCOSched.gen_stars(ucotargets.star_table)
 
         curtime, endtime, apf_obs = NightSim.sun_times(datestr)
 
@@ -234,7 +235,10 @@ def main():
                 idx = idx[0]
 
                 for i in range(0,int(result['NEXP'])):
-                    (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,ucotargets.stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
+                    (curtime,lastfwhm,lastslow,outstr) = \
+                        NightSim.compute_simulation(result,curtime, stars[idx],\
+                                                    apf_obs, slowdowns, fwhms,\
+                                                        result['owner'])
                     sim_results(outstr,star_strs,star_dates)
                     masterfp.write("%s\n" % (outstr))
 
@@ -253,7 +257,7 @@ def main():
         print ("sun rose")
         if ucotargets.hour_constraints:
             update_hour_constraints(options.time_left)
-        update_constraints(os.path.join(options.outdir,options.infile))
+        update_constraints(os.path.join(options.outdir, options.infile))
 
         if os.path.isfile(otfn):
             try:
