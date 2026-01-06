@@ -818,7 +818,6 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
                                                                outfn=outfn, toofn=toofn, \
                                                                 observed_file="observed_targets")
 
-    ucotargets.make_rank_table()
     ucotargets.make_hour_table()
 
     if ucotargets.hour_table is not None:
@@ -829,6 +828,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     if ucotargets.star_table is None:
         apflog("get_next(): Parsing the star list", echo=True)
         ucotargets.make_star_table()
+    ucotargets.append_too_column()
 
     stars = ParseUCOSched.gen_stars(ucotargets.star_table)
     targ_num = len(stars)
@@ -1121,7 +1121,6 @@ def test_main():
     uco_targets = UCOTargets.UCOTargets(Opt())
 
     # this calls make_rank_table
-    uco_targets.make_rank_table()
     uco_targets.make_hour_constraints()
     # this calls make_hour_table 
     uco_targets.make_hour_table()
