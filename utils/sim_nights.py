@@ -235,7 +235,10 @@ def main():
                 idx = idx[0]
 
                 for i in range(0,int(result['NEXP'])):
-                    (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,ucotargets.stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
+                    (curtime,lastfwhm,lastslow,outstr) = \
+                        NightSim.compute_simulation(result,curtime, stars[idx],\
+                                                    apf_obs, slowdowns, fwhms,\
+                                                        result['owner'])
                     sim_results(outstr,star_strs,star_dates)
                     masterfp.write("%s\n" % (outstr))
 
