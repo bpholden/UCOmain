@@ -257,7 +257,7 @@ def main():
         print ("sun rose")
         if ucotargets.hour_constraints:
             update_hour_constraints(options.time_left)
-        update_constraints(os.path.join(options.outdir,options.infile))
+        update_constraints(os.path.join(options.outdir, options.infile))
 
         if os.path.isfile(otfn):
             try:
