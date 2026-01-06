@@ -384,10 +384,11 @@ def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constr
     if hour_constraints is not None:
         if 'runname' in list(hour_constraints.keys()) and 'left' in list(hour_constraints.keys()):
             for runname in hour_constraints['runname']:
-                if hour_constraints['left'][hour_constraints['runname']==runname] < hour_table['tot'][hour_table['sheetn']==runname]:
-                    hour_table['tot'][hour_table['sheetn']==runname] = hour_constraints['left'][hour_constraints['runname']==runname]
-                elif hour_constraints['left'][hour_constraints['runname']==runname] < 0:
-                    hour_table['tot'][hour_table['sheetn']==runname] = -1.0
+                if runname in hour_table['sheetn']:
+                    if hour_constraints['left'][hour_constraints['runname']==runname] < hour_table['tot'][hour_table['sheetn']==runname]:
+                        hour_table['tot'][hour_table['sheetn']==runname] = hour_constraints['left'][hour_constraints['runname']==runname]
+                    elif hour_constraints['left'][hour_constraints['runname']==runname] < 0:
+                        hour_table['tot'][hour_table['sheetn']==runname] = -1.0
 
     try:
         hour_table.write(outfn,format='ascii')
