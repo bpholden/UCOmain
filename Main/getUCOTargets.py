@@ -38,7 +38,7 @@ class getUCOTargets(threading.Thread):
         if self.signal is False:
             return
         
-        if self.rank_table is None and self.sheets is None:
+        if self.uco_targets.rank_table is None and self.uco_targets.sheets is None:
             return
 
         self.uco_targets.make_hour_constraints()
@@ -59,7 +59,7 @@ class getUCOTargets(threading.Thread):
             sheetlist_name = 'EXAMPLE_VAR_1'
 
         try:
-            self.apftask.write(sheetlist_name,",".join(self.sheets),timeout=2)
+            self.apftask.write(sheetlist_name,",".join(self.uco_targets.sheets),timeout=2)
         except Exception as e:
             apflog("Cannot write apftask.%s: %s" % (sheetlist_name, e), level='warn',echo=True)
 
