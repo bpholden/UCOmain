@@ -19,7 +19,7 @@ class Calibrate(threading.Thread):
                   task='master', test=False, \
                     possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
         threading.Thread.__init__(self)
-        self.setDaemon(True)
+        self.daemon = True
         self.apf = apf
         self.task = task
         self.wait_time = wait_time
@@ -182,7 +182,6 @@ class Calibrate(threading.Thread):
             if pi == 0:
                 result = self.test_bias()
                 if result is False:
-                    self.stop()
                     return
             elif pi == 1:
                 result = self.focus_instr()
@@ -218,11 +217,9 @@ def main():
             APFTask.wait(task,True,timeout=1)
         except KeyboardInterrupt:
             apflog("%s has been killed by user." % (calibrate.name), echo=True)
-            calibrate.stop()
             sys.exit()
         except:
             apflog("%s killed by unknown." % (calibrate.name), echo=True)
-            calibrate.stop()
             sys.exit()
 
 if __name__ == "__main__":
