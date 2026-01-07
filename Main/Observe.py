@@ -198,7 +198,7 @@ class Observe(threading.Thread):
         retval = False
 
         mtch = re.search("end\Z", self.tel.line.read())
-        if self.tel.ldone.read(binary=True) == 0 or mtch:
+        if self.apf.ldone.read(binary=True) == 0 or mtch:
             retval = True
         return retval
 
