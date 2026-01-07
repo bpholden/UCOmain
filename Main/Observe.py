@@ -1013,7 +1013,7 @@ class Observe(threading.Thread):
             # If we are open and scriptobs isn't running, start it up
             if self.tel.is_ready_observing()[0] and not running \
                 and float(cursunel) <= sunel_lim and self.tel.openOK:
-                focusing = self.tel.focussta['binary'] < 3
+                focusing = self.apf.focussta['binary'] < 3
                 if focusing:
                     apflog("Focusing in progress, waiting for it to finish", echo=True)
                     APFTask.waitFor(self.task, True, timeout=60)
