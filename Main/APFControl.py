@@ -65,6 +65,19 @@ def cmd_exec(cmd, debug=False, cwd='./'):
         return False, ret_code
 
 
+def restart(name, host):
+    '''
+    restart(name, host)
+    Restart the apfmon service name on host.
+    '''
+    apfcmd = os.path.join(LROOT,"bin/apf")
+    restart_str = '%s restart %s' % (apfcmd,name)
+    cmdlist = ["ssh", "-f", host, restart_str]
+    try:
+        _ = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
+    except Exception as e:
+        apflog("Cannot restart %s on %s: %s" % (name,host,e),level='error',echo=True)
+    return
 
 
 
@@ -82,7 +95,6 @@ class APF:
     sop          = robot['SCRIPTOBS_PHASE']
     message      = robot['SCRIPTOBS_MESSAGE']
     autofoc      = robot["SCRIPTOBS_AUTOFOC"]
-    slew_allowed = robot['SLEW_ALLOWED']
     observed     = robot['SCRIPTOBS_OBSERVED']
     line_result  = robot['SCRIPTOBS_LINE_RESULT']
 
@@ -349,22 +361,6 @@ class APF:
             apflog("%s should be restarted" % (taskname),echo=True)
         return
 
-
-    def restart(self, name, host):
-        '''
-        restart(name, host)
-        Restart the apfmon service name on host.
-        '''
-        apfcmd = os.path.join(LROOT,"bin/apf")
-        restart_str = '%s restart %s' % (apfcmd,name)
-        cmdlist = ["ssh", "-f", host, restart_str]
-        try:
-            p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
-        except Exception as e:
-            apflog("Cannot restart %s on %s: %s" % (name,host,e),level='error',echo=True)
-        return
-
-
     def mini_mon_mon(self, sta, host="bremen"):
         '''
         mini_mon_mon(sta, host="bremen")
@@ -384,7 +380,7 @@ class APF:
             nmsta = sta['name'].lower()
             name = nmsta[0:7] # this relies on the fact that all of the STA
             # variables are serviceSTA and service is
-            self.restart(name, host)
+            restart(name, host)
         return
 
     def apftask_status_mon(self,sta):

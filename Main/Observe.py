@@ -182,7 +182,7 @@ class Observe(threading.Thread):
         if self.lineresult.binary == 3:
             retval = True
         else:
-            if "ERR/WIND"  in self.tel.robot["MASTER_MESSAGE"].read():
+            if "ERR/WIND"  in self.apf.robot["MASTER_MESSAGE"].read():
                 apflog("Windshield error, check for faults", echo=True, level='error')
                 return retval
             if self.lineresult.binary == 2:
@@ -197,7 +197,7 @@ class Observe(threading.Thread):
         """
         retval = False
 
-        mtch = re.search("end\Z", self.tel.line.read())
+        mtch = re.search("end\Z", self.apf.line.read())
         if self.apf.ldone.read(binary=True) == 0 or mtch:
             retval = True
         return retval
@@ -329,7 +329,7 @@ class Observe(threading.Thread):
         def calc_slowdown():
 
             if self.blank:
-                return self.tel.robot["MASTER_SLOWDOWN"].read()
+                return self.apf.robot["MASTER_SLOWDOWN"].read()
 
             if self.bmv is None:
                 ostr = "Warning!: Ended up in get_target() with no B Magnitude value, "
@@ -342,7 +342,7 @@ class Observe(threading.Thread):
                 ostr += "assumed a slowdown of 5."
                 return 5
 
-            if self.tel.line_result.read(binary=True) < 3:
+            if self.apf.line_result.read(binary=True) < 3:
                 # this means that the previous observation failed, so will assume
                 # a big slowdown
                 return 5
@@ -354,7 +354,7 @@ class Observe(threading.Thread):
 
             slowdown = 1
             apflog("Calculating expected counts")
-            apflog("self.vmag [%4.2f] - self.bmv [%4.2f] - self.apf.ael [%4.2f]"\
+            apflog("self.vmag [%4.2f] - self.bmv [%4.2f] - self.tel.ael [%4.2f]"\
                     % (self.vmag, self.bmv, self.tel.ael))
             exp_cnts_sec = ExposureCalculations.getEXPMeter_Rate(self.vmag, \
                                                                  self.bmv, self.tel.ael, \
@@ -470,7 +470,7 @@ class Observe(threading.Thread):
                 apflog("get_target(): Error setting hatch position.", level='Alert')
                 return
 
-            if self.apf.check_sanity() is False:
+            if self.tel.check_sanity() is False:
                 apflog("get_target(): Error in sanity check.", level='Alert')
                 return
 
@@ -484,10 +484,10 @@ class Observe(threading.Thread):
                 # least an error (which is 5)
                 # the ADC not being ready often is reported as a warning
                 # until a slew is finished, so this will ignore that
-                self.apf.run_prepobs()
+                self.tel.run_prepobs()
 
             self.tel.update_windshield(self.windshield_mode)
-            self.focval = self.apf.set_autofoc_val()
+            self.focval = self.tel.set_autofoc_val()
 
             # setup a B star observation if needed
             # if not B star observation, look at current stack of
@@ -507,9 +507,8 @@ class Observe(threading.Thread):
 
             self.target = ds.get_next(time.time(), seeing, slowdown, self.uco_targets,\
                                          bstar=self.obs_B_star, \
-                                         do_too=self.do_too, sheetns=self.sheetn, owner=self.owner,  \
+                                         do_too=self.do_too, owner=self.owner,  \
                                          template=self.do_temp, focval=self.focval, \
-                                         rank_sheetn=self.rank_tablen,\
                                          start_time=self.start_time)
 
             if self.target is None:
@@ -577,7 +576,7 @@ class Observe(threading.Thread):
             if self.can_open is False:
                 apflog("We cannot open, so not trying", level='Error', echo=True)
                 return False
-            if self.tel.robot["SLEW_ALLOWED"].read(binary=True) == False:
+            if self.tel.robot["SLEW_ALLOWED"].read(binary=True) is False:
                 apflog("Opening: Slewing not allowed, so not opening", echo=True)
                 self.can_open = False
                 self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
@@ -661,20 +660,20 @@ class Observe(threading.Thread):
             '''
             rv = False
 
-            isenabled = self.tel.eosdome['AZDRVENA'].read(binary=True)
-            isstopped = self.tel.eosdome['ESTOPST'].read(binary=True)
-            fullstop = self.tel.eosdome['SWESTOP'].read(binary=True)
+            isenabled = self.tel.dome['AZDRVENA'].read(binary=True)
+            isstopped = self.tel.dome['ESTOPST'].read(binary=True)
+            fullstop = self.tel.dome['SWESTOP'].read(binary=True)
             if fullstop:
                 rv = False
                 # cannot start the telescope
             else:
                 # we can!
                 if isstopped:
-                    self.tel.eosdome['ESTOPCMD'].write('ResetEStop')
+                    self.tel.dome['ESTOPCMD'].write('ResetEStop')
                 if isenabled is False:
-                    self.tel.eosdome['AZENABLE'].write('Enable')
-                isenabled = self.tel.eosdome['AZDRVENA'].read(binary=True)
-                isstopped = self.tel.eosdome['ESTOPST'].read(binary=True)
+                    self.tel.dome['AZENABLE'].write('Enable')
+                isenabled = self.tel.dome['AZDRVENA'].read(binary=True)
+                isstopped = self.tel.dome['ESTOPST'].read(binary=True)
                 if isenabled and isstopped is False:
                     rv = True
                 else:
@@ -710,7 +709,7 @@ class Observe(threading.Thread):
                 self.start_time = None
                 self.target = None
             else:
-                apflog("%d total starlist lines and %d lines done." % (tot, self.tel.ldone))
+                apflog("%d total starlist lines and %d lines done." % (tot, self.apf.ldone))
 
             return tot
 
