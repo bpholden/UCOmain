@@ -130,6 +130,9 @@ class UCOTargets(object):
                 except Exception as e:
                     apflog("Error: Cannot reuse rank_table?! %s" % (e),level="error")
 
+        if self.rank_table is not None:
+            self.sheets = list(self.rank_table['sheetn'][self.rank_table['rank'] > 0])
+
 
     def make_star_table(self):
         '''
