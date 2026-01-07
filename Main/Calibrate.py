@@ -1,19 +1,16 @@
 from __future__ import print_function
 import os
-import os.path
 import sys
 import threading
 
-
 try:
     import ktl
-    import APF as APFLib
     import APFTask
 except:
     pass
 
 import APFControl
-from apflog import *
+from apflog import apflog
 
 AVERAGE_INSTRFOC = 8522
 
@@ -48,7 +45,7 @@ class Calibrate(threading.Thread):
             apflog("Would have taken a single bias frame using APFControl.test_bias()",echo=True)
         else:
             result = self.apf.test_bias()
-            if result == None:
+            if result is None:
                 apflog("Focusinstr or calibrate or scriptobs are running?!",\
                         level='Error', echo=True)
             if result is False:
@@ -204,7 +201,7 @@ class Calibrate(threading.Thread):
 
         return
 
-if __name__ == "__main__":
+def main():
 
     # basic functionality test
     task = 'example'
@@ -227,3 +224,6 @@ if __name__ == "__main__":
             apflog("%s killed by unknown." % (calibrate.name), echo=True)
             calibrate.stop()
             sys.exit()
+
+if __name__ == "__main__":
+    main()
