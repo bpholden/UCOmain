@@ -129,6 +129,7 @@ def main():
     curtime, endtime, apf_obs = NightSim.sun_times(datestr)
     bstar = options.bstar
     do_temp = True
+    do_too = True
     tempcount = 0
 
     ucotargets.make_hour_table(obs_datetime=curtime.datetime())
@@ -141,14 +142,16 @@ def main():
 
         result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, ucotargets,\
                              bstar=bstar, outfn=options.infile, template=do_temp,\
-                                outdir=outdir, start_time=start_time)
+                             do_too=do_too, outdir=outdir, start_time=start_time)
         if result:
-            if bstar:
+            if result['isBStar']:
                 bstar = False
             if result['isTemp']:
                 tempcount = tempcount + 1
             if tempcount == 2:
                 do_temp=False # two per night
+            if result['isTOO']:
+                do_too = False # one per night
             curtime += 70./86400 # acquisition time
             (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
             idx = idx[0]
