@@ -30,11 +30,12 @@ class Observe(threading.Thread):
         The Observe class is a thread
         that runs the observing process.
     """
-    def __init__(self, apf, tel, opt, tot_temps=4, task='master'):
+    def __init__(self, apf, tel, opt, uco_targets, tot_temps=4, task='master'):
         threading.Thread.__init__(self)
         self.daemon = True
         self.apf = apf
         self.tel = tel
+        self.uco_targets = uco_targets
         self.task = task
         if opt.name:
             self.user = opt.name
@@ -93,6 +94,7 @@ class Observe(threading.Thread):
         else:
             self.debug = False
         self.do_temp = True
+        self.do_too = True
         self.n_temps = 0
         self.focval = 0
         self.tot_temps = tot_temps
@@ -228,6 +230,7 @@ class Observe(threading.Thread):
             The variable OBSBSTAR still overrides
         """
         self.obs_B_star = ktl.read('apftask', 'MASTER_OBSBSTAR', binary=True)
+        self.do_too = ktl.read('apftask', 'MASTER_OBSTOO', binary=True)
 
         if haveobserved and self.last_obs_success:
             self.obs_B_star = False
@@ -297,8 +300,6 @@ class Observe(threading.Thread):
             err_str = "Cannot copy %s to %s: %s %s" % (backup, fullpath, type(e), e)
             apflog(err_str, echo=True, level='error')
 
-        return
-
     def should_start_list(self):
         """ Observe.should_start_list()
             should we start a fixed observing list or not? true if start 
@@ -353,7 +354,7 @@ class Observe(threading.Thread):
 
             slowdown = 1
             apflog("Calculating expected counts")
-            apflog("self.vmag [%4.2f] - self.bmv [%4.2f] - self.apf.ael [%4.2f]"\
+            apflog("self.vmag [%4.2f] - self.bmv [%4.2f] - self.tel.ael [%4.2f]"\
                     % (self.vmag, self.bmv, self.tel.ael))
             exp_cnts_sec = ExposureCalculations.getEXPMeter_Rate(self.vmag, \
                                                                  self.bmv, self.tel.ael, \
@@ -428,7 +429,6 @@ class Observe(threading.Thread):
                 while len(self.target["SCRIPTOBS"]) > 0:
                     self.target["SCRIPTOBS"].pop()
 
-            return
 
         # This is called when an observation finishes, and selects the next target
         def get_target():
@@ -470,7 +470,7 @@ class Observe(threading.Thread):
                 apflog("get_target(): Error setting hatch position.", level='Alert')
                 return
 
-            if self.apf.check_sanity() is False:
+            if self.tel.check_sanity() is False:
                 apflog("get_target(): Error in sanity check.", level='Alert')
                 return
 
@@ -484,10 +484,10 @@ class Observe(threading.Thread):
                 # least an error (which is 5)
                 # the ADC not being ready often is reported as a warning
                 # until a slew is finished, so this will ignore that
-                self.apf.run_prepobs()
+                self.tel.run_prepobs()
 
-            self.apf.update_windshield(self.windshield_mode)
-            self.focval = self.apf.set_autofoc_val()
+            self.tel.update_windshield(self.windshield_mode)
+            self.focval = self.tel.set_autofoc_val()
 
             # setup a B star observation if needed
             # if not B star observation, look at current stack of
@@ -505,10 +505,10 @@ class Observe(threading.Thread):
 
             self.check_files()
 
-            self.target = ds.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, \
-                                         sheetns=self.sheetn, owner=self.owner,  \
+            self.target = ds.get_next(time.time(), seeing, slowdown, self.uco_targets,\
+                                         bstar=self.obs_B_star, \
+                                         do_too=self.do_too, owner=self.owner,  \
                                          template=self.do_temp, focval=self.focval, \
-                                         rank_sheetn=self.rank_tablen,\
                                          start_time=self.start_time)
 
             if self.target is None:
@@ -521,7 +521,7 @@ class Observe(threading.Thread):
                 self.scriptobs.stdin.close()
                 self.tel.close()
                 if self.fixed_list is None:
-                    APFLib.write(self.apf.ldone, 0)
+                    APFLib.write(self.tel.ldone, 0)
                 self.apf.countrate = -1.0
                 # sleep for a half hour to see if the clouds blow by
                 APFTask.waitfor(self.task, True, timeout=60*30)
@@ -567,14 +567,16 @@ class Observe(threading.Thread):
                 if self.n_temps >= self.tot_temps:
                     self.do_temp = False
 
-            return
+            if self.target['isTOO']:
+                self.do_too = False
+                APFLib.write(self.apf.robot["MASTER_OBSTOO"], False, binary=True)
 
         # opens the dome & telescope, if sunset is True calls open at sunset, else open at night
         def opening(sunel, sunset=False):
             if self.can_open is False:
                 apflog("We cannot open, so not trying", level='Error', echo=True)
                 return False
-            if self.tel.robot["SLEW_ALLOWED"].read(binary=True) == False:
+            if self.tel.robot["SLEW_ALLOWED"].read(binary=True) is False:
                 apflog("Opening: Slewing not allowed, so not opening", echo=True)
                 self.can_open = False
                 self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
@@ -603,7 +605,6 @@ class Observe(threading.Thread):
                         self.tel.close()
                         self.can_open = False
                         self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
-
             self.tel.check_FCUs()
             self.tel.dm_reset()
             empty_queue()
@@ -639,8 +640,6 @@ class Observe(threading.Thread):
             self.star_failures = 0
             self.can_open = True
             self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
-            return
-
 
         def check_tel_state():
             slewing = '$eostele.AZSSTATE == Slewing  or  $eostele.ELSSTATE == Slewing'
@@ -661,20 +660,20 @@ class Observe(threading.Thread):
             '''
             rv = False
 
-            isenabled = self.tel.eosdome['AZDRVENA'].read(binary=True)
-            isstopped = self.tel.eosdome['ESTOPST'].read(binary=True)
-            fullstop = self.tel.eosdome['SWESTOP'].read(binary=True)
+            isenabled = self.tel.dome['AZDRVENA'].read(binary=True)
+            isstopped = self.tel.dome['ESTOPST'].read(binary=True)
+            fullstop = self.tel.dome['SWESTOP'].read(binary=True)
             if fullstop:
                 rv = False
                 # cannot start the telescope
             else:
                 # we can!
                 if isstopped:
-                    self.tel.eosdome['ESTOPCMD'].write('ResetEStop')
+                    self.tel.dome['ESTOPCMD'].write('ResetEStop')
                 if isenabled is False:
-                    self.tel.eosdome['AZENABLE'].write('Enable')
-                isenabled = self.tel.eosdome['AZDRVENA'].read(binary=True)
-                isstopped = self.tel.eosdome['ESTOPST'].read(binary=True)
+                    self.tel.dome['AZENABLE'].write('Enable')
+                isenabled = self.tel.dome['AZDRVENA'].read(binary=True)
+                isstopped = self.tel.dome['ESTOPST'].read(binary=True)
                 if isenabled and isstopped is False:
                     rv = True
                 else:
@@ -782,9 +781,6 @@ class Observe(threading.Thread):
                 APFTask.waitFor(self.task, True, timeout=10)
 
             return
-
-
-
 
         ###############################
 
@@ -1016,7 +1012,7 @@ class Observe(threading.Thread):
             # If we are open and scriptobs isn't running, start it up
             if self.tel.is_ready_observing()[0] and not running \
                 and float(cursunel) <= sunel_lim and self.tel.openOK:
-                focusing = self.tel.focussta['binary'] < 3
+                focusing = self.apf.focussta['binary'] < 3
                 if focusing:
                     apflog("Focusing in progress, waiting for it to finish", echo=True)
                     APFTask.waitFor(self.task, True, timeout=60)

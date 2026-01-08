@@ -35,19 +35,21 @@ import UCOScheduler as ds
 from apflog import apflog, logpush
 import Calibrate
 import getUCOTargets
+import UCOTargets
 import Observe
+import SunPos
 
 os.umask(0o007)
 
 PARENT = 'master'
 
 # global
-paused = False
+
 success = False
 
 POSSIBLE_PHASES = ["Init", "Focus", "Cal-Pre", "Watching", "Cal-Post", "Focus-Post"]
 
-def control_watch(keyword,parent):
+def control_watch(keyword):
     '''
     control_watch(keyword,parent)
 
@@ -57,31 +59,12 @@ def control_watch(keyword,parent):
     '''
     if keyword['populated'] is False:
         return
-    try:
-        value = keyword['ascii']
-        global paused
-        if value == "Abort":
-            APFTask.set(parent, suffix='STATUS', value='Exited/Failure')
-            apflog("Aborted by APFTask")
-            shutdown()
-        elif value == "Pause" and not paused:
-            try:
-                APFTask.set(parent, suffix='STATUS', value='PAUSED')
-                paused = True
-            except:
-                apflog("Failure to set STATUS in APFTask", level="error")
-                shutdown()
 
-        else:
-            try:
-                APFTask.set(parent, suffix='STATUS', value='Running')
-                paused = False
-            except:
-                apflog("Failure to set STATUS in APFTask", level='error')
-                shutdown()
+    value = keyword['ascii']
 
-    except:
-        return
+    if value == "Abort" or value == "Pause":
+        apflog("Aborted by APFTask")
+        shutdown()
 
 
 def signal_shutdown(signal, frame):
@@ -156,7 +139,7 @@ def calc_focus_start_time():
     # computes time before sunset
     udt = datetime.datetime.utcnow()
     dt = datetime.datetime.now()
-    time_to_sunset = ds.compute_sunset(udt)
+    time_to_sunset = SunPos.compute_sunset(udt)
     if time_to_sunset > 36000:
         # the sun has already set
         start_time = -1.
@@ -336,6 +319,7 @@ def init_phase(opt, apf, parent):
     apflog("Setting SCRIPTOBS_LINES_DONE to 0")
     APFLib.write(apf.robot["SCRIPTOBS_LINES_DONE"], 0)
     APFLib.write(apf.robot["MASTER_OBSBSTAR"], True,binary=True)
+    APFLib.write(apf.robot["MASTER_OBSTOO"], True,binary=True)
     apflog("Initialization finished")
 
     return opt
@@ -419,8 +403,7 @@ def main():
     APFTask.set(parent, "TRIPWIRE", "TASK_ABORT")
 
     control = apftask[parent + '_CONTROL']
-    cw = functools.partial(control_watch, parent=parent)
-    control.callback(cw)
+    control.callback(control_watch)
     control.monitor(wait=False)
 
     apflog("Initiallizing APF monitors.", echo=True)
@@ -499,10 +482,10 @@ def main():
         calibrate = None
 
     # Start the main watcher thread
-    observe = Observe.Observe(apf, tel, opt)
-    _ = getUCOTargets.getUCOTargets(opt, task=parent, wait_time=target_time)
+    uco_targets = UCOTargets.UCOTargets(opt)
+    _ = getUCOTargets.getUCOTargets(uco_targets, task=parent, wait_time=target_time)
+    observe = Observe.Observe(apf, tel, opt, uco_targets, task=parent)
 
-    apf.instr_permit()
     apflog("Starting the main watcher." ,echo=True)
     mstart = astropy.time.Time(ktl.read("apftask","master_last_start",binary=True),format='unix')
 
@@ -652,6 +635,7 @@ def main():
         apftask('MASTER_STARLIST').write('', wait=False)
         apftask('MASTER_WHENSTARTLIST').write(0, binary=True, wait=False)
         apftask["MASTER_OBSBSTAR"].write(True, binary=True, wait=False)
+        apftask["MASTER_OBSTOO"].write(True, binary=True, wait=False)
 
     _ = apf.turn_off_inst()
     APFTask.set(parent, suffix="MESSAGE",value="Turning off the motors",wait=False)

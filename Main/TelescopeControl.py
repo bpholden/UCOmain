@@ -15,7 +15,7 @@ try:
 except:
     from fake_apflog import *
 
-from APFControl import apftask_do, cmd_exec, APF
+from APFControl import apftask_do, restart
 
 WINDLIM = 40.0
 SLOWLIM = 100
@@ -110,11 +110,8 @@ class TelescopeControl:
         self.temp4now   = self.eoscool('TEMPNOW4')
 
         self.robot        = ktl.Service('apftask')
-        self.autofoc      = self.robot["SCRIPTOBS_AUTOFOC"]
         self.slew_allowed = self.robot['SLEW_ALLOWED']
-        self.line        = self.robot['SCRIPTOBS_LINE']
-        self.vmag        = self.robot['SCRIPTOBS_VMAG']
-
+        self.autofoc      = self.robot["SCRIPTOBS_AUTOFOC"]
         self.apfteqsta    = self.robot['APFTEQ_STATUS']
         self.metxfersta   = self.robot['METSXFER_STATUS']
         self.slewsta      = self.robot['SLEW_STATUS']
@@ -353,7 +350,7 @@ class TelescopeControl:
                     # this is a warning or error
                     apflog("PC keyword %s has value %s, recommend restarting" % (kw,pc_kw['ascii']),level='Crit',echo=True)
                     srv_name = kw[3:-3].lower()
-                    self.restart(srv_name,host=pc_servers[srv_name.lower()])
+                    restart(srv_name,host=pc_servers[srv_name.lower()])
                 ret_val = False
             except Exception as e:
                 apflog("Cannot monitor keyword %s: %s" % (kw,e),echo=True, level='warn')
@@ -525,7 +522,7 @@ class TelescopeControl:
                 return False, ''
         else:
             return self.is_ready_observing_direct()
-
+        
     def find_star(self):
         """
         find_star()
@@ -847,7 +844,7 @@ class TelescopeControl:
            and behave accodingly. Otherwise it will return True.
         """
         # If this is a test run, just return True
-        if self.test: 
+        if self.test:
             return True
 
         if not self.ok2open:

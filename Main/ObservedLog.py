@@ -2,9 +2,9 @@ from __future__ import print_function
 
 import os
 try:
-    from apflog import *
+    from apflog import apflog
 except:
-    from fake_apflog import *
+    from fake_apflog import apflog
 
 
 class ObservedLog():

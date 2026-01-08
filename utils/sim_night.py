@@ -15,6 +15,7 @@ import UCOScheduler as ds
 
 import NightSim 
 import ParseUCOSched
+import UCOTargets
 
 def get_start_time(hr_mn, datestr):
     '''
@@ -33,11 +34,12 @@ def parse_options():
     parser = optparse.OptionParser()
     parser.add_option("-d","--date",dest="date",default="today")
     parser.add_option("-f","--fixed",dest="fixed",default="")
-    parser.add_option("--rank_table",dest="rank_sheetn",default="2024B_ranks")
+    parser.add_option("--rank_table",dest="rank_table",default="2025B_ranks_operational")
     parser.add_option("-i","--infile",dest="infile",default="googledex.dat")
     parser.add_option("-o","--outfile",dest="outfile",default=None)
     parser.add_option("-b","--bstar",dest="bstar",default=True,action="store_false")
     parser.add_option("-s","--start_time",dest="start_time",default=None)
+    parser.add_option("--tleftfile",dest="time_left",default="time_left.csv")
     (options, args) = parser.parse_args()
 
     return options, args
@@ -104,27 +106,16 @@ def main():
 
     options.fixed = find_fixed(options.fixed)
 
+    ucotargets = UCOTargets.UCOTargets(options)
+
     if not NightSim.checkdate(datestr):
         print ("%s is not an acceptable date string" % (datestr))
         sys.exit()
 
     outfp = make_outfile(options.outfile, datestr)
-    
 
     if os.path.exists('hour_table'):
         os.remove('hour_table')
-
-    tleftfn = 'time_left.csv'
-    if os.path.exists(tleftfn):
-        hour_constraints = astropy.io.ascii.read(tleftfn)
-    else:
-        hour_constraints = None
-   
-
-    rank_table = ds.make_rank_table(options.rank_sheetn)
-    sheet_list = list(rank_table['sheetn'][rank_table['rank'] > 0])
-        
-    star_table, stars  = ParseUCOSched.parse_UCOSched(sheetns=sheet_list,outfn=options.infile,outdir=outdir,hour_constraints=hour_constraints)
 
     fwhms = NightSim.gen_seeing(val=1.0) # good conditions
     slowdowns = NightSim.gen_clouds(val=.6) # typical conditions
@@ -137,27 +128,32 @@ def main():
     observing = True
     curtime, endtime, apf_obs = NightSim.sun_times(datestr)
     bstar = options.bstar
-    doTemp = True
+    do_temp = True
+    do_too = True
     tempcount = 0
 
-    _ = ds.make_hour_table(rank_table,curtime.datetime(),hour_constraints=hour_constraints)
+    ucotargets.make_hour_table(obs_datetime=curtime.datetime())
+    ucotargets.make_star_table()
+
+    stars = ParseUCOSched.gen_stars(ucotargets.star_table)
 
     while observing:
         curtime = ephem.Date(curtime)
 
-        result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, bstar=bstar, \
-                             outfn=options.infile,template=doTemp,sheetns=sheet_list,\
-                                outdir=outdir,rank_sheetn=options.rank_sheetn,\
-                                    start_time=start_time)
+        result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, ucotargets,\
+                             bstar=bstar, outfn=options.infile, template=do_temp,\
+                             do_too=do_too, outdir=outdir, start_time=start_time)
         if result:
-            if bstar:
+            if result['isBstar']:
                 bstar = False
             if result['isTemp']:
                 tempcount = tempcount + 1
             if tempcount == 2:
-                doTemp=False # two per night
+                do_temp=False # two per night
+            if result['isTOO']:
+                do_too = False # one per night
             curtime += 70./86400 # acquisition time
-            (idx,) = np.where(star_table['name'] == result['NAME'])
+            (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
             idx = idx[0]
             for i in range(0,int(result['NEXP'])):
                 (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
@@ -172,11 +168,11 @@ def main():
             lastfwhm = 15
         if curtime > endtime:
             observing = False
-        
-        
+
+
     print("Updating star list with final observations")
     curtime = ephem.Date(curtime)
-    _, star_table = ParseUCOSched.update_local_starlist(curtime.datetime(),outfn=options.infile,observed_file=otfn)
+    _, _ = ParseUCOSched.update_local_starlist(curtime.datetime(),outfn=options.infile,observed_file=otfn)
     print ("sun rose")
     outfp.close()
 

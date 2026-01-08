@@ -5,6 +5,7 @@ import os
 import re
 import time
 import datetime
+import subprocess
 
 import astropy
 import astropy.io.ascii
@@ -16,13 +17,13 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 import Coords
 import ObservedLog
-
-from SchedulerConsts import EXP_LIM, MAX_PRI, DEFAULT_CERT
+from SchedulerConsts import EXP_LIM, DEFAULT_CERT
+import SunPos
 
 try:
-    from apflog import *
+    from apflog import apflog
 except:
-    from fake_apflog import *
+    from fake_apflog import apflog
 
 def check_flag(key,didx,line,regexp,default):
     """ check_flag(key, dict_ind, line, regexp, default)
@@ -247,6 +248,152 @@ def find_columns(col_names,req_cols):
         apflog("Pasting 'Star Name' into column 0 of google spreadsheet" , level="Warn",echo=True)
 
     return didx
+
+def find_time_left():
+    """
+    time_left = find_time_left()
+
+    Uses the timereport/time_left command to find the time left each program has.
+    Writes the output to a table and returns it.
+
+    This is slow, so it should only be called once per night.
+
+    """
+
+    cmd = "/usr/local/lick/bin/timereport/time_left"
+    if os.path.exists(cmd):
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        while p.poll() is None:
+            time.sleep(1)
+        out, err = p.communicate()
+        if len(err):
+            return None
+
+        sheetns = []
+        left = []
+        alloc = []
+        used = []
+        lines = out.split('\n')
+        if len(lines) <= 1:
+            return None
+        for ln in lines[1:]:
+            d = ln.split(",")
+            if len(d) >= 2:
+                sheetns.append(d[0].strip())
+                left.append(d[1].strip())
+                alloc.append(d[2].strip())
+                used.append(d[3].strip())
+
+        rv = astropy.table.Table([sheetns,left,alloc,used], names=["runname","left","alloc","used"])
+
+        return rv
+
+    return None
+
+def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None):
+    """
+    make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None)
+
+    Makes a rank table. The sheet_table_name is the name of the sheet which contains the
+    current semester's rank table.
+    The outfn is the output filename, defaults to rank_table, and the outdir is the output
+    directory, defaults to the current working directory.
+
+    If hour_constraints is not None, it is a dictionary with keys 'runname' and 'left'
+    which is checked against the default values in the hour table, and the final values
+    are the lesser of the two.
+    If hour_constraints is None, calls find_time_left() to get the time left for each program.
+
+    """
+    if not outdir :
+        outdir = os.getcwd()
+
+    outfn = os.path.join(outdir,outfn)
+    if os.path.exists(outfn):
+        rank_table = astropy.table.Table.read(outfn,format='ascii')
+        # the Booleans are now strings, so we have to convert back
+        bs = [ True if sb == 'True' else False for sb in rank_table['too'] ]
+        rank_table['too'] = bs
+    else:
+        sheetns, ranks, fracs, asciitoos = parse_rank_table(sheet_table_name=sheet_table_name)
+        if sheetns is None or len(sheetns) == 0:
+            return None
+            # this should result in this function being called again but with the
+            # backup table being used
+        toos = [ True if str(a) == 'y' else False for a in asciitoos ]
+
+        rank_table= astropy.table.Table([sheetns,ranks,fracs,toos], \
+                                        names=['sheetn','rank','frac','too'])
+
+        if hour_constraints:
+            time_left = hour_constraints
+        else:
+            time_left = find_time_left()
+
+        if time_left is not None:
+            if 'runname' in list(time_left.keys()) and 'left' in list(time_left.keys()):
+                for runname in time_left['runname']:
+                    if float(time_left['left'][time_left['runname']==runname]) < 0:
+                        rank_table['rank'][rank_table['sheetn']==runname] = -1000
+
+        try:
+            rank_table.write(outfn,format='ascii')
+        except Exception as e:
+            apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
+
+    return rank_table
+
+
+def make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constraints=None):
+    """
+
+    hour_table = make_hour_table(rank_table, dt, outfn='hour_table', outdir=None, hour_constraints=None)
+
+    Makes an hour table from the rank table and the current datetime.
+    Writes it to outfn in outdir.
+    The dt is a datetime object used to compute the length of the night.
+    If hour_constraints is not None, it is a dictionary with keys 'runname' and 'left'
+    which is checked against the default values in the hour table, and the final values
+    are the lesser of the two.
+    """
+
+    if not outdir :
+        outdir = os.getcwd()
+
+    outfn = os.path.join(outdir,outfn)
+
+    if os.path.exists(outfn):
+        hour_table =  astropy.table.Table.read(outfn,format='ascii')
+        return hour_table
+
+    # file does not exist to make it from scratch using the fracs
+
+    hour_table = astropy.table.Table([rank_table['sheetn'], \
+                                      rank_table['frac']], names=['sheetn','frac'])
+
+    sunset,sunrise = SunPos.compute_sunset_rise(dt, horizon='-9')
+    if sunrise < sunset:
+        sunrise += 86400
+    tot = sunrise - sunset
+    tot /= 3600.
+
+    hour_table['tot'] =np.abs(tot*hour_table['frac'])
+    hour_table['cur'] =0.0*hour_table['frac']
+
+    if hour_constraints is not None:
+        if 'runname' in list(hour_constraints.keys()) and 'left' in list(hour_constraints.keys()):
+            for runname in hour_constraints['runname']:
+                if runname in hour_table['sheetn']:
+                    if hour_constraints['left'][hour_constraints['runname']==runname] < hour_table['tot'][hour_table['sheetn']==runname]:
+                        hour_table['tot'][hour_table['sheetn']==runname] = hour_constraints['left'][hour_constraints['runname']==runname]
+                    elif hour_constraints['left'][hour_constraints['runname']==runname] < 0:
+                        hour_table['tot'][hour_table['sheetn']==runname] = -1.0
+
+    try:
+        hour_table.write(outfn,format='ascii')
+    except Exception as e:
+        apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
+    return hour_table
 
 
 def parse_rank_table(sheet_table_name='2022A_ranks',certificate=DEFAULT_CERT):
@@ -615,7 +762,7 @@ def gen_stars(star_table):
 
 
 
-def parse_UCOSched(sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, outfn="sched.dat",
+def parse_UCOSched(rank_table, certificate=DEFAULT_CERT, outfn="sched.dat",
                    outdir=None, config={'I2': 'Y', 'decker': 'W',  'Bstar' : 'N' },
                    force_download=False, prilim=0.5, hour_constraints=None):
     """ parse_UCOSched parses google sheets and returns the output as a tuple
@@ -639,6 +786,7 @@ def parse_UCOSched(sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, outfn="sche
 
     """
 
+    sheetns = list(rank_table['sheetn'])
 
     stars = None
     # Downloading all the values is going slowly.

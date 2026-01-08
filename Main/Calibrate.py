@@ -1,19 +1,16 @@
 from __future__ import print_function
 import os
-import os.path
 import sys
 import threading
 
-
 try:
     import ktl
-    import APF as APFLib
     import APFTask
 except:
     pass
 
 import APFControl
-from apflog import *
+from apflog import apflog
 
 AVERAGE_INSTRFOC = 8522
 
@@ -22,7 +19,7 @@ class Calibrate(threading.Thread):
                   task='master', test=False, \
                     possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
         threading.Thread.__init__(self)
-        self.setDaemon(True)
+        self.daemon = True
         self.apf = apf
         self.task = task
         self.wait_time = wait_time
@@ -48,7 +45,7 @@ class Calibrate(threading.Thread):
             apflog("Would have taken a single bias frame using APFControl.test_bias()",echo=True)
         else:
             result = self.apf.test_bias()
-            if result == None:
+            if result is None:
                 apflog("Focusinstr or calibrate or scriptobs are running?!",\
                         level='Error', echo=True)
             if result is False:
@@ -185,7 +182,6 @@ class Calibrate(threading.Thread):
             if pi == 0:
                 result = self.test_bias()
                 if result is False:
-                    self.stop()
                     return
             elif pi == 1:
                 result = self.focus_instr()
@@ -204,7 +200,7 @@ class Calibrate(threading.Thread):
 
         return
 
-if __name__ == "__main__":
+def main():
 
     # basic functionality test
     task = 'example'
@@ -221,9 +217,10 @@ if __name__ == "__main__":
             APFTask.wait(task,True,timeout=1)
         except KeyboardInterrupt:
             apflog("%s has been killed by user." % (calibrate.name), echo=True)
-            calibrate.stop()
             sys.exit()
         except:
             apflog("%s killed by unknown." % (calibrate.name), echo=True)
-            calibrate.stop()
             sys.exit()
+
+if __name__ == "__main__":
+    main()
