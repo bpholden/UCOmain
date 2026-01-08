@@ -17,14 +17,13 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 import Coords
 import ObservedLog
-import UCOScheduler as ds
 from SchedulerConsts import EXP_LIM, DEFAULT_CERT
 import SunPos
 
 try:
-    from apflog import *
+    from apflog import apflog
 except:
-    from fake_apflog import *
+    from fake_apflog import apflog
 
 def check_flag(key,didx,line,regexp,default):
     """ check_flag(key, dict_ind, line, regexp, default)

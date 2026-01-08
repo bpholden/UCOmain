@@ -9,7 +9,6 @@ import APFTask
 
 from apflog import apflog
 import ParseUCOSched
-import UCOScheduler as ds
 import UCOTargets
 
 
@@ -26,6 +25,7 @@ class getUCOTargets(threading.Thread):
         self.timeout = 1200
         self.reading = False
         self.signal = True
+        self.too = None
         self.start()
 
     def run(self):
@@ -74,7 +74,7 @@ class getUCOTargets(threading.Thread):
 
         if self.signal is False:
             return
-        
+
         self.uco_targets.make_hour_table()
 
         self.uco_targets.append_too_column()

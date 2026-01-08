@@ -4,7 +4,6 @@ import os
 
 import time
 import datetime
-import subprocess
 
 import numpy as np
 import ephem
@@ -13,13 +12,13 @@ import ParseUCOSched
 import SchedulerConsts
 import SunPos
 import UCOTargets
+import Visible
 
 try:
-    from apflog import *
+    from apflog import apflog
     import ktl
 except:
-    from fake_apflog import *
-import Visible
+    from fake_apflog import apflog
 
 # a global
 last_objs_attempted = []

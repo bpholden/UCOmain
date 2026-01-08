@@ -14,7 +14,7 @@ try:
     import APFTask
     import Exposure
 except:
-    from fake_apflog import *
+    from fake_apflog import apflog
 
 
 slowlim = 100
