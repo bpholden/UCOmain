@@ -144,7 +144,7 @@ def main():
                              bstar=bstar, outfn=options.infile, template=do_temp,\
                              do_too=do_too, outdir=outdir, start_time=start_time)
         if result:
-            if result['isBStar']:
+            if result['isBstar']:
                 bstar = False
             if result['isTemp']:
                 tempcount = tempcount + 1
