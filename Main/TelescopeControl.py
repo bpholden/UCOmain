@@ -353,7 +353,7 @@ class TelescopeControl:
                     apflog("PC keyword %s has value %s, recommend restarting" % (kw,pc_kw['ascii']),level='Crit',echo=True)
                     srv_name = kw[3:-3].lower()
                     restart(srv_name,host=pc_servers[srv_name.lower()])
-                ret_val = False
+                    ret_val = False
             except Exception as e:
                 apflog("Cannot monitor keyword %s: %s" % (kw,e),echo=True, level='warn')
                 ret_val = False
