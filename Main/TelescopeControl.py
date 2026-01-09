@@ -201,6 +201,8 @@ class TelescopeControl:
         s += "Preferred M2 Focus Value =  % 4.3f\n" % (float(self.pred_tel_focus())*1000.0)
         s += "Okay to open = %s -- %s\n" % (self.openOK, self.checkapf['OPREASON'].read() )
         s += "Current Weather = %s\n" % self.checkapf['WEATHER'].read()
+        s += "Slew Allowed = %s\n" % self.slew_allowed['binary']
+        s += "Is the system sane? = %s\n" % self.check_sanity()
 
         isopen, what = self.is_open()
         if isopen:
