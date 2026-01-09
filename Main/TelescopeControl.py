@@ -15,7 +15,7 @@ try:
 except:
     from fake_apflog import *
 
-from APFControl import apftask_do, restart
+from APFControl import apftask_do, restart, APF
 
 WINDLIM = 40.0
 SLOWLIM = 100
