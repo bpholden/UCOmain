@@ -169,10 +169,6 @@ def main():
             self.test = True
     opt = Opts()
     uco_targets = UCOTargets(opt)
-    uco_targets.make_hour_constraints()
-    print("Hour constraints:", uco_targets.hour_constraints)
-    uco_targets.make_rank_table()
-    print("Rank table:", uco_targets.rank_table)
     uco_targets.make_hour_table()
     print("Hour table:", uco_targets.hour_table)
     uco_targets.make_star_table()
