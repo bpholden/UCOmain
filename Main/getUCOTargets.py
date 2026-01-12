@@ -37,17 +37,12 @@ class getUCOTargets(threading.Thread):
 
         if self.signal is False:
             return
-        
-        if self.uco_targets.rank_table is None and self.uco_targets.sheets is None:
+
+        if self.uco_targets.rank_table_name is None:
             return
 
-        self.uco_targets.make_hour_constraints()
+        self.uco_targets.make_hour_table()
 
-        if self.signal is False:
-            return
-
-        self.uco_targets.make_rank_table()
- 
         if self.signal is False:
             return
 
@@ -69,15 +64,6 @@ class getUCOTargets(threading.Thread):
 
         if self.signal is False:
             return
-
-        self.uco_targets.make_star_table()
-
-        if self.signal is False:
-            return
-
-        self.uco_targets.make_hour_table()
-
-        self.uco_targets.append_too_column()
 
         while self.signal and self.too is not None and not self.debug and False:
 
