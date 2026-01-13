@@ -694,12 +694,12 @@ class TelescopeControl:
             return False
         apflog("Targeting telescope on %s" % star[0], echo=True)
         try:
-            self.vmag.write(star[6])
+            self.robot['SCRIPTOBS_VMAG'].write(star[6])
         except Exception as e:
             apflog("Cannot write SCRIPTOBS_VMAG: %s" % (e), level='error',echo=True)
         try:
             sline = "%s %f %f pmra=%s pmdec=%s vmag=%s # end" % (star[0],float(star[1])*3.819718,float(star[2])*57.295779,star[4],star[5],star[6])
-            self.line.write(sline)
+            self.robot['SCRIPTOBS_LINE'].write(sline)
         except Exception as e:
             apflog("Cannot write SCRIPTOBS_LINE: %s" % (e), level='error',echo=True)
 
