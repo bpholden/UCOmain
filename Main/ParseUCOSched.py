@@ -1106,7 +1106,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
     return nupdates, n_temps
 
 
-def update_online_sheets(observed_file,ctime=None, outfn='parsesched.dat', outdir=None):
+def update_online_sheets(observed_file, ctime=None, outfn='parsesched.dat', outdir=None):
     """
         Update the online googledex  assuming things in filename have been observed.
         update_online_sheets(filename, sheetn="The Googledex",time=None,certificate=DEFAULT_CERT)
