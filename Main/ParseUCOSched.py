@@ -786,7 +786,7 @@ def parse_UCOSched(rank_table, certificate=DEFAULT_CERT, outfn="sched.dat",
 
     """
 
-    sheetns = list(rank_table['sheetn'])
+    sheetns = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
     stars = None
     # Downloading all the values is going slowly.
