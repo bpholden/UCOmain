@@ -350,7 +350,8 @@ class TelescopeControl:
                 kw_val = pc_kw.read(binary=True)
                 if kw_val > 4:
                     # this is a warning or error
-                    apflog("PC keyword %s has value %s, recommend restarting" % (kw,pc_kw['ascii']),level='Crit',echo=True)
+                    apflog("PC keyword %s has value %s, recommend restarting" %\
+                            (kw,pc_kw['ascii']),level='Crit',echo=True)
                     srv_name = kw[3:-3].lower()
                     restart(srv_name,host=pc_servers[srv_name.lower()])
                     ret_val = False
@@ -396,7 +397,8 @@ class TelescopeControl:
 
         """
 
-        #self.avgtemps = [self.avg_lists[nm] for nm in ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')]
+        #self.avgtemps = [self.avg_lists[nm] for nm in:
+        # ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')]
         self.avgtemps = []
         self.avgtemps.append(self.m1tempkw.read(binary=True))
         self.avgtemps.append(self.m2tempkw.read(binary=True))
@@ -492,7 +494,7 @@ class TelescopeControl:
         if ismcopen:
             what = what + "MirrorCover"
             rv = True
-        if isshutterclosed == False:
+        if isshutterclosed is False:
             if len(what) > 0 :
                 what = what + " DomeShutter"
             else:
@@ -524,7 +526,7 @@ class TelescopeControl:
                 return False, ''
         else:
             return self.is_ready_observing_direct()
-        
+
     def find_star(self):
         """
         find_star()
@@ -544,8 +546,10 @@ class TelescopeControl:
         except:
             apflog("Cannot open file %s" % (sfncat), level="warn",echo=True)
             return False
+        # example line
         #$line[3] $line[4] $line[5] $line[6] $line[7] 5 1 "8"] < /usr/local/lick/data/apf/StarCatalog.dat"
-        p = subprocess.Popen(cmdargs, stdin=starcat, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=os.path.curdir)
+        p = subprocess.Popen(cmdargs, stdin=starcat, stdout=subprocess.PIPE,\
+                             stderr=subprocess.PIPE,cwd=os.path.curdir)
         out, err = p.communicate()
         ret_code = p.returncode
         if ret_code != 0:
@@ -582,7 +586,9 @@ class TelescopeControl:
         apflog("Slewing by executing %s" %(cmd), echo=True)
         result, code = apftask_do(cmd,cwd=os.path.curdir,debug=True)
         if not result:
-            apflog("Failed at slewlock - check logs could be a slew failure or a failure to acquire: %s" %(code), level="error", echo=True)
+            errstr = "Failed at slewlock - check logs could be a slew failure " 
+            errstr += "or a failure to acquire: %s" % (code)
+            apflog(errstr, level="error", echo=True)
 
         return result
 
@@ -595,7 +601,8 @@ class TelescopeControl:
 
         """
         now = datetime.datetime.now()
-        self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day, self.tel['TARGNAME'].read()))
+        self.fits3pre.write('%d%02d%02d_%s_' % (now.year,now.month,now.day,\
+                                                 self.tel['TARGNAME'].read()))
         self.fits3dir.write('/data/apfguide')
         self.save3d.write(True)
         return
@@ -694,12 +701,13 @@ class TelescopeControl:
             return False
         apflog("Targeting telescope on %s" % star[0], echo=True)
         try:
-            self.vmag.write(star[6])
+            self.robot['SCRIPTOBS_VMAG'].write(star[6])
         except Exception as e:
             apflog("Cannot write SCRIPTOBS_VMAG: %s" % (e), level='error',echo=True)
         try:
-            sline = "%s %f %f pmra=%s pmdec=%s vmag=%s # end" % (star[0],float(star[1])*3.819718,float(star[2])*57.295779,star[4],star[5],star[6])
-            self.line.write(sline)
+            sline = "%s %f %f pmra=%s pmdec=%s vmag=%s # end" %\
+              (star[0],float(star[1])*3.819718,float(star[2])*57.295779,star[4],star[5],star[6])
+            self.robot['SCRIPTOBS_LINE'].write(sline)
         except Exception as e:
             apflog("Cannot write SCRIPTOBS_LINE: %s" % (e), level='error',echo=True)
 
@@ -707,7 +715,9 @@ class TelescopeControl:
             self.robot['SCRIPTOBS_LINE_RESULT'].write(0)
             self.robot['SCRIPTOBS_OBSERVED'].write(False)
         except Exception as e:
-            apflog("Cannot write 0 to SCRIPTOBS_LINE_RESULT or False to SCRIPTOBS_OBSERVED: %s" % (e), level='warn', echo=True)
+            errstr = "Cannot reset SCRIPTOBS_LINE_RESULT or SCRIPTOBS_OBSERVED: %s" % (e)
+            apflog(errstr, level='error', echo=True)
+
 
 
         predfocus  = self.pred_tel_focus()
@@ -885,11 +895,14 @@ class TelescopeControl:
         # accordingly.
         result, code = apftask_do(cmd)
         if not result:
-            apflog("First openup attempt has failed. Exit code = %d. After a pause, will make one more attempt." % code,echo=True)
+            errstr = "First openat attempt has failed. Exit code = %d." % code
+            errstr += " After a pause, will make one more attempt."
+            apflog(errstr,echo=True)
             APFTask.waitFor(self.task, True, timeout=10)
             result, code = apftask_do(cmd)
             if not result:
-                apflog("Second openup attempt also failed. Exit code %d. Giving up." % code,echo=True)
+                errstr = "Second openup attempt also failed. Exit code = %d. Giving up." % code
+                apflog(errstr, echo=True)
                 return False
         rv = self.check_home()
         if rv is False:
@@ -968,7 +981,8 @@ class TelescopeControl:
             return True
         cmd = os.path.join(SCRIPTDIR,"closeup")
         if force:
-            apflog("Calling a single instance of closeup. Will return regardless of result.", echo=True)
+            apflog("Calling a single instance of closeup. Will return regardless of result.",\
+                    echo=True)
             result, code = apftask_do(cmd)
             return result
         if self.mv_perm.binary is False:
@@ -1014,7 +1028,8 @@ class TelescopeControl:
                     else:
                         apflog("Failure power cycling telescope",echo=True,level="error")
                 if attempts == 7:
-                    lstr = "Closeup has failed %d times consecutively. Human intervention likely required." % (attempts)
+                    lstr = "Closeup has failed %d times consecutively. " % (attempts)
+                    lstr += "Human intervention likely required."
                     areopen, _ = self.is_open()
                     if areopen is True:
                         # truly dire, the telescope is open
@@ -1048,7 +1063,8 @@ class TelescopeControl:
         if self.mv_perm and self.faenable['binary'] == 1:
             try:
                 self.focus.write(predfocus,binary=True,wait=False)
-                self.robot['MASTER_MESSAGE'].write("Wrote %f to eostele.Focus" % (predfocus*1000.) )
+                msg = "Wrote %f to eostele.Focus" % (predfocus*1000.) # in mm
+                self.robot['MASTER_MESSAGE'].write(msg)
             except Exception as e:
                 apflog("Cannot write eostele.FOCUS: %s" % (e), level="error", echo=True)
 
@@ -1217,7 +1233,8 @@ class TelescopeControl:
         apflog("Slewing to lower el",echo=True)
         result, ret_code = apftask_do('slew -e 75')
         if result is False:
-            apflog("Slew returned error code %d. Targeting object has failed." % (ret_code),level='error',echo=True)
+            apflog("Slew returned error code %d. Targeting object has failed."\
+                    % (ret_code),level='error',echo=True)
             return
         # Slew to the specified RA and DEC, set guide camera settings, and centerup( Slewlock )
         # Focus the telescope - all of this, including finding the star, is done in focusTel

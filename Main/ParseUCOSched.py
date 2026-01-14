@@ -131,7 +131,7 @@ def get_spreadsheet(sheetn="The Googledex", certificate=DEFAULT_CERT):
     # the certificate has an email associated with it, that email must
     # have the document shared with it to allow access
 
-    certificate_path = os.path.dirname("/usr/local/lick/data/apf/master/")
+    certificate_path = os.path.dirname("/usr/local/lick/data/apf/main/")
     if os.path.exists(certificate_path) is False:
         certificate_path = os.path.dirname(__file__)
     finpath = os.path.join(certificate_path, certificate)
@@ -786,7 +786,7 @@ def parse_UCOSched(rank_table, certificate=DEFAULT_CERT, outfn="sched.dat",
 
     """
 
-    sheetns = list(rank_table['sheetn'])
+    sheetns = list(rank_table['sheetn'][rank_table['rank'] > 0])
 
     stars = None
     # Downloading all the values is going slowly.
