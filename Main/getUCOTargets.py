@@ -34,7 +34,7 @@ class getUCOTargets(threading.Thread):
         if self.debug:
             expression = '$eostele.SUNEL < 100.0'
         APFTask.waitFor(self.task, True, expression=expression, timeout=self.wait_time)
-        
+
         if self.signal is False:
             return
 
@@ -65,6 +65,8 @@ class getUCOTargets(threading.Thread):
         if self.signal is False:
             return
 
+        self.uco_targets.make_star_table()
+
         while self.signal and self.too is not None and not self.debug and False:
 
             if APFTask.waitfor(self.task, False, expression='apftask.SCRIPTOBS_PHASE==Observing',
@@ -78,7 +80,8 @@ class getUCOTargets(threading.Thread):
                 except Exception as e:
                     apflog("Error: Cannot download %s: %s" % (self.too,e),level="error")
                 self.reading = False
-
+            APFTask.waitFor(self.task, True, expression='apftask.SCRIPTOBS_PHASE==Input',
+                            timeout=self.timeout)
 
 def main():
 
