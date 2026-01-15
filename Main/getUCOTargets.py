@@ -30,15 +30,16 @@ class getUCOTargets(threading.Thread):
         self.start()
 
     def run(self):
-
+        apflog("Starting getUCOTargets for %s" % (self.uco_targets.rank_table_name), echo=True)
         expression = '$eostele.SUNEL < -0.0'
         if self.debug:
             expression = '$eostele.SUNEL < 100.0'
+        apflog("Waiting for %s to be true" % (expression), echo=True)
         APFTask.waitFor(self.task, True, expression=expression, timeout=self.wait_time)
 
         if self.signal is False:
             return
-
+        apflog("getUCOTargets making rank and hour tables", echo=True)
         if self.uco_targets.rank_table_name is None:
             return
 
@@ -65,7 +66,7 @@ class getUCOTargets(threading.Thread):
 
         if self.signal is False:
             return
-
+        apflog("getUCOTargets making star table", echo=True)
         self.uco_targets.make_star_table()
 
         while self.signal and self.too is not None and not self.debug and False:
@@ -85,7 +86,7 @@ class getUCOTargets(threading.Thread):
                             timeout=self.timeout)
 
         self.signal = False
-        
+
 def main():
 
     class Opt:
