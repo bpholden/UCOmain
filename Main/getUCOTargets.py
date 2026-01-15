@@ -1,7 +1,8 @@
 from __future__ import print_function
-import datetime
+import time
 import os
 import threading
+import sys
 
 import numpy as np
 import ktl
@@ -98,6 +99,14 @@ def main():
     uco_targets = UCOTargets.UCOTargets(opt)
     print(uco_targets)
     gt = getUCOTargets(uco_targets, task=task)
+    while gt.signal:
+        try:
+            APFTask.wait(task, True, timeout=100)
+        except KeyboardInterrupt:
+            apflog("%s has been killed by user." % (gt.uco_targets), echo=True)
+            sys.exit()
+    print("Done")
+
 
 if __name__ == "__main__":
     main()
