@@ -172,7 +172,7 @@ def get_spreadsheet(sheetn="The Googledex", certificate=DEFAULT_CERT):
         except:
             time.sleep(more_sleeping)
             cur_codex = None
-
+    apflog("Got %d rows from %s" % (len(cur_codex), sheetn), echo=True)
     return worksheet, cur_codex
 
 def retrieve_codex(req_cols,sheetns, certificate=DEFAULT_CERT, sleep=True):
