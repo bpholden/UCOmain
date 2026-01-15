@@ -34,7 +34,7 @@ class getUCOTargets(threading.Thread):
         if self.debug:
             expression = '$eostele.SUNEL < 100.0'
         APFTask.waitFor(self.task, True, expression=expression, timeout=self.wait_time)
-
+        
         if self.signal is False:
             return
 
@@ -93,8 +93,8 @@ def main():
     APFTask.establish(task, os.getpid())
     opt = Opt()
     uco_targets = UCOTargets.UCOTargets(opt)
-
-    _ = getUCOTargets(uco_targets, task=task)
+    print(uco_targets)
+    gt = getUCOTargets(uco_targets, task=task)
 
 if __name__ == "__main__":
     main()
