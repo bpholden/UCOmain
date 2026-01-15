@@ -84,6 +84,8 @@ class getUCOTargets(threading.Thread):
             APFTask.waitFor(self.task, True, expression='apftask.SCRIPTOBS_PHASE==Input',
                             timeout=self.timeout)
 
+        self.signal = False
+        
 def main():
 
     class Opt:
