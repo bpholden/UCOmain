@@ -26,7 +26,6 @@ class getUCOTargets(threading.Thread):
         self.timeout = 1200
         self.reading = False
         self.signal = True
-        self.too = None
         self.start()
 
     def run(self):
@@ -60,27 +59,34 @@ class getUCOTargets(threading.Thread):
         except Exception as e:
             apflog("Cannot write apftask.%s: %s" % (sheetlist_name, e), level='warn',echo=True)
 
-        if self.uco_targets.rank_table and 'too' in self.uco_targets.rank_table.columns:
-            if np.any(self.uco_targets.rank_table['too']):
-                self.too = list(self.uco_targets.rank_table['sheetn'][self.uco_targets.rank_table['too']])
-
         if self.signal is False:
             return
         apflog("getUCOTargets making star table", echo=True)
         self.uco_targets.make_star_table()
 
-        while self.signal and self.too is not None and not self.debug and False:
+        too_sheetlist_name = 'TOO_SHEETLIST'
+        if self.debug:
+            too_sheetlist_name = 'EXAMPLE_VAR_2'
+        try:
+            if self.uco_targets.too_sheets is not None:
+                self.apftask.write(too_sheetlist_name, ",".join(self.uco_targets.too_sheets), timeout=2)
+            else:
+                self.apftask.write(too_sheetlist_name, "", timeout=2)
+        except Exception as e:
+            apflog("Cannot write apftask.%s: %s" % (too_sheetlist_name, e), level='warn',echo=True)
+
+        while self.signal and self.uco_targets.too_sheets is not None and not self.debug and False:
 
             if APFTask.waitfor(self.task, False, expression='apftask.SCRIPTOBS_PHASE==Observing',
                                timeout=self.timeout):
 
                 self.reading = True
                 try:
-                    ParseUCOSched.parse_TOO(too_sheetns=self.too, outfn=self.star_tab,
-                                            outdir=os.getcwd(), prilim=self.prilim,
-                                            certificate=self.certificate)
+                    ParseUCOSched.parse_TOO(too_sheetns=self.uco_targets.too_sheets, outfn=self.uco_targets.star_table_name,
+                                            outdir=os.getcwd(), prilim=self.uco_targets.prilim,
+                                            certificate=self.uco_targets.certificate)
                 except Exception as e:
-                    apflog("Error: Cannot download %s: %s" % (self.too,e),level="error")
+                    apflog("Error: Cannot download %s: %s" % (self.uco_targets.too_sheets,e),level="error")
                 self.reading = False
             APFTask.waitFor(self.task, True, expression='apftask.SCRIPTOBS_PHASE==Input',
                             timeout=self.timeout)
