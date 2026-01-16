@@ -26,6 +26,7 @@ class UCOTargets(object):
         self.hour_table = None
         self.too = None
         self.sheets = None
+        self.too_sheets = None        
         self.hour_constraints = None
 
         self.prilim = prilim
@@ -63,7 +64,8 @@ class UCOTargets(object):
         if 'too' in self.star_table.columns:
             return
         too_sheets =  self.rank_table['sheetn'][self.rank_table['too']]
-
+        self.too_sheets = list(too_sheets)
+    
         self.star_table['too'] = np.zeros(len(self.star_table), dtype=bool)
         for sn in too_sheets:
             idxs = self.star_table['sheetn'] == sn
