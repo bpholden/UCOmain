@@ -92,13 +92,13 @@ class UCOTargets(object):
 
         req_datetime = obs_datetime if obs_datetime is not None else datetime.datetime.utcnow()
 
+        self.make_hour_constraints()
+
         if self.rank_table_name is None:
             return
         
         if self.rank_table is None:
             self.make_rank_table()
-
-        self.make_hour_constraints()
 
         try:
             self.hour_table = ParseUCOSched.make_hour_table(self.rank_table, req_datetime,
