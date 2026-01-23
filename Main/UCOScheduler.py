@@ -680,7 +680,10 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
     if bstar:
         scriptobs_line = make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], \
                                          owner=res['owner'], I2='N', \
-                                            focval=2)
+                                            focval=0)
+        # we hard code the focval to skip it because 
+        # we will focus on the observation created 
+        # in the line below
         scriptobs_line = scriptobs_line + " # end"
         res['SCRIPTOBS'].append(scriptobs_line)
 
