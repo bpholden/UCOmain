@@ -718,7 +718,7 @@ class TelescopeControl:
             errstr = "Cannot reset SCRIPTOBS_LINE_RESULT or SCRIPTOBS_OBSERVED: %s" % (e)
             apflog(errstr, level='error', echo=True)
 
-
+        apftask_do(os.path.join(SCRIPTDIR,"enable_dome_azdrive"))
 
         predfocus  = self.pred_tel_focus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
