@@ -64,7 +64,7 @@ class getUCOTargets(threading.Thread):
         apflog("getUCOTargets making star table", echo=True)
         self.uco_targets.make_star_table()
 
-        too_sheetlist_name = 'TOO_SHEETLIST'
+        too_sheetlist_name = 'MASTER_TOOSHEETLIST'
         if self.debug:
             too_sheetlist_name = 'EXAMPLE_VAR_2'
         try:
