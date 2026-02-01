@@ -78,6 +78,9 @@ class UCOTargets(object):
         '''
         if self.rank_table_name is None:
             return
+        
+        if self.time_left_name is None:
+            return
 
         if os.path.exists(self.time_left_name):
             try:
