@@ -14,7 +14,10 @@ except ImportError:
     from fake_apflog import *
 
 class UCOTargets(object):
-
+    '''
+    Class to handle UCO target tables: rank table, hour table, and star table.
+    
+    '''
     def __init__(self, opt, prilim=0.5):
 
         self.rank_table_name = opt.rank_table
@@ -37,7 +40,8 @@ class UCOTargets(object):
             return
 
     def __repr__(self):
-        return "<UCOTargets rank_table=%s star_table=%s>" % (self.rank_table_name, self.star_table_name)
+        return "<UCOTargets rank_table=%s star_table=%s>" % \
+            (self.rank_table_name, self.star_table_name)
 
 
     def copy_backup(self, file_name):
@@ -65,7 +69,7 @@ class UCOTargets(object):
             return
         too_sheets =  self.rank_table['sheetn'][self.rank_table['too']]
         self.too_sheets = list(too_sheets)
-    
+
         self.star_table['too'] = np.zeros(len(self.star_table), dtype=bool)
         for sn in too_sheets:
             idxs = self.star_table['sheetn'] == sn
@@ -78,7 +82,7 @@ class UCOTargets(object):
         '''
         if self.rank_table_name is None:
             return
-        
+
         if self.time_left_name is None:
             return
 
@@ -101,7 +105,7 @@ class UCOTargets(object):
 
         if self.rank_table_name is None:
             return
-        
+
         if self.rank_table is None:
             self.make_rank_table()
 
@@ -120,8 +124,9 @@ class UCOTargets(object):
         '''
 
         try:
-            self.rank_table = ParseUCOSched.make_rank_table(self.rank_table_name, outdir=os.getcwd(),\
-                               hour_constraints=self.hour_constraints)
+            self.rank_table = ParseUCOSched.make_rank_table(self.rank_table_name, \
+                                outdir=os.getcwd(),\
+                                hour_constraints=self.hour_constraints)
         except Exception as e:
             apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
 
@@ -147,7 +152,8 @@ class UCOTargets(object):
         '''
 
         try:
-            self.star_table, _ = ParseUCOSched.parse_UCOSched(self.rank_table, outfn=self.star_table_name,
+            self.star_table, _ = ParseUCOSched.parse_UCOSched(self.rank_table, 
+                                                        outfn=self.star_table_name,
                                                         outdir=os.getcwd(),
                                                         prilim=self.prilim,
                                                         certificate=self.certificate)
@@ -158,7 +164,8 @@ class UCOTargets(object):
             # goto backup
             if self.copy_backup(self.star_table_name):
                 try:
-                    self.star_table, _ = ParseUCOSched.parse_UCOSched(self.rank_table, outfn=self.star_table_name,
+                    self.star_table, _ = ParseUCOSched.parse_UCOSched(self.rank_table, 
+                                                        outfn=self.star_table_name,
                                                         outdir=os.getcwd(),
                                                         prilim=self.prilim,
                                                         certificate=self.certificate)
