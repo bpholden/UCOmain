@@ -516,9 +516,7 @@ def main():
                 err_str = "Observe thread has died. Will attempt to restart."
                 apflog(err_str, level='error', echo=True)
 
-                observe = Observe.Observe(apf, tel, opt)
-                observe.task = parent
-
+                observe = Observe.Observe(apf, tel, opt, uco_targets, task=parent)
                 observe.start()
 
             if calibrate:
