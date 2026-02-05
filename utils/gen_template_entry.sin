@@ -52,7 +52,7 @@ if __name__ == "__main__":
     outdir = os.path.dirname(args.googledex)
     if outdir == "":
         outdir = "."
-    fp = open("tonight.lst", "a+", encoding="utf-8")
+    fp = open("tonight.lst", "a+")
     star_table, stars  = ParseUCOSched.parse_UCOSched(args.rank_table, outfn=args.googledex, outdir=outdir)
     bstars = star_table['Bstar'] == "Y"
 
