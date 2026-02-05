@@ -8,6 +8,7 @@ import sys
 
 import numpy as np
 
+import UCOTargets
 import ParseUCOSched
 import UCOScheduler as ds
 
@@ -53,7 +54,10 @@ if __name__ == "__main__":
     if outdir == "":
         outdir = "."
     fp = open("tonight.lst", "a+")
-    star_table, stars  = ParseUCOSched.parse_UCOSched(args.rank_table, outfn=args.googledex, outdir=outdir)
+
+    uco_targets = UCOTargets.UCOTargets(opt=argparse.Namespace(rank_table=args.rank_table, time_left=None, test=False))
+
+    star_table, stars  = ParseUCOSched.parse_UCOSched(uco_targets.rank_table, outfn=args.googledex, outdir=outdir)
     bstars = star_table['Bstar'] == "Y"
 
     dt = datetime.utcfromtimestamp(int(time.time()))
