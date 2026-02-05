@@ -56,24 +56,25 @@ if __name__ == "__main__":
     fp = open("tonight.lst", "a+")
 
     uco_targets = UCOTargets.UCOTargets(opt=argparse.Namespace(rank_table=args.rank_table, time_left=None, test=False))
-
-    star_table, stars  = ParseUCOSched.parse_UCOSched(uco_targets.rank_table, outfn=args.googledex, outdir=outdir)
-    bstars = star_table['Bstar'] == "Y"
+    uco_targets.make_rank_table()
+    uco_targets.make_star_table()
+    
+    bstars = uco_targets.star_table['Bstar'] == "Y"
 
     dt = datetime.utcfromtimestamp(int(time.time()))
     for arg in args.target:
         arg = ParseUCOSched.parse_starname(arg.strip())
-        if arg in star_table['name']:
-            a_idx, = np.where(star_table['name'] == arg)
+        if arg in uco_targets.star_table['name']:
+            a_idx, = np.where(uco_targets.star_table['name'] == arg)
             idx = a_idx[0]
-            owner = star_table['sheetn'][idx]
-            bidx, bfinidx = ds.find_Bstars(star_table, idx, bstars)
+            owner = uco_targets.star_table['sheetn'][idx]
+            bidx, bfinidx = ds.find_Bstars(uco_targets.star_table, idx, bstars)
 
-            bline = ds.make_scriptobs_line(star_table[bstars][bidx], dt,
+            bline = ds.make_scriptobs_line(uco_targets.star_table[bstars][bidx], dt,
                                            decker="N", I2="Y", owner=owner, focval=2)
-            line = ds.make_scriptobs_line(star_table[idx], dt, decker="N",
+            line = ds.make_scriptobs_line(uco_targets.star_table[idx], dt, decker="N",
                                           I2="N", owner=owner, temp=True)
-            bfinline = ds.make_scriptobs_line(star_table[bstars][bfinidx], dt,
+            bfinline = ds.make_scriptobs_line(uco_targets.star_table[bstars][bfinidx], dt,
                                               decker="N", I2="Y", owner=owner, focval=2)
 
             fp.write(bline + " # temp=Y\n")
