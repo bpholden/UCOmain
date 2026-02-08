@@ -99,7 +99,6 @@ class APF:
     line_result  = robot['SCRIPTOBS_LINE_RESULT']
 
     apfteqsta    = robot['APFTEQ_STATUS']
-    metxfersta   = robot['METSXFER_STATUS']
     calsta       = robot['CALIBRATE_STATUS']
     focussta     = robot['FOCUSINSTR_STATUS']
     slewsta      = robot['SLEW_STATUS']
@@ -216,7 +215,6 @@ class APF:
         self.avg_fwhm.monitor()
         self.dewarfoc.monitor()
         self.apfteqsta.monitor()
-        self.metxfersta.monitor()
 
     def __str__(self):
         # Determine if the sun rising / setting check is working
