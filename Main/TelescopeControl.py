@@ -137,6 +137,8 @@ class TelescopeControl:
         self.mv_perm.monitor()
         self.chk_close.monitor()
         self.slew_allowed.monitor()
+        self.apfteqsta.monitor()
+        self.metxfersta.monitor()
 
         self.sunel.monitor()
         self.aaz.monitor()
