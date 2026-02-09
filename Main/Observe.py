@@ -1076,6 +1076,17 @@ class Observe(threading.Thread):
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
 
 
+            # if closed by checkapf, run closeup
+            if not self.tel.openOK and not self.tel.is_open()[0]:
+                self.tel.lastopen.read()
+                self.tel.lastclosed.read()
+                if self.tel.lastopen.binary > self.tel.lastclosed.binary:
+                    outstr = "Closing due to checkapf. Last open time was %s and last closed time was %s"
+                    outstr = outstr % (self.tel.lastopen.read(), self.tel.lastclosed.read())
+                    apflog(outstr, echo=True)
+                    APFTask.set(self.task, suffix="MESSAGE", value=outstr, wait=False)
+                    closing()        
+
             # Keep an eye on the deadman timer if we are open
             if self.tel.is_open()[0] and self.tel.dmtimer <= DMLIM:
                 self.tel.dm_reset()
