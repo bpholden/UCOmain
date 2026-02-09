@@ -722,9 +722,9 @@ class Observe(threading.Thread):
 
             APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
             self.apf.validate_UCAM_outputs()
-            self.apf.apftask_mon(self.tel.metxfersta)
-            self.apf.apftask_mon(self.tel.apfteqsta)
-            self.apf.status_clear()
+            self.tel.apftask_mon(self.tel.metxfersta)
+            self.tel.apftask_mon(self.tel.apfteqsta)
+            self.tel.status_clear()
 
             _, running = self.apf.find_robot()
             if running:

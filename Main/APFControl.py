@@ -317,48 +317,6 @@ class APF:
         except:
             return
 
-    def apftask_mon(self, status):
-        if status['populated'] is False:
-            return
-        try:
-            status_val = status['binary']
-        except:
-            return
-
-        hosts = dict()
-        hosts['METSXFER'] = 'frankfurt.ucolick.org'
-        hosts['APFTEQ'] = 'bremen.ucolick.org'
-
-
-        if status_val > 0:
-            # apftask status values are $(TASKNAME)_status
-            taskname_status = status['name'].lower().strip()
-            taskname_split =  taskname_status.split("_")
-            taskname = taskname_split[0]
-            apflog("%s has status %s" % (taskname,status['ascii']),level='error',echo=True)
-
-            # now we need the runhost
-
-            runhost = hosts[taskname.upper()]
-
-            master_runhost_keyword = 'MASTER_RUNHOST'
-            current_host = ktl.read('apftask',master_runhost_keyword)
-
-            apfcmd = os.path.join(LROOT,"bin/apf")
-            restart = '%s restart %s' % (apfcmd,taskname)
-            if runhost == current_host:
-                cmdlist = restart.split()
-            else:
-                cmdlist = ["ssh", "-f", runhost, restart]
-
-            try:
-                p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
-            except Exception as e:
-                apflog("Cannot restart %s on %s: %s" % (taskname,runhost,e),level='error',echo=True)
-                return
-            apflog("%s should be restarted" % (taskname),echo=True)
-        return
-
     def mini_mon_mon(self, sta, host="bremen"):
         '''
         mini_mon_mon(sta, host="bremen")
@@ -704,20 +662,6 @@ class APF:
                 return False
 
         return True
-
-    def status_clear(self):
-        """
-        status_clear()
-
-        Clears the PS status of any APFTask where
-        the PS status does not match the actual status.
-        """
-        for kw in (self.slewsta, self.calsta, self.focussta, \
-                   self.shuttersta, self.opensta, self.closesta,\
-                    self.focustelsta):
-            #self.apftask_status_mon(kw)
-            pass
-
 
     def focusinstr(self, log_error_level='Alert'):
         """
