@@ -120,6 +120,7 @@ class TelescopeControl:
         self.shuttersta   = self.robot['SHUTTERS_STATUS']
         self.focustelsta  = self.robot['FOCUSTEL_STATUS']
         self.lastopen     = self.robot['OPENUP_LAST_SUCCESS']
+        self.lastclosed   = self.robot['CLOSEUP_LAST_SUCCESS']
 
         self.apfteq     = ktl.Service('apfteq')
         self.teqmode    = self.apfteq['MODE']
