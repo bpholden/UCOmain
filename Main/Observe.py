@@ -820,13 +820,16 @@ class Observe(threading.Thread):
                        echo=True)
                 closing()
 
-            if not self.tel.is_open()[0] and not self.tel.openOK and \
-                self.tel.telstate in ['Tracking', 'Slewing']:
-                # we are closed and not ok to open, but the telescope is tracking
-                # this is bad, so close the telescope
-                apflog("Telescope is tracking but dome is closed, closing telescope",\
-                        level='info', echo=True)
-                closing()
+            # if closed by checkapf, run closeup
+            if not self.tel.openOK and not self.tel.is_open()[0]:
+                self.tel.lastopen.read()
+                self.tel.lastclosed.read()
+                if self.tel.lastopen.binary > self.tel.lastclosed.binary:
+                    outstr = "Closing due to checkapf. Last open time was %s and last closed time was %s"
+                    outstr = outstr % (self.tel.lastopen.ascii, self.tel.lastclosed.ascii)
+                    apflog(outstr, echo=True)
+                    APFTask.set(self.task, suffix="MESSAGE", value=outstr, wait=False)
+                    closing()
 
             # Check the slowdown factor to close for clouds
             if self.vmag is not None and self.bmv is not None and False:
@@ -1074,18 +1077,6 @@ class Observe(threading.Thread):
                 omsg = "Starting scriptobs"
                 if current_msg['MESSAGE'] != omsg:
                     APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
-
-
-            # if closed by checkapf, run closeup
-            if not self.tel.openOK and not self.tel.is_open()[0]:
-                self.tel.lastopen.read()
-                self.tel.lastclosed.read()
-                if self.tel.lastopen.binary > self.tel.lastclosed.binary:
-                    outstr = "Closing due to checkapf. Last open time was %s and last closed time was %s"
-                    outstr = outstr % (self.tel.lastopen.read(), self.tel.lastclosed.read())
-                    apflog(outstr, echo=True)
-                    APFTask.set(self.task, suffix="MESSAGE", value=outstr, wait=False)
-                    closing()        
 
             # Keep an eye on the deadman timer if we are open
             if self.tel.is_open()[0] and self.tel.dmtimer <= DMLIM:
