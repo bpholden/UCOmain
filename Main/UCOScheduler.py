@@ -438,7 +438,7 @@ def condition_cuts(moon, seeing, slowdown, star_table):
     if 'seeing' in star_table.colnames:
         available = (star_table['seeing']/0.109 > seeing) & available
 
-    if 'moon' in star_table.colnames:
+    if 'moon' in star_table.colnames and float(moon.alt) > 0:
         available = (star_table['moon'] > moon.moon_phase) & available
 
     if 'transparency' in star_table.colnames:
@@ -466,12 +466,10 @@ def template_conditions(moon, seeing, slowdown):
         apflog("moon.phase=%.2f moon.alt=%.2f" % (moon.phase,moon.alt),echo=True,level='debug')
         if moon.phase < 50 and float(moon.alt) < 0:
             return True
-        elif moon.phase < 25 and float(moon.alt) < 0.7:
+        if moon.phase < 25 and float(moon.alt) < 0.7:
             return True
-        else:
-            return False
-    else:
-        return False
+
+    return False
 
 def find_closest(ras, decs, ra, dec):
     '''
