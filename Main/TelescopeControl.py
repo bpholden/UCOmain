@@ -416,7 +416,7 @@ class TelescopeControl:
         Clears the PS status of any APFTask where
         the PS status does not match the actual status.
         """
-        for kw in (self.slewsta, self.calsta, self.focussta, \
+        for kw in (self.slewsta, self.apf.calsta, self.apf.focussta, \
                    self.shuttersta, self.opensta, self.closesta,\
                     self.focustelsta):
             #self.apftask_status_mon(kw)
