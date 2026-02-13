@@ -1325,6 +1325,10 @@ class TelescopeControl:
         Writes to ROBOSTATE keyword, effecitively tapping the deadman switch.
 
         """
+
+        if self.checkapf['USERKIND'].read(binary=True) != 3:
+            return
+
         try:
             APFLib.write(self.checkapf['ROBOSTATE'], "master operating",timeout=10)
         except Exception as e:
