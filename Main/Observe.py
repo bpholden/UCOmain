@@ -724,7 +724,7 @@ class Observe(threading.Thread):
             self.apf.validate_UCAM_outputs()
             self.tel.apftask_mon(self.tel.metxfersta)
             self.tel.apftask_mon(self.tel.apfteqsta)
-            self.tel.status_clear()
+            self.tel.enable()
 
             _, running = self.apf.find_robot()
             if running:
