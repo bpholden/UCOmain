@@ -422,6 +422,17 @@ class TelescopeControl:
             #self.apftask_status_mon(kw)
             pass
 
+    def enable(self):
+
+        self.telstate.read()
+        if self.telstate['ascii'] == 'Disabled':
+            apflog("Enabling the telescope", echo=True)
+            try:
+                subprocess.check_output(['slew','-o'],stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                apflog("Failed to enable telescope: %s" % (e), level='error', echo=True)
+                return False
+        return True
 
     def sun_rising(self):
         """
