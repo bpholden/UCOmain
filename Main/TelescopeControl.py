@@ -423,7 +423,10 @@ class TelescopeControl:
             pass
 
     def enable(self):
-
+        '''
+        enable()
+        Enables the telescope if it is disabled.
+        '''
         self.telstate.read()
         if self.telstate['ascii'] == 'Disabled':
             apflog("Enabling the telescope", echo=True)
