@@ -474,11 +474,6 @@ class Observe(threading.Thread):
                 apflog("get_target(): Error in sanity check.", level='Alert')
                 return
 
-            if self.apf.init_guide_cam() is False:
-                apflog("get_target(): Error initializing guide camera.", echo=True, level='warn')
-                if not self.apf.gcam_power.binary:
-                    return
-
             if self.apf.apfmon['READYSTA'].read(binary=True) > 4:
                 # this will only be run if there readysta reports at
                 # least an error (which is 5)
@@ -501,6 +496,11 @@ class Observe(threading.Thread):
                     self.append_selected("%s avgfwhm=%05.2f slowdown=%04.2f" % \
                                          (curstr, seeing, slowdown))
                     self.scriptobs.stdin.write(curstr + '\n')
+                    return
+
+            if self.apf.init_guide_cam() is False:
+                apflog("get_target(): Error initializing guide camera.", echo=True, level='warn')
+                if not self.apf.gcam_power.binary:
                     return
 
             self.check_files()
