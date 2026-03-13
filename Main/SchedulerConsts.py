@@ -23,7 +23,7 @@ SUNEL_HOR = -3.2
 # A few constants to make accessing the star table more readable
 SEEING_TEMP = 15
 SLOWDOWN_MIN = 0.6
-SLOWDOWN_TEMP = 2.5
+SLOWDOWN_TEMP = 3.0
 SLOWDOWN_THRESH = 5.0
 SLOWDOWN_MAX = 10.0
 SLOWDOWN_VMAG_LIM = 11.0
@@ -33,6 +33,5 @@ PRI_DELTA = 20
 
 EXP_LIM = 3e9
 MAX_PRI = 3
-#MAX_PRI = 2
 
 DEFAULT_CERT = 'ucoscheduler-d79e797f0ade.json'
