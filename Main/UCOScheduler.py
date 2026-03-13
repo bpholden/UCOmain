@@ -463,7 +463,7 @@ def template_conditions(moon, seeing, slowdown):
     """
 
     if seeing < SchedulerConsts.SEEING_TEMP and slowdown < SchedulerConsts.SLOWDOWN_TEMP:
-        apflog("moon.phase=%.2f moon.alt=%.2f" % (moon.phase,moon.alt),echo=True,level='debug')
+        apflog("moon.phase=%.2f moon.alt=%.2f" % (moon.phase,moon.alt),echo=True,level='info')
         if moon.phase < 50 and float(moon.alt) < 0:
             return True
         if moon.phase < 25 and float(moon.alt) < 0.7:
