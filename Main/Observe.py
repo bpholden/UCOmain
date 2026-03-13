@@ -394,6 +394,7 @@ class Observe(threading.Thread):
                                                             self.apf.ccountrate))
             apflog("slowdown factor = %4.2f" % slowdown, echo=True)
             APFLib.write(self.apf.robot["MASTER_SLOWDOWN"], slowdown)
+            APFLib.write(self.apf.robot["MASTER_SEEING"], self.apf.avg_fwhm)
             return slowdown
 
         def pop_next():
