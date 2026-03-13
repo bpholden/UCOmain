@@ -84,9 +84,6 @@ def restart(name, host):
 class APF:
     """ Class which creates a monitored state object to track the condition of the APF telescope. """
 
-    # Initial seeing conditions
-
-
     # KTL Services and Keywords
     robot        = ktl.Service('apftask')
     vmag         = robot['SCRIPTOBS_VMAG']
