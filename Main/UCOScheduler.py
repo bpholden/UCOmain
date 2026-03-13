@@ -850,7 +850,8 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     moon = ephem.Moon()
     moon.compute(apf_obs)
 
-    do_templates = template and template_conditions(moon, seeing, slowdown)
+    template_conditions_met = template_conditions(moon, seeing, slowdown)
+    do_templates = template and template_conditions_met
 
     apflog("get_next(): Will attempt templates = %s" % str(do_templates) ,echo=True)
     # Note which of these are B-Stars for later.
@@ -1006,6 +1007,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
             res['isTemp'] = True
             apflog("Attempting template observation of %s" % (ucotargets.star_table['name'][idx]), echo=True)
 
+    res['template_conditions_met'] = template_conditions_met
     return res
 
 def test_basic_ops(ucotargets):
