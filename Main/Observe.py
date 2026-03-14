@@ -531,7 +531,7 @@ class Observe(threading.Thread):
             apflog("Observing target: %s" % self.target['NAME'], echo=True)
             APFTask.set(self.task, suffix="MESSAGE", value="Observing target", wait=False)
             APFTask.set(self.task, suffix="TEMPLATE_COND", 
-                        value=self.target['TEMPLATE_CONDITIONS_MET'], wait=False)
+                        value=self.target['template_conditions_met'], wait=False)
             cur_line = self.target["SCRIPTOBS"].pop()
             cur_line = cur_line.strip()
             out_line = "%s avgfwhm=%05.2f slowdown=%04.2f" % (cur_line, seeing, slowdown )
