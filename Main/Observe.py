@@ -510,7 +510,7 @@ class Observe(threading.Thread):
             self.target = ds.get_next(time.time(), seeing, slowdown, self.uco_targets,\
                                          bstar=self.obs_B_star, \
                                          do_too=self.do_too, owner=self.owner,  \
-                                         template=self.do_temp, focval=self.focval, \
+                                         do_templates=self.do_temp, focval=self.focval, \
                                          start_time=self.start_time)
 
             if self.target is None:

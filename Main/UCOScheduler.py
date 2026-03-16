@@ -72,7 +72,7 @@ def need_cal_star(star_table, observed, priorities):
 
     return priorities
 
-def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None):
+def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None, do_templates=False):
     """
     new_pri = compute_priorities(star_table, cur_dt,
                                     hour_table=None, rank_table=None)
@@ -104,11 +104,10 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
     else:
         redo = np.zeros(1,dtype=bool)
 
+    done_sheets = False
     if hour_table is not None:
         too_much = hour_table['cur']  > hour_table['tot']
         done_sheets = hour_table['sheetn'][too_much]
-    else:
-        done_sheets = False
 
     if done_sheets is not False:
         done_sheets_str = " ".join(list(done_sheets))
@@ -776,7 +775,7 @@ def config_defaults(owner):
     return config
 
 def get_next(ctime, seeing, slowdown, ucotargets, \
-                bstar=False, template=False, \
+                bstar=False, do_templates=False, \
                 do_too=False, owner='public', \
                 outfn="googledex.dat", toofn="too.dat", \
                 outdir=None, focval=0, inst='', \
@@ -851,7 +850,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     moon.compute(apf_obs)
 
     template_conditions_met = template_conditions(moon, seeing, slowdown)
-    do_templates = template and template_conditions_met
+    do_templates = do_templates and template_conditions_met
 
     apflog("get_next(): Will attempt templates = %s" % str(do_templates) ,echo=True)
     # Note which of these are B-Stars for later.
@@ -936,15 +935,16 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
         available = available & bright_enough
 
     if not do_templates:
-        available = available & (ucotargets.star_table['only_template'] == 'N') 
+        available = available & (ucotargets.star_table['only_template'] == 'N')
     # Now just sort by priority, then cadence. Return top target
     if len(ucotargets.star_table['name'][available]) < 1:
         apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
         return None
 
-    final_priorities = compute_priorities(ucotargets.star_table,dt,
+    final_priorities = compute_priorities(ucotargets.star_table, dt,
                                              rank_table=ucotargets.rank_table,
-                                             hour_table=ucotargets.hour_table)
+                                             hour_table=ucotargets.hour_table,
+                                             do_templates=do_templates)
 
     try:
         pri = max(final_priorities[available])
