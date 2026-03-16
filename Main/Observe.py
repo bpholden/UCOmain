@@ -309,6 +309,7 @@ class Observe(threading.Thread):
             return True
         ct = time.time()
         if self.start_time - ct < 180 and ct - self.start_time < 3600:
+            self.apf.ldone.write(0, binary=True)
             return True
         if ct - self.start_time > 3600:
             self.start_time = None
