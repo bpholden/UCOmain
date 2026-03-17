@@ -707,7 +707,6 @@ class Observe(threading.Thread):
                         self.fixed_target["SCRIPTOBS"].append(sline)
             self.fixed_target["SCRIPTOBS"].reverse()
 
-
             if tot == 0:
                 apflog("Error: starlist %s is empty" % (self.fixed_list), level="error")
                 self.fixed_list = None
