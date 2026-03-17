@@ -410,6 +410,7 @@ class Observe(threading.Thread):
                 if len(tlist) > 0:
                     apflog("get_target(): Going through remaining target queue.", echo=True)
                     curstr = tlist.pop()
+                    apflog("get_target(): Popped %s from target queue." % (curstr), echo=True)
                     return curstr
 
             if self.fixed_target is not None and 'SCRIPTOBS' in list(self.fixed_target.keys()):
@@ -874,11 +875,13 @@ class Observe(threading.Thread):
                         self.start_time = None
                         self.target = None
                     else:
-                        apflog("%d total starlist lines and %d lines done." % (tot, self.apf.ldone))
-                        while len(self.target["SCRIPTOBS"]) > 0:
-                            self.scriptobs.stdin.write(self.target["SCRIPTOBS"].pop() + '\n')
+                        self.target = {}
+                        self.target['SCRIPTOBS'] = self.fixed_target['SCRIPTOBS']
                         self.fixed_list = None
-
+                        self.start_time = None
+                        self.fixed_target = None
+                        APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
+                        APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
 
             # If the sun is rising and we are finishing an observation
             # Send scriptobs EOF. This will shut it down after the observation
