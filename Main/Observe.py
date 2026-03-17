@@ -309,6 +309,7 @@ class Observe(threading.Thread):
             return True
         ct = time.time()
         if self.start_time - ct < 180 and ct - self.start_time < 3600:
+            self.apf.ldone.write(0, binary=True)
             return True
         if ct - self.start_time > 3600:
             self.start_time = None
@@ -531,7 +532,7 @@ class Observe(threading.Thread):
             apflog("Observing target: %s" % self.target['NAME'], echo=True)
             APFTask.set(self.task, suffix="MESSAGE", value="Observing target", wait=False)
             APFTask.set(self.task, suffix="TEMPLATE_COND", 
-                        value=self.target['TEMPLATE_CONDITIONS_MET'], wait=False)
+                        value=self.target['template_conditions_met'], wait=False)
             cur_line = self.target["SCRIPTOBS"].pop()
             cur_line = cur_line.strip()
             out_line = "%s avgfwhm=%05.2f slowdown=%04.2f" % (cur_line, seeing, slowdown )
@@ -703,8 +704,8 @@ class Observe(threading.Thread):
                     else:
                         tot += 1
                         self.fixed_target["SCRIPTOBS"].append(sline)
+                        apflog("%d %s" % (tot,sline))
             self.fixed_target["SCRIPTOBS"].reverse()
-
 
             if tot == 0:
                 apflog("Error: starlist %s is empty" % (self.fixed_list), level="error")
@@ -873,10 +874,17 @@ class Observe(threading.Thread):
                         self.start_time = None
                         self.target = None
                     else:
-                        apflog("%d total starlist lines and %d lines done." % (tot, self.apf.ldone))
-                        while len(self.target["SCRIPTOBS"]) > 0:
-                            self.scriptobs.stdin.write(self.target["SCRIPTOBS"].pop() + '\n')
-                        self.fixed_list = None
+                        apflog("%s list" % self.fixed_list)
+                        if 'SCRIPTOBS' in self.fixed_target.keys():
+                            apflog("%s" % self.fixed_target['SCRIPTOBS'])
+                            self.target = {}
+                            self.target['SCRIPTOBS'] = []
+                            self.target['SCRIPTOBS'] = self.fixed_target["SCRIPTOBS"]
+                            self.fixed_list = None
+                            self.start_time = None
+                            APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
+                            APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
+                            
 
 
             # If the sun is rising and we are finishing an observation
