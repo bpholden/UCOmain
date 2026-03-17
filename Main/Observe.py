@@ -410,6 +410,7 @@ class Observe(threading.Thread):
                 if len(tlist) > 0:
                     apflog("get_target(): Going through remaining target queue.", echo=True)
                     curstr = tlist.pop()
+                    apflog("get_target(): Popped %s from target queue." % (curstr), echo=True)
                     return curstr
 
             if self.fixed_target is not None and 'SCRIPTOBS' in list(self.fixed_target.keys()):
@@ -510,7 +511,7 @@ class Observe(threading.Thread):
             self.target = ds.get_next(time.time(), seeing, slowdown, self.uco_targets,\
                                          bstar=self.obs_B_star, \
                                          do_too=self.do_too, owner=self.owner,  \
-                                         template=self.do_temp, focval=self.focval, \
+                                         do_templates=self.do_temp, focval=self.focval, \
                                          start_time=self.start_time)
 
             if self.target is None:
@@ -874,18 +875,13 @@ class Observe(threading.Thread):
                         self.start_time = None
                         self.target = None
                     else:
-                        apflog("%s list" % self.fixed_list)
-                        if 'SCRIPTOBS' in self.fixed_target.keys():
-                            apflog("%s" % self.fixed_target['SCRIPTOBS'])
-                            self.target = {}
-                            self.target['SCRIPTOBS'] = []
-                            self.target['SCRIPTOBS'] = self.fixed_target["SCRIPTOBS"]
-                            self.fixed_list = None
-                            self.start_time = None
-                            APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
-                            APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
-                            
-
+                        self.target = {}
+                        self.target['SCRIPTOBS'] = self.fixed_target['SCRIPTOBS']
+                        self.fixed_list = None
+                        self.start_time = None
+                        self.fixed_target = None
+                        APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
+                        APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
 
             # If the sun is rising and we are finishing an observation
             # Send scriptobs EOF. This will shut it down after the observation

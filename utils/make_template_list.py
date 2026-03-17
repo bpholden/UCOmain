@@ -26,17 +26,14 @@ if __name__ == "__main__":
         "-r","--rank_table",
         metavar="rank_table.dat",
         type=str,
-        default="2025B_ranks",
+        default="2026A_ranks",
         help="Name of the rank table"
     )
     args = parser.parse_args()
-    if args.googledex:
-        star_table, stars = ParseUCOSched.parse_UCOSched(outfn=args.googledex)
-    elif args.rank_table:
-        sheetns, rank, frac, too = ParseUCOSched.parse_rank_table(sheet_table_name=args.rank_table)
-        star_table, stars = ParseUCOSched.parse_UCOSched(sheetns=sheetns)
-    else:
-        sys.exit("No googledex or rank table specified")
+
+    rank_table = ParseUCOSched.make_rank_table(sheet_table_name=args.rank_table)
+    star_table, stars = ParseUCOSched.parse_UCOSched(rank_table, outfn=args.googledex)
+
 
     need = (star_table['Template'] == 'N') & (star_table['I2'] == 'Y')
     need = need & (star_table['Bstar'] == 'N')
