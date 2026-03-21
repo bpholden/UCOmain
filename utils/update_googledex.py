@@ -26,16 +26,7 @@ if __name__ == "__main__":
     fn = sys.argv[1]
     outfn = sys.argv[2]
 
-    sheetns = None
-    if len(sys.argv) > 3:
-        sheetns = sys.argv[3:]
-
     obslog = ObservedLog.ObservedLog(fn)
 
     if len(obslog.names) > 0:
-        if obslog.sheetns[0] is None and sheetns is None:
-            sheetns = set(obslog.owners)
-        elif sheetns is None:
-            sheetns = set(obslog.sheetns)
-
         ParseUCOSched.update_online_sheets(fn,outfn=outfn)
