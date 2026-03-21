@@ -60,6 +60,7 @@ if __name__ == "__main__":
 
     uco_targets = UCOTargets.UCOTargets(opt=argparse.Namespace(rank_table=args.rank_table, time_left=None, test=False))
     uco_targets.rank_table = astropy.table.Table.read(args.rank_table, format='ascii')
+    uco_targets.star_table_name = args.googledex
     uco_targets.make_star_table()
 
     bstars = uco_targets.star_table['Bstar'] == "Y"
