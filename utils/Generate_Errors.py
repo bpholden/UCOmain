@@ -10,12 +10,13 @@ def compute_precision(i2counts, cols):
     The precision is computed using the formula:
     precision = 10^(mean + dev)
     where mean is computed from the I2 counts and the color, and dev is a random
-    drawn from a normal distribution with a mean and standard deviation from empirical data. The precision is then converted from log space to linear space.
+    drawn from a normal distribution with a mean and standard deviation from empirical data.
     Parameters:
     i2counts (float): The I2 counts for the observation.
     cols (float): The color of the star (B-V).
     Returns:
-    float: The computed precision in m/s.""" 
+    float: The computed precision in m/s.
+    """
     blue = cols < 1.2
     gerr = .436/np.log(10) # fractional err
     merr = .363/np.log(10)
@@ -61,15 +62,15 @@ def jitter(cols):
     # jitter[((cols > 1.3) & (cols < 1.6))] += 2.1 + 2.7 * 0.5
 
     if cols < 0.7:
-        jitter =  2.3 + 17.4*0.02
+        jitter_val =  2.3 + 17.4*0.02
     elif cols > 0.7 and cols < 1.0:
-        jitter = 2.1 + 4.7 *0.02
+        jitter_val = 2.1 + 4.7 *0.02
     elif cols > 1.0 and cols < 1.3:
-        jitter =  1.6 - 0.003 * 0.3
+        jitter_val =  1.6 - 0.003 * 0.3
     else:
-        jitter =  2.1 + 2.7 * 0.5
+        jitter_val =  2.1 + 2.7 * 0.5
 
-    return jitter
+    return jitter_val
 
 def compute_real_uncertainty(i2counts,cols):
     """
