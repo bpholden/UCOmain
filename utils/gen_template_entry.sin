@@ -59,7 +59,10 @@ if __name__ == "__main__":
     fp = open("tonight.lst", "a+")
 
     uco_targets = UCOTargets.UCOTargets(opt=argparse.Namespace(rank_table=args.rank_table, time_left=None, test=False))
-    uco_targets.rank_table = astropy.table.Table.read(args.rank_table, format='ascii')
+    rank_table = astropy.table.Table.read(args.rank_table, format='ascii')
+    # arrrrrrg
+    rank_table['too'] = [ True if c == "True" else False for c in rank_table['too'] ]
+    uco_targets.rank_table = rank_table
     uco_targets.star_table_name = args.googledex
     uco_targets.make_star_table()
 
