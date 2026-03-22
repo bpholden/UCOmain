@@ -6,9 +6,9 @@ import os
 import time
 import sys
 
-import astropy.table
 import numpy as np
 
+sys.path.append("../Main")
 import UCOTargets
 import ParseUCOSched
 import UCOScheduler as ds
