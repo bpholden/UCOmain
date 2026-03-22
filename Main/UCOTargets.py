@@ -26,6 +26,7 @@ class UCOTargets(object):
         self.star_table_name = 'googledex.dat' # historical
         self.star_table = None
         self.rank_table = None
+        self.rank_table_filename = "rank_table"
         self.hour_table = None
         self.too = None
         self.sheets = None
@@ -125,7 +126,7 @@ class UCOTargets(object):
 
         try:
             self.rank_table = ParseUCOSched.make_rank_table(self.rank_table_name, \
-                                outdir=os.getcwd(),\
+                                outdir=os.getcwd(), outfn=self.rank_table_filename, \
                                 hour_constraints=self.hour_constraints)
         except Exception as e:
             apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
