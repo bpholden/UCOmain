@@ -137,6 +137,9 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
 
     new_pri[star_table['cal_star'] == 'Y'] = 0
 
+    if do_templates:
+        new_pri[star_table['Template'] == 'Y'] = SchedulerConsts.MAX_PRI
+
     new_pri = need_cal_star(star_table, observed, new_pri)
 
     return new_pri
