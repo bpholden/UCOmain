@@ -865,7 +865,7 @@ class Observe(threading.Thread):
                     APFTask.waitfor(self.task, True, timeout=15)
 
                     haveobserved = True
-                elif self.start_time is not None and self.should_start_list():
+                elif self.fixed_list is not None and self.should_start_list():
                     apflog("Observing a fixed list called %s" % (self.fixed_list), echo=True)
                     tot = read_starlist_file()
                     if tot == 0:
