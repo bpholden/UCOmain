@@ -142,11 +142,6 @@ class Calibrate(threading.Thread):
         APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
 
         if result is False:
-            sunel = float(eostele["sunel"].read())
-            if sunel < 3:
-                apflog("Not Starting calibrate %s script, sun too low." % (phase),\
-                        level='Info', echo=True)
-                return True
             apflog("Calibrate Pre has failed. Trying again",level='warn',echo=True)
             self.apf.instr_permit()
             result = self.apf.calibrate(script = self.calfile, time = ctime)
