@@ -593,16 +593,16 @@ def main():
     except Exception as e:
         apflog("Note: Cannot stop monitoring ok2open. %s" % (e), level="warn", echo=True)
     # 5) Take morning calibrations
-    phase_index = 4
-    APFTask.phase(parent, POSSIBLE_PHASES[phase_index])
+    #phase_index = 4
+    #APFTask.phase(parent, POSSIBLE_PHASES[phase_index])
     apf.instr_permit()
-    result = apf.calibrate(script=opt.calibrate, time='post')
-    if not result:
-        apflog("Calibrate Post has failed.", level='warn',echo=True)
-        result = apf.calibrate(script=opt.calibrate, time='post')
-        if not result:
-            apflog("Calibrate Post has failed twice.", level='error',echo=True)
-            APFTask.set(parent, suffix="MESSAGE",value="Calibrate Post failed twice",wait=False)
+    #result = apf.calibrate(script=opt.calibrate, time='post')
+    #if not result:
+    #    apflog("Calibrate Post has failed.", level='warn',echo=True)
+    #    result = apf.calibrate(script=opt.calibrate, time='post')
+    #    if not result:
+    #        apflog("Calibrate Post has failed twice.", level='error',echo=True)
+    #        APFTask.set(parent, suffix="MESSAGE",value="Calibrate Post failed twice",wait=False)
 
     if not debug:
         APFTask.set(parent, suffix="LAST_OBS", value=apf.ucam["OBSNUM"].read())
