@@ -1022,29 +1022,14 @@ class Observe(threading.Thread):
             # If we are open and scriptobs isn't running, start it up
             if self.tel.is_ready_observing()[0] and not running \
                 and float(cursunel) <= sunel_lim and self.tel.openOK:
-                focusing = self.apf.focussta['binary'] < 3
-                if focusing:
+                done_focusing = APFTask.waitFor(self.task, True, timeout=60, expression="$apftask.FOCUSINSTR_STATUS >= 3")
+                if not done_focusing:
                     apflog("Focusing in progress, waiting for it to finish", echo=True)
-                    APFTask.waitFor(self.task, True, timeout=60)
                     continue
-                rv = APFTask.waitFor(self.task, False,\
-                                      expression="$apftask.CALIBRATE_STATUS == 'Running'",\
-                                          timeout=1)
-                if rv:
-                    try:
-                        APFTask.abort("CALIBRATE")
-                    except ktl.ktlError:
-                        apflog("Warning: CALIBRATE still running after abort, this happens",\
-                                echo=True, level='warn')
-                    except Exception as e:
-                        apflog("Error: Cannot abort CALIBRATE: %s" % (e), echo=True, level='error')
-                    rv = APFTask.waitFor(self.task, False,\
-                                          expression="$apftask.CALIBRATE_STATUS != 'Running'",\
-                                              timeout=300)
-                    if rv is False:
-                        apflog("Error: CALIBRATE did not stop", echo=True, level='warn')
-                    else:
-                        apflog("CALIBRATE has stopped", echo=True)
+                done_calibrating = APFTask.waitFor(self.task, True, timeout=60, expression="$apftask.CALIBRATE_STATUS >= 3")
+                if not done_calibrating:
+                    apflog("Calibrating in progress, waiting for it to finish", echo=True)  
+                    continue
 
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
 
