@@ -38,6 +38,7 @@ import getUCOTargets
 import UCOTargets
 import Observe
 import SunPos
+import SchedulerConsts
 
 os.umask(0o007)
 
@@ -144,7 +145,7 @@ def calc_focus_start_time():
         # the sun has already set
         start_time = -1.
     else:
-        start_time = time_to_sunset - 2.0*3600.
+        start_time = time_to_sunset - SchedulerConsts.FOCUS_START*3600.
     t_delta = datetime.timedelta(0,start_time)
     sun_delta = datetime.timedelta(0,time_to_sunset)
     start_dt = dt + t_delta
