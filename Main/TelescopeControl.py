@@ -111,6 +111,7 @@ class TelescopeControl:
 
         self.robot        = ktl.Service('apftask')
         self.slew_allowed = self.robot['SLEW_ALLOWED']
+        self.slew_recent_failures = self.robot['SLEW_RECENT_FAILURES']
         self.autofoc      = self.robot["SCRIPTOBS_AUTOFOC"]
         self.apfteqsta    = self.robot['APFTEQ_STATUS']
         self.metxfersta   = self.robot['METSXFER_STATUS']
@@ -138,6 +139,7 @@ class TelescopeControl:
         self.mv_perm.monitor()
         self.chk_close.monitor()
         self.slew_allowed.monitor()
+        self.slew_recent_failures.monitor()
         self.apfteqsta.monitor()
         self.metxfersta.monitor()
 
