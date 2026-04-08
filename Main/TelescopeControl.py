@@ -999,6 +999,8 @@ class TelescopeControl:
         if self.test: return True
         cmd = os.path.join(SCRIPTDIR,"power_down_telescope")
         self.dm_reset()
+        self.slew_allowed.write(True, binary=True)
+        self.slew_recent_failures.write("")
         if self.mv_perm.binary is False:
             apflog("Waiting for permission to move")
         chk_mv = '$checkapf.MOVE_PERM == true'
