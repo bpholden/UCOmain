@@ -163,8 +163,8 @@ class APF:
         self.apfminimon = ktl.Service('apfminimon')
 
         try:
-            self.eosgcam['GENABLE'].write(True,binary=True)
-        except:
+            self.eosgcam['GENABLE'].write(True,binary=True,timeout=2)
+        except ktl.TimeoutException:
             apflog("Cannot write True to eosgcam.GENABLE, issue with guider and/or dresden",level='error',echo=True)
 
 
@@ -250,8 +250,11 @@ class APF:
             apfmon_stat = self.ucamd0sta['binary']
             if apfmon_stat == 4:
                 # modify -s apfucam DISP0DWIM="ksetMacval DISP0STA READY"
-                if self.disp0sta.read(binary=True,timeout=2) == 0:
-                    self.ucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
+                try:
+                    if self.disp0sta.read(binary=True,timeout=2) == 0:
+                        self.ucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
+                except ktl.TimeoutException:
+                    apflog("Cannot read or write apfucam keywords DISP0STA or DISP0DWIM", level='warn', echo=True)
         except:
             return
 
@@ -359,7 +362,7 @@ class APF:
                 # we have a contradiction
                 # the process is not running but the pid is stale
                 try:
-                    ktl.write('apftask',name + "_PS_STATE", '')
+                    ktl.write('apftask',name + "_PS_STATE", '', wait=True)
                 except:
                     apflog("Cannot write to apftask.%s_PS_STATE" % (name),level='error',echo=True)
                     pass
@@ -390,7 +393,11 @@ class APF:
             # so we try a few times
             try:
                 if timeout:
-                    keyword.write(value,wait=True,timeout=timeout)
+                    try:
+                        keyword.write(value,wait=True,timeout=timeout)
+                    except ktl.TimeoutException:
+                        apflog("Timeout writing to %s, retrying %d" % \
+                               (keyword, trials), level='warn', echo=True)
                 else:
                     keyword.write(value,wait=True)
             except Exception as e:
@@ -437,9 +444,9 @@ class APF:
             return False
 
         ret_val = True
-        self.save3d.write(False,binary=True)
-        self.fits3pre.write('')
-        if self.gexptime.read(binary=True) >= 1:
+        self.save3d.write(False, binary=True, wait=False)
+        self.fits3pre.write('', wait=False)
+        if self.gexptime.read(binary=True, timeout=2) >= 1:
             ret_val = self.init_sumframe()
             if ret_val:
                 ret_val = self.init_gexptime()
@@ -464,12 +471,12 @@ class APF:
         if self.outfile.read() != self.desired_outfile:
             apflog("Output filename is %s and not the current date %s" % \
                    (self.desired_outfile, self.outfile),level='error',echo=True)
-            self.outfile.write(self.outfile)
+            self.outfile.write(self.outfile, wait=False)
 
         if self.obsnum < self.robot["MASTER_LAST_OBS"]:
             apflog("Output file number is %s which is less than the last logged value %s"\
                     % (self.obsnum, self.robot["MASTER_LAST_OBS"]),level='error',echo=True)
-            self.obsnum.write(self.robot["MASTER_LAST_OBS"])
+            self.obsnum.write(self.robot["MASTER_LAST_OBS"], wait=False)
 
         return
 
@@ -493,11 +500,11 @@ class APF:
         self.desired_outfile = name
         self.ucam('OUTDIR').write('/data/apf/')
         if num:
-            self.obsnum.write(str(num))
-        self.robot['UCAMLAUNCHER_UCAM_PCC'].write(0)
+            self.obsnum.write(str(num), wait=False)
+        self.robot['UCAMLAUNCHER_UCAM_PCC'].write(0, wait=False)
 
         bstr = "%d,%d" % (1,1)
-        self.ucam['BINNING'].write(bstr)
+        self.ucam['BINNING'].write(bstr, wait=False)
 
         apflog("Updated science camera parameters:")
         apflog("Observer = %s" % self.ucam('OBSERVER').read(),echo=True)
