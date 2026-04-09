@@ -1127,7 +1127,7 @@ if __name__ == "__main__":
 
     uco_targets = UCOTargets.UCOTargets(t_opt)
 
-    observe = Observe(t_apf, t_tel, t_opt, task=parent)
+    observe = Observe(t_apf, t_tel, t_opt, uco_targets, task=parent)
     APFTask.waitFor(parent, True, timeout=2)
     observe.start()
     while observe.signal:
