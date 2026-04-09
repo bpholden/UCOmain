@@ -1241,7 +1241,7 @@ class TelescopeControl:
         """
 
         if check_apfmon:
-            status_value = self.apfmon['FC_STATUSSTA'].read(binary=True)
+            status_value = self.apfmon['FC_STATUSSTA'].read(binary=True, timeout=2)
             if status_value < 4:
                 return
 
