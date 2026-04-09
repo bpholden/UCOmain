@@ -20,6 +20,7 @@ import APFControl
 import TelescopeControl
 from apflog import apflog
 import UCOScheduler as ds
+import UCOTargets
 import ExposureCalculations
 import SchedulerConsts
 
@@ -1104,6 +1105,7 @@ if __name__ == "__main__":
             self.fixed = None
             self.sheet = 'RECUR_A100'
             self.rank_table = '2024B_ranks'
+            self.time_left = ''
             self.start = None
             self.test = True
             self.raster = False
@@ -1122,6 +1124,8 @@ if __name__ == "__main__":
     t_tel = TelescopeControl.TelescopeControl(t_apf, test=True)
     APFTask.waitFor(parent, True, timeout=2)
     print(str(t_tel))
+
+    uco_targets = UCOTargets.UCOTargets(t_opt)
 
     observe = Observe(t_apf, t_tel, t_opt, task=parent)
     APFTask.waitFor(parent, True, timeout=2)
