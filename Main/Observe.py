@@ -477,7 +477,7 @@ class Observe(threading.Thread):
                 apflog("get_target(): Error in sanity check.", level='Alert')
                 return
 
-            if self.apf.apfmon['READYSTA'].read(binary=True) > 4:
+            if self.apf.apfmon['READYSTA'].read(binary=True, timeout=2) > 4:
                 # this will only be run if there readysta reports at
                 # least an error (which is 5)
                 # the ADC not being ready often is reported as a warning

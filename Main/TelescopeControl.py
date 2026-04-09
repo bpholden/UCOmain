@@ -352,7 +352,7 @@ class TelescopeControl:
         for kw in pc_keywords:
             try:
                 pc_kw = self.apfmon[kw]
-                kw_val = pc_kw.read(binary=True)
+                kw_val = pc_kw.read(binary=True, timeout=2)
                 if kw_val > 4:
                     # this is a warning or error
                     apflog("PC keyword %s has value %s, recommend restarting" %\
