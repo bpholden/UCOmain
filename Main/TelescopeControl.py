@@ -350,18 +350,18 @@ class TelescopeControl:
         }
 
         for kw in pc_keywords:
+            pc_kw = self.apfmon[kw]
             try:
-                pc_kw = self.apfmon[kw]
                 kw_val = pc_kw.read(binary=True, timeout=2)
-                if kw_val > 4:
-                    # this is a warning or error
-                    apflog("PC keyword %s has value %s, recommend restarting" %\
-                            (kw,pc_kw['ascii']),level='Crit',echo=True)
-                    srv_name = kw[3:-3].lower()
-                    restart(srv_name,host=pc_servers[srv_name.lower()])
-                    ret_val = False
-            except Exception as e:
-                apflog("Cannot monitor keyword %s: %s" % (kw,e),echo=True, level='warn')
+            except ktl.TimeoutException:
+                apflog("Timeout reading PC keyword %s, recommend restarting apfmon3" % (kw), level='Crit', echo=True)
+                return False
+            if kw_val > 4:
+                # this is a warning or error
+                apflog("PC keyword %s has value %s, recommend restarting" %\
+                        (kw,pc_kw['ascii']),level='Crit',echo=True)
+                srv_name = kw[3:-3].lower()
+                restart(srv_name,host=pc_servers[srv_name.lower()])
                 ret_val = False
 
         return ret_val
@@ -848,12 +848,13 @@ class TelescopeControl:
         result, code = apftask_do(cmd,debug=True,cwd=os.getcwd())
         if result:
             try:
-                estopstate = self.dome.read('ESTOPST',binary=True)
+                estopstate = self.dome.read('ESTOPST',binary=True, timeout=2)
                 if estopstate:
                     return False
                 else:
                     return True
-            except:
+            except ktl.TimeoutException as e:
+                apflog("cannot read dome keyword ESTOPST: %s" % (e),level='Alert',echo=True)
                 return False
         else:
             return False
@@ -868,10 +869,13 @@ class TelescopeControl:
 
         # there are three states - but we do not care about ESTOPST,
         # that is will be cleared in openatsunset/openatnight
-        if self.dome['ECLOSEST']:
-            return True
-        if self.dome['ESECURST']:
-            return True
+        try:
+            if self.dome['ECLOSEST']:
+                return True
+            if self.dome['ESECURST']:
+                return True
+        except ktl.TimeoutException as e:
+            apflog("cannot read dome keywords ECLOSEST or ESECURST: %s" % (e),level='Alert',echo=True)
         return False
 
 
@@ -887,7 +891,7 @@ class TelescopeControl:
         rv, rc = apftask_do(cmd)
         try:
             homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
-        except Exception as e:
+        except ktl.TimeoutException as e:
             apflog("cannot read apfmon keyword ELHOMERIGHTSTA: %s" % (e),level='Alert',echo=True)
             return False
         else:
@@ -907,7 +911,7 @@ class TelescopeControl:
         """
         try:
             homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
-        except Exception as e:
+        except ktl.TimeoutException as e:
             apflog("apfmon.ELHOMERIGHTSTA cannot be read: %s" % (e),level='Alert',echo=True)
             return False
         if homed == 2:
@@ -1081,7 +1085,7 @@ class TelescopeControl:
                 # away, if so do not send any more shutter commands
                 apflog("Dome Shutters maybe running away!", level='error', echo=True)
                 return False
-        except:
+        except ktl.TimeoutException:
             apflog("Cannot communicate with apfmon1, proceeding anyway (fingers crossed)", \
                  level='error', echo=True)
 
@@ -1241,7 +1245,11 @@ class TelescopeControl:
         """
 
         if check_apfmon:
-            status_value = self.apfmon['FC_STATUSSTA'].read(binary=True, timeout=2)
+            try:
+                status_value = self.apfmon['FC_STATUSSTA'].read(binary=True, timeout=2)
+            except ktl.TimeoutException:
+                apflog("Cannot read apfmon keyword FC_STATUSSTA, restart apfmon1", level='warn', echo=True)
+                return
             if status_value < 4:
                 return
 
