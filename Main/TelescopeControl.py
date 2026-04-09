@@ -111,6 +111,7 @@ class TelescopeControl:
 
         self.robot        = ktl.Service('apftask')
         self.slew_allowed = self.robot['SLEW_ALLOWED']
+        self.slew_recent_failures = self.robot['SLEW_RECENT_FAILURES']
         self.autofoc      = self.robot["SCRIPTOBS_AUTOFOC"]
         self.apfteqsta    = self.robot['APFTEQ_STATUS']
         self.metxfersta   = self.robot['METSXFER_STATUS']
@@ -138,6 +139,7 @@ class TelescopeControl:
         self.mv_perm.monitor()
         self.chk_close.monitor()
         self.slew_allowed.monitor()
+        self.slew_recent_failures.monitor()
         self.apfteqsta.monitor()
         self.metxfersta.monitor()
 
@@ -997,6 +999,8 @@ class TelescopeControl:
         if self.test: return True
         cmd = os.path.join(SCRIPTDIR,"power_down_telescope")
         self.dm_reset()
+        self.slew_allowed.write(True, binary=True)
+        self.slew_recent_failures.write("")
         if self.mv_perm.binary is False:
             apflog("Waiting for permission to move")
         chk_mv = '$checkapf.MOVE_PERM == true'
