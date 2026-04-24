@@ -256,6 +256,8 @@ def parse_args(apftask):
                          default=False, help="Do not observe B stars")
     parser.add_argument('--time_left', default=None, \
                         help="File name for remaining time in programs")
+    parser.add_argument('--halve', action='store_true', default=False, \
+                        help="Decrement the rank of programs with less than 50 percent time left.")
 
     opt = parser.parse_args()
 

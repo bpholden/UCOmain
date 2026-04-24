@@ -290,7 +290,7 @@ def find_time_left():
 
     return None
 
-def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None):
+def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None, halve_rank=False):
     """
     make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_constraints=None)
 
@@ -325,16 +325,18 @@ def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_cons
         rank_table= astropy.table.Table([sheetns,ranks,fracs,toos], \
                                         names=['sheetn','rank','frac','too'])
 
-        if hour_constraints:
-            time_left = hour_constraints
-        else:
-            time_left = find_time_left()
+        if hour_constraints is None:
+            hour_constraints= find_time_left()
+        time_left = hour_constraints
 
         if time_left is not None:
             if 'runname' in list(time_left.keys()) and 'left' in list(time_left.keys()):
                 for runname in time_left['runname']:
-                    if float(time_left['left'][time_left['runname']==runname]) < 0:
+                    cur = time_left['runname']==runname
+                    if float(time_left['left'][cur]) < 0:
                         rank_table['rank'][rank_table['sheetn']==runname] = -1000
+                    if float(time_left['left'][cur])/float(time_left['alloc'][cur]) < 0.5 and halve_rank:
+                        rank_table['rank'][rank_table['sheetn']==runname] -= 20
 
         try:
             rank_table.write(outfn,format='ascii')

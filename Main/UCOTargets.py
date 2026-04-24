@@ -28,6 +28,7 @@ class UCOTargets(object):
         self.rank_table = None
         self.rank_table_filename = "rank_table"
         self.hour_table = None
+        self.halve = opt.halve if hasattr(opt, 'halve') else False
         self.too = None
         self.sheets = None
         self.too_sheets = None        
@@ -127,7 +128,7 @@ class UCOTargets(object):
         try:
             self.rank_table = ParseUCOSched.make_rank_table(self.rank_table_name, \
                                 outdir=os.getcwd(), outfn=self.rank_table_filename, \
-                                hour_constraints=self.hour_constraints)
+                                hour_constraints=self.hour_constraints, halve_rank=self.halve)
         except Exception as e:
             apflog("Error: Cannot download rank_table?! %s" % (e),level="error")
 
