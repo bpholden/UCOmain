@@ -227,8 +227,7 @@ def main():
         ot.close()
         observing = True
         while observing:
-
-            result = ds.get_next(curtime, lastfwhm, lastslow, ucotargets,\
+            result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, ucotargets,\
                                     bstar=bstar, outfn=options.infile,\
                                     do_templates=do_temp,outdir=options.outdir)
             if result:
