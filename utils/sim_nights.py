@@ -37,7 +37,7 @@ def read_datefile(datefn):
 
     return datelist
 
-def gen_datelist(startstr,endstr):
+def gen_datelist(startstr, endstr):
     datelist = []
     start = datetime.strptime(startstr,"%Y/%m/%d")
     end  = datetime.strptime(endstr,"%Y/%m/%d")
@@ -126,7 +126,7 @@ def parse_args():
                         action="store_false",help="disable bstar")
     parser.add_argument("-o","--outdir",dest="outdir",default=".",
                         help="output directory")
-    parser.add_argument("--rank_table",dest="rank_sheet",
+    parser.add_argument("--rank_table",dest="rank_table",
                         default="2026A_rank",help="rank table file")
     parser.add_argument("--tleftfile",dest="time_left",
                         default="time_left.csv",help="time left file")
@@ -140,6 +140,9 @@ def parse_args():
         df = os.path.join(options.outdir,options.datefile)
         datelist = read_datefile(df)
     else:
+        if options.start_date is None or options.end_date is None:
+            print ("if not using a date file, you must provide start and end dates")
+            sys.exit()
         datelist = gen_datelist(options.start_date, options.end_date)
 
     if options.seed:
@@ -195,9 +198,9 @@ def update_hour_constraints(tleftfn):
 
 def main():
 
-    options,datelist = parse_args()
+    options, datelist = parse_args()
     bstar = options.bstar
-    simoutfp, star_strs, star_dates = prep_simout(options.outdir,options.simout)
+    simoutfp, star_strs, star_dates = prep_simout(options.outdir, options.simout)
 
     ucotargets = UCOTargets.UCOTargets(options)
     ucotargets.make_rank_table()
