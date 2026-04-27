@@ -130,20 +130,17 @@ def parse_args():
                         default="2026A_rank",help="rank table file")
     parser.add_argument("--tleftfile",dest="time_left",
                         default="time_left.csv",help="time left file")
-
+    parser.add_argument("start_date", nargs='?', default=None, help="start date for simulation (YYYY/MM/DD)")
+    parser.add_argument("end_date", nargs='?', default=None, help="end date for simulation (YYYY/MM/DD)")
     parser.add_argument("-s","--simout",dest="simout",
                         default="all_dates.simout",help="simulation output file")
-    (options, args) = parser.parse_args()
-
-    if len(args) < 2 and options.datefile == "":
-        print ("needs either a date pair or an input file which lists the dates")
-        sys.exit()
+    options = parser.parse_args()
 
     if options.datefile != "":
         df = os.path.join(options.outdir,options.datefile)
         datelist = read_datefile(df)
     else:
-        datelist = gen_datelist(args[0],args[1])
+        datelist = gen_datelist(options.start_date, options.end_date)
 
     if options.seed:
         random.seed(int(options.seed))
@@ -153,7 +150,7 @@ def parse_args():
         try:
             os.mkdir(options.outdir)
         except Exception as e:
-            print ("cannot make output directory: %s - %s" % (options.outdir,e))
+            print ("cannot make output directory: %s - %s" % (options.outdir, e))
             sys.exit()
 
     gd = os.path.join(options.outdir,options.infile)
@@ -161,7 +158,7 @@ def parse_args():
         try:    
             shutil.copyfile(options.infile, gd)
         except Exception as e:
-            print ("cannot copy %s to %s: %s" % (options.infile,options.outdir,e))
+            print ("cannot copy %s to %s: %s" % (options.infile,options.outdir, e))
             sys.exit()
 
     return options, datelist
