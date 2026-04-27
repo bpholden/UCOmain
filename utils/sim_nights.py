@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import optparse
+import argparse
 from datetime import datetime, timedelta
 import random
 import os
@@ -66,9 +66,9 @@ def write_sim_file_results(star_strs,outdir="../SimFiles"):
         ofn = "%s.sim" % (starname)
         ofn = os.path.join(outpath,ofn)
         if os.path.exists(ofn):
-            ofp = open(ofn,"a+")
+            ofp = open(ofn,"a+", encoding='utf-8')
         else:
-            ofp = open(ofn,"w")
+            ofp = open(ofn,"w", encoding='utf-8')
         for outstr in star_strs[starname]:
             (name,date,time,mjd,expt,i2cnts,actel,actaz,fwhm,slow,owner) = outstr.split()
             outstr = "%s %s %s\n" % (mjd,i2cnts,actel)
@@ -91,44 +91,48 @@ def sim_results(outstr,star_strs,star_dates):
     return
 
 
-def prep_master(outdir,mastername):
+def prep_simout(outdir,simoutname):
     star_strs = dict()
     star_dates = dict()
-    mastername = os.path.join(outdir,mastername)
-    newmaster = False
-    if not os.path.exists(mastername):
-        newmaster = True
-    else:
+    simoutname = os.path.join(outdir,simoutname)
+    if os.path.exists(simoutname):
         try:
-            masterfp = open(mastername)
+            simoutfp = open(simoutname, encoding='utf-8')
         except Exception as e:
-            print ("Cannot open file %s for output, %s,  exiting" % (mastername, e))
+            print ("Cannot open file %s for output, %s,  exiting" % (simoutname, e))
             sys.exit()
 
-        for ln in masterfp:
+        for ln in simoutfp:
             sim_results(ln,star_strs,star_dates)
-        masterfp.close()
+        simoutfp.close()
 
     try:
-        masterfp = open(mastername,"a+")
+        simoutfp = open(simoutname,"a+", encoding='utf-8')
     except Exception as e:
-        print ("Cannot open file %s for output, %s,  exiting" % (mastername, e))
+        print ("Cannot open file %s for output, %s,  exiting" % (simoutname, e))
         sys.exit()
 
-    return masterfp,star_strs, star_dates
+    return simoutfp, star_strs, star_dates
 
 
 def parse_args():
-    parser = optparse.OptionParser()
-    parser.add_option("-i","--infile",dest="infile",default="googledex.dat")
-    parser.add_option("-f","--file",dest="datefile",default="")
-    parser.add_option("--seed",dest="seed",default=None)
-    parser.add_option("-b","--bstar",dest="bstar",default=True,action="store_false")
-    parser.add_option("-o","--outdir",dest="outdir",default=".")        
-    parser.add_option("--rank_table",dest="rank_sheet",default="2025B_ranks_operational")
-    parser.add_option("--tleftfile",dest="time_left",default="time_left.csv")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i","--infile",dest="infile",default="googledex.dat",
+                        help="input googledex file")
+    parser.add_argument("-f","--file",dest="datefile",default="",
+                        help="input date file")
+    parser.add_argument("--seed",dest="seed",default=None,help="random seed")
+    parser.add_argument("-b","--bstar",dest="bstar",default=True,
+                        action="store_false",help="disable bstar")
+    parser.add_argument("-o","--outdir",dest="outdir",default=".",
+                        help="output directory")
+    parser.add_argument("--rank_table",dest="rank_sheet",
+                        default="2026A_rank",help="rank table file")
+    parser.add_argument("--tleftfile",dest="time_left",
+                        default="time_left.csv",help="time left file")
 
-    parser.add_option("-m","--masterfile",dest="master",default="sim_master.simout")
+    parser.add_argument("-s","--simout",dest="simout",
+                        default="all_dates.simout",help="simulation output file")
     (options, args) = parser.parse_args()
 
     if len(args) < 2 and options.datefile == "":
@@ -185,7 +189,8 @@ def update_hour_constraints(tleftfn):
         used = hour_table['cur'][hour_table['sheetn'] == sheetn]
         time_left['used'][time_left['runname'] == runname] += used
         if runname != 'public':
-            time_left['left'][time_left['runname'] == runname] = time_left['alloc'][time_left['runname'] == runname] - time_left['used'][time_left['runname'] == runname]
+            crun = time_left['runname'] == runname
+            time_left['left'][crun] = time_left['alloc'][crun] - time_left['used'][crun]
 
     time_left.write(tleftfn,format='csv',overwrite=True)
     return
@@ -195,7 +200,7 @@ def main():
 
     options,datelist = parse_args()
     bstar = options.bstar
-    masterfp, star_strs, star_dates = prep_master(options.outdir,options.master)
+    simoutfp, star_strs, star_dates = prep_simout(options.outdir,options.simout)
 
     ucotargets = UCOTargets.UCOTargets(options)
     ucotargets.make_rank_table()
@@ -224,8 +229,8 @@ def main():
         while observing:
 
             result = ds.get_next(curtime, lastfwhm, lastslow, ucotargets,\
-                                    bstar=bstar, outfn=options.infile,template=do_temp,
-                                    outdir=options.outdir)
+                                    bstar=bstar, outfn=options.infile,\
+                                    do_templates=do_temp,outdir=options.outdir)
             if result:
                 if bstar:
                     bstar = False
@@ -234,15 +239,15 @@ def main():
                 (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
                 idx = idx[0]
 
-                for i in range(0,int(result['NEXP'])):
+                for _ in range(0,int(result['NEXP'])):
                     (curtime,lastfwhm,lastslow,outstr) = \
                         NightSim.compute_simulation(result,curtime, stars[idx],\
                                                     apf_obs, slowdowns, fwhms,\
                                                         result['owner'])
                     sim_results(outstr,star_strs,star_dates)
-                    masterfp.write("%s\n" % (outstr))
+                    simoutfp.write("%s\n" % (outstr))
 
-                ot = open(otfn,"a+")
+                ot = open(otfn,"a+", encoding='utf-8')
                 ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
                 ot.close()
             else:
@@ -264,8 +269,8 @@ def main():
                 os.unlink(otfn)
             except:
                 print ("cannot unlink %s" %(otfn))
-    if masterfp:
-        masterfp.close()
+    if simoutfp:
+        simoutfp.close()
 
 
 

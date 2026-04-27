@@ -34,7 +34,7 @@ def parse_options():
     parser = optparse.OptionParser()
     parser.add_option("-d","--date",dest="date",default="today")
     parser.add_option("-f","--fixed",dest="fixed",default="")
-    parser.add_option("--rank_table",dest="rank_table",default="2025B_ranks_operational")
+    parser.add_option("--rank_table",dest="rank_table",default="2026A_ranks")
     parser.add_option("-i","--infile",dest="infile",default="googledex.dat")
     parser.add_option("-o","--outfile",dest="outfile",default=None)
     parser.add_option("-b","--bstar",dest="bstar",default=True,action="store_false")
@@ -42,7 +42,7 @@ def parse_options():
     parser.add_option("--tleftfile",dest="time_left",default="time_left.csv")
     (options, args) = parser.parse_args()
 
-    return options, args
+    return options
 
 def find_date(in_date):
     if in_date == "today":
@@ -64,7 +64,7 @@ def find_fixed(in_fixed):
 
 def make_outfile(outfile, datestr):
     if outfile == None:
-        fdatestr = re.sub("\/","-",datestr)
+        fdatestr = re.sub(r"\/","-",datestr)
         outfile = "%s.simout" % (fdatestr )
 
     try:
@@ -81,11 +81,12 @@ def make_outfile(outfile, datestr):
 
 def should_start_list(start_time, cur_time):
     """ Observe.should_start_list()
-        should we start a fixed observing list or not? true if start time is None or if w/in + 1 hour - 0.5 hours of start time
+        should we start a fixed observing list or not? 
+        true if start time is None or if w/in + 1 hour - 0.5 hours of start time
     """
     if start_time is None:
         return True
-    
+
     if cur_time > start_time and cur_time - start_time < 3600:
         return True
     if cur_time < start_time and start_time - cur_time < 600:
@@ -95,7 +96,7 @@ def should_start_list(start_time, cur_time):
 
 def main():
 
-    options, args = parse_options()
+    options = parse_options()
     outdir = "."
 
     datestr = find_date(options.date)
@@ -123,7 +124,7 @@ def main():
     lastslow = 5
     lastfwhm = 15
     otfn = "observed_targets"
-    ot = open(otfn,"w")
+    ot = open(otfn,"w", encoding='utf-8')
     ot.close()
     observing = True
     curtime, endtime, apf_obs = NightSim.sun_times(datestr)
@@ -141,7 +142,7 @@ def main():
         curtime = ephem.Date(curtime)
 
         result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, ucotargets,\
-                             bstar=bstar, outfn=options.infile, template=do_temp,\
+                             bstar=bstar, outfn=options.infile, do_templates=do_temp,\
                              do_too=do_too, outdir=outdir, start_time=start_time)
         if result:
             if result['isBstar']:
@@ -155,10 +156,12 @@ def main():
             curtime += 70./86400 # acquisition time
             (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
             idx = idx[0]
-            for i in range(0,int(result['NEXP'])):
-                (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,curtime,stars[idx],apf_obs,slowdowns,fwhms,result['owner'])
+            for _ in range(0,int(result['NEXP'])):
+                (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,\
+                                                    curtime,stars[idx],apf_obs,slowdowns,fwhms,\
+                                                    result['owner'])
                 outfp.write(outstr + "\n")
-            ot = open(otfn,"a+")
+            ot = open(otfn,"a+", encoding='utf-8')
             for i in range(0,len(result["SCRIPTOBS"])):
                 ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
             ot.close()
@@ -172,7 +175,8 @@ def main():
 
     print("Updating star list with final observations")
     curtime = ephem.Date(curtime)
-    _, _ = ParseUCOSched.update_local_starlist(curtime.datetime(),outfn=options.infile,observed_file=otfn)
+    _, _ = ParseUCOSched.update_local_starlist(curtime.datetime(),\
+                                               outfn=options.infile,observed_file=otfn)
     print ("sun rose")
     outfp.close()
 

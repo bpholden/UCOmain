@@ -1,14 +1,11 @@
 import sys
+import re
 sys.path.append("../Main")
 #from ExposureCalc import *
 
 import numpy as np
-import pickle
 import ephem
-import optparse
-from datetime import datetime
-import re
-import os
+
 import ExposureCalculations
 import Generate_Errors 
 
@@ -23,7 +20,7 @@ def sun_times(datestr):
     sunset = apf_obs.next_setting(ephem.Sun())
     sunrise = apf_obs.next_rising(ephem.Sun())
     return sunset, sunrise, apf_obs
-    
+
 def make_obs_sample(fn):
     slow,fwhm = np.loadtxt(fn,unpack=True)
     return slow, fwhm
@@ -91,7 +88,7 @@ def compute_el(curtime,star,apf_obs):
 
 
 def checkdate(datestr):
-    match = re.match("(\d{4})(\/|\-)(\d{1,2})(\/|\-)(\d{1,2})",datestr)
+    match = re.match(r"(\d{4})(\/|\-)(\d{1,2})(\/|\-)(\d{1,2})",datestr)
 
     if not match:
         return False
@@ -104,16 +101,18 @@ def checkdate(datestr):
 
 
 def compute_simulation(result,curtime,star,apf_obs,slowdowns,fwhms,owner):
-    actel,actaz = compute_el(curtime,star,apf_obs)
+    actel, actaz = compute_el(curtime,star,apf_obs)
     actslow, actfwhm = rand_obs_sample(slowdowns,fwhms)
     actfwhm = gen_seeing_el(actfwhm,actel)
     lastfwhm = actfwhm
     lastslow = actslow
-    meterrate = ExposureCalculations.getEXPMeter_Rate(result['VMAG'],result['BV'],actel,actfwhm,result['DECKER'])
-    meterrate *= 1 + 0.11*np.random.randn(1)
+    meterrate = ExposureCalculations.getEXPMeter_Rate(result['VMAG'],
+                                                      result['BV'],actel,actfwhm,result['DECKER'])
+    meterrate *= 1 + 0.11*np.random.randn(1)[0]
     meterrate /= actslow
-    specrate = ExposureCalculations.getSpec_Rate(result['VMAG'],result['BV'],actel,actfwhm,result['DECKER'])
-    specrate *= 1 + 0.11*np.random.randn(1)
+    specrate = ExposureCalculations.getSpec_Rate(result['VMAG'],
+                                                 result['BV'],actel,actfwhm,result['DECKER'])
+    specrate *= 1 + 0.11*np.random.randn(1)[0]
     specrate /= actslow
     metertime = result['COUNTS'] / meterrate
     exp_time = result['EXP_TIME']
@@ -127,10 +126,12 @@ def compute_simulation(result,curtime,star,apf_obs,slowdowns,fwhms,owner):
     barycentertime += fexptime/(2.*86400)
     totcounts = fexptime * specrate
 
-    precision, true_error = Generate_Errors.compute_real_uncertainty(totcounts,result['BV'])
+    #precision, true_error = Generate_Errors.compute_real_uncertainty(totcounts,result['BV'])
     if actaz < 180:
         actel *= -1.
-    outstr = "%s %s %.5f %.1f %.1f %.2f %.2f %.2f %.2f %s" %(result['NAME'] , ephem.Date(curtime), ephem.julian_date(ephem.Date(barycentertime)), fexptime, totcounts,  actel,actaz, actfwhm, actslow, owner)
+    outstr = "%s %s %.5f %.1f %.1f %.2f %.2f %.2f %.2f %s" % \
+    (result['NAME'] , ephem.Date(curtime), ephem.julian_date(ephem.Date(barycentertime)),\
+      fexptime, totcounts, actel, actaz, actfwhm, actslow, owner)
     print (outstr)
 
     return curtime, lastfwhm, lastslow, outstr
@@ -148,12 +149,12 @@ def init_sim_vals():
 
 def read_sim_lines(lines,sim_names,sim_vals):
     for l in lines:
-        if re.search("\A\#",l):
+        if re.search(r"\A\#",l):
             continue
         d = l.split()
         if len(d) == 11:
-            for i in range(0,len(sim_names)):
-                sim_vals[sim_names[i]].append(d[i])
+            for i, sim_name in enumerate(sim_names):
+                sim_vals[sim_name].append(d[i])
 
     return
 
@@ -163,7 +164,7 @@ def sum_owner_times(vals):
     owner_els = dict()
     owner_nexps = dict()
     for o in vals['owner']:
-        if o not in owner_tots.keys():
+        if o not in owner_tots:
             owner_tots[o] = 0.
             owner_els[o] = 0.
             owner_nexps[o] = 0
@@ -172,7 +173,6 @@ def sum_owner_times(vals):
     owner_nexps['total'] = 0
 
     for i in range(0,len(vals['owner'])):
-        m = re.search("\ARECUR_A100",vals['owner'][i])
         owner_tots[vals['owner'][i]] += float(vals['etime'][i])
         owner_els[vals['owner'][i]] += float(vals['El'][i])
         owner_nexps[vals['owner'][i]] += 1
@@ -180,7 +180,7 @@ def sum_owner_times(vals):
         owner_els['total'] += float(vals['El'][i])
         owner_nexps['total'] += 1
 
-    for o in owner_els.keys():
+    for o in owner_els:
         if owner_nexps[o] > 0:
             owner_els[o] /= owner_nexps[o]
 
