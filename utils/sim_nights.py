@@ -128,7 +128,7 @@ def parse_args():
                         help="output directory")
     parser.add_argument("--rank_table",dest="rank_table",
                         default="2026A_rank",help="rank table file")
-    parser.add_argument("--tleftfile",dest="time_left",
+    parser.add_argument("--time_left",dest="time_left",
                         default="time_left.csv",help="time left file")
     parser.add_argument("start_date", nargs='?', default=None, help="start date for simulation (YYYY/MM/DD)")
     parser.add_argument("end_date", nargs='?', default=None, help="end date for simulation (YYYY/MM/DD)")
