@@ -184,4 +184,4 @@ def sum_owner_times(vals):
         if owner_nexps[o] > 0:
             owner_els[o] /= owner_nexps[o]
 
-    return owner_tots,owner_els,owner_nexps
+    return owner_tots, owner_els, owner_nexps
