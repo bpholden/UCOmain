@@ -131,7 +131,6 @@ class APF:
         self.combo_ps   = self.ucam['COMBO_PS']
         self.ctalk      = self.ucam['CTALKTO']
         self.nerase     = self.ucam['NERASE']
-        self.disp0sta   = self.ucam['DISP0STA']
 
         self.apfschedule= ktl.Service('apfschedule')
 
@@ -158,27 +157,10 @@ class APF:
         self.kcountrate     = self.guide['COUNTRATE']
         self.avg_fwhm   = self.guide['AVG_FWHM']
 
-        self.apfmon     = ktl.Service('apfmon')
-        self.ucamd0sta  = self.apfmon['UCAMDSTA0STA']
-
-        self.apfminimon = ktl.Service('apfminimon')
-
         try:
             self.eosgcam['GENABLE'].write(True,binary=True,timeout=2)
         except ktl.TimeoutException:
             apflog("Cannot write True to eosgcam.GENABLE, issue with guider and/or dresden",level='error',echo=True)
-
-
-        self.apfstas = []
-        for n in range(1,8):
-            kwnm = 'apfmon%dsta'  % (n)
-            kw = self.apfminimon[kwnm]
-            try:
-                kw.monitor()
-                kw.callback(self.mini_mon_mon)
-                self.apfstas.append(kw)
-            except Exception as e:
-                apflog("Cannot monitor keyword %s: %s" % (kwnm,e),echo=True, level='warn')
 
         # Set the callbacks and monitors
 
@@ -233,33 +215,10 @@ class APF:
         else:
             s += "Robot is not running\n"
 
-        stasum = ''
-        for kw in self.apfstas:
-            stasum += '%s %s ' % (kw['name'],kw['ascii'])
-
-        s += 'APFmon is %s' % (stasum)
-
         return s
 
     ## callbacks - these are the callbacks used to measure quantities or flip states
     ## these are always running
-
-    def ucam_dispatch_mon(self):
-        if self.ucamd0sta['populated'] is False:
-            return
-        try:
-            apfmon_stat = self.ucamd0sta.read(binary=True,timeout=2)
-            if apfmon_stat == 4:
-                # modify -s apfucam DISP0DWIM="ksetMacval DISP0STA READY"
-                try:
-                    if self.disp0sta.read(binary=True,timeout=2) == 0:
-                        self.ucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
-                except ktl.TimeoutException:
-                    apflog("Cannot read or write apfucam keywords DISP0STA or DISP0DWIM", level='warn', echo=True)
-        except ktl.TimeoutException:
-            return
-
-        return
 
     def count_mon(self, counts):
         if counts['populated'] is False:
@@ -318,28 +277,7 @@ class APF:
         except:
             return
 
-    def mini_mon_mon(self, sta, host="bremen"):
-        '''
-        mini_mon_mon(sta, host="bremen")
-        Callback for the apfminimon keywords.
-        If the status is warning or higher, restart the appropriate
-        apfmon service on the host specified (default bremen).
-        '''
-        if sta['populated'] is False:
-            return
-        try:
-            sta_val = sta['binary']
-        except:
-            return
-
-        if sta_val > 3:
-            # warning or higher
-            nmsta = sta['name'].lower()
-            name = nmsta[0:7] # this relies on the fact that all of the STA
-            # variables are serviceSTA and service is
-            restart(name, host)
-        return
-
+ 
     def apftask_status_mon(self,sta):
         '''
         apftask_status_mon(sta)
@@ -373,7 +311,6 @@ class APF:
 
     ## these are various methods, there are a LOT of them
     ##
-
 
 
     def init_keyword(self, keyword, value, timeout=None):

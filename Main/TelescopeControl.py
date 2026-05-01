@@ -126,7 +126,13 @@ class TelescopeControl:
         self.apfteq     = ktl.Service('apfteq')
         self.teqmode    = self.apfteq['MODE']
 
-        self.apfmon     = ktl.Service('apfmon')
+        self.ucam       = ktl.Service('apfucam')
+        self.disp0sta   = self.ucam['DISP0STA']
+
+        self.apfstas = []
+        self.setup_apfmon()
+        self.apfminimon = ktl.Service('apfminimon')
+        self.setup_apfminimon()
 
         self.ok2open.monitor()
         self.ok2open.callback(self.ok_mon)
@@ -219,6 +225,12 @@ class TelescopeControl:
         s += "Focus value for scriptobs = %d\n" % focval
         windshield = self.update_windshield("auto")
         s += "Windshield state = %s\n" % windshield
+
+        stasum = ''
+        for kw in self.apfstas:
+            stasum += '%s %s ' % (kw['name'],kw['ascii'])
+
+        s += 'APFmon is %s' % (stasum)
 
         return s
 
@@ -409,6 +421,74 @@ class TelescopeControl:
                 apflog("Cannot restart %s on %s: %s" % (taskname,runhost,e),level='error',echo=True)
                 return
             apflog("%s should be restarted" % (taskname),echo=True)
+        return
+
+
+    def ucam_dispatch_mon(self):
+        if self.ucamd0sta['populated'] is False:
+            return
+        try:
+            apfmon_stat = self.ucamd0sta.read(binary=True,timeout=2)
+            if apfmon_stat == 4:
+                # modify -s apfucam DISP0DWIM="ksetMacval DISP0STA READY"
+                try:
+                    if self.disp0sta.read(binary=True,timeout=2) == 0:
+                        self.ucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
+                except ktl.TimeoutException:
+                    apflog("Cannot read or write apfucam keywords DISP0STA or DISP0DWIM", level='warn', echo=True)
+        except ktl.TimeoutException:
+            return
+
+        return
+
+    def setup_apfmon(self):
+        """
+        setup_apfmon()
+        This sets up the monitoring of the apfmon.UCAMDSTA0STA keyword and the callback for it.
+        """
+        try:
+            self.apfmon     = ktl.Service('apfmon')
+            self.ucamd0sta  = self.apfmon['UCAMDSTA0STA']
+            self.ucamd0sta.monitor()
+            self.ucamd0sta.callback(self.ucam_dispatch_mon)
+        except Exception as e:
+            apflog("Cannot monitor apfmon.UCAMDSTA0STA: %s" % (e), level='warn', echo=True)
+
+
+    def mini_mon_mon(self, sta, host="bremen"):
+        '''
+        mini_mon_mon(sta, host="bremen")
+        Callback for the apfminimon keywords.
+        If the status is warning or higher, restart the appropriate
+        apfmon service on the host specified (default bremen).
+        '''
+        if sta['populated'] is False:
+            return
+        try:
+            sta_val = sta['binary']
+        except:
+            return
+
+        if sta_val > 3:
+            # warning or higher
+            nmsta = sta['name'].lower()
+            name = nmsta[0:7] # this relies on the fact that all of the STA
+            # variables are serviceSTA and service is
+            restart(name, host)
+            self.setup_apfmon()
+        return
+
+    def setup_apfminimon(self):
+        self.apfstas = []
+        for n in range(1,8):
+            kwnm = 'apfmon%dsta'  % (n)
+            kw = self.apfminimon[kwnm]
+            try:
+                kw.monitor()
+                kw.callback(self.mini_mon_mon)
+                self.apfstas.append(kw)
+            except Exception as e:
+                apflog("Cannot monitor keyword %s: %s" % (kwnm,e),echo=True, level='warn')
         return
 
     def status_clear(self):
