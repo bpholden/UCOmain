@@ -84,59 +84,7 @@ def restart(name, host):
 class APF:
     """ Class which creates a monitored state object to track the condition of the APF telescope. """
 
-    # KTL Services and Keywords
-    robot        = ktl.Service('apftask')
-    vmag         = robot['SCRIPTOBS_VMAG']
-    ldone        = robot['SCRIPTOBS_LINES_DONE']
-    line         = robot['SCRIPTOBS_LINE']
-    sop          = robot['SCRIPTOBS_PHASE']
-    message      = robot['SCRIPTOBS_MESSAGE']
-    autofoc      = robot["SCRIPTOBS_AUTOFOC"]
-    observed     = robot['SCRIPTOBS_OBSERVED']
-    line_result  = robot['SCRIPTOBS_LINE_RESULT']
-
-    apfteqsta    = robot['APFTEQ_STATUS']
-    calsta       = robot['CALIBRATE_STATUS']
-    focussta     = robot['FOCUSINSTR_STATUS']
-    slewsta      = robot['SLEW_STATUS']
-    opensta      = robot['OPENUP_STATUS']
-    closesta     = robot['CLOSEUP_STATUS']
-    shuttersta   = robot['SHUTTERS_STATUS']
-    focustelsta  = robot['FOCUSTEL_STATUS']
-
-    ucamcmd      = robot['UCAMLAUNCHER_UCAM_COMMAND']
-    lastopen     = robot['OPENUP_LAST_SUCCESS']
-
-    ucam       = ktl.Service('apfucam')
-    outfile    = ucam['OUTFILE']
-    elapsed    = ucam['ELAPSED']
-    obsnum     = ucam['OBSNUM']
-    event      = ucam['EVENT']
-    combo_ps   = ucam['COMBO_PS']
-    ctalk      = ucam['CTALKTO']
-    nerase     = ucam['NERASE']
-    disp0sta   = ucam['DISP0STA']
-
-    apfschedule= ktl.Service('apfschedule')
-
-    motor      = ktl.Service('apfmot')
-    decker     = motor['DECKERNAM']
-#    deckerord  = motor['DECKERORD']
-    dewarfoc   = motor["DEWARFOCRAW"]
-    hatchpos   = motor["HATCHPOS"]
-    ucampower  = motor['UCAMPOWER']
-    gcam_power = motor['GCAMPOWER']
-
-    eosgcam    = ktl.Service('eosgcam')
-    fits3pre   = eosgcam('FITS3PRE')
-    fits3dir   = eosgcam('FITS3DIR')
-    save3d     = eosgcam('SAVE3D')
-    fits2pre   = eosgcam('FITS2PRE')
-    fits2dir   = eosgcam('FITS2DIR')
-    save2d     = eosgcam('SAVE2D')
-    gexptime   = eosgcam('GEXPTIME')
-    sumframe   = eosgcam('SUMFRAME')
-
+ 
 
     def __init__(self, task="example", test=False):
         """ Initilize the current state of APF. Setup the callbacks and monitors necessary for automated telescope operation."""
@@ -151,6 +99,59 @@ class APF:
         self.ncountrate = 0
         self.countrate = 0.0
         self.ccountrate = 0.0
+
+        # KTL Services and Keywords
+        self.robot        = ktl.Service('apftask')
+        self.vmag         = self.robot['SCRIPTOBS_VMAG']
+        self.ldone        = self.robot['SCRIPTOBS_LINES_DONE']
+        self.line         = self.robot['SCRIPTOBS_LINE']
+        self.sop          = self.robot['SCRIPTOBS_PHASE']
+        self.message      = self.robot['SCRIPTOBS_MESSAGE']
+        self.autofoc      = self.robot["SCRIPTOBS_AUTOFOC"]
+        self.observed     = self.robot['SCRIPTOBS_OBSERVED']
+        self.line_result  = self.robot['SCRIPTOBS_LINE_RESULT']
+
+        self.apfteqsta    = self.robot['APFTEQ_STATUS']
+        self.calsta       = self.robot['CALIBRATE_STATUS']
+        self.focussta     = self.robot['FOCUSINSTR_STATUS']
+        self.slewsta      = self.robot['SLEW_STATUS']
+        self.opensta      = self.robot['OPENUP_STATUS']
+        self.closesta     = self.robot['CLOSEUP_STATUS']
+        self.shuttersta   = self.robot['SHUTTERS_STATUS']
+        self.focustelsta  = self.robot['FOCUSTEL_STATUS']
+
+        self.ucamcmd      = self.robot['UCAMLAUNCHER_UCAM_COMMAND']
+        self.lastopen     = self.robot['OPENUP_LAST_SUCCESS']
+
+        self.ucam       = ktl.Service('apfucam')
+        self.outfile    = self.ucam['OUTFILE']
+        self.elapsed    = self.ucam['ELAPSED']
+        self.obsnum     = self.ucam['OBSNUM']
+        self.event      = self.ucam['EVENT']
+        self.combo_ps   = self.ucam['COMBO_PS']
+        self.ctalk      = self.ucam['CTALKTO']
+        self.nerase     = self.ucam['NERASE']
+        self.disp0sta   = self.ucam['DISP0STA']
+
+        self.apfschedule= ktl.Service('apfschedule')
+
+        self.motor      = ktl.Service('apfmot')
+        self.decker     = self.motor['DECKERNAM']
+#    deckerord  = motor['DECKERORD']
+        self.dewarfoc   = self.motor["DEWARFOCRAW"]
+        self.hatchpos   = self.motor["HATCHPOS"]
+        self.ucampower  = self.motor['UCAMPOWER']
+        self.gcam_power = self.motor['GCAMPOWER']
+
+        self.eosgcam    = ktl.Service('eosgcam')
+        self.fits3pre   = self.eosgcam('FITS3PRE')
+        self.fits3dir   = self.eosgcam('FITS3DIR')
+        self.save3d     = self.eosgcam('SAVE3D')
+        self.fits2pre   = self.eosgcam('FITS2PRE')
+        self.fits2dir   = self.eosgcam('FITS2DIR')
+        self.save2d     = self.eosgcam('SAVE2D')
+        self.gexptime   = self.eosgcam('GEXPTIME')
+        self.sumframe   = self.eosgcam('SUMFRAME')
 
         self.guide      = ktl.Service('apfguide')
         self.counts     = self.guide['COUNTS']
@@ -247,7 +248,7 @@ class APF:
         if self.ucamd0sta['populated'] is False:
             return
         try:
-            apfmon_stat = self.ucamd0sta['binary']
+            apfmon_stat = self.ucamd0sta.read(binary=True,timeout=2)
             if apfmon_stat == 4:
                 # modify -s apfucam DISP0DWIM="ksetMacval DISP0STA READY"
                 try:
@@ -255,7 +256,7 @@ class APF:
                         self.ucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
                 except ktl.TimeoutException:
                     apflog("Cannot read or write apfucam keywords DISP0STA or DISP0DWIM", level='warn', echo=True)
-        except:
+        except ktl.TimeoutException:
             return
 
         return
@@ -265,7 +266,7 @@ class APF:
             return
         try:
             cnts = counts['binary']
-        except:
+        except ktl.TimeoutException:
             return
         try:
             time = float(self.elapsed.read(binary=True,timeout=2))
