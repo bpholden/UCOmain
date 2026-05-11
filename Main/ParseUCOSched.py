@@ -333,9 +333,11 @@ def make_rank_table(sheet_table_name, outfn='rank_table', outdir=None, hour_cons
             if 'runname' in list(time_left.keys()) and 'left' in list(time_left.keys()):
                 for runname in time_left['runname']:
                     cur = time_left['runname']==runname
-                    if float(time_left['left'][cur]) < 0:
+                    cur_time_left = float(time_left['left'][cur][0])
+                    time_alloc = float(time_left['alloc'][cur][0])
+                    if cur_time_left < 0:
                         rank_table['rank'][rank_table['sheetn']==runname] = -1000
-                    if float(time_left['left'][cur])/float(time_left['alloc'][cur]) < 0.5 and halve_rank:
+                    if time_alloc > 0 and cur_time_left/time_alloc < 0.5 and halve_rank:
                         rank_table['rank'][rank_table['sheetn']==runname] -= 20
 
         try:

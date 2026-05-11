@@ -155,7 +155,7 @@ def main():
                 do_too = False # one per night
             curtime += 70./86400 # acquisition time
             (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
-            idx = idx[0]
+            idx = int(idx[0])
             for _ in range(0,int(result['NEXP'])):
                 (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,\
                                                     curtime,stars[idx],apf_obs,slowdowns,fwhms,\
