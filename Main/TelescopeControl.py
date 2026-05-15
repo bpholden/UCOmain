@@ -563,7 +563,7 @@ class TelescopeControl:
             try:
                 val = kwd.read(binary=True,timeout=2)
                 self.avgtemps.append(val)
-            except Exception as e:
+            except ktl.TimeoutException as e:
                 apflog("Exception reading keyword %s: %s" % (kwd['name'],e), level='warn', echo=True)
 
 
