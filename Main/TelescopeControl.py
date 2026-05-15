@@ -557,12 +557,15 @@ class TelescopeControl:
         #self.avgtemps = [self.avg_lists[nm] for nm in:
         # ('TM1S210','TM2CSUR','TAVERAGE','TM2CAIR','TEMPNOW3','TEMPNOW4')]
         self.avgtemps = []
-        self.avgtemps.append(self.m1tempkw.read(binary=True))
-        self.avgtemps.append(self.m2tempkw.read(binary=True))
-        self.avgtemps.append(self.taveragekw.read(binary=True))
-        self.avgtemps.append(self.m2airkw.read(binary=True))
-        self.avgtemps.append(self.temp3now.read(binary=True))
-        self.avgtemps.append(self.temp4now.read(binary=True))
+
+        for kwd in (self.m1tempkw,self.m2tempkw,self.taveragekw,self.m2airkw,self.temp3now,
+                    self.temp4now):
+            try:
+                val = kwd.read(binary=True,timeout=2)
+                self.avgtemps.append(val)
+            except Exception as e:
+                apflog("Exception reading keyword %s: %s" % (kwd['name'],e), level='warn', echo=True)
+
 
         # TAVERAGE is the average of the four trusses
         # temp_names = ["TTRUS135","TTRUS225","TTRUS045","TTRUS315"]
@@ -880,7 +883,7 @@ class TelescopeControl:
         predfocus  = self.pred_tel_focus()
         self.robot['FOCUSTEL_STARTFOCUS'].write(predfocus)
         self.robot['FOCUSTEL_LASTFOCUS'].write(predfocus)
-        self.focus.write(self.pred_tel_focus(), binary=True, wait=False)
+        self.focus.write(predfocus, binary=True, wait=False)
         if self.slew(star):
             return self.run_focustel()
         return False
