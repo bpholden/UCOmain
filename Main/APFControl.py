@@ -830,7 +830,7 @@ class APF:
             APFLib.write("apfmot.DEWARFOCRAW",lastfit_dewarfoc)
 
         # check on weirdness for UCAM host post-reboot
-        self.ucam_dispatch_mon()
+        #self.ucam_dispatch_mon()
 
         # Start scriptobs
 
