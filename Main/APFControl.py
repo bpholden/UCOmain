@@ -136,21 +136,20 @@ class APF:
 
         self.motor      = ktl.Service('apfmot')
         self.decker     = self.motor['DECKERNAM']
-#    deckerord  = motor['DECKERORD']
         self.dewarfoc   = self.motor["DEWARFOCRAW"]
         self.hatchpos   = self.motor["HATCHPOS"]
         self.ucampower  = self.motor['UCAMPOWER']
         self.gcam_power = self.motor['GCAMPOWER']
 
         self.eosgcam    = ktl.Service('eosgcam')
-        self.fits3pre   = self.eosgcam('FITS3PRE')
-        self.fits3dir   = self.eosgcam('FITS3DIR')
-        self.save3d     = self.eosgcam('SAVE3D')
-        self.fits2pre   = self.eosgcam('FITS2PRE')
-        self.fits2dir   = self.eosgcam('FITS2DIR')
-        self.save2d     = self.eosgcam('SAVE2D')
-        self.gexptime   = self.eosgcam('GEXPTIME')
-        self.sumframe   = self.eosgcam('SUMFRAME')
+        self.fits3pre   = self.eosgcam['FITS3PRE']
+        self.fits3dir   = self.eosgcam['FITS3DIR']
+        self.save3d     = self.eosgcam['SAVE3D']
+        self.fits2pre   = self.eosgcam['FITS2PRE']
+        self.fits2dir   = self.eosgcam['FITS2DIR']
+        self.save2d     = self.eosgcam['SAVE2D']
+        self.gexptime   = self.eosgcam['GEXPTIME']
+        self.sumframe   = self.eosgcam['SUMFRAME']
 
         self.guide      = ktl.Service('apfguide')
         self.counts     = self.guide['COUNTS']
@@ -165,8 +164,8 @@ class APF:
         # Set the callbacks and monitors
 
         self.checkapf   = ktl.Service('checkapf')
-        self.userkind   = self.checkapf('USERKIND')
-        self.instr_perm = self.checkapf('INSTR_PERM')
+        self.userkind   = self.checkapf['USERKIND']
+        self.instr_perm = self.checkapf['INSTR_PERM']
 
         self.kcountrate.monitor()
         self.kcountrate.callback(self.countrate_mon)
@@ -830,7 +829,7 @@ class APF:
             APFLib.write("apfmot.DEWARFOCRAW",lastfit_dewarfoc)
 
         # check on weirdness for UCAM host post-reboot
-        #self.ucam_dispatch_mon()
+        self.ucam_dispatch_mon()
 
         # Start scriptobs
 
