@@ -447,6 +447,12 @@ class TelescopeControl:
         return
 
     def setup_apfminimon(self):
+        '''
+        setup_apfminimon(self)
+
+        Sets up the monitoring of the apfminimon keywords
+        related to the APF mon dispatchers.
+        '''
         self.apfstas = []
         for n in range(1,8):
             kwnm = 'apfmon%dsta'  % (n)
@@ -873,7 +879,8 @@ class TelescopeControl:
 
         """
 
-        if self.test: return True
+        if self.test: 
+            return True
         if self.mv_perm.binary is False:
             apflog("Waiting for permission to move...", echo=True)
             chk_move = "$checkapf.MOVE_PERM == true"
@@ -913,7 +920,8 @@ class TelescopeControl:
             if self.dome['ESECURST']:
                 return True
         except ktl.TimeoutException as e:
-            apflog("cannot read dome keywords ECLOSEST or ESECURST: %s" % (e),level='Alert',echo=True)
+            log_str = "cannot read dome keywords ECLOSEST or ESECURST: %s" % (e)
+            apflog(log_str,level='Alert',echo=True)
         return False
 
 
@@ -926,7 +934,7 @@ class TelescopeControl:
 
         """
         cmd = os.path.join(SCRIPTDIR,"slew") + " --home"
-        rv, rc = apftask_do(cmd)
+        _, rc = apftask_do(cmd)
         try:
             homed = self.apfmon('ELHOMERIGHTSTA').read(binary=True,timeout=2)
         except ktl.TimeoutException as e:
@@ -1234,15 +1242,15 @@ class TelescopeControl:
         based on wind speed and temperature.
         Otherwise, the input state defines the mode.
         """
-        currMode = self.robot["SCRIPTOBS_WINDSHIELD"].read().strip().lower()
-        rv = currMode
+        curr_mode = self.robot["SCRIPTOBS_WINDSHIELD"].read().strip().lower()
+        rv = curr_mode
         if state == 'on':
-            if currMode != 'enable':
+            if curr_mode != 'enable':
                 apflog("Setting scriptobs_windshield to Enable")
                 rv = "Enable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
         elif state == 'off':
-            if currMode != 'disable':
+            if curr_mode != 'disable':
                 apflog("Setting scriptobs_windshield to Disable")
                 rv = "Disable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
@@ -1258,13 +1266,13 @@ class TelescopeControl:
 
             apflog("Current median wind speed is %.2f with the limit %.2f" % \
                    (wvel,WINDSHIELD_LIMIT), level='debug')
-            if currMode == 'enable' and wvel <= WINDSHIELD_LIMIT and \
+            if curr_mode == 'enable' and wvel <= WINDSHIELD_LIMIT and \
                 float(self.avg_lists['TEMP']) > TEMP_LIMIT:
                 apflog("Setting scriptobs_windshield to Disable")
                 rv = "Disable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
 
-            if currMode == 'disable' and (wvel > WINDSHIELD_LIMIT or \
+            if curr_mode == 'disable' and (wvel > WINDSHIELD_LIMIT or \
                                           float(self.avg_lists['TEMP']) < TEMP_LIMIT):
                 apflog("Setting scriptobs_windshield to Enable")
                 rv = "Enable"
