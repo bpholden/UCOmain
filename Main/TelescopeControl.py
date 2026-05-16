@@ -126,11 +126,11 @@ class TelescopeControl:
         self.apfteq     = ktl.Service('apfteq')
         self.teqmode    = self.apfteq['MODE']
 
-        self.ucam       = ktl.Service('apfucam')
-        self.disp0sta   = self.ucam['DISP0STA']
+        self.apfmon     = ktl.Service('apfmon')
 
+        # these are the apfmon statuses monitored by
+        # apfminimon
         self.apfstas = []
-        self.setup_apfmon()
         self.apfminimon = ktl.Service('apfminimon')
         self.setup_apfminimon()
 
@@ -424,38 +424,6 @@ class TelescopeControl:
             apflog("%s should be restarted" % (taskname),echo=True)
         return
 
-
-    def ucam_dispatch_mon(self):
-        if self.ucamd0sta['populated'] is False:
-            return
-        try:
-            apfmon_stat = self.ucamd0sta.read(binary=True,timeout=2)
-            if apfmon_stat == 4:
-                # modify -s apfucam DISP0DWIM="ksetMacval DISP0STA READY"
-                try:
-                    if self.disp0sta.read(binary=True,timeout=2) == 0:
-                        self.ucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
-                except ktl.TimeoutException:
-                    apflog("Cannot read or write apfucam keywords DISP0STA or DISP0DWIM", level='warn', echo=True)
-        except ktl.TimeoutException:
-            return
-
-        return
-
-    def setup_apfmon(self):
-        """
-        setup_apfmon()
-        This sets up the monitoring of the apfmon.UCAMDSTA0STA keyword and the callback for it.
-        """
-        try:
-            self.apfmon     = ktl.Service('apfmon')
-            self.ucamd0sta  = self.apfmon['UCAMDSTA0STA']
-            self.ucamd0sta.monitor()
-            self.ucamd0sta.callback(self.ucam_dispatch_mon)
-        except Exception as e:
-            apflog("Cannot monitor apfmon.UCAMDSTA0STA: %s" % (e), level='warn', echo=True)
-
-
     def mini_mon_mon(self, sta, host="bremen"):
         '''
         mini_mon_mon(sta, host="bremen")
@@ -476,7 +444,6 @@ class TelescopeControl:
             name = nmsta[0:7] # this relies on the fact that all of the STA
             # variables are serviceSTA and service is
             restart(name, host)
-            self.setup_apfmon()
         return
 
     def setup_apfminimon(self):
@@ -491,19 +458,6 @@ class TelescopeControl:
             except Exception as e:
                 apflog("Cannot monitor keyword %s: %s" % (kwnm,e),echo=True, level='warn')
         return
-
-    def status_clear(self):
-        """
-        status_clear()
-
-        Clears the PS status of any APFTask where
-        the PS status does not match the actual status.
-        """
-        for kw in (self.slewsta, self.apf.calsta, self.apf.focussta, \
-                   self.shuttersta, self.opensta, self.closesta,\
-                    self.focustelsta):
-            #self.apftask_status_mon(kw)
-            pass
 
     def enable(self):
         '''
@@ -1389,14 +1343,14 @@ class TelescopeControl:
             return
         self.dm_reset()
 
-        if self.apf.calsta['binary'] < 3 or self.apf.focussta['binary'] < 3:
-            log_str = 'Focusinstr and/or Calibrate are running, will skip evening star observation.'
-            log_str += ' focusinstr=%s calibrate=%s' % (self.apf.calsta, self.apf.focussta)
-            apflog(log_str,echo=True)
-            return
+        if self.apf:
+            if self.apf.calsta['binary'] < 3 or self.apf.focussta['binary'] < 3:
+                log_str = 'Focusinstr and/or Calibrate are running,'
+                log_str += ' will skip evening star observation.'
+                log_str += ' focusinstr=%s calibrate=%s' % (self.apf.calsta, self.apf.focussta)
+                apflog(log_str,echo=True)
+                return
 
-        # check on weirdness for UCAM host post-reboot
-        self.apf.ucam_dispatch_mon()
         self.run_prepobs(evening=True)
 
         self.dm_reset()

@@ -131,8 +131,11 @@ class APF:
         self.combo_ps   = self.ucam['COMBO_PS']
         self.ctalk      = self.ucam['CTALKTO']
         self.nerase     = self.ucam['NERASE']
+        self.disp0sta   = self.ucam['DISP0STA']
 
         self.apfschedule= ktl.Service('apfschedule')
+        self.apfmon     = ktl.Service('apfmon')
+        self.ucamd0sta  = self.apfmon['UCAMD0STA']
 
         self.motor      = ktl.Service('apfmot')
         self.decker     = self.motor['DECKERNAM']
@@ -994,6 +997,22 @@ class APF:
             rv = False
         return rv
 
+    def ucam_dispatch_mon(self):
+        if self.ucamd0sta['populated'] is False:
+            return
+        try:
+            apfmon_stat = self.ucamd0sta.read(binary=True,timeout=2)
+            if apfmon_stat == 4:
+                # modify -s apfucam DISP0DWIM="ksetMacval DISP0STA READY"
+                try:
+                    if self.disp0sta.read(binary=True,timeout=2) == 0:
+                        self.ucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
+                except ktl.TimeoutException:
+                    apflog("Cannot read or write apfucam keywords DISP0STA or DISP0DWIM", level='warn', echo=True)
+        except ktl.TimeoutException:
+            return
+
+        return
 
 
     def ucam_power_cycle(self, fake=False):
