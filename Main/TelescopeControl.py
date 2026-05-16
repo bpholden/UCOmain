@@ -1330,9 +1330,8 @@ class TelescopeControl:
 
         if check_apfmon:
             try:
-                status_value = self.apfmon['FC_STATUSSTA'].read(binary=True, timeout=5)
+                status_value = self.apfmon['FC_STATUSSTA'].read(binary=True, timeout=2)
             except ktl.TimeoutException:
-                apflog("Cannot read apfmon keyword FC_STATUSSTA, restart apfmon1", level='warn', echo=True)
                 return
             if status_value < 4:
                 return

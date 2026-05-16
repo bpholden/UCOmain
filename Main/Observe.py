@@ -808,9 +808,7 @@ class Observe(threading.Thread):
             _, running = self.apf.find_robot()
             cursunel = self.tel.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
-            self.tel.check_FCUs(check_apfmon=True)
             # Check and close for weather
-
             self.bad_weather = self.tel.dew_too_close \
                 or not self.apf.gcam_power.binary
 
