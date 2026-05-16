@@ -214,7 +214,7 @@ class TelescopeControl:
         s += "Current Weather = %s\n" % self.checkapf['WEATHER'].read()
         s += "Slew Allowed = %s\n" % self.slew_allowed['binary']
         s += "Is the system sane? = %s\n" % self.check_sanity()
-        s += "FCU Status = %s\n" % self.check_FCUs()
+        s += "FCU Status = %s (should be None)\n" % self.check_FCUs()
 
         isopen, what = self.is_open()
         if isopen:
