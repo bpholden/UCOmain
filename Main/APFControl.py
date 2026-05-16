@@ -68,7 +68,7 @@ def cmd_exec(cmd, debug=False, cwd='./'):
 def restart(name, host):
     '''
     restart(name, host)
-    Restart the apfmon service name on host.
+    Restart the service name on host.
     '''
     apfcmd = os.path.join(LROOT,"bin/apf")
     restart_str = '%s restart %s' % (apfcmd,name)
@@ -167,6 +167,8 @@ class APF:
         self.checkapf   = ktl.Service('checkapf')
         self.userkind   = self.checkapf('USERKIND')
         self.instr_perm = self.checkapf('INSTR_PERM')
+
+        self.apfmon = ktl.Service('apfmon')
 
         self.kcountrate.monitor()
         self.kcountrate.callback(self.countrate_mon)
