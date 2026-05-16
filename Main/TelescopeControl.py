@@ -214,6 +214,7 @@ class TelescopeControl:
         s += "Current Weather = %s\n" % self.checkapf['WEATHER'].read()
         s += "Slew Allowed = %s\n" % self.slew_allowed['binary']
         s += "Is the system sane? = %s\n" % self.check_sanity()
+        s += "FCU Status = %s\n" % self.check_FCUs()
 
         isopen, what = self.is_open()
         if isopen:
@@ -1329,7 +1330,7 @@ class TelescopeControl:
 
         if check_apfmon:
             try:
-                status_value = self.apfmon['FC_STATUSSTA'].read(binary=True, timeout=2)
+                status_value = self.apfmon['FC_STATUSSTA'].read(binary=True, timeout=5)
             except ktl.TimeoutException:
                 apflog("Cannot read apfmon keyword FC_STATUSSTA, restart apfmon1", level='warn', echo=True)
                 return
