@@ -168,8 +168,6 @@ class APF:
         self.userkind   = self.checkapf('USERKIND')
         self.instr_perm = self.checkapf('INSTR_PERM')
 
-        self.apfmon = ktl.Service('apfmon')
-
         self.kcountrate.monitor()
         self.kcountrate.callback(self.countrate_mon)
 
