@@ -135,7 +135,7 @@ class APF:
 
         self.apfschedule= ktl.Service('apfschedule')
         self.apfmon     = ktl.Service('apfmon')
-        self.ucamd0sta  = self.apfmon['UCAMD0STA']
+        self.ucamd0sta  = self.apfmon['UCAMDSTA0STA']
 
         self.motor      = ktl.Service('apfmot')
         self.decker     = self.motor['DECKERNAM']
