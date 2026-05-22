@@ -825,11 +825,12 @@ class Observe(threading.Thread):
                 closing()
 
             # if closed by checkapf, run closeup
-            if not self.tel.openOK and not self.tel.is_open()[0]:
+            if not self.tel.openOK:
                 self.tel.lastopen.read()
                 self.tel.lastclosed.read()
                 if self.tel.lastopen.binary > self.tel.lastclosed.binary:
-                    outstr = "Closing due to checkapf. Last open time was %s and last closed time was %s"
+                    outstr = "Closing due to checkapf. Last open time was %s"
+                    outstr += " and last closed time was %s"
                     outstr = outstr % (self.tel.lastopen.ascii, self.tel.lastclosed.ascii)
                     apflog(outstr, echo=True)
                     APFTask.set(self.task, suffix="MESSAGE", value=outstr, wait=False)
