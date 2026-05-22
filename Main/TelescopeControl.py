@@ -1210,9 +1210,7 @@ class TelescopeControl:
             self.autofoc.write("robot_autofocus_disable")
             return 0
 
-        lastopen = self.robot['OPENUP_LAST_SUCCESS'].read(binary=True)
-
-        if lastfoc < lastopen:
+        if lastfoc < self.lastopen.read(binary=True):
             self.autofoc.write("robot_autofucs_enable")
             return 2
 
