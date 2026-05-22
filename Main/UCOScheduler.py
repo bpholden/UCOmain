@@ -1093,12 +1093,16 @@ def test_templates(ucotargets):
     tidx = tidx[0]
     tbstars = (tstar_table['Bstar'] == 'Y')|(tstar_table['Bstar'] == 'y')
     tbidx, tbfinidx = find_Bstars(tstar_table, tidx, tbstars)
-    tbline = make_scriptobs_line(tstar_table[tbstars][tbidx], t_dt, \
-                                decker="N", I2="Y", owner='public', focval=2)
+    decker = "N"
     tline  = make_scriptobs_line(tstar_table[tidx], t_dt, \
-                                decker="N", I2="N", owner='public', temp=True)
+                                decker=decker, I2="N", owner='public', temp=True)
+    if "decker=W" in tline:
+        decker = "W"
+    tbline = make_scriptobs_line(tstar_table[tbstars][tbidx], t_dt, \
+                                decker=decker, I2="Y", owner='public', focval=2)
+
     tbfinline = make_scriptobs_line(tstar_table[tbstars][tbfinidx], t_dt, \
-                                   decker="N", I2="Y", owner='public', focval=0)
+                                   decker=decker, I2="Y", owner='public', focval=0)
     temp_res= []
     temp_res.append(tbfinline + " # temp=Y end")
     temp_res.append(tline + " # temp=Y")
