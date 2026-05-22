@@ -994,17 +994,21 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
         bidx, bfinidx = find_Bstars(ucotargets.star_table, idx, bstars)
 
         if enough_time_templates(ucotargets.star_table,stars,idx,apf_obs,dt):
-            bline = make_scriptobs_line(ucotargets.star_table[bstars][bidx], dt, \
-                                        decker="N", I2="Y", owner=res['owner'], focval=2)
+            decker= "N"
             line  = make_scriptobs_line(ucotargets.star_table[idx], \
-                                        dt, decker="N", I2="N", owner=res['owner'], temp=True)
+                                        dt, decker=decker, I2="N", owner=res['owner'], temp=True)
+            if "decker=W" in line:
+                decker = "W"
+            bline = make_scriptobs_line(ucotargets.star_table[bstars][bidx], dt, \
+                                        decker=decker, I2="Y", owner=res['owner'], focval=2)
             bfinline = make_scriptobs_line(ucotargets.star_table[bstars][bfinidx], dt,\
-                                            decker="N", I2="Y", owner=res['owner'], focval=0)
+                                            decker=decker, I2="Y", owner=res['owner'], focval=0)
             res['SCRIPTOBS'] = []
             res['SCRIPTOBS'].append(bfinline + " # temp=Y end")
             res['SCRIPTOBS'].append(line + " # temp=Y")
             res['SCRIPTOBS'].append(bline + " # temp=Y")
             res['isTemp'] = True
+            res['DECKER'] = decker
             apflog("Attempting template observation of %s" % (ucotargets.star_table['name'][idx]), echo=True)
 
     res['template_conditions_met'] = template_conditions_met
@@ -1029,7 +1033,7 @@ def test_basic_ops(ucotargets):
     ot = open(OTFN, "w")
     starttime = time.time()
     result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=True, \
-                      template=False)
+                      do_templates=False)
     while len(result['SCRIPTOBS']) > 0:
         ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
     ot.close()
@@ -1037,7 +1041,7 @@ def test_basic_ops(ucotargets):
     for i in range(5):
 
         result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=False, \
-                         template=False)
+                         do_templates=False)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
         if result is None:
@@ -1067,11 +1071,11 @@ def test_failure(starttime, ucotargets):
     except:
         pass
     result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=False, \
-                     template=True, )
+                     do_templates=True, )
     print(result)
     print("Nonsensical start time")
     result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=True, \
-                     template=True, start_time=1)
+                     do_templates=True, start_time=1)
     print(result)
     return
 
