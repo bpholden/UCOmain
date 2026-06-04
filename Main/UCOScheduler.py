@@ -269,6 +269,7 @@ def time_check(star_table, totexptimes, dt, start_time=None):
                 pass
 
     faint = star_table['Vmag'] > SchedulerConsts.SLOWDOWN_VMAG_LIM
+    faint &= star_table['too'] is False
     time_good = totexptimes <= maxexptime
     time_good_faint = totexptimes <= maxfaintexptime
 
