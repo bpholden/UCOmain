@@ -15,6 +15,7 @@ def make_APF_obs(dt, horizon=str(SchedulerConsts.TARGET_ELEVATION_MIN)):
     apf_obs.lat  = '37:20:33.1'
     apf_obs.long = '-121:38:17.7'
     apf_obs.elevation = 1274
+    apf_obs.pressure = 870 # typical value
     # Minimum observation to observe things at
     apf_obs.horizon = horizon
     apf_obs.date = dt
@@ -76,6 +77,7 @@ def sun_el_check(star_table, apf_obs, horizon='-18'):
     sun_el = np.degrees(sun.alt)
 
     faint = star_table['Vmag'] > SchedulerConsts.SLOWDOWN_VMAG_LIM
+    faint &= star_table['too'] is False
 
     if sun_el > float(horizon):
         bright_enough[faint] = False
