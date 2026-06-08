@@ -478,12 +478,16 @@ class Observe(threading.Thread):
                 apflog("get_target(): Error in sanity check.", level='Alert')
                 return
 
-            if self.tel.apfmon['READYSTA'].read(binary=True, timeout=2) > 4:
-                # this will only be run if there readysta reports at
-                # least an error (which is 5)
-                # the ADC not being ready often is reported as a warning
-                # until a slew is finished, so this will ignore that
-                self.tel.run_prepobs()
+            try:
+                if self.tel.apfmon['READYSTA'].read(binary=True, timeout=2) > 4:
+                    # this will only be run if there readysta reports at
+                    # least an error (which is 5)
+                    # the ADC not being ready often is reported as a warning
+                    # until a slew is finished, so this will ignore that
+                    self.tel.run_prepobs()
+            except ktl.TimeoutException:
+                apflog("get_target(): Timeout waiting for apfmon.READYSTA. ", level='Alert', echo=True)
+                return
 
             self.tel.update_windshield(self.windshield_mode)
             self.focval = self.tel.set_autofoc_val()
