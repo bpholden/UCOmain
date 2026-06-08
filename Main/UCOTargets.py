@@ -31,7 +31,7 @@ class UCOTargets(object):
         self.halve = opt.halve if hasattr(opt, 'halve') else False
         self.too = None
         self.sheets = None
-        self.too_sheets = None        
+        self.too_sheets = None
         self.hour_constraints = None
 
         self.prilim = prilim
