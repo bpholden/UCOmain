@@ -748,9 +748,10 @@ def behind_moon(moon,ras,decs):
     '''
     md = SchedulerConsts.TARGET_MOON_DIST_MAX - SchedulerConsts.TARGET_MOON_DIST_MIN
     min_moon_dist = ((moon.phase / 100.) * md) + SchedulerConsts.TARGET_MOON_DIST_MIN
-    moon_dist = np.degrees(np.sqrt((moon.ra - ras)**2 + (moon.dec - decs)**2))
+    moon_dist = np.arccos(np.cos(moon.dec) * np.cos(decs) * np.cos(moon.ra - ras)
+                          + np.sin(moon.dec) * np.sin(decs)) # values in radians
 
-    moon_check = moon_dist > min_moon_dist
+    moon_check = np.degrees(moon_dist) > min_moon_dist
 
     return moon_check
 
