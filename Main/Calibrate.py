@@ -108,8 +108,10 @@ class Calibrate(threading.Thread):
             self.apf.set_observer_info(num=self.obsnum, name=self.outfile, owner=self.owner)
 
         apflog("Focus begun.", echo=True)
+        APFTask.set(self.task, suffix="MESSAGE", value="Focus begun.")
         result = self.apf.focusinstr()
         apflog("Focus has finished.",echo=True)
+        APFTask.set(self.task, suffix="MESSAGE", value="Focus has finished.")
 
         APFTask.set(self.task, suffix="LAST_OBS", value=self.apf.ucam["OBSNUM"].read())
 
@@ -128,7 +130,9 @@ class Calibrate(threading.Thread):
 
         ctime = phase[4:].lower()
 
-        apflog("Starting calibrate %s script." % (phase), level='Info', echo=True)
+        lstr = "Starting calibrate %s script." % (phase)
+        APFTask.set(self.task, suffix='MESSAGE', value=lstr)
+        apflog(lstr, level='Info', echo=True)
         if self.test:
             apflog("Would have waited for permission (APFControl.instr_permit()) for phase %s"\
                     % (phase),echo=True)
@@ -226,7 +230,7 @@ def main():
             break
 
     calibrate = Calibrate(apf,'public',stime,'uco','test_1',10000,\
-                          phase_index=4,end_phase=6,task=task,test=True)
+                          phase_index=4,end_phase=5,task=task,test=True)
     while calibrate.signal:
         try:
             APFTask.wait(task,True,timeout=1)
