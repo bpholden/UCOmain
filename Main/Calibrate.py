@@ -28,7 +28,9 @@ class Calibrate(threading.Thread):
         self.test = test
         self.calfile = calfile
         self.possible_phases = possible_phases
+        self.completed_phases = []
         self.phase_index = phase_index
+        self.end_phase = self.possible_phases.index('Watching')
         self.outfile = outfile
         self.obsnum = obsnum
 
@@ -164,9 +166,9 @@ class Calibrate(threading.Thread):
             APFTask.wait(self.task, True, timeout=self.wait_time)
 
         start = self.phase_index
-        end = self.possible_phases.index('Watching')
-        if start > end:
-            end = len(self.possible_phases) + 1
+        end = self.end_phase
+        if self.phase_index > self.end_phase:
+            end = len(self.possible_phases)
 
         for pi in range(start,end):
             self.phase_index = pi
@@ -187,6 +189,7 @@ class Calibrate(threading.Thread):
 
             if result:
                 apflog("Phase %s is complete" % cur_phase,echo=True)
+                self.completed_phases.append(cur_phase)
             else:
                 apflog("Phase %s failed" % cur_phase,echo=True)
                 return
@@ -216,6 +219,23 @@ def main():
         except:
             apflog("%s killed by unknown." % (calibrate.name), echo=True)
             sys.exit()
+        if calibrate.is_alive() is False:
+            break
+
+    calibrate.phase_index = 4
+    calibrate.end_phase = 6
+    calibrate.start()
+    while calibrate.signal:
+        try:
+            APFTask.wait(task,True,timeout=1)
+        except KeyboardInterrupt:
+            apflog("%s has been killed by user." % (calibrate.name), echo=True)
+            sys.exit()
+        except:
+            apflog("%s killed by unknown." % (calibrate.name), echo=True)
+            sys.exit()
+        if calibrate.is_alive() is False:
+            break
 
 if __name__ == "__main__":
     main()
