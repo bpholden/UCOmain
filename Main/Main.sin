@@ -595,10 +595,12 @@ def main():
         tel.ok2open.monitor(start=False)
     except Exception as e:
         apflog("Note: Cannot stop monitoring ok2open. %s" % (e), level="warn", echo=True)
-    # 5) Take morning calibrations
-    #phase_index = 4
-    #APFTask.phase(parent, POSSIBLE_PHASES[phase_index])
-    apf.instr_permit()
+    # 5) Take morning calibrations if needed
+    phase_index = 4
+    if 'Cal-Pre' not in calibrate.completed_phases:
+        apflog("Pre-calibrations were not completed, running cal-post.", level='info', echo=True)
+        APFTask.phase(parent, POSSIBLE_PHASES[phase_index])
+        apf.instr_permit()
     #result = apf.calibrate(script=opt.calibrate, time='post')
     #if not result:
     #    apflog("Calibrate Post has failed.", level='warn',echo=True)
