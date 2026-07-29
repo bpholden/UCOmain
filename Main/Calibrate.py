@@ -16,7 +16,7 @@ AVERAGE_INSTRFOC = 8522
 
 class Calibrate(threading.Thread):
     def __init__(self, apf, name, wait_time, calfile, outfile, obsnum, phase_index=0,\
-                  task='master', test=False, \
+                  end_phase = None, task='master', test=False, \
                     possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
         threading.Thread.__init__(self)
         self.daemon = True
@@ -30,7 +30,10 @@ class Calibrate(threading.Thread):
         self.possible_phases = possible_phases
         self.completed_phases = []
         self.phase_index = phase_index
-        self.end_phase = self.possible_phases.index('Watching')
+        if end_phase is None:
+            self.end_phase = self.possible_phases.index('Watching')
+        else:
+            self.end_phase = end_phase
         self.outfile = outfile
         self.obsnum = obsnum
 
@@ -222,9 +225,8 @@ def main():
         if calibrate.is_alive() is False:
             break
 
-    calibrate.phase_index = 4
-    calibrate.end_phase = 6
-    calibrate.start()
+    calibrate = Calibrate(apf,'public',stime,'uco','test_1',10000,\
+                          phase_index=4,end_phase=6,task=task,test=True)
     while calibrate.signal:
         try:
             APFTask.wait(task,True,timeout=1)
