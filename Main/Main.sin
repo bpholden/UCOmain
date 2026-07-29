@@ -562,6 +562,23 @@ def main():
     # We have finished taking data, and presumably it is the morning.
     tel.set_apfteq_mode('Morning')
     tel.close(force=True)
+    try:
+        tel.ok2open.monitor(start=False)
+    except Exception as e:
+        apflog("Note: Cannot stop monitoring ok2open. %s" % (e), level="warn", echo=True)
+
+    # 5) Take morning calibrations if needed
+    phase_index = 5
+    if 'Cal-Pre' not in calibrate.completed_phases:
+        apflog("Pre-calibrations were not completed, running cal-post.", level='info', echo=True)
+        phase_index = 4
+
+    if not debug:
+        APFTask.set(parent, suffix="LAST_OBS", value=apf.ucam["OBSNUM"].read())
+
+    calibrate = Calibrate.Calibrate(apf, 'public', 0, opt.calibrate, \
+                            opt.name, opt.obsnum, phase_index=phase_index,
+                            end_phase=6, task=parent, test=debug, possible_phases=POSSIBLE_PHASES)
 
     # Keep a copy of observed_targets around for a bit just in case
     if os.path.exists(os.path.join(os.getcwd(),"observed_targets")):
@@ -591,39 +608,18 @@ def main():
         if os.path.exists(os.path.join(os.getcwd(), fn)):
             logpush(os.path.join(os.getcwd(), fn))
 
-    try:
-        tel.ok2open.monitor(start=False)
-    except Exception as e:
-        apflog("Note: Cannot stop monitoring ok2open. %s" % (e), level="warn", echo=True)
-    # 5) Take morning calibrations if needed
-    phase_index = 4
-    if 'Cal-Pre' not in calibrate.completed_phases:
-        apflog("Pre-calibrations were not completed, running cal-post.", level='info', echo=True)
-        APFTask.phase(parent, POSSIBLE_PHASES[phase_index])
-        apf.instr_permit()
-    #result = apf.calibrate(script=opt.calibrate, time='post')
-    #if not result:
-    #    apflog("Calibrate Post has failed.", level='warn',echo=True)
-    #    result = apf.calibrate(script=opt.calibrate, time='post')
-    #    if not result:
-    #        apflog("Calibrate Post has failed twice.", level='error',echo=True)
-    #        APFTask.set(parent, suffix="MESSAGE",value="Calibrate Post failed twice",wait=False)
+    while calibrate.signal:
+        try:
+            APFTask.wait(parent,True,timeout=1)
+        except KeyboardInterrupt:
+            apflog("%s has been killed by user." % (calibrate.name), echo=True)
+            sys.exit()
+        except:
+            apflog("%s killed by unknown." % (calibrate.name), echo=True)
+            sys.exit()
+        if calibrate.is_alive() is False:
+            break
 
-    if not debug:
-        APFTask.set(parent, suffix="LAST_OBS", value=apf.ucam["OBSNUM"].read())
-
-    bin_str = "%d,%d" % (1,1)
-    apf.ucam['BINNING'].write(bin_str)
-
-    # Focus the instrument once more
-    phase_index = 5
-    APFTask.phase(parent, POSSIBLE_PHASES[phase_index])
-    apflog("Running Focus-Post", echo=True)
-    result = apf.focusinstr(log_error_level='error')
-    if not result:
-        apflog("Focus-post has failed", echo=True)
-    else:
-        apflog("Focus-post has finished successfully.", echo=True)
 
     # We have done everything we needed to, so leave
     # the telescope in day mode to allow it to start thermalizing to the next night.
