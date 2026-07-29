@@ -183,11 +183,11 @@ class Calibrate(threading.Thread):
                 result = self.test_bias()
                 if result is False:
                     return
-            elif pi == 1:
+            elif pi == 1 or pi == 5:
                 result = self.focus_instr()
-                if result == False:
+                if result is False:
                     result = self.focus_instr(setup=False)
-            elif pi == 2:
+            elif pi == 2 or pi == 4:
                 result = self.calibrate(cur_phase)
 
             if result:
