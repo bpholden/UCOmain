@@ -1,5 +1,4 @@
-import numpy as np
-import ephem
+import math
 
 def make_strs(deg,mn,sec,neg=False):
     """
@@ -40,7 +39,7 @@ def get_RA_rad(hr, mn, sec):
         if sec < 0 or sec >= 60:
             return rv
         ra_hours = hr + mn/60. + sec/3600.
-        ra_hours *= 15 * np.pi/180.0
+        ra_hours *= 15 * math.pi/180.0
 
         shr, smn, ssec = make_strs(hr,mn,sec)
 
@@ -65,9 +64,9 @@ def get_dec_rad(deg, mn, sec, neg=False):
         sec = float(sec)
         if deg < -60 or deg > 90:
             return rv
-        if mn > 59:
+        if mn < 0 or mn > 59:
             return rv
-        if sec >= 60:
+        if sec < 0 or sec >= 60:
             return rv
     except:
         return rv
@@ -81,37 +80,10 @@ def get_dec_rad(deg, mn, sec, neg=False):
         neg = True
 
     dec = abs(deg) + abs(mn)/60. + abs(sec)/3600.
-    dec = dec * np.pi/180.
+    dec = dec * math.pi/180.
     if neg:
         dec *= -1
 
     sdeg, smn, ssec = make_strs(abs(deg),abs(mn),abs(sec),neg=neg)
 
     return dec, sdeg, smn, ssec
-
-def get_LST(date, longitude):
-    """Take a datetime and longitude and calculate the Local Sidereal Time."""
-    # Assumes date is a datetime object, and that the longitude is formatted as in PyEphem 
-
-    ll = [float(v) for v in longitude.split(':')]
-    if ll[0] > 0:
-        sign = 1
-    else:
-        sign = -1
-    ut = date.hour + date.minute/60. + date.second/3600.
-    lng = ll[0] + sign*ll[1]/60. + sign*ll[2]/3600.
-    d  = ephem.julian_date() - 2451545.0
-    lst = 100.46 + 0.985647 * d + lng + 15*ut
-    return lst % 360.
-
-def get_ElAz(ra, dec, lat, lng, time):
-    """Given RA, DEC, Latitude, and a time, returns the corresponding elevation and azimuth angles
-       Works with single values, or numpy arrays
-       """
-    lst = get_LST(time, lng)
-    ha = ((lst- np.degrees(ra)) % 360.) * np.pi/180.
-    el = np.arcsin(np.sin(dec) * np.sin(lat) + \
-                   np.cos(dec) * np.cos(lat) * np.cos(ha))
-    az = np.arccos( (np.sin(dec) - np.sin(el)*np.sin(lat)) / \
-                         (np.cos(el) * np.cos(lat)))
-    return (np.degrees(el), np.degrees(az))

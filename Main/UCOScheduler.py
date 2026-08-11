@@ -6,7 +6,8 @@ import time
 import datetime
 
 import numpy as np
-import ephem
+import astroplan
+import astropy.time
 
 import ParseUCOSched
 import SchedulerConsts
@@ -90,7 +91,7 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
     new_pri[star_table['pri'] == 2] -= 20
     new_pri[star_table['pri'] == 3] -= 40
 
-    cadence_check = ephem.julian_date(cur_dt) - star_table['lastobs']
+    cadence_check = astropy.time.Time(cur_dt, format='datetime').jd - star_table['lastobs']
     good_cadence = cadence_check > star_table['cad']
     bad_cadence = np.logical_not(good_cadence)
     really_bad_candence = cadence_check < .7
@@ -249,7 +250,7 @@ def time_check(star_table, totexptimes, dt, start_time=None):
 
     started_multiples = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
     if np.any(started_multiples):
-        cadence_check = ephem.julian_date(dt) - star_table['lastobs']
+        cadence_check = astropy.time.Time(dt, format='datetime').jd - star_table['lastobs']
         waiting = cadence_check < (star_table['night_cad'] - BUFFER )
         if np.any(waiting):
             maxexptimes = (star_table['night_cad'] - cadence_check) * 86400
@@ -403,15 +404,15 @@ def compute_preferred_el(star_table, targ_num):
 def compute_datetime(ctime):
     '''
     dt = compute_datetime(ctime)
-    ctime - can be a float, datetime, or ephem.Date, else UT now is used
+    ctime - can be a float, datetime, or astropy.time.Time, else UT now is used
     dt - datetime object appropriate for ctime.
     '''
     if isinstance(ctime, float):
         dt = datetime.datetime.utcfromtimestamp(int(ctime))
     elif isinstance(ctime, datetime.datetime):
         dt = ctime
-    elif isinstance(ctime, ephem.Date):
-        dt = ctime.datetime()
+    elif isinstance(ctime, astropy.time.Time):
+        dt = ctime.to_datetime()
     else:
         #punt and use current UT
         dt = datetime.datetime.utcnow()
@@ -427,7 +428,7 @@ def condition_cuts(moon, seeing, slowdown, star_table):
 
     available - Boolean numpy array of available targets
 
-    moon - phase value from pyephem, ranges from 0 to 100 (a percentage)
+    moon - coordinates of the moon from astroplan
     seeing - size in pixels
     transparency - magnitudes of extinction
 
@@ -438,7 +439,7 @@ def condition_cuts(moon, seeing, slowdown, star_table):
     if 'seeing' in star_table.colnames:
         available = (star_table['seeing']/0.109 > seeing) & available
 
-    if 'moon' in star_table.colnames and float(moon.alt) > 0:
+    if 'moon' in star_table.colnames and float(moon.alt.value) > 0:
         available = (star_table['moon'] > moon.moon_phase) & available
 
     if 'transparency' in star_table.colnames:
@@ -449,24 +450,24 @@ def condition_cuts(moon, seeing, slowdown, star_table):
     return available
 
 
-def template_conditions(moon, seeing, slowdown):
+def template_conditions(moon_illumination, moon_alt, seeing, slowdown):
     """ istrue = template_condition(moon, seeing, slowdown)
 
     Checks to see if moon, seeing and slowdown factor are within template conditions
 
     istrue - a simple Boolean
 
-    moon - phase value from pyephem, ranges from 0 to 100 (a percentage)
+    moon_illumination - illumination value from astroplan, ranges from 0 to 1
     seeing - size in pixels
     slowdown - relative to clear
 
     """
 
     if seeing < SchedulerConsts.SEEING_TEMP and slowdown < SchedulerConsts.SLOWDOWN_TEMP:
-        apflog("moon.phase=%.2f moon.alt=%.2f" % (moon.phase,moon.alt),echo=True,level='info')
-        if moon.phase < 50 and float(moon.alt) < 0:
+        apflog("moon_illumination=%.2f" % (moon_illumination), echo=True, level='info')
+        if moon_illumination < 0.5 and float(moon_alt) < 0:
             return True
-        if moon.phase < 25 and float(moon.alt) < 0.7:
+        if moon_illumination < 0.25 and float(moon_alt) < 0.7:
             return True
 
     return False
@@ -513,9 +514,9 @@ def enough_time_templates(star_table, stars, idx, apf_obs, dt):
     '''
     enough_time_templates(star_table, stars, idx, apf_obs, dt)
     star_table - astropy table of targets
-    stars - list of ephem.FixedBody objects
+    stars - list of astroplan.FixedTarget objects
     idx - index of target in star_table
-    apf_obs - ephem.Observer object
+    apf_obs - astroplan.Observer object
     dt - datetime object
 
     enough_time_templates - boolean
@@ -636,7 +637,7 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
 
     make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode='')
 
-    stars - list of ephem.FixedBody objects
+    stars - list of astroplan.FixedTarget objects
     star_table - astropy table of targets
     totexptimes - numpy array of total exposure times
     final_priorities - numpy array of final priorities
@@ -650,8 +651,8 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
     '''
     res = dict()
 
-    res['RA'] = stars[idx].a_ra
-    res['DEC'] = stars[idx].a_dec
+    res['RA'] = float(stars[idx].ra.value)
+    res['DEC'] = float(stars[idx].dec.value)
     res['PM_RA'] = star_table['pmRA'][idx]
     res['PM_DEC'] = star_table['pmDEC'][idx]
     res['VMAG'] = star_table['Vmag'][idx]
@@ -738,18 +739,23 @@ def last_attempted():
     return failed_obs
 
 
-def behind_moon(moon,ras,decs):
+def behind_moon(moon, moon_phase, ras, decs):
     '''
     moon_check = behind_moon(moon,ras,decs)
-    moon - pyephem moon object
+    moon - moon coordinate object
     ras - numpy array of right ascensions in radians
     decs - numpy array of declinations in radians
+
+    Returns:
     moon_check - numpy array of booleans, True if the target is too close to the moon
     '''
     md = SchedulerConsts.TARGET_MOON_DIST_MAX - SchedulerConsts.TARGET_MOON_DIST_MIN
-    min_moon_dist = ((moon.phase / 100.) * md) + SchedulerConsts.TARGET_MOON_DIST_MIN
-    moon_dist = np.arccos(np.cos(moon.dec) * np.cos(decs) * np.cos(moon.ra - ras)
-                          + np.sin(moon.dec) * np.sin(decs)) # values in radians
+    min_moon_dist = ((moon_phase / 100.) * md) + SchedulerConsts.TARGET_MOON_DIST_MIN
+
+    moon_ra = float(moon.fk5.ra.rad)
+    moon_dec = float(moon.fk5.dec.rad)
+    moon_dist = np.arccos(np.cos(moon_dec) * np.cos(decs) * np.cos(moon_ra - ras)
+                          + np.sin(moon_dec) * np.sin(decs)) # values in radians
 
     moon_check = np.degrees(moon_dist) > min_moon_dist
 
@@ -777,7 +783,7 @@ def config_defaults(owner):
     return config
 
 def get_next(ctime, seeing, slowdown, ucotargets, \
-                bstar=False, do_templates=False, \
+                obs_bstar=False, do_templates=False, \
                 do_too=False, owner='public', \
                 outfn="googledex.dat", toofn="too.dat", \
                 outdir=None, focval=0, inst='', \
@@ -799,7 +805,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     apflog( "get_next(): Finding target for time %s" % (dt), echo=True)
 
     if slowdown > SchedulerConsts.SLOWDOWN_MAX:
-        log_str = "get_next(): Slowndown value of %f " % (slowdown)
+        log_str = "get_next(): Slowdown value of %f " % (slowdown)
         log_str += "exceeds maximum of %f at time %s" % (SchedulerConsts.SLOWDOWN_MAX, dt)
         apflog(log_str , echo=True)
         return None
@@ -845,20 +851,20 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     # timedelta = now - uth,utm : minus current JD?
     ###
 
-    apf_obs = SunPos.make_APF_obs(dt)
+    apf_obs = SunPos.make_APF_obs()
 
     # Calculate the moon's location
-    moon = ephem.Moon()
-    moon.compute(apf_obs)
+    moon_pos = apf_obs.moon_altaz(ptime)
+    moon_phase = apf_obs.moon_illumination(ptime)
 
-    template_conditions_met = template_conditions(moon, seeing, slowdown)
+    template_conditions_met = template_conditions(moon_phase, moon_pos.alt.value, seeing, slowdown)
     do_templates = do_templates and template_conditions_met
 
     apflog("get_next(): Will attempt templates = %s" % str(do_templates) ,echo=True)
     # Note which of these are B-Stars for later.
     bstars = (ucotargets.star_table['Bstar'] == 'Y')|(ucotargets.star_table['Bstar'] == 'y')
 
-    if bstar and np.any(bstars) is False:
+    if obs_bstar and np.any(bstars) is False:
         apflog("get_next(): No B stars listed in target sheets!", label='Error', echo=True)
         return None
 
@@ -871,7 +877,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
 
     # Is the target behind the moon?
 
-    moon_check = behind_moon(moon, ucotargets.star_table['ra'], ucotargets.star_table['dec'])
+    moon_check = behind_moon(moon_pos, moon_phase, ucotargets.star_table['ra'], ucotargets.star_table['dec'])
     available = available & moon_check
     log_str = "get_next(): Moon visibility check - stars rejected = "
     log_str += "%s" % ( np.asarray(ucotargets.star_table['name'][np.logical_not(moon_check)]))
@@ -881,7 +887,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     available = available & sun_el_good
 
     # other condition cuts (seeing, transparency, moon phase)
-    cuts = condition_cuts(moon, seeing, slowdown, ucotargets.star_table)
+    cuts = condition_cuts(moon_pos, seeing, slowdown, ucotargets.star_table)
     available = available & cuts
 
     if len(last_objs_attempted)>0:
@@ -889,7 +895,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
             attempted = ucotargets.star_table['name'] == n
             available = available & np.logical_not(attempted) # Available and not observed
 
-    if bstar:
+    if obs_bstar:
         # We just need a B star
         apflog("get_next(): Selecting B stars", echo=True)
         available = available & bstars
@@ -916,9 +922,10 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     # Compute the elevations of the stars
 
     apflog("get_next(): Computing star elevations",echo=True)
-    fstars = [s for s,_ in zip(stars,available) if _ ]
+    fstars = [s for s,_ in zip(stars, available) if _ ]
     vis, star_elevations, scaled_els = Visible.visible(apf_obs, fstars, \
                                                        totexptimes[available],
+                                                       ptime,
                                                        shiftwest=shiftwest
     )
 

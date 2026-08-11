@@ -3,7 +3,10 @@ from __future__ import print_function
 import datetime
 import time
 
-import ephem
+import astroplan
+import astropy.units
+import astropy.time
+import astropy.coordinates
 import numpy as np
 
 import SchedulerConsts
@@ -31,12 +34,13 @@ def calc_preferred_angle(shiftwest, sun_el, delta_t):
 
     return preferred_angle, offset
 
-def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATION_HIGH_MIN, \
+def visible(observer, stars, obs_len, ptime,
+            pref_min_el=SchedulerConsts.TARGET_ELEVATION_HIGH_MIN, \
                 min_el=SchedulerConsts.TARGET_ELEVATION_MIN, \
                    max_el=SchedulerConsts.TARGET_ELEVATION_MAX, shiftwest=False, delta_t=0):
     """ Args:
-            stars: A list of pyephem bodies to evaluate visibility of
-            observer: A pyephem observer to use a the visibility reference
+            stars: A list of astroplan FixedTarget objects to evaluate visibility of
+            observer: An astroplan Observer to use as the visibility reference
             obs_len: A list of observation lengths ( Seconds ). 
               This is the time frame for which visibility is checked
             pref_min_el: Preferred minimum body elevation to be visible ( degrees )
@@ -49,15 +53,12 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
         Notes: Uses the observer's current date and location
     """
     # Store the previous observer horizon and date since we change these
-    prev_horizon = observer.horizon
-    cdate = observer.date
     ret = []
     start_elevations = []
     scaled_elevations = []
-    observer.horizon = str(min_el)
 
-    sun = ephem.Sun(observer)
-    sun_el = np.degrees(sun.alt)
+    sun = observer.sun_altaz(ptime)
+    sun_el = float(sun.alt.value)
 
     preferred_angle, offset = calc_preferred_angle(shiftwest, sun_el, delta_t)
 
@@ -66,10 +67,9 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
 
         # Is the target visible now?
 
-        observer.date = ephem.Date(cdate)
-        star.compute(observer)
-        cur_el = np.degrees(star.alt)
-        cur_az = np.degrees(star.az)
+        star_pos = observer.altaz(ptime, star)
+        cur_el = float(star_pos.alt.value)
+        cur_az = float(star_pos.az.value)
         start_elevations.append(cur_el)
         in_east = cur_az < 180
 
@@ -91,13 +91,13 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
         obs_time_days = obs_time / 86400
         if obs_time > 0:
             # Is the target visible at the end of the observations?
-            observer.date = ephem.Date(cdate + obs_time_days)
-            star.compute(observer)
-            fin_el = np.degrees(star.alt)
+            new_time = ptime + obs_time_days
+            fin_pos = star.compute(observer, time=new_time)
+            fin_el = np.degrees(fin_pos.alt)
 
-            observer.date = ephem.Date(cdate + obs_time_days/2)
-            star.compute(observer)
-            mid_el = np.degrees(star.alt)
+            new_time = ptime + obs_time_days/2
+            mid_pos = star.compute(observer, time=new_time)
+            mid_el = np.degrees(mid_pos.alt)
 
         else:
             fin_el = cur_el
@@ -168,27 +168,31 @@ def visible(observer, stars, obs_len, pref_min_el=SchedulerConsts.TARGET_ELEVATI
         # Everything seems to be fine, so the target is visible!
         ret.append(True)
 #	apflog( "is_visible(): done searching targets", echo=True)
-    observer.horizon = prev_horizon
+
     return ret, np.array(start_elevations), np.array(scaled_elevations)
 
 def test_main():
     # This is a test function to check the visibility of a star
     # It will be run when this file is executed
-    # Generate a pyephem observer for the APF
-    apf_obs = ephem.Observer()
-    apf_obs.lat = '37:20:33.1'
-    apf_obs.long = '-121:38:17.7'
-    apf_obs.elevation = 1274
-    # Minimum observation to observe things at
-    apf_obs.horizon = str(SchedulerConsts.TARGET_ELEVATION_MIN)
-    apf_obs.date = datetime.datetime.utcfromtimestamp(int(time.time()))
+    # Generate a astroplan observer for the APF
 
-    test_star = ephem.FixedBody()
-    test_star._ra = ephem.hours(":".join(["1", "44", "4.083"]))
-    test_star._dec = ephem.degrees(":".join(["-15", "56", "14.93"]))
-    tret, tse, tsce = visible(apf_obs, [test_star], [0.])
+    lat = '37:20:33.1'
+    long = '-121:38:17.7'
+    elevation = 1274 * astropy.units.m
+
+    # Minimum observation to observe things at
+    apf_obs = astroplan.Observer(location=astropy.coordinates.EarthLocation(lat=lat, lon=long, height=elevation))
+    apf_obs_date = datetime.datetime.utcfromtimestamp(int(time.time()))
+
+
+    test_star_ra = ":".join(["1", "44", "4.083"])
+    test_star_dec = ":".join(["-15", "56", "14.93"])
+    test_coord = astropy.coordinates.SkyCoord(test_star_ra, test_star_dec,\
+                                             unit=(astropy.units.hourangle, astropy.units.deg))
+    test_star = astroplan.FixedTarget(coord=test_coord, name="Test Star")
+    tret, tse, tsce = visible(apf_obs, [test_star], [0.], apf_obs_date)
     print(tret, tse, tsce)
-    tret, tse, tsce = visible(apf_obs, [test_star], [400.])
+    tret, tse, tsce = visible(apf_obs, [test_star], [400.], apf_obs_date)
     print(tret, tse, tsce)
 
 if __name__ == '__main__':

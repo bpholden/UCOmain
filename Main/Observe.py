@@ -516,7 +516,7 @@ class Observe(threading.Thread):
             self.check_files()
 
             self.target = ds.get_next(time.time(), seeing, slowdown, self.uco_targets,\
-                                         bstar=self.obs_B_star, \
+                                         obs_bstar=self.obs_B_star, \
                                          do_too=self.do_too, owner=self.owner,  \
                                          do_templates=self.do_temp, focval=self.focval, \
                                          start_time=self.start_time)

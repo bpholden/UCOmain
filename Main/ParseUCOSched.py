@@ -10,8 +10,11 @@ import subprocess
 import astropy
 import astropy.io.ascii
 import astropy.table
+import astropy.coordinates
+import astropy.units as u
+import astropy.time
 import numpy as np
-import ephem
+import astroplan
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -744,10 +747,10 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
 
 def gen_stars(star_table):
     """
-    pyephem_objs = gen_stars(star_table)
+    astroplan_objs = gen_stars(star_table)
 
     given a star_table returned by parse_codex (or init_star_table) returns
-    a list of pyephem objects for every object in the table
+    a list of astroplan.FixedTarget objects for every object in the table
 
     Inputs star_table - astropy Table that must have the RA and Dec in
     sexigresimal format with each column for each part of the
@@ -756,10 +759,10 @@ def gen_stars(star_table):
     stars = []
     if 'name' in star_table.colnames:
         for i in range(0,len(star_table['name'])):
-            star = ephem.FixedBody()
-            star.name = star_table['name'][i]
-            star._ra = ephem.hours(":".join([str(star_table["RA hr"][i]), str(star_table["RA min"][i]), str(star_table["RA sec"][i])]))
-            star._dec = ephem.degrees(":".join([str(star_table["Dec deg"][i]), str(star_table["Dec min"][i]), str(star_table["Dec sec"][i])]))
+            star_coords = astropy.coordinates.SkyCoord(ra=star_table['ra'][i]*u.rad, \
+                                                       dec=star_table['dec'][i]*u.rad, \
+                                                       frame='icrs')
+            star = astroplan.FixedTarget(name=star_table['name'][i], coord=star_coords)
             stars.append(star)
 
     return stars
@@ -776,7 +779,7 @@ def parse_UCOSched(rank_table, certificate=DEFAULT_CERT, outfn="sched.dat",
     star_table, stars = parse_UCOSched(sheetns=["RECUR_A100"],certificate='cert.json',outfn="sched.dat",outdir=None,config={'I2': 'Y', 'decker': 'W', 'Bstar' : 'N' },force_download=False,prilim=0.5)
 
     star_table - an astropy table
-    stars - a list of pyEphem objects
+    stars - a list of astroplan.FixedTarget objects
 
     Inputs:
     sheetns - list of google sheet names
@@ -919,7 +922,7 @@ def update_local_starlist(intime, observed_file="observed_targets", outfn='parse
                     intime = datetime.datetime.utcnow()
                 t = datetime.datetime(intime.year, intime.month, intime.day, hr, mn)
 
-            jd = round(float(ephem.julian_date(t)), 4)
+            jd = round(float(astropy.time.Time(t, format='datetime').jd), 4)
 
             selection = (star_table['name'] == name) & (star_table['sheetn'] == owner)
             if any(selection):
@@ -946,7 +949,7 @@ def update_local_starlist(intime, observed_file="observed_targets", outfn='parse
 
     return obslog, star_table
 
-def observed_JD(star_table_row,otime,ctime):
+def observed_JD(star_table_row, otime, ctime):
     '''
     observed_JD(star_table_row,otime,ctime)
 
@@ -973,7 +976,7 @@ def observed_JD(star_table_row,otime,ctime):
         else:
             hr, mn = otime
             t = datetime.datetime(ctime.year, ctime.month, ctime.day, hr, mn)
-            jd = float(ephem.julian_date(t))
+            jd = float(astropy.time.Time(t, format='datetime').jd)
 
     return jd
 
