@@ -536,7 +536,7 @@ def parse_codex(config, sheetns=["RECUR_A100"], certificate=DEFAULT_CERT, prilim
     # These are the columns we need for scheduling
     req_cols = ["Star Name", "RA hr", "RA min", "RA sec", \
                     "Dec deg", "Dec min", "Dec sec", "pmRA", "pmDEC", "Vmag", \
-                    "texp", "I2", "expcount", "decker","Close Companion", \
+                    "texp", "I2", "expcount", "decker", "Close Companion", \
                     "lastobs", "B-V", \
                     "cad", "pri", "nexp", "count", "binning", \
                     "night_cad", "night_obs", "night_nexp", "DaysNew", \
