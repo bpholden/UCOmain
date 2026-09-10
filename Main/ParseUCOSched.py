@@ -1110,7 +1110,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
     return nupdates, n_temps
 
 
-def update_online_sheets(observed_file, ctime=None, outfn='parsesched.dat', outdir=None):
+def update_online_sheets(observed_file, ctime=None, outfn='parsesched.dat', outdir=None, sheetns=None):
     """
         Update the online googledex  assuming things in filename have been observed.
         update_online_sheets(filename, sheetn="The Googledex",time=None,certificate=DEFAULT_CERT)
@@ -1136,6 +1136,8 @@ def update_online_sheets(observed_file, ctime=None, outfn='parsesched.dat', outd
     # is the sheet name
     # this will need to be updated when we start using coverid
     needed_sheetns = list( set(obslog.owners))
+    if sheetns is not None:
+        needed_sheetns = [s for s in needed_sheetns if s in sheetns]
 
     if 'public' in needed_sheetns:
         needed_sheetns.remove('public')
