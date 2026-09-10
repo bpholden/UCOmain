@@ -82,10 +82,11 @@ class TelescopeControl:
         self.mv_perm    = self.checkapf('MOVE_PERM')
         self.chk_close  = self.checkapf('CHK_CLOSE')
 
-        self.apfmet     = ktl.Service('apftempest')
-        self.wx         = self.apfmet('WINDAV')
-        self.airtemp    = self.apfmet('TEMP')
-        self.down       = self.apfmet('STATUS')
+        self.apfmet     = ktl.Service('met3apf')
+        self.wx         = self.apfmet('M3WIND')
+        self.eosmets    = ktl.Service('eosmets')
+        self.airtemp    = self.eosmets('AIRTEMP')
+        self.down       = self.apfmet('M3DOWN')
 
         self.eosti8k    = ktl.Service('eosti8k')
         self.m2tempkw   = self.eosti8k('TM2CSUR')
@@ -185,7 +186,6 @@ class TelescopeControl:
         # Grab some initial values for the state of the telescope
 
         self.wx.read()
-        #self.altwx.read()
         self.dewpt.read()
         self.ok2open.read()
         self.avgtemps = np.asarray([self.avg_lists[nm] for nm in \
