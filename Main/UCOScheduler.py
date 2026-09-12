@@ -1128,7 +1128,7 @@ def test_main():
     # This is a test function to see if the basic operations work
     # It will not be run in production
 
-    RANK_TABLEN='2025B_ranks_operational'
+    RANK_TABLEN='2026B_ranks'
 
     class Opt:
         def __init__(self):
