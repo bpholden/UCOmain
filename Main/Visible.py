@@ -176,14 +176,10 @@ def test_main():
     # It will be run when this file is executed
     # Generate a astroplan observer for the APF
 
-    lat = '37:20:33.1'
-    long = '-121:38:17.7'
-    elevation = 1274 * astropy.units.m
+    import SunPos
 
-    # Minimum observation to observe things at
-    apf_obs = astroplan.Observer(location=astropy.coordinates.EarthLocation(lat=lat, lon=long, height=elevation))
-    apf_obs_date = datetime.datetime.utcfromtimestamp(int(time.time()))
-
+    apf_obs_date = datetime.datetime.fromtimestamp(int(time.time()), tz=datetime.timezone.utc)
+    apf_obs = SunPos.make_APF_obs()
 
     test_star_ra = ":".join(["1", "44", "4.083"])
     test_star_dec = ":".join(["-15", "56", "14.93"])
