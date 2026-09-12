@@ -6,7 +6,6 @@ import time
 import datetime
 
 import numpy as np
-import astroplan
 import astropy.time
 
 import ParseUCOSched
@@ -234,7 +233,7 @@ def time_check(star_table, totexptimes, dt, start_time=None):
         # dt is a UT datetime object, start_time is a UT time stamp
         # however strftime assumes that the dt is in local time
         # JFC, this is a mess
-        utc_offset = datetime.datetime.utcnow() - datetime.datetime.now()
+        utc_offset = datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.now()
         curr_time = float(dt.strftime('%s')) - utc_offset.total_seconds()
         if curr_time < start_time:
             maxexptime = start_time - curr_time
@@ -408,14 +407,14 @@ def compute_datetime(ctime):
     dt - datetime object appropriate for ctime.
     '''
     if isinstance(ctime, float):
-        dt = datetime.datetime.utcfromtimestamp(int(ctime))
+        dt = datetime.datetime.fromtimestamp(int(ctime), tz=datetime.timezone.utc)
     elif isinstance(ctime, datetime.datetime):
         dt = ctime
     elif isinstance(ctime, astropy.time.Time):
         dt = ctime.to_datetime()
     else:
         #punt and use current UT
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(tz=datetime.timezone.utc)
     return dt
 
 
@@ -813,12 +812,12 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     try:
         apfguide = ktl.Service('apfguide')
         stamp = apfguide['midptfin'].read(binary=True)
-        ptime = datetime.datetime.utcfromtimestamp(stamp)
-    except:
-        if type(dt) == datetime.datetime:
+        ptime = datetime.datetime.fromtimestamp(stamp, tz=datetime.timezone.utc)
+    except NameError:
+        if isinstance(dt, datetime.datetime):
             ptime = dt
         else:
-            ptime = datetime.datetime.utcfromtimestamp(int(time.time()))
+            ptime = datetime.datetime.fromtimestamp(int(time.time()), tz=datetime.timezone.utc)
 
     apflog("get_next(): Updating star list with previous observations", echo=True)
     observed, ucotargets.star_table = ParseUCOSched.update_local_starlist(ptime,\
@@ -883,7 +882,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     log_str += "%s" % ( np.asarray(ucotargets.star_table['name'][np.logical_not(moon_check)]))
     apflog(log_str, echo=True)
 
-    sun_el_good = SunPos.sun_el_check(ucotargets.star_table, apf_obs, horizon='-18')
+    sun_el_good = SunPos.sun_el_check(ucotargets.star_table, apf_obs, dt, horizon='-18')
     available = available & sun_el_good
 
     # other condition cuts (seeing, transparency, moon phase)
