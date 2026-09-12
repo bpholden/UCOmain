@@ -273,6 +273,10 @@ class Observe(threading.Thread):
                 if rv:
                     apflog("Power cycled telescope", echo=True)
                     self.power_cycles += 1
+                    # so we are just gonna sit here for a minute
+                    self.tel.dm_reset()
+                    APFTask.wait(self.task, True, timeout=60)
+
                 else:
                     apflog("Failure power cycling telescope", echo=True, level="alert")
 
