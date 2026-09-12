@@ -267,7 +267,7 @@ class Observe(threading.Thread):
         if result:
 
             rv = self.tel.servo_failure()
-            if rv:
+            if rv and self.power_cycles < self.tot_power_cycles:
 
                 rv = self.tel.power_down_telescope()
                 if rv:
