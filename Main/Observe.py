@@ -66,6 +66,9 @@ class Observe(threading.Thread):
         self.last_obs_finished = True
         self.star_failures = 0
 
+        self.power_cycles = 0
+        self.tot_power_cycles = 5
+
         if opt.fixed:
             self.fixed_list = opt.fixed
         else:
@@ -269,6 +272,7 @@ class Observe(threading.Thread):
                 rv = self.tel.power_down_telescope()
                 if rv:
                     apflog("Power cycled telescope", echo=True)
+                    self.power_cycles += 1
                 else:
                     apflog("Failure power cycling telescope", echo=True, level="alert")
 
