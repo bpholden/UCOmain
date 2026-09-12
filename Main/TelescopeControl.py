@@ -1268,6 +1268,7 @@ class TelescopeControl:
                 wvel = self.avg_lists['WINDAV']
             else:
                 wvel = self.avg_lists['M3WIND']
+                wvel /= 2.237 # conv to mps
 
             apflog("Current median wind speed is %.2f with the limit %.2f" % \
                    (wvel,WINDSHIELD_LIMIT), level='debug')
