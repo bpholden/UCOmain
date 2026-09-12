@@ -1063,7 +1063,12 @@ class TelescopeControl:
         apflog("Running power_down_telescope script")
         result, _ = apftask_do(cmd)
         if result:
-            return True
+            exp = "$eosdome.ESTOPST == True"
+            rv = APFTask.waitFor(self.task, True, expression=exp, timeout=60)
+            if rv is False:
+                apflog("Dome did not report ESTOPST == True after power down.",\
+                        level='alert', echo=True)
+            return rv
 
         apflog("power_down_telescope has failed. Human intervention likely required.",
                 level='alert', echo=True)
