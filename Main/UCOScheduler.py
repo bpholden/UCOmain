@@ -420,17 +420,18 @@ def compute_datetime(ctime):
 
 
 
-def condition_cuts(moon, seeing, slowdown, star_table):
-    """ available = condition_cuts(moon, seeing, slowdown, star_table)
+def condition_cuts(moon_pos, moon_phase, seeing, slowdown, star_table):
+    """ available = condition_cuts(moon_pos, moon_phase, seeing, slowdown, star_table)
 
     Checks if columns are in the star_table, then cuts on those, returns a boolean numpy array
 
     available - Boolean numpy array of available targets
 
-    moon - coordinates of the moon from astroplan
+    moon_pos - coordinates of the moon from astroplan
+    moon_phase - illumination fraction of the moon from astroplan
     seeing - size in pixels
     transparency - magnitudes of extinction
-
+ 
     """
 
     available = np.ones(len(star_table['ra']), dtype=bool)
@@ -438,8 +439,8 @@ def condition_cuts(moon, seeing, slowdown, star_table):
     if 'seeing' in star_table.colnames:
         available = (star_table['seeing']/0.109 > seeing) & available
 
-    if 'moon' in star_table.colnames and float(moon.alt.value) > 0:
-        available = (star_table['moon'] > moon.moon_phase) & available
+    if 'moon' in star_table.colnames and float(moon_pos.alt.value) > 0:
+        available = (star_table['moon'] > moon_phase) & available
 
     if 'transparency' in star_table.colnames:
         ext = 2.5 * np.log10(slowdown)
@@ -886,7 +887,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     available = available & sun_el_good
 
     # other condition cuts (seeing, transparency, moon phase)
-    cuts = condition_cuts(moon_pos, seeing, slowdown, ucotargets.star_table)
+    cuts = condition_cuts(moon_pos, moon_phase, seeing, slowdown, ucotargets.star_table)
     available = available & cuts
 
     if len(last_objs_attempted)>0:
@@ -1040,7 +1041,7 @@ def test_basic_ops(ucotargets):
     OTFN = "observed_targets"
     ot = open(OTFN, "w")
     starttime = time.time()
-    result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=True, \
+    result = get_next(starttime, 7.99, 0.4, ucotargets, obs_bstar=True, \
                       do_templates=False)
     while len(result['SCRIPTOBS']) > 0:
         ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
@@ -1048,7 +1049,7 @@ def test_basic_ops(ucotargets):
 
     for i in range(5):
 
-        result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=False, \
+        result = get_next(starttime, 7.99, 0.4, ucotargets, obs_bstar=False, \
                          do_templates=False)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
@@ -1078,11 +1079,11 @@ def test_failure(starttime, ucotargets):
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 2, binary=True)
     except:
         pass
-    result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=False, \
+    result = get_next(starttime, 7.99, 0.4, ucotargets, obs_bstar=False, \
                      do_templates=True, )
     print(result)
     print("Nonsensical start time")
-    result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=True, \
+    result = get_next(starttime, 7.99, 0.4, ucotargets, obs_bstar=True, \
                      do_templates=True, start_time=1)
     print(result)
     return
