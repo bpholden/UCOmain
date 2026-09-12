@@ -10,7 +10,6 @@ import SchedulerConsts
 def make_APF_obs():
     '''
     apf_obs = make_APF_obs(dt, horizon=str(TARGET_ELEVATION_MIN))
-    dt - datetime object
     horizon - string of horizon in degrees
     apf_obs - returns astroplan.Observer object for the time dt with the horizon set to horizon
     '''
