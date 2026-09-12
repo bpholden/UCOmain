@@ -82,11 +82,13 @@ class TelescopeControl:
         self.mv_perm    = self.checkapf('MOVE_PERM')
         self.chk_close  = self.checkapf('CHK_CLOSE')
 
-        self.apfmet     = ktl.Service('met3apf')
-        self.wx         = self.apfmet('M3WIND')
+        self.apfmet     = ktl.Service('apftempest')
+        self.wv         = self.apfmet('WINDAV')
         self.eosmets    = ktl.Service('eosmets')
         self.airtemp    = self.eosmets('AIRTEMP')
-        self.down       = self.apfmet('M3DOWN')
+        self.down       = self.apfmet('DOWN')
+        self.metapf     = ktl.Service('met3apf')
+        self.alt_wv     = self.metapf('M3WIND')
 
         self.eosti8k    = ktl.Service('eosti8k')
         self.m2tempkw   = self.eosti8k('TM2CSUR')
@@ -168,7 +170,7 @@ class TelescopeControl:
 
         for kw in (self.m1tempkw,self.m2tempkw,self.m2airkw,self.taveragekw,\
                    self.t045kw,self.t135kw,self.t225kw,self.t315kw,self.temp3now,\
-                    self.temp4now,self.wx,self.airtemp):
+                    self.temp4now,self.wv,self.alt_wv,self.airtemp):
             self.mon_lists[kw['name']] = []
             self.avg_lists[kw['name']] = None
             kw.monitor()
@@ -185,7 +187,7 @@ class TelescopeControl:
 
         # Grab some initial values for the state of the telescope
 
-        self.wx.read()
+        self.wv.read()
         self.dewpt.read()
         self.ok2open.read()
         self.avgtemps = np.asarray([self.avg_lists[nm] for nm in \
@@ -201,7 +203,7 @@ class TelescopeControl:
         s += "Sun elevation = %4.2f %s\n" % (self.sunel, "Rising" if self.sun_rising() else "Setting")
         s += "Telescope -- AZ=%4.2f  EL=%4.2f \n" % (self.aaz, self.ael)
         s += "Front/Rear Shutter=%4.2f / %4.2f\n"%(self.fspos, self.rspos)
-        s += "Wind = %3.1f mps (APF)  \n" % (np.average(self.mon_lists['M3WIND']))
+        s += "Wind = %3.1f mps (APF)  \n" % (np.average(self.mon_lists['WINDAV']))
         s += "Last open time = %.2f sec\n" % (self.lastopen.binary)
         s += "Time since opening = %6.2f sec\n" % (time.time() - self.lastopen.binary)
         s += "M1 = %5.2f deg C M2 = %5.2f deg C Tel Avg = %5.2f deg C M2 Air = %5.2f deg C FCU3 = %5.2f deg C FCU4 = %5.2f deg C\n" % tuple(self.avgtemps)
@@ -1263,7 +1265,7 @@ class TelescopeControl:
             # This state enables or disables windshielding based on the 
             # wind speed and the outside temperature
             if self.down > 0:
-                wvel = self.avg_lists['M3WIND']
+                wvel = self.avg_lists['WINDAV']
             else:
                 wvel = self.avg_lists['M3WIND']
 
