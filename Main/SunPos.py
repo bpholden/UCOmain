@@ -60,20 +60,17 @@ def compute_sunrise(dt, horizon='0'):
     _, sunrise = compute_sunset_rise(dt, horizon=horizon)
     return sunrise
 
-def sun_el_check(star_table, apf_obs, horizon='-18'):
+def sun_el_check(star_table, apf_obs, dt, horizon='-18'):
     '''
     sun_el_check = sun_el_check(star_table, stars, idx, apf_obs, dt, horizon='0')
     star_table - astropy table of targets
-    stars - list of astroplan.FixedTarget objects
-    idx - index of target in star_table
     apf_obs - astroplan.Observer object
     dt - datetime object
     horizon - string of horizon in degrees
-    sun_el_check - boolean
     '''
     bright_enough = np.ones(len(star_table['Vmag']), dtype=bool)
 
-    sun = apf_obs.sun_altaz(datetime.datetime.utcnow())
+    sun = apf_obs.sun_altaz(dt)
     sun_el = float(sun.alt.value)
 
     faint = star_table['Vmag'] > SchedulerConsts.SLOWDOWN_VMAG_LIM
