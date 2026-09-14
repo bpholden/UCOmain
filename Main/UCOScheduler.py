@@ -877,7 +877,8 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
 
     # Is the target behind the moon?
 
-    moon_check = behind_moon(moon_pos, moon_phase, ucotargets.star_table['ra'], ucotargets.star_table['dec'])
+    moon_check = behind_moon(moon_pos, moon_phase, ucotargets.star_table['ra'],\
+                              ucotargets.star_table['dec'])
     available = available & moon_check
     log_str = "get_next(): Moon visibility check - stars rejected = "
     log_str += "%s" % ( np.asarray(ucotargets.star_table['name'][np.logical_not(moon_check)]))
