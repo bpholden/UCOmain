@@ -91,19 +91,19 @@ def visible(observer, stars, obs_len, ptime,
         obs_time_days = obs_time / 86400
         if obs_time > 0:
             # Is the target visible at the end of the observations?
-            new_time = ptime + obs_time_days
-            fin_pos = star.compute(observer, time=new_time)
-            fin_el = np.degrees(fin_pos.alt)
+            new_time = ptime + datetime.timedelta(days=obs_time_days)
+            fin_pos = observer.altaz(new_time, star)
+            fin_el = np.degrees(fin_pos.alt.value)
 
-            new_time = ptime + obs_time_days/2
-            mid_pos = star.compute(observer, time=new_time)
-            mid_el = np.degrees(mid_pos.alt)
+            new_time = ptime + datetime.timedelta(days=obs_time_days/2)
+            mid_pos = observer.altaz(new_time, star)
+            mid_el = np.degrees(mid_pos.alt.value)
 
         else:
             fin_el = cur_el
             mid_el = cur_el
 
-        diff = np.abs(star.a_dec - observer.lat)
+        diff = np.abs(star.dec.value - observer.location.lat.value)
         transit_alt = 90.0 - np.degrees(diff)
         se = 90.0 - (transit_alt - mid_el)
 
@@ -130,7 +130,7 @@ def visible(observer, stars, obs_len, ptime,
             pass
         else:
             # Making the assumption that next_set is a datetime object. Might not be the case
-            if next_set < obs_time:
+            if next_set < ptime + datetime.timedelta(days=obs_time_days):
                 # The object will set before the observation finishes
                 ret.append(False)
                 continue
@@ -144,7 +144,7 @@ def visible(observer, stars, obs_len, ptime,
             # If the body never rises above the max limit no problem
             pass
         else:
-            if next_rise < obs_time:
+            if next_rise < ptime + datetime.timedelta(days=obs_time_days):
                 # The object rises above the max el before the observation finishes
                 ret.append(False)
                 continue
