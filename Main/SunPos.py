@@ -27,12 +27,15 @@ def make_APF_obs():
 def compute_sunset_rise(dt, horizon='0'):
     '''
     sunset, sunrise = compute_sunset_rise(dt, horizon='0')
-    dt - datetime object
+    dt - datetime object or astropy.time.Time object
     horizon - string of horizon in degrees
     computes time in seconds before sunset and next sunrise from dt
     '''
     apf_obs = make_APF_obs()
-    curr_time = astropy.time.Time(dt, format='datetime')
+    if isinstance(dt, astropy.time.Time):
+        curr_time = dt
+    else:
+        curr_time = astropy.time.Time(dt, format='datetime')
     sunset_time = apf_obs.sun_set_time(curr_time, horizon=float(horizon)*astropy.units.deg, which='next')
     sunrise_time = apf_obs.sun_rise_time(curr_time, horizon=float(horizon)*astropy.units.deg, which='next')
     sunset = float(sunset_time.unix - curr_time.unix)
@@ -79,3 +82,17 @@ def sun_el_check(star_table, apf_obs, dt, horizon='-18'):
         bright_enough[faint] = False
 
     return bright_enough
+
+def main():
+    dt = astropy.time.Time(datetime.datetime.now(datetime.timezone.utc),
+                            format='datetime', scale='utc')
+    sunset, sunrise = compute_sunset_rise(dt)
+    print("Sunset in seconds:", sunset)
+    print("Sunrise in seconds:", sunrise)
+    horizon = '-9'
+    sunset_horizon, sunrise_horizon = compute_sunset_rise(dt, horizon=horizon)
+    print("Sunset at horizon", horizon, "in seconds:", sunset_horizon)
+    print("Sunrise at horizon", horizon, "in seconds:", sunrise_horizon)
+
+if __name__ == "__main__":
+    main()

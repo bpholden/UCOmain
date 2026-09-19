@@ -174,9 +174,10 @@ def update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None)
     cur = dt
     for i in range(0,nobj):
         hr, mn = observed.times[i]
-        prev = datetime.datetime(dt.year, dt.month, dt.day, hr, mn)
+        prev = datetime.datetime(dt.datetime.year, dt.datetime.month, dt.datetime.day, hr, mn)
+        prev = astropy.time.Time(prev, scale='utc')
         diff = cur - prev
-        hourdiff = diff.days * 24 + diff.seconds / 3600.
+        hourdiff = diff.to_value('sec') / 3600.
         if hourdiff > 0:
             hours[observed.owners[i]] += hourdiff
             cur = prev
@@ -214,13 +215,13 @@ def tot_exp_times(star_table, targ_num):
     totexptimes = nobs*(star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1))
     totexptimes += (nobs-1)*star_table['night_cad']*86400
 
-    return totexptimes
+    return astropy.time.TimeDelta(totexptimes, format='sec')
 
-def time_check(star_table, totexptimes, dt, start_time=None):
+def time_check(star_table, totexptimes, dt):
     """ time_check = time_check(star_table, totexptimes, dt, hour_table)
     star_table - astropy table of targets
     totexptimes - numpy array of total exposure times
-    dt - datetime object
+    dt - astropy.time.Time object
     time_check - numpy array of booleans
     values are determined by whether or not the target can be observed in the time left
     """
@@ -228,16 +229,6 @@ def time_check(star_table, totexptimes, dt, start_time=None):
     maxfaintexptime = SunPos.compute_sunrise(dt,horizon='-18')
     if maxfaintexptime > maxexptime:
         maxfaintexptime = 0
-
-    if start_time is not None:
-        # dt is a UT datetime object, start_time is a UT time stamp
-        # however strftime assumes that the dt is in local time
-        # JFC, this is a mess
-        utc_offset = datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.now()
-        curr_time = float(dt.strftime('%s')) - utc_offset.total_seconds()
-        if curr_time < start_time:
-            maxexptime = start_time - curr_time
-            maxfaintexptime = start_time - curr_time
 
     if maxexptime < SchedulerConsts.TARGET_EXPOSURE_TIME_MIN:
         maxexptime = SchedulerConsts.TARGET_EXPOSURE_TIME_MIN
@@ -270,8 +261,8 @@ def time_check(star_table, totexptimes, dt, start_time=None):
 
     faint = star_table['Vmag'] > SchedulerConsts.SLOWDOWN_VMAG_LIM
     faint &= star_table['too'] is False
-    time_good = totexptimes <= maxexptime
-    time_good_faint = totexptimes <= maxfaintexptime
+    time_good = totexptimes <= maxexptime * astropy.units.s
+    time_good_faint = totexptimes <= maxfaintexptime * astropy.units.s
 
     time_good[faint] = time_good_faint[faint]
 
@@ -320,7 +311,7 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
     # lamp
     ret += 'lamp=none '
     # start time
-    ret += 'uth=%02d utm=%02d ' % (int(t.hour),int(t.minute))
+    ret += 'uth=%02d utm=%02d ' % (t.datetime.hour,t.datetime.minute)
 
     # Exp Count
     if star_table_row['expcount'] > SchedulerConsts.EXP_LIM:
@@ -404,17 +395,20 @@ def compute_datetime(ctime):
     '''
     dt = compute_datetime(ctime)
     ctime - can be a float, datetime, or astropy.time.Time, else UT now is used
-    dt - datetime object appropriate for ctime.
+    dt - astropy.time.Time object appropriate for ctime.
     '''
     if isinstance(ctime, float):
-        dt = datetime.datetime.fromtimestamp(int(ctime), tz=datetime.timezone.utc)
+        dt = astropy.time.Time(datetime.datetime.fromtimestamp(int(ctime), 
+                                                               tz=datetime.timezone.utc), 
+                                                               format='datetime', scale='utc')
     elif isinstance(ctime, datetime.datetime):
-        dt = ctime
+        dt = astropy.time.Time(ctime, format='datetime', scale='utc')
     elif isinstance(ctime, astropy.time.Time):
-        dt = ctime.to_datetime()
+        dt = ctime
     else:
         #punt and use current UT
-        dt = datetime.datetime.now(tz=datetime.timezone.utc)
+        dt = astropy.time.Time(datetime.datetime.now(tz=datetime.timezone.utc), 
+                               format='datetime', scale='utc')
     return dt
 
 
@@ -517,7 +511,7 @@ def enough_time_templates(star_table, stars, idx, apf_obs, dt):
     stars - list of astroplan.FixedTarget objects
     idx - index of target in star_table
     apf_obs - astroplan.Observer object
-    dt - datetime object
+    dt - astropy.time.Time object
 
     enough_time_templates - boolean
 
@@ -529,9 +523,10 @@ def enough_time_templates(star_table, stars, idx, apf_obs, dt):
 
     tot_time = count * 1200
 
-    tot_time += 210 + (2*40 + 40*(star_table['nexp'][idx]-1)) + 2400 
+    tot_time += 210 + (2*40 + 40*(star_table['nexp'][idx]-1)) + 2400
+    td_tot_time = astropy.time.TimeDelta(tot_time, format='sec')
     # two B star exposures + three 70 second acquisitions and the actual observation readout times
-    vis, _, _ = Visible.visible(apf_obs, [stars[idx]], [tot_time])
+    vis, _, _ = Visible.visible(apf_obs, [stars[idx]], [td_tot_time], dt)
     time_left_before_sunrise = SunPos.compute_sunrise(dt, horizon='-18')
 
     try:
@@ -813,12 +808,10 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     try:
         apfguide = ktl.Service('apfguide')
         stamp = apfguide['midptfin'].read(binary=True)
-        ptime = datetime.datetime.fromtimestamp(stamp, tz=datetime.timezone.utc)
+        ptime = astropy.time.Time(stamp, format='unix', scale='utc')
     except NameError:
-        if isinstance(dt, datetime.datetime):
-            ptime = dt
-        else:
-            ptime = datetime.datetime.fromtimestamp(int(time.time()), tz=datetime.timezone.utc)
+        ptime = dt
+
 
     apflog("get_next(): Updating star list with previous observations", echo=True)
     observed, ucotargets.star_table = ParseUCOSched.update_local_starlist(ptime,\
@@ -907,13 +900,13 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
         shiftwest = True
 
     if do_too is False:
-        apflog("get_next(): Selecting TOO targets", echo=True)
+        apflog("get_next(): De-selecting TOO targets", echo=True)
         not_too = ucotargets.star_table['too'] == False
         available = available & not_too
 
     # Is the exposure time too long?
     apflog("get_next(): Removing really long exposures", echo=True)
-    time_good = time_check(ucotargets.star_table, totexptimes, dt, start_time=start_time)
+    time_good = time_check(ucotargets.star_table, totexptimes, dt)
 
     available = available & time_good
     if np.any(available) is False:
@@ -963,11 +956,12 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
         apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
         return None
 
-    if bstar:
+    if obs_bstar:
         sort_j = cur_elevations[sort_i].argsort()[::-1]
         focval=2
     else:
         sort_j = scaled_elevations[sort_i].argsort()[::-1]
+
 
     allidx, = np.where(sort_i)
     idx = allidx[sort_j][0]
@@ -981,7 +975,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     pristr= "get_next(): star priorities %s" % (np.asarray(final_priorities[sort_i][sort_j]))
     mxpristr= "get_next(): max priority %d" % (pri)
     shstr= "get_next(): star sheet names %s" % (np.asarray(ucotargets.star_table['sheetn'][sort_i][sort_j]))
-    if bstar:
+    if obs_bstar:
         elstr= "get_next(): Bstar current elevations %s" % (cur_elevations[sort_i][sort_j])
     else:
         elstr= "get_next(): star scaled elevations %s" % (scaled_elevations[sort_i][sort_j])
@@ -991,16 +985,14 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     apflog(mxpristr, echo=True)
     apflog(elstr, echo=True)
 
-    stars[idx].compute(apf_obs)
-
     take_template = do_templates and ucotargets.star_table['Template'][idx] == 'N' \
         and ucotargets.star_table['I2'][idx] == 'Y'
     if ucotargets.star_table['only_template'][idx] == 'Y' and do_templates:
         take_template = True
 
     res =  make_result(stars, ucotargets.star_table, totexptimes, final_priorities, dt, \
-                       idx, focval=focval, bstar=bstar, mode=config['mode'])
-    if take_template and bstar is False:
+                       idx, focval=focval, bstar=obs_bstar, mode=config['mode'])
+    if take_template and obs_bstar is False:
         bidx, bfinidx = find_Bstars(ucotargets.star_table, idx, bstars)
 
         if enough_time_templates(ucotargets.star_table,stars,idx,apf_obs,dt):
@@ -1095,7 +1087,7 @@ def test_templates(ucotargets):
     ucotargets - UCOTargets object
     """
     print("Testing templates")
-    t_dt = datetime.datetime.now()
+    t_dt = astropy.time.Time(datetime.datetime.now(tz=datetime.timezone.utc), scale='utc')
     tstar_table, _ = ParseUCOSched.parse_UCOSched(ucotargets.rank_table, \
                                                      outfn='googledex.dat', outdir=".", \
                                                         config=config_defaults('public'))
