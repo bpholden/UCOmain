@@ -21,7 +21,7 @@ WINDLIM = 40.0
 SLOWLIM = 100
 WINDSHIELD_LIMIT = 4.5 # mps at the APF
 FOCUSTIME = 3600. # minimum time before checking telescope focus
-TEMP_LIMIT = 35. # deg F at the APF
+TEMP_LIMIT = 3. # deg C at the APF
 wxtimeout = datetime.timedelta(seconds=1800)
 SUNEL_HOR = -3.2
 TELFOCUSMIN = -0.00096
