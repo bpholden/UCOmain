@@ -1262,7 +1262,7 @@ class TelescopeControl:
 
         else:
             # State must be auto, so check wind and temperature.
-            # This state enables or disables windshielding based on the 
+            # This state enables or disables windshielding based on the
             # wind speed and the outside temperature
             if self.down > 0:
                 wvel = self.avg_lists['WINDAV']
