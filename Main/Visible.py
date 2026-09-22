@@ -101,7 +101,7 @@ def visible(observer, stars, obs_len, ptime,
         diff = np.abs(star.dec.value - observer.location.lat.value)
         transit_alt = 90.0 - diff
         se = observer.target_hour_angle(new_time, star).to(astropy.units.deg)
-        if se  < 180:
+        if se.value  < 180:
             in_east = True
             se = 90 - se.value
         else:
