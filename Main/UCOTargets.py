@@ -178,9 +178,10 @@ class UCOTargets(object):
 def main():
     class Opts:
         def __init__(self):
-            self.rank_table = '2026B_ranks_operational'
+            self.rank_table = '2026B_ranks'
             self.time_left = '/home/holden/time_left.csv'
             self.test = True
+            self.halve = True
     opt = Opts()
     uco_targets = UCOTargets(opt)
     uco_targets.make_hour_table()
