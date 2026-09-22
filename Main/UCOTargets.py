@@ -178,7 +178,7 @@ class UCOTargets(object):
 def main():
     class Opts:
         def __init__(self):
-            self.rank_table = '2025B_ranks_operational'
+            self.rank_table = '2026B_ranks_operational'
             self.time_left = '/home/holden/time_left.csv'
             self.test = True
     opt = Opts()
