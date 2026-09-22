@@ -834,9 +834,9 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     stars = ParseUCOSched.gen_stars(ucotargets.star_table)
     targ_num = len(stars)
 
-    last_failure = last_attempted()
-    if last_failure is not None:
-        last_objs_attempted.append(last_failure)
+#    last_failure = last_attempted()
+#    if last_failure is not None:
+#        last_objs_attempted.append(last_failure)
 
     ###
     # Need to update the googledex with the lastObserved date for observed targets
