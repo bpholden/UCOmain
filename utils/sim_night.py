@@ -7,8 +7,7 @@ import re
 import os
 
 import numpy as np
-import ephem
-import astropy.io.ascii
+import astropy.time
 
 sys.path.append("../Main")
 import UCOScheduler as ds
@@ -31,6 +30,13 @@ def get_start_time(hr_mn, datestr):
 
 
 def parse_options():
+    '''
+    Parse command-line options for the simulation script.
+
+    Returns:
+    optparse.Values
+        The parsed command-line options.
+    '''
     parser = optparse.OptionParser()
     parser.add_option("-d","--date",dest="date",default="today")
     parser.add_option("-f","--fixed",dest="fixed",default="")
@@ -52,7 +58,7 @@ def find_date(in_date):
         datestr = "%d/%02d/%02d" % (today.year,today.month,today.day)
     else:
         datestr = in_date
-    return datestr
+    return datestr, today
 
 def find_fixed(in_fixed):
     if in_fixed != "":
@@ -99,7 +105,7 @@ def main():
     options = parse_options()
     outdir = "."
 
-    datestr = find_date(options.date)
+    datestr, today = find_date(options.date)
 
     start_time = None
     if options.start_time:
@@ -109,7 +115,7 @@ def main():
 
     ucotargets = UCOTargets.UCOTargets(options)
 
-    if not NightSim.checkdate(datestr):
+    if not NightSim.check_date(datestr):
         print ("%s is not an acceptable date string" % (datestr))
         sys.exit()
 
@@ -127,22 +133,21 @@ def main():
     ot = open(otfn,"w", encoding='utf-8')
     ot.close()
     observing = True
-    curtime, endtime, apf_obs = NightSim.sun_times(datestr)
+    curtime, endtime, apf_obs = NightSim.sun_times(today)
     bstar = options.bstar
     do_temp = True
     do_too = True
     tempcount = 0
 
-    ucotargets.make_hour_table(obs_datetime=curtime.datetime())
+    ucotargets.make_hour_table(obs_datetime=curtime.datetime)
     ucotargets.make_star_table()
 
     stars = ParseUCOSched.gen_stars(ucotargets.star_table)
 
     while observing:
-        curtime = ephem.Date(curtime)
 
-        result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, ucotargets,\
-                             bstar=bstar, outfn=options.infile, do_templates=do_temp,\
+        result = ds.get_next(curtime, lastfwhm, lastslow, ucotargets,\
+                             obs_bstar=bstar, outfn=options.infile, do_templates=do_temp,\
                              do_too=do_too, outdir=outdir, start_time=start_time)
         if result:
             if result['isBstar']:
@@ -153,7 +158,7 @@ def main():
                 do_temp=False # two per night
             if result['isTOO']:
                 do_too = False # one per night
-            curtime += 70./86400 # acquisition time
+            curtime += astropy.time.TimeDelta(70, format='sec') # acquisition time
             (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
             idx = int(idx[0])
             for _ in range(0,int(result['NEXP'])):
@@ -166,7 +171,7 @@ def main():
                 ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
             ot.close()
         else:
-            curtime += 2100./86400 # close for lack of target
+            curtime += astropy.time.TimeDelta(2100, format='sec') # close for lack of target
             lastslow = 5
             lastfwhm = 15
         if curtime > endtime:
@@ -174,8 +179,8 @@ def main():
 
 
     print("Updating star list with final observations")
-    curtime = ephem.Date(curtime)
-    _, _ = ParseUCOSched.update_local_starlist(curtime.datetime(),\
+
+    _, _ = ParseUCOSched.update_local_starlist(curtime.datetime,\
                                                outfn=options.infile,observed_file=otfn)
     print ("sun rose")
     outfp.close()
