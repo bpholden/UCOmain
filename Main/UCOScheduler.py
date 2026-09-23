@@ -379,27 +379,6 @@ def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', f
 
     return str(ret)
 
-
-def compute_preferred_el(star_table, targ_num):
-    '''
-    pref_el = compute_preferred_el(star_table, targ_num)
-    star_table - astropy table of targets
-    targ_num - number of targets
-    pref_el - numpy array of preferred elevations
-    '''
-    pref_el = np.zeros(targ_num, dtype=float)
-    for i in range(0,targ_num):
-        if star_table['Vmag'][i] > SchedulerConsts.SLOWDOWN_VMAG_LIM:
-            pref_el[i] = SchedulerConsts.TARGET_ELEVATION_HIGH_MIN
-        else:
-            pref_el[i] = SchedulerConsts.TARGET_ELEVATION_MIN
-
-    return pref_el
-
-   # pref_el_min = [ SchedulerConsts.TARGET_ELEVATION_HIGH_MIN ] * targ_num
-
-
-
 def compute_datetime(ctime):
     '''
     dt = compute_datetime(ctime)
@@ -946,7 +925,8 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     final_priorities = compute_priorities(ucotargets.star_table, dt,
                                              rank_table=ucotargets.rank_table,
                                              hour_table=ucotargets.hour_table,
-                                             do_templates=do_templates)
+                                             do_templates=do_templates,
+                                             observed=observed)
 
     try:
         pri = max(final_priorities[available])
