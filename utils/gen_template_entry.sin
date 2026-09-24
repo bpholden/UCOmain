@@ -11,7 +11,7 @@ import numpy as np
 sys.path.append("../Main")
 import UCOTargets
 import ParseUCOSched
-import UCOScheduler as ds
+import Observability
 import ScriptobsLine
 
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
             a_idx, = np.where(uco_targets.star_table['name'] == arg)
             idx = a_idx[0]
             owner = uco_targets.star_table['sheetn'][idx]
-            bidx, bfinidx = ds.find_Bstars(uco_targets.star_table, idx, bstars)
+            bidx, bfinidx = Observability.find_Bstars(uco_targets.star_table, idx, bstars)
 
             bline = ScriptobsLine.make_scriptobs_line(uco_targets.star_table[bstars][bidx], dt,
                                            decker="N", I2="Y", owner=owner, focval=2)
