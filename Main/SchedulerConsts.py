@@ -36,3 +36,13 @@ EXP_LIM = 3e9
 MAX_PRI = 3
 
 DEFAULT_CERT = 'ucoscheduler-d79e797f0ade.json'
+
+# obsblock modes, values of the star table 'mode' column
+ACQUIRE = 'A'
+BLANK = 'B'
+FIRST = '1'
+LAST = 'L'
+
+# cadence slop, in seconds and in days
+BUFFERSEC = 600
+BUFFER = BUFFERSEC / (24.*60*60)

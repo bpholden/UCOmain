@@ -12,6 +12,7 @@ sys.path.append("../Main")
 import UCOTargets
 import ParseUCOSched
 import UCOScheduler as ds
+import ScriptobsLine
 
 
 if __name__ == "__main__":
@@ -76,11 +77,11 @@ if __name__ == "__main__":
             owner = uco_targets.star_table['sheetn'][idx]
             bidx, bfinidx = ds.find_Bstars(uco_targets.star_table, idx, bstars)
 
-            bline = ds.make_scriptobs_line(uco_targets.star_table[bstars][bidx], dt,
+            bline = ScriptobsLine.make_scriptobs_line(uco_targets.star_table[bstars][bidx], dt,
                                            decker="N", I2="Y", owner=owner, focval=2)
-            line = ds.make_scriptobs_line(uco_targets.star_table[idx], dt, decker="N",
+            line = ScriptobsLine.make_scriptobs_line(uco_targets.star_table[idx], dt, decker="N",
                                           I2="N", owner=owner, temp=True)
-            bfinline = ds.make_scriptobs_line(uco_targets.star_table[bstars][bfinidx], dt,
+            bfinline = ScriptobsLine.make_scriptobs_line(uco_targets.star_table[bstars][bfinidx], dt,
                                               decker="N", I2="Y", owner=owner, focval=2)
 
             fp.write(bline + " # temp=Y\n")

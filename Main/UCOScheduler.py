@@ -10,6 +10,7 @@ import ephem
 
 import ParseUCOSched
 import SchedulerConsts
+import ScriptobsLine
 import SunPos
 import UCOTargets
 import Visible
@@ -22,15 +23,6 @@ except:
 
 # a global
 last_objs_attempted = []
-
-# some constants
-ACQUIRE = 'A'
-BLANK = 'B'
-FIRST = '1'
-LAST = 'L'
-
-BUFFERSEC = 600
-BUFFER = BUFFERSEC / (24.*60*60)
 
 def zero_last_objs_attempted():
     """
@@ -99,8 +91,8 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
     started_doubles = started_doubles & (star_table['night_obs'] > 0)
     started_doubles = started_doubles & (star_table['night_obs'] < star_table['night_nexp'])
     if np.any(started_doubles):
-        redo = started_doubles & (cadence_check > (star_table['night_cad'] - BUFFER))
-        redo = redo & (cadence_check < (star_table['night_cad'] + BUFFER))
+        redo = started_doubles & (cadence_check > (star_table['night_cad'] - SchedulerConsts.BUFFER))
+        redo = redo & (cadence_check < (star_table['night_cad'] + SchedulerConsts.BUFFER))
     else:
         redo = np.zeros(1,dtype=bool)
 
@@ -250,12 +242,12 @@ def time_check(star_table, totexptimes, dt, start_time=None):
     started_multiples = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
     if np.any(started_multiples):
         cadence_check = ephem.julian_date(dt) - star_table['lastobs']
-        waiting = cadence_check < (star_table['night_cad'] - BUFFER )
+        waiting = cadence_check < (star_table['night_cad'] - SchedulerConsts.BUFFER )
         if np.any(waiting):
             maxexptimes = (star_table['night_cad'] - cadence_check) * 86400
             maxfaintexptimes = (star_table['night_cad'] - cadence_check) * 86400
             try:
-                maxexptime = np.min(maxexptimes[waiting & started_multiples]) + BUFFERSEC - 180
+                maxexptime = np.min(maxexptimes[waiting & started_multiples]) + SchedulerConsts.BUFFERSEC - 180
             except ValueError:
                 # this means we have double observations we are waiting for
                 # but they are in the selection window
@@ -264,7 +256,7 @@ def time_check(star_table, totexptimes, dt, start_time=None):
                 pass
             try:
                 maxfaintexptime = np.min(maxfaintexptimes[waiting & started_multiples])
-                maxfaintexptime += BUFFERSEC - 180
+                maxfaintexptime += SchedulerConsts.BUFFERSEC - 180
             except ValueError:
                 pass
 
@@ -276,108 +268,6 @@ def time_check(star_table, totexptimes, dt, start_time=None):
     time_good[faint] = time_good_faint[faint]
 
     return time_good
-
-def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='', temp=False):
-    """ given a name, a row in a star table and a do_flag, will generate
-    a scriptobs line as a string:
-    line = make_scriptobs_line(star_table_row, t, decker="W",I2="Y")
-
-    star_table_row -contains all of the data needed for the line except
-    t - a datetime object, this is used to fill in the uth and utm fields
-    decker - one character field for the decker, defaults to "W"
-    I2 - one character field for whether or not the Iodine cell is in, must be "Y" or "N"
-    temp - a boolean for whether or not this is a template observation
-    """
-
-    # Add the RA as three elements, HR, MIN, SEC
-    rastr = "%s %s %s " % (star_table_row['RA hr'],
-                           star_table_row['RA min'],
-                           star_table_row['RA sec'])
-
-    # Add the DEC as three elements, DEG, MIN, SEC
-    decstr = "%s %s %s " % (star_table_row['Dec deg'],
-                            star_table_row['Dec min'],
-                            star_table_row['Dec sec'])
-    # Start with the target name
-    ret = "%s %s %s 2000 " % (str(star_table_row['name']),rastr, decstr)
-
-    # Proper motion RA and DEC
-    ret += 'pmra=%.4f ' % (star_table_row['pmRA'])
-    ret += 'pmdec=%.4f ' % (star_table_row['pmDEC'])
-    # V Mag
-    ret += 'vmag=%.2f ' % (star_table_row['Vmag'])
-
-    # T Exp
-    if temp:
-        ret += 'texp=1200 '
-    else:
-        ret += 'texp=%d ' % int(star_table_row['texp'])
-
-    # I2
-    if temp:
-        I2 = 'N'
-    ret += 'I2=%s ' % (I2)
-    # lamp
-    ret += 'lamp=none '
-    # start time
-    ret += 'uth=%02d utm=%02d ' % (int(t.hour),int(t.minute))
-
-    # Exp Count
-    if star_table_row['expcount'] > SchedulerConsts.EXP_LIM:
-        ret += 'expcount=%.3g ' % (SchedulerConsts.EXP_LIM)
-    elif temp:
-        ret += 'expcount=%.3g ' % (1e9)
-    else:
-        ret += 'expcount=%.3g ' % (star_table_row['expcount'])
-    # Decker
-    if temp and star_table_row['Vmag'] > 9:
-        decker = 'W'
-    elif temp and star_table_row['Vmag'] <= 9:
-        decker = 'N'
-    ret += 'decker=%s ' % (decker)
-    # do flag
-    if star_table_row['do']:
-        ret += 'do=Y '
-    else:
-        ret += 'do= '
-    # Count
-    if temp:
-        count = num_template_exp(star_table_row['Vmag'])
-    else:
-        count = int(star_table_row['nexp'])
-
-    ret += 'count=%d ' % (count)
-
-    ret += 'foc=%d ' % (int(focval))
-
-    if owner != '':
-        if owner == 'RECUR_A100':
-            owner = 'public'
-        ret += 'owner=%s ' % str(owner)
-
-    if coverid != '':
-        ret += 'coverid=%s ' % str(coverid)
-
-    ret += 'binning=%s ' % str(star_table_row['binning'])
-
-#    if star_table_row['mode'] != None:
-#        if star_table_row['mode'] == BLANK:
-#            ret += ' blank=Y'
-#        elif star_table_row['mode'] == ACQUIRE:
-#            ret += ' guide=Y'
-#    else:
-#        ret += ''
-
-#    raoff  = star_table_row['raoff']
-#    decoff = star_table_row['decoff']
-#    if raoff == 'None':
-#        raoff = ''
-#    if decoff == 'None':
-#        decoff = ''
-#    if raoff is not '' and decoff is not '':
-#        ret += ' raoff=' + str(raoff) + ' decoff=' + str(decoff)
-
-    return str(ret)
 
 def compute_datetime(ctime):
     '''
@@ -470,24 +360,6 @@ def find_closest(ras, decs, ra, dec):
 
     return min_ind
 
-def num_template_exp(vmag):
-    '''
-    num_template_exp(vmag)
-
-    vmag - V magnitude of target
-    count - number of exposures for a template observation
-
-    '''
-    count = 7
-
-    if vmag > 10:
-        count = 9
-
-    elif vmag  < 8:
-        count = 5
-
-    return count
-
 def enough_time_templates(star_table, stars, idx, apf_obs, dt):
     '''
     enough_time_templates(star_table, stars, idx, apf_obs, dt)
@@ -503,7 +375,7 @@ def enough_time_templates(star_table, stars, idx, apf_obs, dt):
     and checks if there is enough time left before sunrise.
     '''
 
-    count = num_template_exp(star_table['Vmag'][idx])
+    count = ScriptobsLine.num_template_exp(star_table['Vmag'][idx])
 
     tot_time = count * 1200
 
@@ -544,71 +416,6 @@ def find_Bstars(star_table,idx, bstars):
 
     return near_idx,end_idx
 
-
-def make_obs_block(star_table, idx, dt, focval):
-    '''
-
-    make_obs_block(star_table, idx, dt, focval)
-
-    star_table - astropy table of targets
-    idx - index of target in star_table
-    dt - datetime object
-    focval - focus value
-
-    rv - list of scriptobs lines for an obsblock
-    '''
-
-    rv = []
-
-    cur_obsblock = star_table['obsblock'][idx]
-
-    allinblock = star_table['obsblock'] == cur_obsblock
-    allinblock = allinblock & (star_table['sheetn'] == star_table['sheetn'][idx])
-
-    if np.any(star_table['mode'][allinblock] == FIRST):
-        first = star_table['mode'][allinblock] == FIRST
-    elif np.any(star_table['mode'][allinblock] == ACQUIRE):
-        first = star_table['mode'][allinblock] == ACQUIRE
-    else:
-        first = None
-
-    if np.any(star_table['mode'][allinblock] == LAST):
-        last = star_table['mode'][allinblock] == LAST
-    else:
-        last = None
-
-    rest = star_table['mode'][allinblock] != FIRST
-    rest = rest & (star_table['mode'][allinblock] != ACQUIRE)
-    rest = rest & (star_table['mode'][allinblock] != LAST)
-    rest_idxs, = np.where(rest)
-
-
-    if np.any(first):
-        first_idxs, = np.where(first)
-        for idx in first_idxs:
-            scriptobs_line = make_scriptobs_line(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
-                                                owner=star_table['sheetn'][allinblock][idx], \
-                                                I2=star_table['I2'][allinblock][idx], focval=focval)
-            rv.append(scriptobs_line)
-
-    for idx in rest_idxs:
-        scriptobs_line = make_scriptobs_line(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
-                                               owner=star_table['sheetn'][allinblock][idx], \
-                                               I2=star_table['I2'][allinblock][idx], focval=focval)
-        rv.append(scriptobs_line)
-
-    if np.any(last):
-        last_idxs, = np.where(last)
-        for idx in last_idxs:
-            scriptobs_line = make_scriptobs_line(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
-                                                owner=star_table['sheetn'][allinblock][idx], \
-                                                I2=star_table['I2'][allinblock][idx], focval=focval)
-            rv.append(scriptobs_line)
-
-
-    rv.reverse()
-    rv[0] += ' # obsblock=%s end' % (cur_obsblock)
-    return rv
 
 def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode=''):
     '''
@@ -655,7 +462,7 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
 
     res['SCRIPTOBS'] = []
     if bstar:
-        scriptobs_line = make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], \
+        scriptobs_line = ScriptobsLine.make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], \
                                          owner=res['owner'], I2='N', \
                                             focval=0)
         # we hard code the focval to skip it because 
@@ -664,7 +471,7 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
         scriptobs_line = scriptobs_line + " # end"
         res['SCRIPTOBS'].append(scriptobs_line)
 
-    scriptobs_line = make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], \
+    scriptobs_line = ScriptobsLine.make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], \
                                          owner=res['owner'], I2=star_table['I2'][idx], \
                                             focval=focval)
 
@@ -734,27 +541,6 @@ def behind_moon(moon,ras,decs):
 
     return moon_check
 
-def config_defaults(owner):
-    '''
-    config_defaults(owner)
-    owner - string, owner of the targets
-
-    config - dictionary of default values for the config
-    '''
-
-    config = dict()
-    config['I2'] = 'Y'
-    config['decker'] = 'W'
-    config['mode'] = ''
-    config['obsblock'] = ''
-    config['Bstar'] = 'N'
-    config['owner'] = owner
-    config['inst'] = 'levy'
-    config['raoff'] = ''
-    config['decoff'] = ''
-
-    return config
-
 def get_next(ctime, seeing, slowdown, ucotargets, \
                 bstar=False, do_templates=False, \
                 do_too=False, owner='public', \
@@ -773,7 +559,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
 
     dt = compute_datetime(ctime)
 
-    config = config_defaults(owner)
+    config = ScriptobsLine.config_defaults(owner)
 
     apflog( "get_next(): Finding target for time %s" % (dt), echo=True)
 
@@ -977,13 +763,13 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
 
         if enough_time_templates(ucotargets.star_table,stars,idx,apf_obs,dt):
             decker= "N"
-            line  = make_scriptobs_line(ucotargets.star_table[idx], \
+            line  = ScriptobsLine.make_scriptobs_line(ucotargets.star_table[idx], \
                                         dt, decker=decker, I2="N", owner=res['owner'], temp=True)
             if "decker=W" in line:
                 decker = "W"
-            bline = make_scriptobs_line(ucotargets.star_table[bstars][bidx], dt, \
+            bline = ScriptobsLine.make_scriptobs_line(ucotargets.star_table[bstars][bidx], dt, \
                                         decker=decker, I2="Y", owner=res['owner'], focval=2)
-            bfinline = make_scriptobs_line(ucotargets.star_table[bstars][bfinidx], dt,\
+            bfinline = ScriptobsLine.make_scriptobs_line(ucotargets.star_table[bstars][bfinidx], dt,\
                                             decker=decker, I2="Y", owner=res['owner'], focval=0)
             res['SCRIPTOBS'] = []
             res['SCRIPTOBS'].append(bfinline + " # temp=Y end")
@@ -1070,20 +856,20 @@ def test_templates(ucotargets):
     t_dt = datetime.datetime.now()
     tstar_table, _ = ParseUCOSched.parse_UCOSched(ucotargets.rank_table, \
                                                      outfn='googledex.dat', outdir=".", \
-                                                        config=config_defaults('public'))
+                                                        config=ScriptobsLine.config_defaults('public'))
     tidx, = np.asarray(tstar_table['name'] == '185144').nonzero()
     tidx = tidx[0]
     tbstars = (tstar_table['Bstar'] == 'Y')|(tstar_table['Bstar'] == 'y')
     tbidx, tbfinidx = find_Bstars(tstar_table, tidx, tbstars)
     decker = "N"
-    tline  = make_scriptobs_line(tstar_table[tidx], t_dt, \
+    tline  = ScriptobsLine.make_scriptobs_line(tstar_table[tidx], t_dt, \
                                 decker=decker, I2="N", owner='public', temp=True)
     if "decker=W" in tline:
         decker = "W"
-    tbline = make_scriptobs_line(tstar_table[tbstars][tbidx], t_dt, \
+    tbline = ScriptobsLine.make_scriptobs_line(tstar_table[tbstars][tbidx], t_dt, \
                                 decker=decker, I2="Y", owner='public', focval=2)
 
-    tbfinline = make_scriptobs_line(tstar_table[tbstars][tbfinidx], t_dt, \
+    tbfinline = ScriptobsLine.make_scriptobs_line(tstar_table[tbstars][tbfinidx], t_dt, \
                                    decker=decker, I2="Y", owner='public', focval=0)
     temp_res= []
     temp_res.append(tbfinline + " # temp=Y end")
