@@ -942,7 +942,7 @@ def update_local_starlist(intime, observed_file="observed_targets", outfn='parse
     astropy.io.ascii.write(star_table,outfn, format='ecsv', overwrite=True)
     if too_table is not None:
         astropy.io.ascii.write(too_table,toofn, format='ecsv', overwrite=True)
-        star_table = astropy.table.vstack(too_table,star_table)
+        star_table = astropy.table.vstack([too_table,star_table])
 
     return obslog, star_table
 
