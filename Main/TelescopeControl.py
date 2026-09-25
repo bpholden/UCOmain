@@ -21,7 +21,7 @@ WINDLIM = 40.0
 SLOWLIM = 100
 WINDSHIELD_LIMIT = 4.5 # mps at the APF
 FOCUSTIME = 3600. # minimum time before checking telescope focus
-TEMP_LIMIT = 35. # deg F at the APF
+TEMP_LIMIT = 3. # deg C at the APF
 wxtimeout = datetime.timedelta(seconds=1800)
 SUNEL_HOR = -3.2
 TELFOCUSMIN = -0.00096
@@ -1262,7 +1262,7 @@ class TelescopeControl:
 
         else:
             # State must be auto, so check wind and temperature.
-            # This state enables or disables windshielding based on the 
+            # This state enables or disables windshielding based on the
             # wind speed and the outside temperature
             if self.down > 0:
                 wvel = self.avg_lists['WINDAV']
@@ -1273,13 +1273,13 @@ class TelescopeControl:
             apflog("Current median wind speed is %.2f with the limit %.2f" % \
                    (wvel,WINDSHIELD_LIMIT), level='debug')
             if curr_mode == 'enable' and wvel <= WINDSHIELD_LIMIT and \
-                float(self.avg_lists['TEMP']) > TEMP_LIMIT:
+                float(self.avg_lists['AIRTEMP']) > TEMP_LIMIT:
                 apflog("Setting scriptobs_windshield to Disable")
                 rv = "Disable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
 
             if curr_mode == 'disable' and (wvel > WINDSHIELD_LIMIT or \
-                                          float(self.avg_lists['TEMP']) < TEMP_LIMIT):
+                                          float(self.avg_lists['AIRTEMP']) < TEMP_LIMIT):
                 apflog("Setting scriptobs_windshield to Enable")
                 rv = "Enable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)

@@ -66,7 +66,8 @@ class Observe(threading.Thread):
         self.star_failures = 0
 
         self.power_cycles = 0
-        self.tot_power_cycles = 5
+        self.tot_power_cycles = 15
+        self.power_limit_reached = False
 
         if opt.fixed:
             self.fixed_list = opt.fixed
@@ -106,7 +107,7 @@ class Observe(threading.Thread):
 
         self.target = None
         self.fixed_target = None
-        self.bad_weather = False
+        self.do_not_open = False
 
         self.apftask = ktl.Service('apftask')
         self.lineresult = self.apftask['SCRIPTOBS_LINE_RESULT']
@@ -280,7 +281,11 @@ class Observe(threading.Thread):
                     apflog("Failure power cycling telescope", echo=True, level="alert")
 
                 return rv
-
+            if rv and self.power_cycles >= self.tot_power_cycles:
+                self.power_limit_reached = True
+                apflog("Servo failure detected but maximum power cycles reached",\
+                        echo=True, level="alert")
+                return False
             apflog("No current servo faults", echo=True)
             return True
 
@@ -805,10 +810,11 @@ class Observe(threading.Thread):
             cursunel = self.tel.sunel
             current_msg = APFTask.get("master", ["MESSAGE"])
             # Check and close for weather
-            self.bad_weather = self.tel.dew_too_close \
-                or not self.apf.gcam_power.binary
+            self.do_not_open = self.tel.dew_too_close \
+                or not self.apf.gcam_power.binary or \
+                self.power_limit_reached
 
-            if self.tel.is_open()[0] and self.bad_weather:
+            if self.tel.is_open()[0] and self.do_not_open:
                 closetime = datetime.datetime.now()
                 APFTask.set(self.task, suffix="MESSAGE", \
                             value="Closing for weather or instrument issues", wait=False)
@@ -912,7 +918,7 @@ class Observe(threading.Thread):
                 self.stop()
 
             # Open
-            if self.tel.openOK and self.can_open and not self.bad_weather:
+            if self.tel.openOK and self.can_open and not self.do_not_open:
                 if not self.tel.is_ready_observing()[0] and \
                     float(cursunel) < SchedulerConsts.SUNEL_HOR:
                     if float(cursunel) > sunel_lim and not rising:
@@ -1014,6 +1020,9 @@ class Observe(threading.Thread):
                 apflog("Likely amplifier failure, may power cycle telescope",\
                         echo=True, level='error')
                 rv = self.check_servos()
+                if rv is False:
+                    closing(force=True)
+                    return False
 
             # If we are open and scriptobs isn't running, start it up
             if self.tel.is_ready_observing()[0] and not running \
