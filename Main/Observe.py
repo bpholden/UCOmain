@@ -3,7 +3,6 @@ import datetime
 import math
 import os
 import os.path
-import shutil
 import re
 import sys
 import threading
@@ -20,7 +19,7 @@ import APFControl
 import TelescopeControl
 from apflog import apflog
 import UCOScheduler as ds
-import UCOTargets
+import UCOTargetTables
 import ExposureCalculations
 import SchedulerConsts
 
@@ -292,23 +291,6 @@ class Observe(threading.Thread):
             self.tel.close(force=True)
             return False
 
-    def check_files(self, outfn='googledex.dat'):
-        """ Observe.check_files(outfn='googledex.dat')
-            checks for the existence of a file, and if it exists, makes a backup
-        """
-        outdir = os.getcwd()
-        fullpath = os.path.join(outdir, outfn)
-        if os.path.isfile(fullpath):
-            return
-
-        # make it so
-        backup = fullpath + ".1"
-        try:
-            shutil.copyfile(backup, fullpath)
-        except Exception as e:
-            err_str = "Cannot copy %s to %s: %s %s" % (backup, fullpath, type(e), e)
-            apflog(err_str, echo=True, level='error')
-
     def should_start_list(self):
         """ Observe.should_start_list()
             should we start a fixed observing list or not? true if start 
@@ -521,7 +503,7 @@ class Observe(threading.Thread):
                 if not self.apf.gcam_power.binary:
                     return
 
-            self.check_files()
+            self.uco_targets.check_files()
 
             self.target = ds.get_next(time.time(), seeing, slowdown, self.uco_targets,\
                                          bstar=self.obs_B_star, \
@@ -1138,7 +1120,7 @@ if __name__ == "__main__":
     APFTask.waitFor(parent, True, timeout=2)
     print(str(t_tel))
 
-    uco_targets = UCOTargets.UCOTargets(t_opt)
+    uco_targets = UCOTargetTables.UCOTargetTables(t_opt)
 
     observe = Observe(t_apf, t_tel, t_opt, uco_targets, task=parent)
     APFTask.waitFor(parent, True, timeout=2)

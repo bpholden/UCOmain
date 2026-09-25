@@ -9,7 +9,7 @@ import sys
 import numpy as np
 
 sys.path.append("../Main")
-import UCOTargets
+import UCOTargetTables
 import ParseUCOSched
 import Observability
 import ScriptobsLine
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         outdir = "."
     fp = open("tonight.lst", "a+")
 
-    uco_targets = UCOTargets.UCOTargets(opt=argparse.Namespace(rank_table=args.rank_table, time_left=None, test=False))
+    uco_targets = UCOTargetTables.UCOTargetTables(opt=argparse.Namespace(rank_table=args.rank_table, time_left=None, test=False))
     #rank_table = astropy.table.Table.read(args.rank_table, format='ascii')
     uco_targets.rank_table_filename = args.rank_table
     uco_targets.make_rank_table()

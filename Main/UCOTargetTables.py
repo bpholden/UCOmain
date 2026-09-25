@@ -13,7 +13,7 @@ try:
 except ImportError:
     from fake_apflog import *
 
-class UCOTargets(object):
+class UCOTargetTables(object):
     '''
     Class to handle UCO target tables: rank table, hour table, and star table.
     
@@ -28,6 +28,8 @@ class UCOTargets(object):
         self.rank_table = None
         self.rank_table_filename = "rank_table"
         self.hour_table = None
+        self.hour_table_filename = "hour_table"
+        self.stars = None
         self.halve = opt.halve if hasattr(opt, 'halve') else False
         self.too = None
         self.sheets = None
@@ -42,7 +44,7 @@ class UCOTargets(object):
             return
 
     def __repr__(self):
-        return "<UCOTargets rank_table=%s star_table=%s>" % \
+        return "<UCOTargetTables rank_table=%s star_table=%s>" % \
             (self.rank_table_name, self.star_table_name)
 
 
@@ -175,6 +177,114 @@ class UCOTargets(object):
                     apflog("Error: Cannot reuse googledex?! %s" % (e),level="error" )
         self.append_too_column()
 
+    def check_files(self, outfn=None):
+        """ check_files(outfn=None)
+            if the star table file (googledex.dat by default) is missing,
+            restores it from its .1 backup
+        """
+        if outfn is None:
+            outfn = self.star_table_name
+        outdir = os.getcwd()
+        fullpath = os.path.join(outdir, outfn)
+        if os.path.isfile(fullpath):
+            return
+
+        # make it so
+        backup = fullpath + ".1"
+        try:
+            shutil.copyfile(backup, fullpath)
+        except Exception as e:
+            err_str = "Cannot copy %s to %s: %s %s" % (backup, fullpath, type(e), e)
+            apflog(err_str, echo=True, level='error')
+
+    def update_from_observed(self, ptime, outfn=None, toofn='too.dat',
+                             observed_file="observed_targets"):
+        '''
+        observed = update_from_observed(ptime, outfn=None, toofn='too.dat')
+
+        Updates the star table on disk with the observations in observed_file,
+        sets self.star_table to the result and returns the ObservedLog.
+        self.star_table is None if the star table file could not be read.
+        '''
+        if outfn is None:
+            outfn = self.star_table_name
+        observed, self.star_table = ParseUCOSched.update_local_starlist(ptime,\
+                                                               outfn=outfn, toofn=toofn, \
+                                                                observed_file=observed_file)
+        return observed
+
+    def update_hour_table(self, observed, dt, outfn=None, outdir=None):
+        '''
+        update_hour_table(observed, dt, outfn=None, outdir=None)
+
+        Updates self.hour_table with history of observations and writes it to disk.
+        observed is the observed log
+        dt is the current datetime
+        outfn is the output filename, defaults to hour_table
+        outdir is the output directory, defaults to current working directory
+
+        '''
+        if self.hour_table is None:
+            return None
+
+        if outfn is None:
+            outfn = self.hour_table_filename
+
+        if not outdir :
+            outdir = os.getcwd()
+
+        outfn = os.path.join(outdir, outfn)
+
+        hour_table = self.hour_table
+        hours = dict()
+
+        # observed objects have lists as attributes
+        # reverse time order, so most recent target observed is first.
+
+        observed.reverse()
+
+        nobj = len(observed.names)
+        for i in range(0,nobj):
+            own = observed.owners[i]
+            if own not in list(hours):
+                hours[own] = 0.0
+
+        cur = dt
+        for i in range(0,nobj):
+            hr, mn = observed.times[i]
+            prev = datetime.datetime(dt.year, dt.month, dt.day, hr, mn)
+            diff = cur - prev
+            hourdiff = diff.days * 24 + diff.seconds / 3600.
+            if hourdiff > 0:
+                hours[observed.owners[i]] += hourdiff
+                cur = prev
+
+        for ky in list(hours.keys()):
+            if ky == 'public':
+                hour_table['cur'][hour_table['sheetn'] == 'RECUR_A100'] = hours[ky]
+            else:
+                hour_table['cur'][hour_table['sheetn'] == ky] = hours[ky]
+
+        try:
+            hour_table.write(outfn,format='ascii',overwrite=True)
+        except Exception as e:
+            apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
+
+        observed.reverse()
+
+        self.hour_table = hour_table
+        return hour_table
+
+    def gen_stars(self):
+        '''
+        stars = gen_stars()
+
+        Makes the list of ephem.FixedBody objects for self.star_table,
+        keeps it as self.stars and returns it.
+        '''
+        self.stars = ParseUCOSched.gen_stars(self.star_table)
+        return self.stars
+
 def main():
     class Opts:
         def __init__(self):
@@ -182,7 +292,7 @@ def main():
             self.time_left = '/home/holden/time_left.csv'
             self.test = True
     opt = Opts()
-    uco_targets = UCOTargets(opt)
+    uco_targets = UCOTargetTables(opt)
     uco_targets.make_hour_table()
     print("Hour table:", uco_targets.hour_table)
     uco_targets.make_star_table()

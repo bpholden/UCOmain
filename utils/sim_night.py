@@ -15,7 +15,7 @@ import UCOScheduler as ds
 
 import NightSim 
 import ParseUCOSched
-import UCOTargets
+import UCOTargetTables
 
 def get_start_time(hr_mn, datestr):
     '''
@@ -107,7 +107,7 @@ def main():
 
     options.fixed = find_fixed(options.fixed)
 
-    ucotargets = UCOTargets.UCOTargets(options)
+    ucotargets = UCOTargetTables.UCOTargetTables(options)
 
     if not NightSim.checkdate(datestr):
         print ("%s is not an acceptable date string" % (datestr))
