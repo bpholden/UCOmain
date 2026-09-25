@@ -204,13 +204,33 @@ class UCOTargetTables(object):
 
         Updates the star table on disk with the observations in observed_file,
         sets self.star_table to the result and returns the ObservedLog.
-        self.star_table is None if the star table file could not be read.
+
+        If the star table file is missing, it is rebuilt with make_star_table
+        and the observations are applied to the rebuilt copy. The observations
+        only reach the table through the file, so keeping the in-memory table
+        instead would miss every observation until the file came back.
+        If the file cannot be rebuilt, self.star_table is left as it was.
         '''
         if outfn is None:
             outfn = self.star_table_name
-        observed, self.star_table = ParseUCOSched.update_local_starlist(ptime,\
+        observed, star_table = ParseUCOSched.update_local_starlist(ptime,\
                                                                outfn=outfn, toofn=toofn, \
                                                                 observed_file=observed_file)
+        if star_table is None:
+            apflog("update_from_observed(): %s is missing, rebuilding it" % (outfn), echo=True)
+            previous = self.star_table
+            self.star_table = None
+            self.make_star_table()
+            if self.star_table is None:
+                apflog("update_from_observed(): cannot rebuild %s, keeping previous star table" % (outfn),
+                       level='error', echo=True)
+                self.star_table = previous
+                return observed
+            observed, star_table = ParseUCOSched.update_local_starlist(ptime,\
+                                                               outfn=outfn, toofn=toofn, \
+                                                                observed_file=observed_file)
+        if star_table is not None:
+            self.star_table = star_table
         return observed
 
     def update_hour_table(self, observed, dt, outfn=None, outdir=None):
