@@ -318,8 +318,8 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     # Note which of these are B-Stars for later.
     bstars = (ucotargets.star_table['Bstar'] == 'Y')|(ucotargets.star_table['Bstar'] == 'y')
 
-    if bstar and np.any(bstars) is False:
-        apflog("get_next(): No B stars listed in target sheets!", label='Error', echo=True)
+    if bstar and not np.any(bstars):
+        apflog("get_next(): No B stars listed in target sheets!", level='error', echo=True)
         return None
 
     apflog("get_next(): Computing exposure times", echo=True)
@@ -369,7 +369,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
     time_good = Observability.time_check(ucotargets.star_table, totexptimes, dt, start_time=start_time)
 
     available = available & time_good
-    if np.any(available) is False:
+    if not np.any(available):
         apflog( "get_next(): Not enough time left to observe any targets", level="error", echo=True)
         return None
 
