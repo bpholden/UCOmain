@@ -22,8 +22,9 @@ After this refactor:
 
 | Question | Decision |
 | --- | --- |
-| Class relationship | Composition: `UCOScheduler` holds a `TargetTables` (today's `UCOTargets`, renamed) |
+| Class relationship | Composition: `UCOScheduler` holds a `UCOTargetTables` (today's `UCOTargets`, renamed) |
 | Entry point name | `get_next()` (snake_case, matches the repo) |
+| Tables class name | `UCOTargetTables` (keeps the package's `UCO` prefix) |
 | File layout | Split into four modules plus a test module |
 | `utils/` | Port the live scripts; leave the already-dead ones alone |
 
@@ -68,7 +69,7 @@ So: `Main.sin` constructs the scheduler alongside the tables and passes it to
 
 ```python
 # Main.sin
-targets   = TargetTables.TargetTables(opt)
+targets   = UCOTargetTables.UCOTargetTables(opt)
 _         = getUCOTargets.getUCOTargets(targets, task=parent, wait_time=target_time)
 scheduler = UCOScheduler.UCOScheduler(targets, opt)
 observe   = Observe.Observe(apf, tel, opt, scheduler, task=parent)
@@ -82,15 +83,14 @@ occasions it needs them, so it takes one argument instead of two.
 | File | Contents |
 | --- | --- |
 | `Main/SchedulerConsts.py` (existing) | gains `ACQUIRE`, `BLANK`, `FIRST`, `LAST`, `BUFFERSEC`, `BUFFER` |
-| `Main/TargetTables.py` (new, from `UCOTargets.py`) | `class TargetTables` — rank/hour/star tables and all disk bookkeeping |
+| `Main/UCOTargetTables.py` (new, from `UCOTargets.py`) | `class UCOTargetTables` — rank/hour/star tables and all disk bookkeeping |
 | `Main/ScriptobsLine.py` (new) | pure string generation for scriptobs lines |
 | `Main/Observability.py` (new) | pure array/astro filters — no scheduler state |
 | `Main/UCOScheduler.py` (rewritten) | `class UCOScheduler` only |
 | `Main/test_UCOScheduler.py` (new) | the `test_*` functions currently at the bottom of `UCOScheduler.py` |
 
-`UCOTargets.py` is deleted; `TargetTables.py` replaces it. (Naming is the one
-detail still open — `TargetTables` reads well but drops the `UCO` prefix the rest
-of the package uses. `UCOTargetTables` is the alternative.)
+`UCOTargets.py` is deleted; `UCOTargetTables.py` replaces it. The name keeps
+the `UCO` prefix the rest of the package uses.
 
 ## Where every current symbol goes
 
@@ -114,7 +114,7 @@ All pure functions of `(star_table, moon, apf_obs, dt, ...)`, no instance state:
 These are the functions worth having unit tests for, which is the main reason to
 pull them out.
 
-### `Main/TargetTables.py`
+### `Main/UCOTargetTables.py`
 
 Everything that reads or writes the bookkeeping files:
 
@@ -151,7 +151,7 @@ class UCOScheduler(object):
     def __init__(self, targets, opt=None, owner='public', outdir=None,
                  do_templates=True, do_too=True, start_time=None,
                  outfn='googledex.dat', toofn='too.dat'):
-        self.targets   = targets          # TargetTables
+        self.targets   = targets          # UCOTargetTables
         self.owner     = owner
         self.outdir    = outdir or os.getcwd()
         self.outfn     = outfn
@@ -217,8 +217,8 @@ Three call sites, all mechanical:
 | `Observe.py:659` | `ds.zero_last_objs_attempted()` | `self.scheduler.zero_last_objs_attempted()` |
 
 `Observe.check_files()` (`Observe.py:295`) restores `googledex.dat` from its
-`.1` backup and duplicates `TargetTables.copy_backup`. It moves to
-`TargetTables.check_files()` and `Observe` calls
+`.1` backup and duplicates `UCOTargetTables.copy_backup`. It moves to
+`UCOTargetTables.check_files()` and `Observe` calls
 `self.scheduler.targets.check_files()`.
 
 `Observe.start_time` is read by `get_next` today via the `start_time=` keyword.
@@ -232,7 +232,7 @@ write `self.scheduler.start_time`.
 ## getUCOTargets.py changes
 
 Import and type name only: `UCOTargets.UCOTargets` becomes
-`TargetTables.TargetTables`. The thread does not touch the scheduler.
+`UCOTargetTables.UCOTargetTables`. The thread does not touch the scheduler.
 
 ## utils/ changes
 
@@ -246,7 +246,7 @@ Live scripts, ported:
 * `utils/gen_template_entry.sin:77-83` — `ds.find_Bstars` becomes
   `Observability.find_Bstars`, `ds.make_scriptobs_line` becomes
   `ScriptobsLine.make_scriptobs_line`.
-* `utils/download_googledex.py` — `UCOTargets` to `TargetTables`.
+* `utils/download_googledex.py` — `UCOTargets` to `UCOTargetTables`.
 
 Left alone, already broken against the deployed code:
 
@@ -292,7 +292,7 @@ decide which to take, and in which commit.
 5. **`update_local_starlist` returns `None` for the star table** when
    `googledex.dat` is missing, and `get_next` assigns that straight onto
    `ucotargets.star_table` (`UCOScheduler.py:827`), discarding a perfectly good
-   in-memory table before rebuilding it. In `TargetTables.update_from_observed`
+   in-memory table before rebuilding it. In `UCOTargetTables.update_from_observed`
    the assignment becomes conditional.
 
 6. **`dt.strftime('%s')`** at `UCOScheduler.py:238` is a glibc extension, not
@@ -322,7 +322,7 @@ Each step leaves the tree runnable, so a bad step can be bisected.
 3. **`Observability.py`.** Move the pure filters out. Pure code motion.
 4. **`test_UCOScheduler.py`.** Move the `test_*` functions out, still passing
    the module-level `get_next`. Run them — this is the baseline.
-5. **`TargetTables.py`.** Rename `UCOTargets`, absorb `update_hour_table`, add
+5. **`UCOTargetTables.py`.** Rename `UCOTargets`, absorb `update_hour_table`, add
    `update_from_observed`, `gen_stars`, `check_files`. Update
    `getUCOTargets.py`, `Main.sin`, `utils/download_googledex.py`.
 6. **`UCOScheduler` class.** Write the class, decompose `get_next` into the
@@ -357,12 +357,11 @@ they are not generated fresh per run.
 
 ## Open questions
 
-1. `TargetTables` vs `UCOTargetTables` for the class and module name.
-2. Should `get_next` keep returning a plain `dict`, or become a small
+1. Should `get_next` keep returning a plain `dict`, or become a small
    `Target` result class? The dict is consumed in `Observe.py` by string key
    (`self.target['NAME']`, `self.target["SCRIPTOBS"]`) and in the sim scripts.
    A result class is nicer but widens the diff; the plan above keeps the dict.
-3. `Observe` mutates `self.do_temp` and `self.n_temps` during the night to cap
+2. `Observe` mutates `self.do_temp` and `self.n_temps` during the night to cap
    template observations at `tot_temps`. That template budget arguably belongs
    to the scheduler. The plan leaves it in `Observe` for now and passes
    `do_templates` per call.
