@@ -1,6 +1,6 @@
 # Scheduler refactor: turning UCOScheduler into a class
 
-Status: draft plan, not yet implemented.
+Status: steps 1-7 done; step 8 (bug fixes) outstanding.
 Branch: clean branch off the deployed version.
 
 ## Goal
@@ -100,7 +100,7 @@ occasions it needs them, so it takes one argument instead of two.
 | `make_scriptobs_line` | unchanged; `utils/` and `gen_template_entry.sin` call it |
 | `num_template_exp` | unchanged |
 | `config_defaults` | unchanged |
-| `make_obs_block` | **dead** — its only caller is a commented-out block at `UCOScheduler.py:696`. Moved but marked, or dropped; see "Dead code" below |
+| `make_obs_block` | **dead** — its only caller is commented out in `make_result` (`UCOScheduler.py:185`). Moved; see bug 6, "Disabled obsblock path", below |
 
 ### `Main/Observability.py`
 
@@ -108,7 +108,7 @@ All pure functions of `(star_table, moon, apf_obs, dt, ...)`, no instance state:
 
 `compute_datetime`, `tot_exp_times`, `time_check`, `condition_cuts`,
 `behind_moon`, `template_conditions`, `find_closest`, `find_Bstars`,
-`enough_time_templates`, `compute_preferred_el` (**dead**, see below).
+`enough_time_templates`. (`compute_preferred_el` had no live callers and was deleted rather than moved.)
 
 These are the functions worth having unit tests for, which is the main reason to
 pull them out.
@@ -262,53 +262,74 @@ refactor does not make them any deader.
 
 These are pre-existing. I would **not** fix them silently inside a move-only
 refactor — each one changes which target gets picked. Listing them so you can
-decide which to take, and in which commit.
+decide which to take, and in which commit. Line numbers are as of the end of
+step 7. (The cal-star bug, where `get_next` never passed `observed=` to
+`compute_priorities`, was fixed before step 6 and is no longer listed.)
 
-1. **Cal-star boosting never runs.** `get_next` calls `compute_priorities(...)`
-   without `observed=`, so `need_cal_star` (`UCOScheduler.py:45`) hits its
-   `if observed is None: return priorities` guard and returns unchanged
-   priorities. The whole `need_cal` / `cal_star` mechanism is dead in
-   production. On the class this is fixed by construction — `compute_priorities`
-   reads `self.observed`, which `_refresh_tables` has already set. **This is a
-   real behavior change** and should be its own commit, verified with
-   `sim_nights.py`.
+1. **`star_table['too'] is False`** at `Observability.py:110` (`time_check`)
+   and `SunPos.py:80` (`sun_el_check`). `is` on a numpy array is always
+   `False`, so `faint &= False` makes `faint` all-`False`. In `time_check` the
+   faint-star exposure-time limit (`maxfaintexptime`, the `-18` horizon) never
+   applies; in `sun_el_check` faint stars are never rejected when the sun is
+   above `-18`. Intended: `~star_table['too']`, in both places.
 
-2. **`star_table['too'] is False`** at `UCOScheduler.py:272`. `is` on a numpy
-   array is always `False`, so `faint &= False` makes `faint` all-`False` and
-   the faint-star exposure-time branch (`maxfaintexptime`, the `-18` horizon)
-   never applies. Intended: `~star_table['too']`.
-
-3. **`np.any(...) is False`** at `UCOScheduler.py:842` and `:901`. `np.any`
+2. **`np.any(...) is False`** at `UCOScheduler.py:311` and `:454`. `np.any`
    returns `np.bool_`, never the `False` singleton, so both early returns are
    unreachable — "no B stars listed" and "not enough time left to observe any
    targets" never fire. Intended: `not np.any(...)`.
+   **Fix in the same commit:** the "no B stars" return at `:312` calls
+   `apflog(..., label='Error')`, and `apflog` has no `label` parameter, so the
+   moment that line becomes reachable it raises `TypeError`. It should be
+   `level='error'`.
 
-4. **`vstack` called with two positional arguments** at
-   `ParseUCOSched.py:944`: `astropy.table.vstack(too_table, star_table)`.
+3. **`vstack` called with two positional arguments** at
+   `ParseUCOSched.py:945`: `astropy.table.vstack(too_table, star_table)`.
    `vstack`'s second positional is `join_type`, so this raises whenever a
    `too.dat` exists. Intended: `vstack([too_table, star_table])`.
 
-5. **`update_local_starlist` returns `None` for the star table** when
-   `googledex.dat` is missing, and `get_next` assigns that straight onto
-   `ucotargets.star_table` (`UCOScheduler.py:827`), discarding a perfectly good
-   in-memory table before rebuilding it. In `UCOTargetTables.update_from_observed`
-   the assignment becomes conditional.
+4. **`update_local_starlist` returns `None` for the star table** when
+   `googledex.dat` is missing, and `UCOTargetTables.update_from_observed`
+   (`UCOTargetTables.py:207`) assigns that straight onto `self.star_table`,
+   discarding a perfectly good in-memory table before `get_next` rebuilds it.
+   Intended: only assign when the returned table is not `None`.
 
-6. **`dt.strftime('%s')`** at `UCOScheduler.py:238` is a glibc extension, not
-   portable, and the surrounding UTC-offset arithmetic is fragile (its own
-   comment says so). `calendar.timegm(dt.utctimetuple())` is the correct
-   spelling and needs no offset correction.
+5. **`dt.strftime('%s')`** at `Observability.py:75` (`time_check`, the
+   `start_time` branch) is a glibc extension, not portable, and the
+   surrounding UTC-offset arithmetic is fragile (its own comment says so): the
+   offset is taken from *now*, not from `dt`, so it is wrong across a DST
+   change. `calendar.timegm(dt.utctimetuple())` is the correct spelling and
+   needs no offset correction.
 
-7. **Dead code**: `compute_preferred_el` (`:383`) and `make_obs_block` (`:569`)
-   have no live callers. The obsblock path in `make_result` is commented out at
-   `:674-696`. Proposal: delete `compute_preferred_el`, and keep
-   `make_obs_block` in `ScriptobsLine.py` with a comment saying the calling path
-   is disabled, since re-enabling obsblocks is a plausible future want.
+6. **Disabled obsblock path.** `make_obs_block` (`ScriptobsLine.py:153`) has no
+   live callers; the only call is commented out in `make_result` at
+   `UCOScheduler.py:185`, part of the commented-out `obsblock` lines at
+   `:163-164` and `:183-185`. Proposal: keep `make_obs_block`, since
+   re-enabling obsblocks is a plausible future want, and add a comment saying
+   the calling path is disabled. (`compute_preferred_el`, the other dead
+   function, has been deleted.)
 
-8. **`config_defaults` result is almost entirely unused** — `get_next` builds
-   `config` and reads only `config['mode']`, which is `''`. It stays for
-   `ParseUCOSched.parse_UCOSched`'s `config=` parameter, but the `get_next` call
-   can drop it.
+7. **`config_defaults` result is almost entirely unused** — `get_next` builds
+   `config` at `UCOScheduler.py:284` and reads only `config['mode']`, which is
+   `''`, at `:344`. `config_defaults` stays for
+   `ParseUCOSched.parse_UCOSched`'s `config=` parameter, but the `get_next`
+   call can drop it.
+
+8. **`sim_nights.py` skips the first and last night of the range.**
+   `gen_datelist` (`utils/sim_nights.py:40`) advances `cur` by a day *before*
+   appending it, and loops `while cur < end`, so both the start and end dates
+   are dropped. `sim_nights.py 2026/09/28 2026/10/01` simulates only 09/29 and
+   09/30 (two "sun rose" lines, not four). Intended: include both endpoints.
+   This changes the baseline's night count, so fix it before recording the
+   `sim_nights.py` baseline that the other fixes are diffed against.
+
+9. **`compute_datetime` silently uses the current time for an `int`.**
+   `Observability.compute_datetime` (`Observability.py:21`) accepts a `float`,
+   `datetime` or `ephem.Date`, and falls through to `utcnow()` for anything
+   else — including an `int` Unix timestamp such as `calendar.timegm(...)`
+   returns. No error or log line, just the wrong time. Production is not
+   affected (`Observe` passes `time.time()`, a `float`), but it is an easy trap
+   in the sim scripts and tests. Intended: accept any real number
+   (`isinstance(ctime, (int, float))`, excluding `bool`).
 
 ## Implementation order
 
@@ -330,10 +351,11 @@ Each step leaves the tree runnable, so a bad step can be bisected.
    `sim_night.py` still runs unchanged and can be diffed against step 4.
 7. **Port the call sites.** `Observe.py`, `Main.sin`, `sim_night.py`,
    `sim_nights.py` to the object API. Delete the temporary module-level shim.
-8. **Bug fixes**, one commit each, each one re-run through `sim_nights.py` and
-   diffed against the step-4 baseline. Items 2, 3, 4, 5 first (clear fixes),
-   then item 1 (cal stars) last, since it is the one that visibly changes target
-   selection.
+8. **Bug fixes**, one commit each. Item 8 (`sim_nights.py` date range) first,
+   then record the `sim_nights.py` baseline. Then items 1, 2, 3, 4 (clear
+   fixes that change target selection), each re-run through `sim_nights.py`
+   and diffed against that baseline. Items 5, 6, 7, 9 last; they should not
+   change target selection.
 
 ## How this gets verified
 
