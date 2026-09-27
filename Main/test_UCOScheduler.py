@@ -12,16 +12,17 @@ import ParseUCOSched
 import Observability
 import ScriptobsLine
 import UCOTargetTables
-from UCOScheduler import get_next
+import UCOScheduler
 
 try:
     import ktl
 except:
     pass
 
-def test_basic_ops(ucotargets):
+def test_basic_ops(scheduler):
     """
-    test_basic_ops()
+    test_basic_ops(scheduler)
+    scheduler - UCOScheduler object
     """
 
     # Test the basic operations of the scheduler
@@ -37,7 +38,7 @@ def test_basic_ops(ucotargets):
     OTFN = "observed_targets"
     ot = open(OTFN, "w")
     starttime = time.time()
-    result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=True, \
+    result = scheduler.get_next(starttime, 7.99, 0.4, bstar=True, \
                       do_templates=False)
     while len(result['SCRIPTOBS']) > 0:
         ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
@@ -45,7 +46,7 @@ def test_basic_ops(ucotargets):
 
     for i in range(5):
 
-        result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=False, \
+        result = scheduler.get_next(starttime, 7.99, 0.4, bstar=False, \
                          do_templates=False)
         #result = smartList("tst_targets", time.time(), 13.5, 2.4)
 
@@ -64,23 +65,24 @@ def test_basic_ops(ucotargets):
 
     return starttime
 
-def test_failure(starttime, ucotargets):
+def test_failure(starttime, scheduler):
     '''
-    test_failure(starttime, ucotargets)
+    test_failure(starttime, scheduler)
     starttime - time to start the test
-    ucotargets - UCOTargetTables object
+    scheduler - UCOScheduler object
     '''
     print("Testing a failure")
     try:
         ktl.write('apftask', 'SCRIPTOBS_LINE_RESULT', 2, binary=True)
     except:
         pass
-    result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=False, \
+    result = scheduler.get_next(starttime, 7.99, 0.4, bstar=False, \
                      do_templates=True, )
     print(result)
     print("Nonsensical start time")
-    result = get_next(starttime, 7.99, 0.4, ucotargets, bstar=True, \
-                     do_templates=True, start_time=1)
+    scheduler.start_time = 1
+    result = scheduler.get_next(starttime, 7.99, 0.4, bstar=True, \
+                     do_templates=True)
     print(result)
     return
 
@@ -140,9 +142,11 @@ def test_main():
     # this calls make_hour_table 
     uco_targets.make_hour_table()
 
-    starttime = test_basic_ops(uco_targets)
+    scheduler = UCOScheduler.UCOScheduler(uco_targets)
 
-    test_failure(starttime, uco_targets)
+    starttime = test_basic_ops(scheduler)
+
+    test_failure(starttime, scheduler)
     test_templates(uco_targets)
 
 if __name__ == '__main__':

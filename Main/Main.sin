@@ -31,7 +31,7 @@ except:
 import APFControl
 import TelescopeControl
 import ParseUCOSched
-import UCOScheduler as ds
+import UCOScheduler
 from apflog import apflog, logpush
 import Calibrate
 import getUCOTargets
@@ -487,7 +487,18 @@ def main():
     # Start the main watcher thread
     uco_targets = UCOTargetTables.UCOTargetTables(opt)
     _ = getUCOTargets.getUCOTargets(uco_targets, task=parent, wait_time=target_time)
-    observe = Observe.Observe(apf, tel, opt, uco_targets, task=parent)
+
+    # the scheduler is built here, not in Observe, so its run-state
+    # survives the Observe thread being restarted below
+    start_time = None
+    if opt.start:
+        try:
+            start_time = float(opt.start)
+        except ValueError as e:
+            apflog("ValueError: %s" % (e), echo=True, level='error')
+    scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=opt.owner if opt.owner else 'public',
+                                          start_time=start_time)
+    observe = Observe.Observe(apf, tel, opt, scheduler, task=parent)
 
     apflog("Starting the main watcher." ,echo=True)
     mstart = astropy.time.Time(ktl.read("apftask","master_last_start",binary=True),format='unix')
@@ -519,7 +530,7 @@ def main():
                 err_str = "Observe thread has died. Will attempt to restart."
                 apflog(err_str, level='error', echo=True)
 
-                observe = Observe.Observe(apf, tel, opt, uco_targets, task=parent)
+                observe = Observe.Observe(apf, tel, opt, scheduler, task=parent)
                 observe.start()
 
             if calibrate:

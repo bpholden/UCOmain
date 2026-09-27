@@ -11,7 +11,7 @@ import ephem
 import astropy.io.ascii
 
 sys.path.append("../Main")
-import UCOScheduler as ds
+import UCOScheduler
 
 import NightSim 
 import ParseUCOSched
@@ -138,12 +138,14 @@ def main():
 
     stars = ParseUCOSched.gen_stars(ucotargets.star_table)
 
+    scheduler = UCOScheduler.UCOScheduler(ucotargets, outfn=options.infile, \
+                                          outdir=outdir, start_time=start_time)
+
     while observing:
         curtime = ephem.Date(curtime)
 
-        result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, ucotargets,\
-                             bstar=bstar, outfn=options.infile, do_templates=do_temp,\
-                             do_too=do_too, outdir=outdir, start_time=start_time)
+        result = scheduler.get_next(curtime.datetime(), lastfwhm, lastslow, \
+                                    bstar=bstar, do_templates=do_temp, do_too=do_too)
         if result:
             if result['isBstar']:
                 bstar = False

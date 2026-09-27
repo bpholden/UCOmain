@@ -14,7 +14,7 @@ import astropy
 sys.path.insert(1,"../Main")
 
 import NightSim
-import UCOScheduler as ds
+import UCOScheduler
 import ParseUCOSched
 import UCOTargetTables
 
@@ -205,6 +205,9 @@ def main():
     ucotargets = UCOTargetTables.UCOTargetTables(options)
     ucotargets.make_rank_table()
 
+    scheduler = UCOScheduler.UCOScheduler(ucotargets, outfn=options.infile, \
+                                          outdir=options.outdir)
+
     for datestr in datelist:
 
         if os.path.exists('hour_table'):
@@ -227,9 +230,8 @@ def main():
         ot.close()
         observing = True
         while observing:
-            result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, ucotargets,\
-                                    bstar=bstar, outfn=options.infile,\
-                                    do_templates=do_temp,outdir=options.outdir)
+            result = scheduler.get_next(curtime.datetime(), lastfwhm, lastslow, \
+                                        bstar=bstar, do_templates=do_temp)
             if result:
                 if bstar:
                     bstar = False

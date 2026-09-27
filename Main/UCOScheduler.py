@@ -234,7 +234,7 @@ class UCOScheduler(object):
     list of objects that recently failed to be observed.
 
     '''
-    def __init__(self, targets, opt=None, owner='public', outdir=None,
+    def __init__(self, targets, owner='public', outdir=None,
                  do_templates=False, do_too=False, start_time=None,
                  outfn='googledex.dat', toofn='too.dat'):
         self.targets = targets
@@ -558,36 +558,3 @@ class UCOScheduler(object):
             res['DECKER'] = decker
             apflog("Attempting template observation of %s" % (star_table['name'][idx]), echo=True)
 
-
-# Temporary module-level API, kept until Observe and the sim scripts
-# construct their own UCOScheduler (step 7 of docs/scheduler_refactor.md).
-# One shared instance, so last_objs_attempted survives between calls
-# as the old module global did.
-_scheduler = None
-
-def zero_last_objs_attempted():
-    """
-    zero_last_objs_attempted()
-
-    Empties the shared scheduler's last_objs_attempted.
-    """
-    if _scheduler is not None:
-        _scheduler.zero_last_objs_attempted()
-
-def get_next(ctime, seeing, slowdown, ucotargets, \
-                bstar=False, do_templates=False, \
-                do_too=False, owner='public', \
-                outfn="googledex.dat", toofn="too.dat", \
-                outdir=None, focval=0, inst='', \
-                start_time=None):
-    global _scheduler
-    if _scheduler is None:
-        _scheduler = UCOScheduler(ucotargets)
-    _scheduler.targets = ucotargets
-    _scheduler.owner = owner
-    _scheduler.outdir = outdir or os.getcwd()
-    _scheduler.outfn = outfn
-    _scheduler.toofn = toofn
-    _scheduler.start_time = start_time
-    return _scheduler.get_next(ctime, seeing, slowdown, bstar=bstar, focval=focval,
-                               do_templates=do_templates, do_too=do_too)
