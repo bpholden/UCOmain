@@ -16,7 +16,7 @@ sys.path.insert(1,"../Main")
 import NightSim
 import UCOScheduler as ds
 import ParseUCOSched
-import UCOTargets
+import UCOTargetTables
 
 
 def read_datefile(datefn):
@@ -202,7 +202,7 @@ def main():
     bstar = options.bstar
     simoutfp, star_strs, star_dates = prep_simout(options.outdir, options.simout)
 
-    ucotargets = UCOTargets.UCOTargets(options)
+    ucotargets = UCOTargetTables.UCOTargetTables(options)
     ucotargets.make_rank_table()
 
     for datestr in datelist:

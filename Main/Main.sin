@@ -35,7 +35,7 @@ import UCOScheduler as ds
 from apflog import apflog, logpush
 import Calibrate
 import getUCOTargets
-import UCOTargets
+import UCOTargetTables
 import Observe
 import SunPos
 import SchedulerConsts
@@ -485,7 +485,7 @@ def main():
         calibrate = None
 
     # Start the main watcher thread
-    uco_targets = UCOTargets.UCOTargets(opt)
+    uco_targets = UCOTargetTables.UCOTargetTables(opt)
     _ = getUCOTargets.getUCOTargets(uco_targets, task=parent, wait_time=target_time)
     observe = Observe.Observe(apf, tel, opt, uco_targets, task=parent)
 

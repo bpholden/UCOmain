@@ -11,7 +11,7 @@ import numpy as np
 import ParseUCOSched
 import Observability
 import ScriptobsLine
-import UCOTargets
+import UCOTargetTables
 from UCOScheduler import get_next
 
 try:
@@ -68,7 +68,7 @@ def test_failure(starttime, ucotargets):
     '''
     test_failure(starttime, ucotargets)
     starttime - time to start the test
-    ucotargets - UCOTargets object
+    ucotargets - UCOTargetTables object
     '''
     print("Testing a failure")
     try:
@@ -87,7 +87,7 @@ def test_failure(starttime, ucotargets):
 def test_templates(ucotargets):
     """
     test_templates(ucotargets)
-    ucotargets - UCOTargets object
+    ucotargets - UCOTargetTables object
     """
     print("Testing templates")
     t_dt = datetime.datetime.now()
@@ -133,7 +133,7 @@ def test_main():
             self.time_left = "time_left.csv"
             self.rank_table = RANK_TABLEN
 
-    uco_targets = UCOTargets.UCOTargets(Opt())
+    uco_targets = UCOTargetTables.UCOTargetTables(Opt())
 
     # this calls make_rank_table
     uco_targets.make_hour_constraints()

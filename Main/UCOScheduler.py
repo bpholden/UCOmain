@@ -8,7 +8,6 @@ import datetime
 import numpy as np
 import ephem
 
-import ParseUCOSched
 import SchedulerConsts
 import Observability
 import ScriptobsLine
@@ -132,61 +131,6 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
     new_pri = need_cal_star(star_table, observed, new_pri)
 
     return new_pri
-
-def update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None):
-    '''
-    update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None)
-
-    Updates hour_table with history of observations.
-    observed is the observed log
-    dt is the current datetime
-    outfn is the output filename, defaults to hour_table
-    outdir is the output directory, defaults to current working directory
-
-    '''
-
-    if not outdir :
-        outdir = os.getcwd()
-
-    outfn = os.path.join(outdir, outfn)
-
-    hours = dict()
-
-    # observed objects have lists as attributes
-    # reverse time order, so most recent target observed is first.
-
-    observed.reverse()
-
-    nobj = len(observed.names)
-    for i in range(0,nobj):
-        own = observed.owners[i]
-        if own not in list(hours):
-            hours[own] = 0.0
-
-    cur = dt
-    for i in range(0,nobj):
-        hr, mn = observed.times[i]
-        prev = datetime.datetime(dt.year, dt.month, dt.day, hr, mn)
-        diff = cur - prev
-        hourdiff = diff.days * 24 + diff.seconds / 3600.
-        if hourdiff > 0:
-            hours[observed.owners[i]] += hourdiff
-            cur = prev
-
-    for ky in list(hours.keys()):
-        if ky == 'public':
-            hour_table['cur'][hour_table['sheetn'] == 'RECUR_A100'] = hours[ky]
-        else:
-            hour_table['cur'][hour_table['sheetn'] == ky] = hours[ky]
-
-    try:
-        hour_table.write(outfn,format='ascii',overwrite=True)
-    except Exception as e:
-        apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
-
-    observed.reverse()
-
-    return hour_table
 
 
 def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode=''):
@@ -335,14 +279,11 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
             ptime = datetime.datetime.utcfromtimestamp(int(time.time()))
 
     apflog("get_next(): Updating star list with previous observations", echo=True)
-    observed, ucotargets.star_table = ParseUCOSched.update_local_starlist(ptime,\
-                                                               outfn=outfn, toofn=toofn, \
-                                                                observed_file="observed_targets")
+    observed = ucotargets.update_from_observed(ptime, outfn=outfn, toofn=toofn)
 
     ucotargets.make_hour_table()
 
-    if ucotargets.hour_table is not None:
-        ucotargets.hour_table = update_hour_table(ucotargets.hour_table, observed, ptime)
+    ucotargets.update_hour_table(observed, ptime)
     # Parse the Googledex
     # Note -- RA and Dec are returned in Radians
 
@@ -351,7 +292,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
         ucotargets.make_star_table()
     ucotargets.append_too_column()
 
-    stars = ParseUCOSched.gen_stars(ucotargets.star_table)
+    stars = ucotargets.gen_stars()
     targ_num = len(stars)
 
     last_failure = last_attempted()
