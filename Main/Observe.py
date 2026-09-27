@@ -980,7 +980,7 @@ class Observe(threading.Thread):
                                     break
 
 
-                    elif not rising or (rising and float(cursunel) < (sunel_lim - 5)) and self.can_open and not self.bad_weather:
+                    elif not rising or (rising and float(cursunel) < (sunel_lim - 5)) and self.can_open:
                         success = opening(cursunel)
                         omsg = "Opening at %s" % (cursunel)
                         APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
