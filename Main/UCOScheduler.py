@@ -232,10 +232,14 @@ class UCOScheduler(object):
     Holds the run-state that must survive between calls, such as the
     list of objects that recently failed to be observed.
 
+    track_failures - if True, get_next records the last object attempted
+    when it failed and skips it on later calls, until
+    zero_last_objs_attempted is called.
+
     '''
     def __init__(self, targets, owner='public', outdir=None,
                  do_templates=False, do_too=False, start_time=None,
-                 outfn='googledex.dat', toofn='too.dat'):
+                 outfn='googledex.dat', toofn='too.dat', track_failures=False):
         self.targets = targets
         self.owner = owner
         self.outdir = outdir or os.getcwd()
@@ -244,6 +248,7 @@ class UCOScheduler(object):
         self.do_templates = do_templates
         self.do_too = do_too
         self.start_time = start_time
+        self.track_failures = track_failures
 
         # run-state, was a module global
         self.last_objs_attempted = []
@@ -296,7 +301,8 @@ class UCOScheduler(object):
         stars = self.stars
         targ_num = len(stars)
 
-        self.record_last_attempt()
+        if self.track_failures:
+            self.record_last_attempt()
 
         self._sky_state(dt)
 
@@ -307,8 +313,8 @@ class UCOScheduler(object):
         # Note which of these are B-Stars for later.
         bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
 
-        if bstar and np.any(bstars) is False:
-            apflog("get_next(): No B stars listed in target sheets!", label='Error', echo=True)
+        if bstar and not np.any(bstars):
+            apflog("get_next(): No B stars listed in target sheets!", level='error', echo=True)
             return None
 
         apflog("get_next(): Computing exposure times", echo=True)
@@ -450,7 +456,7 @@ class UCOScheduler(object):
         time_good = Observability.time_check(star_table, totexptimes, dt, start_time=self.start_time)
 
         available = available & time_good
-        if np.any(available) is False:
+        if not np.any(available):
             apflog( "get_next(): Not enough time left to observe any targets", level="error", echo=True)
             return None
 

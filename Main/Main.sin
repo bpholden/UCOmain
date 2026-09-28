@@ -497,7 +497,7 @@ def main():
         except ValueError as e:
             apflog("ValueError: %s" % (e), echo=True, level='error')
     scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=opt.owner if opt.owner else 'public',
-                                          start_time=start_time)
+                                          start_time=start_time, track_failures=False)
     observe = Observe.Observe(apf, tel, opt, scheduler, task=parent)
 
     apflog("Starting the main watcher." ,echo=True)
