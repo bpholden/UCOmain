@@ -25,6 +25,7 @@ class UCOTargetTables(object):
         self.debug = opt.test if hasattr(opt, 'test') else False
         self.star_table_name = 'googledex.dat' # historical
         self.star_table = None
+        self.stars = None
         self.rank_table = None
         self.rank_table_filename = "rank_table"
         self.hour_table = None
@@ -178,10 +179,10 @@ class UCOTargetTables(object):
         self.append_too_column()
 
     def check_files(self, outfn=None):
-        """ check_files(outfn=None)
-            if the star table file (googledex.dat by default) is missing,
-            restores it from its .1 backup
-        """
+        '''
+        If the star table file is missing, restore it from its backup.
+
+        '''
         if outfn is None:
             outfn = self.star_table_name
         outdir = os.getcwd()
@@ -197,47 +198,32 @@ class UCOTargetTables(object):
             err_str = "Cannot copy %s to %s: %s %s" % (backup, fullpath, type(e), e)
             apflog(err_str, echo=True, level='error')
 
-    def update_from_observed(self, ptime, outfn=None, toofn='too.dat',
-                             observed_file="observed_targets"):
+    def update_from_observed(self, ptime, outfn=None, toofn='too.dat'):
         '''
-        observed = update_from_observed(ptime, outfn=None, toofn='too.dat')
+        Update the local star table file with the observed log,
+        set star_table from it, and return the ObservedLog.
 
-        Updates the star table on disk with the observations in observed_file,
-        sets self.star_table to the result and returns the ObservedLog.
-
-        If the star table file is missing, it is rebuilt with make_star_table
-        and the observations are applied to the rebuilt copy. The observations
-        only reach the table through the file, so keeping the in-memory table
-        instead would miss every observation until the file came back.
-        If the file cannot be rebuilt, self.star_table is left as it was.
         '''
         if outfn is None:
             outfn = self.star_table_name
-        observed, star_table = ParseUCOSched.update_local_starlist(ptime,\
+        observed, self.star_table = ParseUCOSched.update_local_starlist(ptime,\
                                                                outfn=outfn, toofn=toofn, \
-                                                                observed_file=observed_file)
-        if star_table is None:
-            apflog("update_from_observed(): %s is missing, rebuilding it" % (outfn), echo=True)
-            previous = self.star_table
-            self.star_table = None
-            self.make_star_table()
-            if self.star_table is None:
-                apflog("update_from_observed(): cannot rebuild %s, keeping previous star table" % (outfn),
-                       level='error', echo=True)
-                self.star_table = previous
-                return observed
-            observed, star_table = ParseUCOSched.update_local_starlist(ptime,\
-                                                               outfn=outfn, toofn=toofn, \
-                                                                observed_file=observed_file)
-        if star_table is not None:
-            self.star_table = star_table
+                                                                observed_file="observed_targets")
         return observed
 
-    def update_hour_table(self, observed, dt, outfn=None, outdir=None):
+    def gen_stars(self):
         '''
-        update_hour_table(observed, dt, outfn=None, outdir=None)
+        Make the pyephem objects for the current star table.
 
-        Updates self.hour_table with history of observations and writes it to disk.
+        '''
+        self.stars = ParseUCOSched.gen_stars(self.star_table)
+        return self.stars
+
+    def update_hour_table(self, observed, dt, outfn='hour_table', outdir=None):
+        '''
+        update_hour_table(observed, dt, outfn='hour_table', outdir=None)
+
+        Updates hour_table with history of observations.
         observed is the observed log
         dt is the current datetime
         outfn is the output filename, defaults to hour_table
@@ -247,15 +233,11 @@ class UCOTargetTables(object):
         if self.hour_table is None:
             return None
 
-        if outfn is None:
-            outfn = self.hour_table_filename
-
         if not outdir :
             outdir = os.getcwd()
 
         outfn = os.path.join(outdir, outfn)
 
-        hour_table = self.hour_table
         hours = dict()
 
         # observed objects have lists as attributes
@@ -281,29 +263,18 @@ class UCOTargetTables(object):
 
         for ky in list(hours.keys()):
             if ky == 'public':
-                hour_table['cur'][hour_table['sheetn'] == 'RECUR_A100'] = hours[ky]
+                self.hour_table['cur'][self.hour_table['sheetn'] == 'RECUR_A100'] = hours[ky]
             else:
-                hour_table['cur'][hour_table['sheetn'] == ky] = hours[ky]
+                self.hour_table['cur'][self.hour_table['sheetn'] == ky] = hours[ky]
 
         try:
-            hour_table.write(outfn,format='ascii',overwrite=True)
+            self.hour_table.write(outfn,format='ascii',overwrite=True)
         except Exception as e:
             apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
 
         observed.reverse()
 
-        self.hour_table = hour_table
-        return hour_table
-
-    def gen_stars(self):
-        '''
-        stars = gen_stars()
-
-        Makes the list of ephem.FixedBody objects for self.star_table,
-        keeps it as self.stars and returns it.
-        '''
-        self.stars = ParseUCOSched.gen_stars(self.star_table)
-        return self.stars
+        return self.hour_table
 
 def main():
     class Opts:

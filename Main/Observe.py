@@ -18,7 +18,7 @@ except:
 import APFControl
 import TelescopeControl
 from apflog import apflog
-import UCOScheduler as ds
+import UCOScheduler
 import UCOTargetTables
 import ExposureCalculations
 import SchedulerConsts
@@ -26,25 +26,21 @@ import SchedulerConsts
 DMLIM = 1140
 
 class Observe(threading.Thread):
-    """ Observe(apf, opt, tot_temps=4, task='master')
+    """ Observe(apf, tel, opt, scheduler, tot_temps=4, task='master')
         The Observe class is a thread
         that runs the observing process.
     """
-    def __init__(self, apf, tel, opt, uco_targets, tot_temps=4, task='master'):
+    def __init__(self, apf, tel, opt, scheduler, tot_temps=4, task='master'):
         threading.Thread.__init__(self)
         self.daemon = True
         self.apf = apf
         self.tel = tel
-        self.uco_targets = uco_targets
+        self.scheduler = scheduler
         self.task = task
         if opt.name:
             self.user = opt.name
         else:
             self.user = 'apf'
-        if opt.owner:
-            self.owner = opt.owner
-        else:
-            self.owner = 'public'
 
         if opt.windshield:
             self.windshield_mode = opt.windshield
@@ -81,14 +77,6 @@ class Observe(threading.Thread):
             self.rank_tablen = opt.rank_table
         else:
             self.rank_tablen = None
-        if opt.start:
-            try:
-                self.start_time = float(opt.start)
-            except ValueError as e:
-                apflog("ValueError: %s" % (e), echo=True, level='error')
-                self.start_time = None
-        else:
-            self.start_time = None
         if opt.raster:
             self.raster = opt.raster
         else:
@@ -222,9 +210,9 @@ class Observe(threading.Thread):
             apflog("New starlist %s detected" % (self.fixed_list), echo=True)
 
         if start_time > 0:
-            if start_time != self.start_time:
-                self.start_time = start_time
-                apflog("New start time %s detected" % (str(self.start_time)), echo=True)
+            if start_time != self.scheduler.start_time:
+                self.scheduler.start_time = start_time
+                apflog("New start time %s detected" % (str(self.scheduler.start_time)), echo=True)
 
     def check_star(self, haveobserved):
         """ Observe.obsBstar(haveobserved)
@@ -301,14 +289,14 @@ class Observe(threading.Thread):
             should we start a fixed observing list or not? true if start 
             time is None or if w/in + 1 hour - 3 minutes of start time
         """
-        if self.start_time is None:
+        if self.scheduler.start_time is None:
             return True
         ct = time.time()
-        if self.start_time - ct < 180 and ct - self.start_time < 3600:
+        if self.scheduler.start_time - ct < 180 and ct - self.scheduler.start_time < 3600:
             self.apf.ldone.write(0, binary=True)
             return True
-        if ct - self.start_time > 3600:
-            self.start_time = None
+        if ct - self.scheduler.start_time > 3600:
+            self.scheduler.start_time = None
         return False
 
 
@@ -508,13 +496,11 @@ class Observe(threading.Thread):
                 if not self.apf.gcam_power.binary:
                     return
 
-            self.uco_targets.check_files()
+            self.scheduler.targets.check_files()
 
-            self.target = ds.get_next(time.time(), seeing, slowdown, self.uco_targets,\
-                                         bstar=self.obs_B_star, \
-                                         do_too=self.do_too, owner=self.owner,  \
-                                         do_templates=self.do_temp, focval=self.focval, \
-                                         start_time=self.start_time)
+            self.target = self.scheduler.get_next(time.time(), seeing, slowdown, \
+                                         bstar=self.obs_B_star, focval=self.focval, \
+                                         do_templates=self.do_temp, do_too=self.do_too)
 
             if self.target is None:
                 log_str = "No acceptable target was found. "
@@ -643,7 +629,7 @@ class Observe(threading.Thread):
                     apflog("Failure power cycling telescope", echo=True, level="alert")
 
             self.tel.check_FCUs()
-            ds.zero_last_objs_attempted()
+            self.scheduler.zero_last_objs_attempted()
             self.star_failures = 0
             self.can_open = True
             self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
@@ -713,7 +699,7 @@ class Observe(threading.Thread):
             if tot == 0:
                 apflog("Error: starlist %s is empty" % (self.fixed_list), level="error")
                 self.fixed_list = None
-                self.start_time = None
+                self.scheduler.start_time = None
                 self.target = None
             else:
                 apflog("%d total starlist lines and %d lines done." % (tot, self.apf.ldone))
@@ -752,7 +738,7 @@ class Observe(threading.Thread):
                 if not os.path.exists(self.fixed_list):
                     apflog("Error: starlist %s does not exist" % (self.fixed_list), level="error")
                     self.fixed_list = None
-                    self.start_time = None
+                    self.scheduler.start_time = None
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
                     APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
 
@@ -764,7 +750,7 @@ class Observe(threading.Thread):
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
                     APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
                     self.fixed_list = None
-                    self.start_time = None
+                    self.scheduler.start_time = None
                     self.target = None
                     if not self.apf.test:
                         APFTask.set(self.task, suffix="STARLIST", value="")
@@ -874,13 +860,13 @@ class Observe(threading.Thread):
                     if tot == 0:
                         apflog("Error: starlist %s is empty" % (self.fixed_list), level="error")
                         self.fixed_list = None
-                        self.start_time = None
+                        self.scheduler.start_time = None
                         self.target = None
                     else:
                         self.target = {}
                         self.target['SCRIPTOBS'] = self.fixed_target['SCRIPTOBS']
                         self.fixed_list = None
-                        self.start_time = None
+                        self.scheduler.start_time = None
                         self.fixed_target = None
                         APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
                         APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
@@ -1130,8 +1116,9 @@ if __name__ == "__main__":
     print(str(t_tel))
 
     uco_targets = UCOTargetTables.UCOTargetTables(t_opt)
+    scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=t_opt.owner, start_time=t_opt.start)
 
-    observe = Observe(t_apf, t_tel, t_opt, uco_targets, task=parent)
+    observe = Observe(t_apf, t_tel, t_opt, scheduler, task=parent)
     APFTask.waitFor(parent, True, timeout=2)
     observe.start()
     while observe.signal:

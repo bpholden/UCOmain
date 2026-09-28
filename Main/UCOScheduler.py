@@ -20,19 +20,6 @@ try:
 except:
     from fake_apflog import apflog
 
-# a global
-last_objs_attempted = []
-
-def zero_last_objs_attempted():
-    """
-    zero_last_objs_attempted()
-
-    Sets the global last_objs_attempted to an empty list.
-    """
-    global last_objs_attempted
-    last_objs_attempted = []
-    return
-
 def need_cal_star(star_table, observed, priorities):
     """
     need_cal_star(star_table, priorities)
@@ -239,232 +226,328 @@ def last_attempted():
     return failed_obs
 
 
-def get_next(ctime, seeing, slowdown, ucotargets, \
-                bstar=False, do_templates=False, \
-                do_too=False, owner='public', \
-                outfn="googledex.dat", toofn="too.dat", \
-                outdir=None, focval=0, inst='', \
-                start_time=None):
-    """ Determine the best target to observe for the given input.
-        Takes the time, seeing, and slowdown factor.
-        Returns a dict with target RA, DEC, Total Exposure time, and scritobs line
-    """
+class UCOScheduler(object):
+    '''
+    Selects the next target to observe from a UCOTargetTables object.
+    Holds the run-state that must survive between calls, such as the
+    list of objects that recently failed to be observed.
 
-    global last_objs_attempted
+    '''
+    def __init__(self, targets, owner='public', outdir=None,
+                 do_templates=False, do_too=False, start_time=None,
+                 outfn='googledex.dat', toofn='too.dat'):
+        self.targets = targets
+        self.owner = owner
+        self.outdir = outdir or os.getcwd()
+        self.outfn = outfn
+        self.toofn = toofn
+        self.do_templates = do_templates
+        self.do_too = do_too
+        self.start_time = start_time
 
-    if not outdir:
-        outdir = os.getcwd()
+        # run-state, was a module global
+        self.last_objs_attempted = []
 
-    dt = Observability.compute_datetime(ctime)
+        # per-call scratch, kept for logging and for Observe to inspect
+        self.observed = None
+        self.apf_obs = None
+        self.moon = None
+        self.stars = None
+        self.result = None
+        self.template_conditions_met = False
 
-    config = ScriptobsLine.config_defaults(owner)
+    def __repr__(self):
+        return "<UCOScheduler targets=%s owner=%s>" % (self.targets, self.owner)
 
-    apflog( "get_next(): Finding target for time %s" % (dt), echo=True)
+    def zero_last_objs_attempted(self):
+        self.last_objs_attempted = []
 
-    if slowdown > SchedulerConsts.SLOWDOWN_MAX:
-        log_str = "get_next(): Slowndown value of %f " % (slowdown)
-        log_str += "exceeds maximum of %f at time %s" % (SchedulerConsts.SLOWDOWN_MAX, dt)
-        apflog(log_str , echo=True)
-        return None
+    def record_last_attempt(self):
+        last_failure = last_attempted()
+        if last_failure is not None:
+            self.last_objs_attempted.append(last_failure)
 
-    try:
-        apfguide = ktl.Service('apfguide')
-        stamp = apfguide['midptfin'].read(binary=True)
-        ptime = datetime.datetime.utcfromtimestamp(stamp)
-    except:
-        if type(dt) == datetime.datetime:
-            ptime = dt
+    def get_next(self, ctime, seeing, slowdown, bstar=False, focval=0,
+                 do_templates=None, do_too=None):
+        """ Determine the best target to observe for the given input.
+            Takes the time, seeing, and slowdown factor.
+            Returns a dict with target RA, DEC, Total Exposure time, and scritobs line
+        """
+        if do_templates is None:
+            do_templates = self.do_templates
+        if do_too is None:
+            do_too = self.do_too
+
+        dt = Observability.compute_datetime(ctime)
+
+        config = ScriptobsLine.config_defaults(self.owner)
+
+        apflog( "get_next(): Finding target for time %s" % (dt), echo=True)
+
+        if slowdown > SchedulerConsts.SLOWDOWN_MAX:
+            log_str = "get_next(): Slowndown value of %f " % (slowdown)
+            log_str += "exceeds maximum of %f at time %s" % (SchedulerConsts.SLOWDOWN_MAX, dt)
+            apflog(log_str , echo=True)
+            return None
+
+        ptime = self._previous_obs_time(dt)
+        self._refresh_tables(ptime)
+        star_table = self.targets.star_table
+        stars = self.stars
+        targ_num = len(stars)
+
+        self.record_last_attempt()
+
+        self._sky_state(dt)
+
+        self.template_conditions_met = Observability.template_conditions(self.moon, seeing, slowdown)
+        do_templates = do_templates and self.template_conditions_met
+
+        apflog("get_next(): Will attempt templates = %s" % str(do_templates) ,echo=True)
+        # Note which of these are B-Stars for later.
+        bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
+
+        if bstar and np.any(bstars) is False:
+            apflog("get_next(): No B stars listed in target sheets!", label='Error', echo=True)
+            return None
+
+        apflog("get_next(): Computing exposure times", echo=True)
+        totexptimes = Observability.tot_exp_times(star_table, targ_num)
+
+        found = self._available(dt, seeing, slowdown, bstar, bstars, totexptimes,
+                                do_too, do_templates)
+        if found is None:
+            return None
+        available, cur_elevations, scaled_elevations = found
+
+        final_priorities = compute_priorities(star_table, dt,
+                                                 rank_table=self.targets.rank_table,
+                                                 hour_table=self.targets.hour_table,
+                                                 do_templates=do_templates,
+                                                 observed=self.observed)
+
+        idx = self._select(available, final_priorities, bstar, cur_elevations, scaled_elevations)
+        if idx is None:
+            return None
+        if bstar:
+            focval = 2
+
+        stars[idx].compute(self.apf_obs)
+
+        take_template = do_templates and star_table['Template'][idx] == 'N' \
+            and star_table['I2'][idx] == 'Y'
+        if star_table['only_template'][idx] == 'Y' and do_templates:
+            take_template = True
+
+        res =  make_result(stars, star_table, totexptimes, final_priorities, dt, \
+                           idx, focval=focval, bstar=bstar, mode=config['mode'])
+        if take_template and bstar is False:
+            self._add_template(res, idx, dt, bstars)
+
+        res['template_conditions_met'] = self.template_conditions_met
+        self.result = res
+        return res
+
+    def _previous_obs_time(self, dt):
+        '''
+        Time of the previous observation, from the guider, falling back to dt.
+
+        '''
+        try:
+            apfguide = ktl.Service('apfguide')
+            stamp = apfguide['midptfin'].read(binary=True)
+            ptime = datetime.datetime.utcfromtimestamp(stamp)
+        except:
+            if type(dt) == datetime.datetime:
+                ptime = dt
+            else:
+                ptime = datetime.datetime.utcfromtimestamp(int(time.time()))
+        return ptime
+
+    def _refresh_tables(self, ptime):
+        '''
+        Fold the observed log into the tables and regenerate the ephem objects.
+
+        '''
+        apflog("get_next(): Updating star list with previous observations", echo=True)
+        self.observed = self.targets.update_from_observed(ptime, outfn=self.outfn, toofn=self.toofn)
+
+        self.targets.make_hour_table()
+
+        self.targets.update_hour_table(self.observed, ptime)
+        # Parse the Googledex
+        # Note -- RA and Dec are returned in Radians
+
+        if self.targets.star_table is None:
+            apflog("get_next(): Parsing the star list", echo=True)
+            self.targets.make_star_table()
+        self.targets.append_too_column()
+
+        self.stars = self.targets.gen_stars()
+
+    def _sky_state(self, dt):
+        '''
+        Set the observatory and the moon for dt.
+
+        '''
+        self.apf_obs = SunPos.make_APF_obs(dt)
+
+        # Calculate the moon's location
+        self.moon = ephem.Moon()
+        self.moon.compute(self.apf_obs)
+
+    def _available(self, dt, seeing, slowdown, bstar, bstars, totexptimes, do_too, do_templates):
+        '''
+        Apply the visibility and condition cuts.
+        Returns (available, cur_elevations, scaled_elevations), or None
+        if no target survives.
+
+        '''
+        star_table = self.targets.star_table
+        targ_num = len(self.stars)
+
+        available = np.ones(targ_num, dtype=bool)
+        cur_elevations = np.zeros(targ_num, dtype=float)
+        scaled_elevations = np.zeros(targ_num, dtype=float)
+
+        # Is the target behind the moon?
+
+        moon_check = Observability.behind_moon(self.moon, star_table['ra'], star_table['dec'])
+        available = available & moon_check
+        log_str = "get_next(): Moon visibility check - stars rejected = "
+        log_str += "%s" % ( np.asarray(star_table['name'][np.logical_not(moon_check)]))
+        apflog(log_str, echo=True)
+
+        sun_el_good = SunPos.sun_el_check(star_table, self.apf_obs, horizon='-18')
+        available = available & sun_el_good
+
+        # other condition cuts (seeing, transparency, moon phase)
+        cuts = Observability.condition_cuts(self.moon, seeing, slowdown, star_table)
+        available = available & cuts
+
+        if len(self.last_objs_attempted)>0:
+            for n in self.last_objs_attempted:
+                attempted = star_table['name'] == n
+                available = available & np.logical_not(attempted) # Available and not observed
+
+        if bstar:
+            # We just need a B star
+            apflog("get_next(): Selecting B stars", echo=True)
+            available = available & bstars
+            shiftwest = False
         else:
-            ptime = datetime.datetime.utcfromtimestamp(int(time.time()))
+            apflog("get_next(): Culling B stars", echo=True)
+            available = available & np.logical_not(bstars)
+            shiftwest = True
 
-    apflog("get_next(): Updating star list with previous observations", echo=True)
-    observed = ucotargets.update_from_observed(ptime, outfn=outfn, toofn=toofn)
+        if do_too is False:
+            apflog("get_next(): Selecting TOO targets", echo=True)
+            not_too = star_table['too'] == False
+            available = available & not_too
 
-    ucotargets.make_hour_table()
+        # Is the exposure time too long?
+        apflog("get_next(): Removing really long exposures", echo=True)
+        time_good = Observability.time_check(star_table, totexptimes, dt, start_time=self.start_time)
 
-    ucotargets.update_hour_table(observed, ptime)
-    # Parse the Googledex
-    # Note -- RA and Dec are returned in Radians
+        available = available & time_good
+        if np.any(available) is False:
+            apflog( "get_next(): Not enough time left to observe any targets", level="error", echo=True)
+            return None
 
-    if ucotargets.star_table is None:
-        apflog("get_next(): Parsing the star list", echo=True)
-        ucotargets.make_star_table()
-    ucotargets.append_too_column()
+        # Compute the elevations of the stars
 
-    stars = ucotargets.gen_stars()
-    targ_num = len(stars)
+        apflog("get_next(): Computing star elevations",echo=True)
+        fstars = [s for s,_ in zip(self.stars,available) if _ ]
+        vis, star_elevations, scaled_els = Visible.visible(self.apf_obs, fstars, \
+                                                           totexptimes[available],
+                                                           shiftwest=shiftwest
+        )
 
-#    last_failure = last_attempted()
-#    if last_failure is not None:
-#        last_objs_attempted.append(last_failure)
+        currently_available = available
+        if len(star_elevations) > 0:
+            currently_available[available] = currently_available[available] & vis
+        else:
+            apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
+            return None
 
-    ###
-    # Need to update the googledex with the lastObserved date for observed targets
-    # Scriptobs line uth utm can be used for this
-    # Need to convert a uth and utm to a JD quickly.
-    # timedelta = now - uth,utm : minus current JD?
-    ###
+        cur_elevations[available] += star_elevations[vis]
+        scaled_elevations[available] += scaled_els[vis]
 
-    apf_obs = SunPos.make_APF_obs(dt)
+        if slowdown > SchedulerConsts.SLOWDOWN_THRESH or seeing > SchedulerConsts.SEEING_THRESH:
+            bright_enough = star_table['Vmag'] < SchedulerConsts.SLOWDOWN_VMAG_LIM
+            available = available & bright_enough
 
-    # Calculate the moon's location
-    moon = ephem.Moon()
-    moon.compute(apf_obs)
+        if not do_templates:
+            available = available & (star_table['only_template'] == 'N')
+        # Now just sort by priority, then cadence. Return top target
+        if len(star_table['name'][available]) < 1:
+            apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
+            return None
 
-    template_conditions_met = Observability.template_conditions(moon, seeing, slowdown)
-    do_templates = do_templates and template_conditions_met
+        return available, cur_elevations, scaled_elevations
 
-    apflog("get_next(): Will attempt templates = %s" % str(do_templates) ,echo=True)
-    # Note which of these are B-Stars for later.
-    bstars = (ucotargets.star_table['Bstar'] == 'Y')|(ucotargets.star_table['Bstar'] == 'y')
+    def _select(self, available, final_priorities, bstar, cur_elevations, scaled_elevations):
+        '''
+        Pick the highest priority available target, breaking ties on elevation.
+        Returns the index into the star table, or None.
 
-    if bstar and not np.any(bstars):
-        apflog("get_next(): No B stars listed in target sheets!", level='error', echo=True)
-        return None
+        '''
+        star_table = self.targets.star_table
 
-    apflog("get_next(): Computing exposure times", echo=True)
-    totexptimes = Observability.tot_exp_times(ucotargets.star_table, targ_num)
+        try:
+            pri = max(final_priorities[available])
+            sort_i = (final_priorities == pri) & available
+        except:
+            apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
+            return None
 
-    available = np.ones(targ_num, dtype=bool)
-    cur_elevations = np.zeros(targ_num, dtype=float)
-    scaled_elevations = np.zeros(targ_num, dtype=float)
+        if bstar:
+            sort_j = cur_elevations[sort_i].argsort()[::-1]
+        else:
+            sort_j = scaled_elevations[sort_i].argsort()[::-1]
 
-    # Is the target behind the moon?
+        allidx, = np.where(sort_i)
+        idx = allidx[sort_j][0]
 
-    moon_check = Observability.behind_moon(moon, ucotargets.star_table['ra'], ucotargets.star_table['dec'])
-    available = available & moon_check
-    log_str = "get_next(): Moon visibility check - stars rejected = "
-    log_str += "%s" % ( np.asarray(ucotargets.star_table['name'][np.logical_not(moon_check)]))
-    apflog(log_str, echo=True)
+        t_n = star_table['name'][idx]
+        o_n = star_table['sheetn'][idx]
+        p_n = final_priorities[idx]
 
-    sun_el_good = SunPos.sun_el_check(ucotargets.star_table, apf_obs, horizon='-18')
-    available = available & sun_el_good
+        apflog("get_next(): selected target %s for program %s at priority %.0f" % (t_n, o_n, p_n) )
+        nmstr= "get_next(): star names %s" % (np.asarray(star_table['name'][sort_i][sort_j]))
+        pristr= "get_next(): star priorities %s" % (np.asarray(final_priorities[sort_i][sort_j]))
+        mxpristr= "get_next(): max priority %d" % (pri)
+        shstr= "get_next(): star sheet names %s" % (np.asarray(star_table['sheetn'][sort_i][sort_j]))
+        if bstar:
+            elstr= "get_next(): Bstar current elevations %s" % (cur_elevations[sort_i][sort_j])
+        else:
+            elstr= "get_next(): star scaled elevations %s" % (scaled_elevations[sort_i][sort_j])
+        apflog(nmstr, echo=True)
+        apflog(shstr, echo=True)
+        apflog(pristr, echo=True)
+        apflog(mxpristr, echo=True)
+        apflog(elstr, echo=True)
 
-    # other condition cuts (seeing, transparency, moon phase)
-    cuts = Observability.condition_cuts(moon, seeing, slowdown, ucotargets.star_table)
-    available = available & cuts
+        return idx
 
-    if len(last_objs_attempted)>0:
-        for n in last_objs_attempted:
-            attempted = ucotargets.star_table['name'] == n
-            available = available & np.logical_not(attempted) # Available and not observed
+    def _add_template(self, res, idx, dt, bstars):
+        '''
+        Replace the scriptobs lines in res with a template sequence,
+        if there is enough time for one.
 
-    if bstar:
-        # We just need a B star
-        apflog("get_next(): Selecting B stars", echo=True)
-        available = available & bstars
-        shiftwest = False
-    else:
-        apflog("get_next(): Culling B stars", echo=True)
-        available = available & np.logical_not(bstars)
-        shiftwest = True
+        '''
+        star_table = self.targets.star_table
+        bidx, bfinidx = Observability.find_Bstars(star_table, idx, bstars)
 
-    if do_too is False:
-        apflog("get_next(): Selecting TOO targets", echo=True)
-        not_too = ucotargets.star_table['too'] == False
-        available = available & not_too
-
-    # Is the exposure time too long?
-    apflog("get_next(): Removing really long exposures", echo=True)
-    time_good = Observability.time_check(ucotargets.star_table, totexptimes, dt, start_time=start_time)
-
-    available = available & time_good
-    if not np.any(available):
-        apflog( "get_next(): Not enough time left to observe any targets", level="error", echo=True)
-        return None
-
-    # Compute the elevations of the stars
-
-    apflog("get_next(): Computing star elevations",echo=True)
-    fstars = [s for s,_ in zip(stars,available) if _ ]
-    vis, star_elevations, scaled_els = Visible.visible(apf_obs, fstars, \
-                                                       totexptimes[available],
-                                                       shiftwest=shiftwest
-    )
-
-    currently_available = available
-    if len(star_elevations) > 0:
-        currently_available[available] = currently_available[available] & vis
-    else:
-        apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
-        return None
-
-    cur_elevations[available] += star_elevations[vis]
-    scaled_elevations[available] += scaled_els[vis]
-
-    if slowdown > SchedulerConsts.SLOWDOWN_THRESH or seeing > SchedulerConsts.SEEING_THRESH:
-        bright_enough = ucotargets.star_table['Vmag'] < SchedulerConsts.SLOWDOWN_VMAG_LIM
-        available = available & bright_enough
-
-    if not do_templates:
-        available = available & (ucotargets.star_table['only_template'] == 'N')
-    # Now just sort by priority, then cadence. Return top target
-    if len(ucotargets.star_table['name'][available]) < 1:
-        apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
-        return None
-
-    final_priorities = compute_priorities(ucotargets.star_table, dt,
-                                             rank_table=ucotargets.rank_table,
-                                             hour_table=ucotargets.hour_table,
-                                             do_templates=do_templates,
-                                             observed=observed)
-
-    try:
-        pri = max(final_priorities[available])
-        sort_i = (final_priorities == pri) & available
-    except:
-        apflog( "get_next(): Couldn't find any suitable targets!", level="error", echo=True)
-        return None
-
-    if bstar:
-        sort_j = cur_elevations[sort_i].argsort()[::-1]
-        focval=2
-    else:
-        sort_j = scaled_elevations[sort_i].argsort()[::-1]
-
-    allidx, = np.where(sort_i)
-    idx = allidx[sort_j][0]
-
-    t_n = ucotargets.star_table['name'][idx]
-    o_n = ucotargets.star_table['sheetn'][idx]
-    p_n = final_priorities[idx]
-
-    apflog("get_next(): selected target %s for program %s at priority %.0f" % (t_n, o_n, p_n) )
-    nmstr= "get_next(): star names %s" % (np.asarray(ucotargets.star_table['name'][sort_i][sort_j]))
-    pristr= "get_next(): star priorities %s" % (np.asarray(final_priorities[sort_i][sort_j]))
-    mxpristr= "get_next(): max priority %d" % (pri)
-    shstr= "get_next(): star sheet names %s" % (np.asarray(ucotargets.star_table['sheetn'][sort_i][sort_j]))
-    if bstar:
-        elstr= "get_next(): Bstar current elevations %s" % (cur_elevations[sort_i][sort_j])
-    else:
-        elstr= "get_next(): star scaled elevations %s" % (scaled_elevations[sort_i][sort_j])
-    apflog(nmstr, echo=True)
-    apflog(shstr, echo=True)
-    apflog(pristr, echo=True)
-    apflog(mxpristr, echo=True)
-    apflog(elstr, echo=True)
-
-    stars[idx].compute(apf_obs)
-
-    take_template = do_templates and ucotargets.star_table['Template'][idx] == 'N' \
-        and ucotargets.star_table['I2'][idx] == 'Y'
-    if ucotargets.star_table['only_template'][idx] == 'Y' and do_templates:
-        take_template = True
-
-    res =  make_result(stars, ucotargets.star_table, totexptimes, final_priorities, dt, \
-                       idx, focval=focval, bstar=bstar, mode=config['mode'])
-    if take_template and bstar is False:
-        bidx, bfinidx = Observability.find_Bstars(ucotargets.star_table, idx, bstars)
-
-        if Observability.enough_time_templates(ucotargets.star_table,stars,idx,apf_obs,dt):
+        if Observability.enough_time_templates(star_table,self.stars,idx,self.apf_obs,dt):
             decker= "N"
-            line  = ScriptobsLine.make_scriptobs_line(ucotargets.star_table[idx], \
+            line  = ScriptobsLine.make_scriptobs_line(star_table[idx], \
                                         dt, decker=decker, I2="N", owner=res['owner'], temp=True)
             if "decker=W" in line:
                 decker = "W"
-            bline = ScriptobsLine.make_scriptobs_line(ucotargets.star_table[bstars][bidx], dt, \
+            bline = ScriptobsLine.make_scriptobs_line(star_table[bstars][bidx], dt, \
                                         decker=decker, I2="Y", owner=res['owner'], focval=2)
-            bfinline = ScriptobsLine.make_scriptobs_line(ucotargets.star_table[bstars][bfinidx], dt,\
+            bfinline = ScriptobsLine.make_scriptobs_line(star_table[bstars][bfinidx], dt,\
                                             decker=decker, I2="Y", owner=res['owner'], focval=0)
             res['SCRIPTOBS'] = []
             res['SCRIPTOBS'].append(bfinline + " # temp=Y end")
@@ -472,7 +555,5 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
             res['SCRIPTOBS'].append(bline + " # temp=Y")
             res['isTemp'] = True
             res['DECKER'] = decker
-            apflog("Attempting template observation of %s" % (ucotargets.star_table['name'][idx]), echo=True)
+            apflog("Attempting template observation of %s" % (star_table['name'][idx]), echo=True)
 
-    res['template_conditions_met'] = template_conditions_met
-    return res

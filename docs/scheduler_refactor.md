@@ -1,52 +1,46 @@
 # Scheduler refactor: turning UCOScheduler into a class
 
-Status: steps 1-5 and the bug fixes are done; steps 6-7 (the class itself and
-porting the call sites) are next.
-Branch: `scheduler_object`, with `main` merged in at `afd3357`.
-
-## Progress
-
-| Step | State | Commit |
-| --- | --- | --- |
-| 1. Constants to `SchedulerConsts.py` | done | `d092459` |
-| 2. `ScriptobsLine.py` | done | `d092459` |
-| 3. `Observability.py` | done | `9fe7518` |
-| 4. `test_UCOScheduler.py` | done | `75581d0` |
-| 5. `UCOTargetTables.py` | done | `75581d0` |
-| 6. `UCOScheduler` class | not started | |
-| 7. Port the call sites | not started (sim scripts renamed only) | |
-| 8. Bug fixes | done except bug 8, which is optional | see "Bugs found while reading" |
+Status: steps 1-7 done and committed on `scheduler_object`; step 8 (bug fixes)
+outstanding. This document describes the branch as built. Where the build
+departed from the original plan, the reason is given.
 
 ## Goal
 
-`Main/UCOScheduler.py` was a 1147-line module of free functions with a
-module-level global. Steps 1-5 took it down to 478 lines, but it is still free
-functions. Every call to `get_next()` threads `ucotargets`, `focval`, `owner`,
+Before this refactor, `Main/UCOScheduler.py` was a 1147-line module of free
+functions with a module-level global. Every call to `get_next()` threaded
+`star_table`, `rank_table`, `hour_table`, `observed`, `focval`, `owner`,
 `outdir` and `start_time` through by hand.
 
-After this refactor:
+After it:
 
-* `UCOScheduler` is a class. `Observe` holds an instance and calls
-  `self.scheduler.get_next(...)`.
-* Target-table state and the files those tables live in stay in one object,
-  separate from the scheduler's own run-state.
+* `UCOScheduler` is a class. `Main.sin` builds one instance, `Observe` holds it
+  and calls `self.scheduler.get_next(...)`.
+* Target-table state and the files those tables live in are in one object,
+  `UCOTargetTables`, separate from the scheduler's own run-state.
 * The pure helpers (scriptobs line formatting, visibility and condition cuts)
-  move to their own modules so they can be tested without a scheduler. (Done.)
+  are in their own modules so they can be tested without a scheduler.
+* Target selection is unchanged: steps 1-7 were verified to pick the same
+  targets and write the same files as the code they replaced (see "How this
+  was verified").
 
-## Decisions taken
+## Decisions
 
 | Question | Decision |
 | --- | --- |
 | Class relationship | Composition: `UCOScheduler` holds a `UCOTargetTables` (the old `UCOTargets`, renamed) |
+| Tables class name | `UCOTargetTables`, keeping the `UCO` prefix the rest of the package uses (rather than `TargetTables`) |
 | Entry point name | `get_next()` (snake_case, matches the repo) |
 | Tables class name | `UCOTargetTables` (keeps the package's `UCO` prefix) |
 | File layout | Split into four modules plus a test module |
+| Pure selection helpers | `compute_priorities`, `need_cal_star`, `make_result`, `last_attempted` stay module-level functions in `UCOScheduler.py`, not methods; they use no scheduler state and are easier to test that way |
+| `start_time` | Lives on the scheduler (`scheduler.start_time`); `Observe` reads and writes it there |
+| `do_templates` / `do_too` defaults | `False`, as the old `get_next` had; both can also be overridden per call |
 | `utils/` | Port the live scripts; leave the already-dead ones alone |
 
 ## Why composition and not one merged class
 
-The tables object is not owned by the scheduler. `Main.sin` builds it and
-hands the *same* object to two places:
+`UCOTargets` was not owned by the scheduler. `Main.sin` built it and handed the
+*same* object to two places (before the refactor):
 
 ```
 Main.sin:488   uco_targets = UCOTargetTables.UCOTargetTables(opt)
@@ -59,57 +53,62 @@ Main.sin:490   observe = Observe.Observe(apf, tel, opt, uco_targets, ...)
 writes them to disk on its own schedule. Merging the tables into `UCOScheduler`
 would mean that download thread mutates the scheduler object directly, and it
 would drag the selection algorithm into `getUCOTargets`'s import graph. Keeping
-them as two objects preserves the current separation: one object owns the
-tables and the files, the other owns target selection.
+them as two objects preserves the separation: one object owns the tables and
+the files, the other owns target selection.
 
-## Lifetime: build the scheduler in Main.sin, not in Observe
+## Lifetime: the scheduler is built in Main.sin, not in Observe
 
-This matters and is easy to get wrong. `Main.sin:515-522` **recreates**
-`Observe` when its thread dies:
+`Main.sin` **recreates** `Observe` when its thread dies (`Main.sin:533`):
 
 ```
 if observe.is_alive() is False:
-    observe = Observe.Observe(apf, tel, opt, uco_targets, task=parent)
+    observe = Observe.Observe(apf, tel, opt, scheduler, task=parent)
     observe.start()
 ```
 
-`uco_targets` survives that restart, and so does `last_objs_attempted`, because
-it is a module global. If the scheduler were constructed inside
-`Observe.__init__`, the list of objects that just failed to observe would be
-wiped every time the thread restarted, and the scheduler would immediately
-re-select a target it had already failed on.
-
-`main` has currently turned the failure tracking off: the `last_attempted()`
-call in `get_next` (`UCOScheduler.py:297-299`) is commented out, so nothing is
-appended to `last_objs_attempted` at the moment. The lifetime argument still
-holds for when it is turned back on.
-
-So: `Main.sin` constructs the scheduler alongside the tables and passes it to
-`Observe`, exactly as it does with `uco_targets` now.
+`last_objs_attempted`, the list of objects that just failed to observe, used to
+survive that restart because it was a module global. If the scheduler were
+constructed inside `Observe.__init__`, that list would be silently wiped every
+time the thread restarted, and the scheduler would immediately re-select a
+target it had already failed on. So `Main.sin` constructs the scheduler
+alongside the tables and passes it to `Observe` (`Main.sin:488-501`):
 
 ```python
-# Main.sin
-targets   = UCOTargetTables.UCOTargetTables(opt)
-_         = getUCOTargets.getUCOTargets(targets, task=parent, wait_time=target_time)
-scheduler = UCOScheduler.UCOScheduler(targets, opt)
-observe   = Observe.Observe(apf, tel, opt, scheduler, task=parent)
+uco_targets = UCOTargetTables.UCOTargetTables(opt)
+_ = getUCOTargets.getUCOTargets(uco_targets, task=parent, wait_time=target_time)
+
+start_time = None
+if opt.start:
+    try:
+        start_time = float(opt.start)
+    except ValueError as e:
+        apflog("ValueError: %s" % (e), echo=True, level='error')
+scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=opt.owner if opt.owner else 'public',
+                                      start_time=start_time)
+observe = Observe.Observe(apf, tel, opt, scheduler, task=parent)
 ```
 
-`Observe` reaches the tables through `self.scheduler.targets` on the rare
-occasions it needs them, so it takes one argument instead of two.
+`Observe` reaches the tables through `self.scheduler.targets`, so it takes one
+argument instead of two.
+
+**Behavior change:** because `start_time` now lives on the scheduler, it also
+survives an `Observe` restart. Previously `Observe.__init__` re-read it from
+`--start` on every restart. This was a deliberate choice; the alternative
+(keep `start_time` on `Observe` and pass it per call) was considered and
+rejected.
 
 ## File layout
 
-| File | Contents | State |
-| --- | --- | --- |
-| `Main/SchedulerConsts.py` | gained `ACQUIRE`, `BLANK`, `FIRST`, `LAST`, `BUFFERSEC`, `BUFFER` | done |
-| `Main/UCOTargetTables.py` (from `UCOTargets.py`) | `class UCOTargetTables`: rank/hour/star tables and all disk bookkeeping | done |
-| `Main/ScriptobsLine.py` | pure string generation for scriptobs lines | done |
-| `Main/Observability.py` | pure array/astro filters, no scheduler state | done |
-| `Main/UCOScheduler.py` | `class UCOScheduler` only | still free functions |
-| `Main/test_UCOScheduler.py` | the `test_*` functions from the bottom of `UCOScheduler.py` | done |
+| File | Contents |
+| --- | --- |
+| `Main/SchedulerConsts.py` (existing) | gained `ACQUIRE`, `BLANK`, `FIRST`, `LAST`, `BUFFERSEC`, `BUFFER` |
+| `Main/UCOTargetTables.py` (renamed from `UCOTargets.py`, 291 lines) | `class UCOTargetTables`: rank/hour/star tables and all disk bookkeeping |
+| `Main/ScriptobsLine.py` (new, 216 lines) | pure string generation for scriptobs lines |
+| `Main/Observability.py` (new, 258 lines) | pure array/astro filters, no scheduler state |
+| `Main/UCOScheduler.py` (rewritten, 560 lines) | the pure selection helpers and `class UCOScheduler` |
+| `Main/test_UCOScheduler.py` (new, 154 lines) | the `test_*` functions formerly at the bottom of `UCOScheduler.py` |
 
-`UCOTargets.py` is gone (`git mv` to `UCOTargetTables.py`, so history follows).
+`UCOTargets.py` was renamed with `git mv`, so its history carries over.
 
 ## Where every symbol went
 
@@ -120,7 +119,7 @@ occasions it needs them, so it takes one argument instead of two.
 | `make_scriptobs_line` | unchanged; `utils/make_scriptobsline.py` and `gen_template_entry.sin` call it |
 | `num_template_exp` | unchanged |
 | `config_defaults` | unchanged |
-| `make_obs_block` | **dead**, kept with a comment saying so. Its only caller is the commented-out obsblock path in `make_result` (`UCOScheduler.py:197`) |
+| `make_obs_block` | **dead**: its only caller is commented out in `make_result` (`UCOScheduler.py:185`). Moved; see bug 6, "Disabled obsblock path" |
 
 ### `Main/Observability.py` (done)
 
@@ -130,13 +129,13 @@ All pure functions of `(star_table, moon, apf_obs, dt, ...)`, no instance state:
 `behind_moon`, `template_conditions`, `find_closest`, `find_Bstars`,
 `enough_time_templates`.
 
-(`compute_preferred_el` was on this list; it had no callers and was deleted in
-`f4ae698`.)
+`compute_preferred_el` had no live callers and was deleted (commit `f4ae698`)
+rather than moved.
 
-These are the functions worth having unit tests for, which is the main reason to
-pull them out.
+These are the functions worth having unit tests for, which is the main reason
+they were pulled out.
 
-### `Main/UCOTargetTables.py` (done)
+### `Main/UCOTargetTables.py`
 
 Everything that reads or writes the bookkeeping files:
 
@@ -148,13 +147,10 @@ Everything that reads or writes the bookkeeping files:
 | `make_star_table` | `UCOTargets` (unchanged) |
 | `append_too_column` | `UCOTargets` (unchanged) |
 | `copy_backup` | `UCOTargets` (unchanged) |
-| `update_hour_table(observed, dt)` | **moved** from `UCOScheduler.update_hour_table`. It writes `hour_table` to disk, so it is bookkeeping. Does nothing if there is no hour table |
-| `update_from_observed(ptime)` | **new**: wraps `ParseUCOSched.update_local_starlist`, sets `self.star_table`, returns the `ObservedLog`. If `googledex.dat` is missing it rebuilds it and then applies the observations (bug 5) |
-| `gen_stars()` | **new**: wraps `ParseUCOSched.gen_stars` and keeps the result as `self.stars` |
-| `check_files()` | **moved** from `Observe.check_files`. Restores `googledex.dat` from its `.1` backup if it is missing |
-
-`get_next` already calls `update_from_observed`, `update_hour_table` and
-`gen_stars` on the tables object.
+| `update_hour_table(observed, dt, outfn='hour_table', outdir=None)` | **moved** from the free function `UCOScheduler.update_hour_table`. It writes `hour_table` to disk, so it is bookkeeping. Now a no-op when `hour_table` is `None` (that check used to be in `get_next`) |
+| `update_from_observed(ptime, outfn=None, toofn='too.dat')` | **new**: wraps `ParseUCOSched.update_local_starlist`, sets `self.star_table`, returns the `ObservedLog`. `outfn` defaults to `self.star_table_name` |
+| `gen_stars()` | **new**: wraps `ParseUCOSched.gen_stars` and keeps the result on `self.stars`. It regenerates on every call; there is no caching logic |
+| `check_files(outfn=None)` | **moved** from `Observe.check_files`: restores `googledex.dat` from its `.1` backup if it is missing |
 
 Files this object owns, unchanged in name and format:
 
@@ -165,7 +161,7 @@ Files this object owns, unchanged in name and format:
 * `observed_targets` (read via `ObservedLog`; written by `Observe`)
 * the time-left CSV named by `opt.time_left` (read only)
 
-Nothing about these files changes. That is the constraint that makes this
+Nothing about these files changed. That is the constraint that makes this
 refactor safe to deploy: the on-disk contract is identical, so a night can be
 resumed from files written by the old code.
 
@@ -176,11 +172,20 @@ What is left in the module today: the `last_objs_attempted` global,
 `make_result`, `last_attempted` and `get_next` (`UCOScheduler.py:242`, about
 235 lines). The target shape:
 
+Module-level functions, kept as pure helpers:
+
+* `need_cal_star(star_table, observed, priorities)`
+* `compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_table=None, do_templates=False)`
+* `make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode='')`
+* `last_attempted()`: reads the last scriptobs result from `ktl`
+
+The class:
+
 ```python
 class UCOScheduler(object):
 
-    def __init__(self, targets, opt=None, owner='public', outdir=None,
-                 do_templates=True, do_too=True, start_time=None,
+    def __init__(self, targets, owner='public', outdir=None,
+                 do_templates=False, do_too=False, start_time=None,
                  outfn='googledex.dat', toofn='too.dat'):
         self.targets   = targets          # UCOTargetTables
         self.owner     = owner
@@ -203,67 +208,93 @@ class UCOScheduler(object):
 
     # --- public -------------------------------------------------------
     def get_next(self, ctime, seeing, slowdown, bstar=False, focval=0,
-                 do_templates=None, do_too=None):
-    def zero_last_objs_attempted(self):
-    def record_last_attempt(self):        # was module-level last_attempted(); call is disabled on main
+                 do_templates=None, do_too=None)
+    def zero_last_objs_attempted(self)
+    def record_last_attempt(self)         # calls last_attempted(), appends failures
 
-    # --- pipeline stages, one per current block of get_next ------------
-    def _previous_obs_time(self, dt):     # apfguide midptfin, falls back to dt
-    def _refresh_tables(self, ptime):     # update_from_observed + hour table
-    def _sky_state(self, dt):             # apf_obs + moon
-    def _available(self, dt, seeing, slowdown, bstar)   -> bool array
-    def compute_priorities(self, dt)      # uses self.observed for need_cal_star
-    def _need_cal_star(self, priorities)
-    def _select(self, available, priorities, bstar)     -> idx
-    def _make_result(self, idx, totexptimes, priorities, dt, focval, bstar)
+    # --- pipeline stages, called in order by get_next ------------------
+    def _previous_obs_time(self, dt)      # apfguide midptfin, falls back to dt
+    def _refresh_tables(self, ptime)      # update_from_observed, hour table, star table, gen_stars
+    def _sky_state(self, dt)              # apf_obs + moon
+    def _available(self, dt, seeing, slowdown, bstar, bstars, totexptimes,
+                   do_too, do_templates)  # -> (available, cur_elevations, scaled_elevations) or None
+    def _select(self, available, final_priorities, bstar,
+                cur_elevations, scaled_elevations)   # -> idx or None
     def _add_template(self, res, idx, dt, bstars)
 ```
 
-The ephem star list lives on `self.targets.stars` (set by `gen_stars()`), so the
-scheduler does not keep its own copy.
+`get_next` is about 80 lines, down from 240. It runs the stages above, plus
+`compute_priorities` and `make_result`, in order. The early-exit checks and the
+template decision stay inline in `get_next` rather than being split further.
+Every stage keeps its original `apflog` calls, in the original order, so the
+night log reads the same.
 
-`get_next` becomes roughly forty lines calling the stages in order. Each stage
-keeps its existing `apflog` calls so the night log reads the same.
-
-Constructor arguments that are currently per-call `get_next` keyword arguments
-(`owner`, `outdir`, `outfn`, `toofn`, `start_time`, `do_templates`, `do_too`)
-move to `__init__`, since `Observe` passes the same value on every call.
+Constructor arguments (`owner`, `outdir`, `outfn`, `toofn`, `start_time`,
+`do_templates`, `do_too`) used to be per-call `get_next` keyword arguments.
+They moved to `__init__` because `Observe` passed the same value on every call.
 `do_templates` and `do_too` are also accepted per call as overrides, because
-`Observe` mutates `self.do_temp` and `self.do_too` during a night.
+`Observe` changes `self.do_temp` and `self.do_too` during a night. `outdir` is
+stored but, as before the refactor, not used by `get_next`.
+
+Removed from the module: the `last_objs_attempted` global, the module-level
+`get_next` and `zero_last_objs_attempted` (a temporary shim during step 6, see
+below), the free function `update_hour_table` (moved to `UCOTargetTables`), and
+the now-unused `ParseUCOSched` and `UCOTargets` imports.
 
 ### `Main/test_UCOScheduler.py` (done)
 
 `test_basic_ops`, `test_failure`, `test_templates` and `test_main` moved here
-verbatim, except that they now call `UCOScheduler.get_next(...)`. They stay
-runnable as a script (`python test_UCOScheduler.py`); converting them to pytest
-is a separate job. Step 7 changes them to the object API.
+unchanged apart from:
+
+* `test_main` reads `time_left.csv` from the current directory instead of
+  `/home/holden/time_left.csv`, so it uses the fixture copy.
+* `test_basic_ops` and `test_failure` take a `UCOScheduler`, which `test_main`
+  builds once. The "nonsensical start time" case sets `scheduler.start_time = 1`
+  instead of passing `start_time=1`.
+
+They stay runnable as a script; converting them to pytest is a separate job.
+Run them from a *copy* of the fixtures, because `get_next` rewrites
+`googledex.dat` and creates `observed_targets` and `hour_table` in the current
+directory:
+
+```
+cp /Users/holden/src/test_main/{googledex.dat,rank_table,time_left.csv} <scratch>/ && cd <scratch>
+PYTHONPATH=/Users/holden/src/UCOmain/Main python3 /Users/holden/src/UCOmain/Main/test_UCOScheduler.py
+```
+
+The tests take their start time from the clock (`time.time()`,
+`datetime.now()`), so their output depends on when they run. Two runs can only
+be compared if they run at the same time.
 
 ## Observe.py changes
 
-Done so far: the `UCOTargetTables` rename, and `check_files()` moved to
-`UCOTargetTables.check_files()`. `Observe` now calls
-`self.uco_targets.check_files()` (`Observe.py:511`). That becomes
-`self.scheduler.targets.check_files()` in step 7.
-
-Remaining for step 7, all mechanical:
-
-| Line | Now | After |
+| Line (now) | Before | After |
 | --- | --- | --- |
-| `Observe.py:21-22` | `import UCOScheduler as ds` / `import UCOTargetTables` | `import UCOScheduler` |
+| `Observe.py:21-22` | `import UCOScheduler as ds` / `import UCOTargets` | `import UCOScheduler` / `import UCOTargetTables` (both used only by the `__main__` block) |
 | `Observe.py:33` | `def __init__(self, apf, tel, opt, uco_targets, ...)` | `def __init__(self, apf, tel, opt, scheduler, ...)` |
-| `Observe.py:511` | `self.uco_targets.check_files()` | `self.scheduler.targets.check_files()` |
-| `Observe.py:513` | `ds.get_next(time.time(), seeing, slowdown, self.uco_targets, bstar=..., do_too=..., owner=..., do_templates=..., focval=..., start_time=...)` | `self.scheduler.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, focval=self.focval, do_templates=self.do_temp, do_too=self.do_too)` |
-| `Observe.py:646` | `ds.zero_last_objs_attempted()` | `self.scheduler.zero_last_objs_attempted()` |
-| `Observe.py:1132-1134` (test `main`) | builds `UCOTargetTables` and passes it | builds the tables and a scheduler, passes the scheduler |
+| `Observe.py:494` | `self.check_files()` | `self.scheduler.targets.check_files()` |
+| `Observe.py:496` | `ds.get_next(time.time(), seeing, slowdown, self.uco_targets, bstar=..., do_too=..., owner=..., do_templates=..., focval=..., start_time=...)` | `self.scheduler.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, focval=self.focval, do_templates=self.do_temp, do_too=self.do_too)` |
+| `Observe.py:627` | `ds.zero_last_objs_attempted()` | `self.scheduler.zero_last_objs_attempted()` |
 
-`Observe.start_time` is read by `get_next` today via the `start_time=` keyword.
-It moves to the scheduler constructor. `Observe` clears `self.start_time` in
-several places: `__init__` (`:89`, `:91`), `should_start_list()` (`:299`,
-`:311`, after an hour), and `:716`, `:755`, `:767`, `:877`, `:883`. Every one
-of those must clear `self.scheduler.start_time` instead, or the scheduler keeps
-limiting exposure times to a start window that has passed. Easiest is to make
-`start_time` the scheduler's attribute only, and have `Observe` read and write
-`self.scheduler.start_time`.
+Also:
+
+* `Observe.check_files()` and the `shutil` import it needed were removed; the
+  method now lives on `UCOTargetTables`.
+* `self.owner` was removed. Passing it to `get_next` was its only use; the owner
+  is now set on the scheduler in `Main.sin`.
+* The `start_time` initialisation from `opt.start` moved to `Main.sin`, and all
+  14 uses of `self.start_time` became `self.scheduler.start_time`, including
+  `should_start_list()` (`Observe.py:282`), which clears it an hour after the
+  start time, the `MASTER_WHENSTARTLIST` check and the fixed-list branches.
+* The `__main__` test block builds a `UCOScheduler` and passes it in.
+
+## Main.sin changes
+
+* `import UCOScheduler as ds` became `import UCOScheduler`; `import UCOTargets`
+  became `import UCOTargetTables`.
+* The scheduler is built alongside the tables, with `owner` and the parsed
+  `start_time`, and passed to `Observe` both at startup and on thread restart
+  (see "Lifetime" above).
 
 ## getUCOTargets.py changes (done)
 
@@ -274,18 +305,19 @@ Import and type name only: `UCOTargets.UCOTargets` became
 
 Done:
 
-* `utils/make_scriptobsline.py` calls `ScriptobsLine.make_scriptobs_line` and
-  no longer imports `UCOScheduler`.
-* `utils/gen_template_entry.sin` calls `Observability.find_Bstars` and
-  `ScriptobsLine.make_scriptobs_line`, and no longer imports `UCOScheduler`.
-* `utils/download_googledex.py` uses `UCOTargetTables`.
-* `utils/sim_night.py` and `utils/sim_nights.py` use `UCOTargetTables` (rename
-  only).
-
-Remaining for step 7:
-
-* `utils/sim_night.py:144`, `utils/sim_nights.py:230`: build a `UCOScheduler`
-  once before the loop and call `scheduler.get_next(...)` inside it.
+* `utils/sim_night.py`, `utils/sim_nights.py`: build one `UCOScheduler` before
+  the loop (in `sim_nights`, before the loop over nights, so the failed-object
+  list carries across nights as the old global did) and call
+  `scheduler.get_next(...)` inside it. `outfn`, `outdir` and `start_time` go to
+  the constructor. They still call `ParseUCOSched.gen_stars` directly for their
+  own `stars` list.
+* `utils/make_scriptobsline.py`: `ds.make_scriptobs_line` became
+  `ScriptobsLine.make_scriptobs_line`.
+* `utils/gen_template_entry.sin`: `ds.find_Bstars` became
+  `Observability.find_Bstars`, `ds.make_scriptobs_line` became
+  `ScriptobsLine.make_scriptobs_line`, `UCOTargets` became `UCOTargetTables`.
+* `utils/download_googledex.py`: `UCOTargets` became `UCOTargetTables`. It
+  still has an unused `import UCOScheduler as ds`, which is harmless.
 
 Left alone, already broken against the deployed code:
 
@@ -295,134 +327,165 @@ Left alone, already broken against the deployed code:
 * `utils/gen_template_entry.py` calls `ds.makeResult`, `ds.makeScriptobsLine`
   and `ds.find_Bstars` (the `.sin` is the live version)
 
-None of those names exist in `UCOScheduler.py`. They are dead, and this
-refactor does not make them any deader.
+None of those names existed in `UCOScheduler.py` before this refactor, so these
+scripts were already dead. (`gen_template_entry.py` also calls
+`ds.find_Bstars`, which did exist until step 3 moved it to `Observability`; the
+script was already broken by the other two calls.)
 
 ## Bugs found while reading
 
-These were pre-existing. Each fix went in as its own commit, separate from the
-code moves.
+These are pre-existing. I would **not** fix them silently inside a move-only
+refactor — each one changes which target gets picked. Listing them so you can
+decide which to take, and in which commit. Line numbers are as of the end of
+step 7. (The cal-star bug, where `get_next` never passed `observed=` to
+`compute_priorities`, was fixed before step 6 and is no longer listed.)
 
-1. **Cal-star boosting never ran.** *Fixed in `f4ae698`.* `get_next` called
-   `compute_priorities(...)` without `observed=`, so `need_cal_star` returned
-   the priorities unchanged. `get_next` now passes `observed=observed`
-   (`UCOScheduler.py:406-410`). Checked by hand: with an observed program
-   marked `need_cal`, its two cal stars are raised to max priority + 1, and are
-   no longer raised once one of them has been observed. The 2025A fixtures have
-   no `need_cal` or `cal_star` rows, so `test_main` does not exercise this.
+1. **`star_table['too'] is False`** at `Observability.py:110` (`time_check`)
+   and `SunPos.py:80` (`sun_el_check`). `is` on a numpy array is always
+   `False`, so `faint &= False` makes `faint` all-`False`. In `time_check` the
+   faint-star exposure-time limit (`maxfaintexptime`, the `-18` horizon) never
+   applies; in `sun_el_check` faint stars are never rejected when the sun is
+   above `-18`. Intended: `~star_table['too']`, in both places.
 
-2. **`star_table['too'] is False`** in `time_check`. *Fixed on `main` in
-   `594aa50`, applied to `Observability.py:108` in the merge `afd3357`.* Now
-   `star_table['too'] == False`. Before, the faint-star limit (`maxfaintexptime`,
-   the -18° sunrise) never applied. On the fixtures it now covers 519 faint
-   targets; at 13:30 UT none of them pass while 290 bright ones still do.
+2. **`np.any(...) is False`** at `UCOScheduler.py:311` and `:454`. `np.any`
+   returns `np.bool_`, never the `False` singleton, so both early returns are
+   unreachable — "no B stars listed" and "not enough time left to observe any
+   targets" never fire. Intended: `not np.any(...)`.
+   **Fix in the same commit:** the "no B stars" return at `:312` calls
+   `apflog(..., label='Error')`, and `apflog` has no `label` parameter, so the
+   moment that line becomes reachable it raises `TypeError`. It should be
+   `level='error'`.
 
-3. **`np.any(...) is False`**. *Fixed in `1507451`.* Both early returns in
-   `get_next` (`UCOScheduler.py:321`, `:372`) now use `not np.any(...)`. The
-   no-B-stars branch also called `apflog(..., label='Error')`, which neither
-   `apflog` nor `fake_apflog` accepts, so the first time the branch was reached
-   it would have raised `TypeError`. That is now `level='error'`.
+3. **`vstack` called with two positional arguments** at
+   `ParseUCOSched.py:945`: `astropy.table.vstack(too_table, star_table)`.
+   `vstack`'s second positional is `join_type`, so this raises whenever a
+   `too.dat` exists. Intended: `vstack([too_table, star_table])`.
 
-4. **`vstack` called with two positional arguments** in
-   `ParseUCOSched.update_local_starlist`. *Fixed on `main` in `594aa50`,
-   merged in `afd3357`.* Now `vstack([too_table, star_table])`.
+4. **`update_local_starlist` returns `None` for the star table** when
+   `googledex.dat` is missing, and `UCOTargetTables.update_from_observed`
+   (`UCOTargetTables.py:207`) assigns that straight onto `self.star_table`,
+   discarding a perfectly good in-memory table before `get_next` rebuilds it.
+   Intended: only assign when the returned table is not `None`.
 
-5. **Missing `googledex.dat` lost the night's observations.** *Fixed in
-   `994c692`.* `update_local_starlist` returns `None` for the star table when
-   the file is missing. `get_next` then rebuilt the table, but observations are
-   only applied through the file, so the rebuilt table had none of them. If the
-   rebuild failed too, `get_next` raised `AttributeError`.
-   `UCOTargetTables.update_from_observed` now rebuilds the file and then
-   applies the observations. If the rebuild fails, it keeps the previous table.
+5. **`dt.strftime('%s')`** at `Observability.py:75` (`time_check`, the
+   `start_time` branch) is a glibc extension, not portable, and the
+   surrounding UTC-offset arithmetic is fragile (its own comment says so): the
+   offset is taken from *now*, not from `dt`, so it is wrong across a DST
+   change. `calendar.timegm(dt.utctimetuple())` is the correct spelling and
+   needs no offset correction.
 
-   The fix first proposed here, keeping the in-memory table whenever the file is
-   missing, was not used. Nothing would recreate the file, so the table would
-   stop picking up observations for the rest of the night.
+6. **Disabled obsblock path.** `make_obs_block` (`ScriptobsLine.py:153`) has no
+   live callers; the only call is commented out in `make_result` at
+   `UCOScheduler.py:185`, part of the commented-out `obsblock` lines at
+   `:163-164` and `:183-185`. Proposal: keep `make_obs_block`, since
+   re-enabling obsblocks is a plausible future want, and add a comment saying
+   the calling path is disabled. (`compute_preferred_el`, the other dead
+   function, has been deleted.)
 
-6. **`dt.strftime('%s')`** in `time_check`. *Fixed in `ae57130`.* Now
-   `calendar.timegm(dt.utctimetuple())`. The old arithmetic was an hour off
-   whenever `dt` and the current time were on opposite sides of a DST change.
-   That happens on the night the clocks change, and whenever a sim replays a
-   night from the other half of the year. For a January night run from
-   California with a start list 30 minutes away, the old code ignored the
-   window completely.
+7. **`config_defaults` result is almost entirely unused** — `get_next` builds
+   `config` at `UCOScheduler.py:284` and reads only `config['mode']`, which is
+   `''`, at `:344`. `config_defaults` stays for
+   `ParseUCOSched.parse_UCOSched`'s `config=` parameter, but the `get_next`
+   call can drop it.
 
-7. **Dead code.** *Done.* `compute_preferred_el` was deleted in `f4ae698`.
-   `make_obs_block` is kept in `ScriptobsLine.py` with a comment saying its
-   calling path is disabled, since re-enabling obsblocks is a plausible future
-   want.
+8. **`sim_nights.py` skips the first and last night of the range.**
+   `gen_datelist` (`utils/sim_nights.py:40`) advances `cur` by a day *before*
+   appending it, and loops `while cur < end`, so both the start and end dates
+   are dropped. `sim_nights.py 2026/09/28 2026/10/01` simulates only 09/29 and
+   09/30 (two "sun rose" lines, not four). Intended: include both endpoints.
+   This changes the baseline's night count, so fix it before recording the
+   `sim_nights.py` baseline that the other fixes are diffed against.
 
-8. **`config_defaults` result is almost entirely unused.** *Not changed.*
-   `get_next` builds `config` (`UCOScheduler.py:260`) and reads only
-   `config['mode']` (`:455`), which is `''`. `config_defaults` stays for
-   `ParseUCOSched.parse_UCOSched`'s `config=` parameter. The `get_next` call can
-   go when step 6 rewrites that code.
+9. **`compute_datetime` silently uses the current time for an `int`.**
+   `Observability.compute_datetime` (`Observability.py:21`) accepts a `float`,
+   `datetime` or `ephem.Date`, and falls through to `utcnow()` for anything
+   else — including an `int` Unix timestamp such as `calendar.timegm(...)`
+   returns. No error or log line, just the wrong time. Production is not
+   affected (`Observe` passes `time.time()`, a `float`), but it is an easy trap
+   in the sim scripts and tests. Intended: accept any real number
+   (`isinstance(ctime, (int, float))`, excluding `bool`).
 
-Found during the merge, not a bug fix: `main` commented out the
-`last_attempted()` call (`3010802`, "turn off last_obj_attempted"), so the
-scheduler no longer avoids a target that just failed. The merge keeps that.
+## Steps as done
 
-## Implementation order
+Each step left the tree runnable, so a bad step can be bisected.
 
-Each step leaves the tree runnable, so a bad step can be bisected.
+| Step | What | Commit(s) |
+| --- | --- | --- |
+| (pre) | Deleted `compute_preferred_el`; fixed cal-star boosting by passing `observed=` to `compute_priorities` | `f4ae698` |
+| 1 | Constants `ACQUIRE`/`BLANK`/`FIRST`/`LAST`/`BUFFERSEC`/`BUFFER` moved to `SchedulerConsts.py` | `d092459` |
+| 2 | `ScriptobsLine.py`; updated `utils/make_scriptobsline.py` and `utils/gen_template_entry.sin` | `d092459` |
+| 3 | `Observability.py`; pure code motion | `9fe7518` |
+| 4 | `test_UCOScheduler.py`; tests moved out, `time_left` path made local | `ec5fd9a` |
+| 5 | `UCOTargets` renamed to `UCOTargetTables` (`git mv`), then `update_hour_table`, `update_from_observed`, `gen_stars`, `check_files` added. All importers updated, including `Observe.py`, the sim scripts, `gen_template_entry.sin` and the tests, which the original plan did not list | `c1805f5`, `3a7cf23` |
+| 6 | `UCOScheduler` class; `get_next` split into stages | `7d5af65` |
+| 7 | `Observe.py`, `Main.sin`, `sim_night.py`, `sim_nights.py`, `test_UCOScheduler.py` moved to the object API; temporary shim deleted | `8f0f51f` |
+| 8 | Bug fixes | outstanding |
 
-1. ~~**Constants.**~~ Done.
-2. ~~**`ScriptobsLine.py`.**~~ Done.
-3. ~~**`Observability.py`.**~~ Done.
-4. ~~**`test_UCOScheduler.py`.**~~ Done.
-5. ~~**`UCOTargetTables.py`.**~~ Done.
-6. **`UCOScheduler` class.** Write the class and split `get_next` into the
-   stages above. Keep a module-level `get_next(ctime, seeing, slowdown,
-   targets, **kw)` that builds a scheduler and delegates to it, *temporarily*,
-   so `sim_night.py` still runs unchanged and can be diffed against the
-   baseline. Drop the unused `config` from `get_next` (bug 8) while there.
-7. **Port the call sites.** `Observe.py`, `Main.sin`, `sim_night.py`,
-   `sim_nights.py` and `test_UCOScheduler.py` to the object API, including the
-   `start_time` handling above. Delete the temporary module-level shim.
+**Step 6 shim.** While `Observe` and the sim scripts still called the module
+functions, step 6 kept a module-level `get_next(ctime, seeing, slowdown,
+targets, **kw)` and `zero_last_objs_attempted()`. The original plan had the
+shim construct a new scheduler per call. That would have emptied
+`last_objs_attempted` on every call in production, so the shim instead kept
+one shared module-level scheduler, which behaved exactly like the old global.
+Step 7 deleted it.
 
-## How this gets verified
+**Step 8 order.** Item 8 (`sim_nights.py` date range) first, then record the
+`sim_nights.py` baseline. Then items 1, 2, 3, 4, which fix real behavior and
+change target selection, each re-run through `sim_nights.py` and diffed against
+that baseline, one commit each. Items 5, 6, 7, 9 last; they should not change
+target selection.
 
-There is no test suite, so verification is differential: the old and new code
-run on the same inputs, and the outputs are compared.
+## How this was verified
 
-What was done for steps 1-5 and the bug fixes:
+There is no test suite, so verification is differential: for each step, the
+previous commit and the new tree were run side by side, each on its own fresh
+copy of the fixtures, and their printed output and written files compared.
 
-* **Inputs**: the 2025A tables in `~/Dropbox/src/test_UCOmain` (`rank_table`,
-  `googledex.dat` and their `.1` backups, `hour_table`, `time_left.csv`).
-  Each run copies them into a fresh scratch directory.
-* **Run**: `test_UCOScheduler.test_main()` with `time.time()` pinned to
-  2025-03-11 06:00 UT. This uses the backup-file path; there is no Google
-  certificate in this checkout.
-* **Refactor steps**: `observed_targets`, every table file and the log were
-  byte-identical to the previous code. The one exception is the uth/utm on the
-  template lines, which `test_templates` takes from the wall clock.
-* **Bug fixes**: `test_main` was unchanged by every fix, because none of them
-  change the fixtures' normal path. Each fix was checked separately on the
-  case it affects, as described under each bug above.
+**Fixtures.** `/Users/holden/src/test_main` holds `googledex.dat`,
+`rank_table` and `time_left.csv`. It is outside the repo. Every run copies
+these first, because the scheduler rewrites `googledex.dat` and creates
+`observed_targets` and `hour_table` in the current directory.
 
-Still to do:
+**What was run:**
 
-* **`sim_nights.py` baseline**: run it over a fixed set of nights on the
-  current branch head and save the full sequence of selected scriptobs lines.
-  Steps 6-7 must reproduce it exactly. It has not been run yet.
-* **Fixtures in the repo**: copy the pinned inputs and the time-pinning runner
-  into a fixtures directory, so the comparison doesn't depend on a Dropbox path.
-* **Google-sheet path**: `test_UCOScheduler.py` has only run on the backup path.
-  Running it where the certificate is available (e.g. the deployed machine)
-  would cover the download path.
-* **`Observe` and `Main.sin`** need `ktl`, so nothing above exercises them.
-  Step 7's changes there have to be checked on the telescope machine or in
-  `--test` mode.
+* **Steps 4-7:** `test_UCOScheduler.py`, old and new started at the same moment
+  (the tests read the clock). Printed output and the written `googledex.dat`,
+  `observed_targets`, `hour_table` and `rank_table` were identical at every
+  step.
+* **Step 6, a wider sweep:** 176 `get_next` calls, hourly through two nights
+  (2026-10-10, near new moon, and 2026-09-27), with every combination of
+  `bstar`, `do_templates` and `do_too`. It faked a failed observation every few
+  calls and called `zero_last_objs_attempted` partway through. Output
+  (4,855 lines), written files and the final `last_objs_attempted` list were
+  identical. A second pass with every target set to `Template=N` ran the
+  template branch 8 times; also identical.
+* **Step 7, the sim scripts:** run through a small wrapper that seeds numpy's
+  random generator identically, since `NightSim` draws seeing, clouds and
+  count rates from `np.random`. `sim_night.py -d 2026-09-28`: `.simout`
+  (57 observations), `observed_targets`, `googledex.dat`, `hour_table` and
+  735 lines of output identical. `sim_nights.py 2026/09/28 2026/10/01`:
+  `.simout` (159 lines), every written file and 2,554 lines of output
+  identical.
+
+**Not executed:** `Observe.py`, `Main.sin` and `getUCOTargets.py` need `ktl`,
+so they were compiled or parsed, and grepped for leftover references, but never
+run. The first night on the telescope is their real test.
+
+**Not in the repo:** the sweep script and the numpy-seeding wrapper were ad hoc
+and were not committed. No saved baseline exists yet. Because the tests read
+the clock, a repeatable baseline needs either a fixed start time in
+`test_main` or the seeded `sim_nights.py` run, recorded after bug 8 is fixed.
 
 ## Open questions
 
-1. Should `get_next` keep returning a plain `dict`, or become a small
+1. ~~`TargetTables` vs `UCOTargetTables`~~: decided, `UCOTargetTables`.
+2. Should `get_next` keep returning a plain `dict`, or become a small
    `Target` result class? The dict is consumed in `Observe.py` by string key
    (`self.target['NAME']`, `self.target["SCRIPTOBS"]`) and in the sim scripts.
-   A result class is nicer but widens the diff; the plan above keeps the dict.
-2. `Observe` mutates `self.do_temp` and `self.n_temps` during the night to cap
+   A result class is nicer but widens the diff. **As built:** still a dict.
+3. `Observe` changes `self.do_temp` and `self.n_temps` during the night to cap
    template observations at `tot_temps`. That template budget arguably belongs
-   to the scheduler. The plan leaves it in `Observe` for now and passes
+   to the scheduler. **As built:** it stays in `Observe`, which passes
    `do_templates` per call.
 3. Should failure tracking (`last_attempted()`) come back on? If so, the
    class's `record_last_attempt` should be called from `get_next` again.
