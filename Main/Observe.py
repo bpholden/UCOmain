@@ -26,11 +26,11 @@ import SchedulerConsts
 DMLIM = 1140
 
 class Observe(threading.Thread):
-    """ Observe(apf, tel, opt, scheduler, tot_temps=4, task='master')
+    """ Observe(apf, tel, opt, scheduler, task='master')
         The Observe class is a thread
         that runs the observing process.
     """
-    def __init__(self, apf, tel, opt, scheduler, tot_temps=4, task='master'):
+    def __init__(self, apf, tel, opt, scheduler, task='master'):
         threading.Thread.__init__(self)
         self.daemon = True
         self.apf = apf
@@ -85,11 +85,8 @@ class Observe(threading.Thread):
             self.debug = opt.test
         else:
             self.debug = False
-        self.do_temp = True
         self.do_too = True
-        self.n_temps = 0
         self.focval = 0
-        self.tot_temps = tot_temps
 
         self.exit_message = None
 
@@ -500,7 +497,7 @@ class Observe(threading.Thread):
 
             self.target = self.scheduler.get_next(time.time(), seeing, slowdown, \
                                          bstar=self.obs_B_star, focval=self.focval, \
-                                         do_templates=self.do_temp, do_too=self.do_too)
+                                         do_too=self.do_too)
 
             if self.target is None:
                 log_str = "No acceptable target was found. "
@@ -555,11 +552,6 @@ class Observe(threading.Thread):
             apflog("get_target(): Target= %s Temp=%s" % (self.target["NAME"], istemp))
             apflog("get_target(): Counts=%.2f  EXPTime=%.2f  Nexp=%d"\
                     % (self.target["COUNTS"], self.target["EXP_TIME"], self.target["NEXP"]))
-            if self.target['isTemp']:
-                self.n_temps += 1
-                if self.n_temps >= self.tot_temps:
-                    self.do_temp = False
-
             if self.target['isTOO']:
                 self.do_too = False
                 APFLib.write(self.apf.robot["MASTER_OBSTOO"], False, binary=True)
@@ -1116,7 +1108,8 @@ if __name__ == "__main__":
     print(str(t_tel))
 
     uco_targets = UCOTargetTables.UCOTargetTables(t_opt)
-    scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=t_opt.owner, start_time=t_opt.start)
+    scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=t_opt.owner, start_time=t_opt.start,
+                                          do_templates=True, tot_temps=4)
 
     observe = Observe(t_apf, t_tel, t_opt, scheduler, task=parent)
     APFTask.waitFor(parent, True, timeout=2)

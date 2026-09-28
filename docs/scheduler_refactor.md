@@ -36,6 +36,7 @@ After it:
 | `start_time` | Lives on the scheduler (`scheduler.start_time`); `Observe` reads and writes it there |
 | `do_templates` / `do_too` defaults | `False`, as the old `get_next` had; both can also be overridden per call |
 | Failed-object tracking | The list stays on the scheduler (`last_objs_attempted`). Whether it is used is a constructor option, `track_failures`, default `False`. `Main.sin` passes `track_failures=False`, matching `main`, which had turned tracking off |
+| Template budget | Lives on the scheduler: `tot_temps` (constructor, default `None` = no limit) and the count `n_temps`. `get_next` counts each template it returns and stops offering templates once `n_temps >= tot_temps`. `Main.sin` passes `do_templates=True, tot_temps=4`, the old `Observe` defaults. A template counts when `get_next` returns it, even if `Observe` then fails to write it to scriptobs (previously such a template did not count) |
 | `utils/` | Port the live scripts; leave the already-dead ones alone |
 
 ## Why composition and not one merged class
@@ -85,16 +86,18 @@ if opt.start:
     except ValueError as e:
         apflog("ValueError: %s" % (e), echo=True, level='error')
 scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=opt.owner if opt.owner else 'public',
-                                      start_time=start_time, track_failures=False)
+                                      start_time=start_time, track_failures=False,
+                                      do_templates=True, tot_temps=4)
 observe = Observe.Observe(apf, tel, opt, scheduler, task=parent)
 ```
 
 `Observe` reaches the tables through `self.scheduler.targets`, so it takes one
 argument instead of two.
 
-**Behavior change:** because `start_time` now lives on the scheduler, it also
-survives an `Observe` restart. Previously `Observe.__init__` re-read it from
-`--start` on every restart. This was a deliberate choice; the alternative
+**Behavior change:** because `start_time` and the template budget now live on
+the scheduler, they also survive an `Observe` restart. Previously
+`Observe.__init__` re-read `start_time` from `--start` and reset the template
+count to zero on every restart. This was a deliberate choice; the alternative
 (keep `start_time` on `Observe` and pass it per call) was considered and
 rejected.
 
@@ -182,7 +185,8 @@ class UCOScheduler(object):
 
     def __init__(self, targets, owner='public', outdir=None,
                  do_templates=False, do_too=False, start_time=None,
-                 outfn='googledex.dat', toofn='too.dat', track_failures=False):
+                 outfn='googledex.dat', toofn='too.dat', track_failures=False,
+                 tot_temps=None):
         self.targets   = targets          # UCOTargetTables
         self.owner     = owner
         self.outdir    = outdir or os.getcwd()
@@ -192,9 +196,12 @@ class UCOScheduler(object):
         self.do_too       = do_too
         self.start_time   = start_time
         self.track_failures = track_failures
+        self.tot_temps = tot_temps
 
         # run-state, was a module global
         self.last_objs_attempted = []
+        # templates returned so far, counted against tot_temps
+        self.n_temps = 0
 
         # per-call scratch, kept for logging and for Observe to inspect
         self.observed  = None             # ObservedLog from the last refresh
@@ -242,6 +249,12 @@ called (`Observe` calls it after power-cycling the telescope). With
 `track_failures=False`, `last_attempted()` is never called and the list stays
 empty.
 
+**Template budget.** At the start of each call `get_next` turns templates off
+if `tot_temps` is set and `n_temps >= tot_temps`, before the "Will attempt
+templates" log line, so the log reflects the cap. When it returns a template
+(`isTemp`), it adds one to `n_temps`. This replaces the counting `Observe` and
+`sim_night.py` each did themselves.
+
 Removed from the module: the `last_objs_attempted` global, the module-level
 `get_next` and `zero_last_objs_attempted` (a temporary shim during step 6, see
 "Steps as done"), the free function `update_hour_table` (moved to
@@ -279,10 +292,10 @@ the default `track_failures=False`.
 | Line (now) | Before | After |
 | --- | --- | --- |
 | `Observe.py:21-22` | `import UCOScheduler as ds` / `import UCOTargets` | `import UCOScheduler` / `import UCOTargetTables` (both used only by the `__main__` block) |
-| `Observe.py:33` | `def __init__(self, apf, tel, opt, uco_targets, ...)` | `def __init__(self, apf, tel, opt, scheduler, ...)` |
-| `Observe.py:499` | `self.check_files()` | `self.scheduler.targets.check_files()` |
-| `Observe.py:501` | `ds.get_next(time.time(), seeing, slowdown, self.uco_targets, bstar=..., do_too=..., owner=..., do_templates=..., focval=..., start_time=...)` | `self.scheduler.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, focval=self.focval, do_templates=self.do_temp, do_too=self.do_too)` |
-| `Observe.py:632` | `ds.zero_last_objs_attempted()` | `self.scheduler.zero_last_objs_attempted()` |
+| `Observe.py:33` | `def __init__(self, apf, tel, opt, uco_targets, tot_temps=4, task='master')` | `def __init__(self, apf, tel, opt, scheduler, task='master')` |
+| `Observe.py:496` | `self.check_files()` | `self.scheduler.targets.check_files()` |
+| `Observe.py:498` | `ds.get_next(time.time(), seeing, slowdown, self.uco_targets, bstar=..., do_too=..., owner=..., do_templates=..., focval=..., start_time=...)` | `self.scheduler.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, focval=self.focval, do_too=self.do_too)` |
+| `Observe.py:624` | `ds.zero_last_objs_attempted()` | `self.scheduler.zero_last_objs_attempted()` |
 
 Also:
 
@@ -292,9 +305,13 @@ Also:
   is now set on the scheduler in `Main.sin`.
 * The `start_time` initialisation from `opt.start` moved to `Main.sin`, and all
   14 uses of `self.start_time` became `self.scheduler.start_time`, including
-  `should_start_list()` (`Observe.py:287`), which clears it an hour after the
+  `should_start_list()` (`Observe.py:284`), which clears it an hour after the
   start time, the `MASTER_WHENSTARTLIST` check and the fixed-list branches.
-* The `__main__` test block builds a `UCOScheduler` and passes it in.
+* The template budget moved to the scheduler: `self.do_temp`, `self.n_temps`,
+  `self.tot_temps`, the `tot_temps` constructor argument and the counting after
+  each template were removed.
+* The `__main__` test block builds a `UCOScheduler` (with `do_templates=True,
+  tot_temps=4`) and passes it in.
 
 `Observe.py` also has unrelated changes from `main` (the power-cycle limit and
 `do_not_open`), brought in by the merge `afd3357`. They are not part of this
@@ -305,7 +322,7 @@ refactor.
 * `import UCOScheduler as ds` became `import UCOScheduler`; `import UCOTargets`
   became `import UCOTargetTables`.
 * The scheduler is built alongside the tables, with `owner`, the parsed
-  `start_time` and `track_failures=False`, and passed to `Observe` both at
+  `start_time`, `track_failures=False`, `do_templates=True` and `tot_temps=4`, and passed to `Observe` both at
   startup and on thread restart (see "Lifetime" above).
 
 ## getUCOTargets.py changes
@@ -321,8 +338,11 @@ Live scripts, ported:
   the loop (in `sim_nights`, before the loop over nights, so the failed-object
   list carries across nights as the old global did) and call
   `scheduler.get_next(...)` inside it. `outfn`, `outdir` and `start_time` go to
-  the constructor. They do not pass `track_failures`, so tracking is off in the
-  sims; pass `track_failures=True` to simulate with it on. They still call
+  the constructor, along with `do_templates=True`. `sim_night.py` passes
+  `tot_temps=2` (its old "two per night" rule) and no longer counts templates
+  itself; `sim_nights.py` has no cap, as before. Neither passes
+  `track_failures`, so tracking is off in the sims; pass `track_failures=True`
+  to simulate with it on. They still call
   `ParseUCOSched.gen_stars` directly for their own `stars` list.
 * `utils/make_scriptobsline.py`: `ds.make_scriptobs_line` became
   `ScriptobsLine.make_scriptobs_line`.
@@ -407,6 +427,7 @@ Each step left the tree runnable, so a bad step can be bisected.
 | 7 | `Observe.py`, `Main.sin`, `sim_night.py`, `sim_nights.py`, `test_UCOScheduler.py` moved to the object API; temporary shim deleted | `8f0f51f` |
 | merge | Parallel line (see below) merged in | `8ac7dc7` |
 | 8 | Fixes lost by the merge reapplied to the class code; `track_failures` option added | `c308960` |
+| 8 | Template budget moved into the scheduler (`tot_temps`, `n_temps`) | uncommitted |
 | 8 | Remaining bug fixes | outstanding |
 
 **Step 6 shim.** While `Observe` and the sim scripts still called the module
@@ -480,6 +501,13 @@ these first, because the scheduler rewrites `googledex.dat` and creates
   pick as failed, `track_failures=True` skips it on the next call and
   `track_failures=False` never calls `last_attempted()`.
 
+* **Template budget:** seeded `sim_night.py`, `sim_nights.py` and
+  `test_UCOScheduler.py` identical to `c308960`. With every target set to
+  `Template=N`, seeded `sim_night.py` on 2026-10-10 and 2026-10-12 returned
+  exactly 2 templates each, old and new, with identical output and `.simout`.
+  Over 30 calls on one night, `tot_temps=4` returned 4 templates and
+  `tot_temps=None` returned 18.
+
 **Not executed:** `Observe.py`, `Main.sin` and `getUCOTargets.py` need `ktl`,
 so they were compiled or parsed, and grepped for leftover references, but never
 run. The first night on the telescope is their real test.
@@ -496,10 +524,6 @@ bug 4 is fixed.
    `Target` result class? The dict is consumed in `Observe.py` by string key
    (`self.target['NAME']`, `self.target["SCRIPTOBS"]`) and in the sim scripts.
    A result class is nicer but widens the diff. **As built:** still a dict.
-2. `Observe` changes `self.do_temp` and `self.n_temps` during the night to cap
-   template observations at `tot_temps`. That template budget arguably belongs
-   to the scheduler. **As built:** it stays in `Observe`, which passes
-   `do_templates` per call.
 
-Settled: the tables class name (`UCOTargetTables`) and failed-object tracking
-(the `track_failures` option).
+Settled: the tables class name (`UCOTargetTables`), failed-object tracking
+(the `track_failures` option) and the template budget (on the scheduler).

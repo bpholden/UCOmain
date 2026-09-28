@@ -206,7 +206,7 @@ def main():
     ucotargets.make_rank_table()
 
     scheduler = UCOScheduler.UCOScheduler(ucotargets, outfn=options.infile, \
-                                          outdir=options.outdir)
+                                          outdir=options.outdir, do_templates=True)
 
     for datestr in datelist:
 
@@ -222,7 +222,6 @@ def main():
         fwhms = NightSim.gen_seeing()
         slowdowns = NightSim.gen_clouds()
 
-        do_temp = True
         lastslow = 5
         lastfwhm = 15
         otfn = os.path.join(options.outdir,"observed_targets")
@@ -231,7 +230,7 @@ def main():
         observing = True
         while observing:
             result = scheduler.get_next(curtime.datetime(), lastfwhm, lastslow, \
-                                        bstar=bstar, do_templates=do_temp)
+                                        bstar=bstar)
             if result:
                 if bstar:
                     bstar = False

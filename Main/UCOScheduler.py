@@ -236,10 +236,14 @@ class UCOScheduler(object):
     when it failed and skips it on later calls, until
     zero_last_objs_attempted is called.
 
+    tot_temps - the most template observations get_next will return over
+    the scheduler's lifetime; None means no limit.
+
     '''
     def __init__(self, targets, owner='public', outdir=None,
                  do_templates=False, do_too=False, start_time=None,
-                 outfn='googledex.dat', toofn='too.dat', track_failures=False):
+                 outfn='googledex.dat', toofn='too.dat', track_failures=False,
+                 tot_temps=None):
         self.targets = targets
         self.owner = owner
         self.outdir = outdir or os.getcwd()
@@ -249,9 +253,12 @@ class UCOScheduler(object):
         self.do_too = do_too
         self.start_time = start_time
         self.track_failures = track_failures
+        self.tot_temps = tot_temps
 
         # run-state, was a module global
         self.last_objs_attempted = []
+        # templates returned so far, counted against tot_temps
+        self.n_temps = 0
 
         # per-call scratch, kept for logging and for Observe to inspect
         self.observed = None
@@ -280,6 +287,8 @@ class UCOScheduler(object):
         """
         if do_templates is None:
             do_templates = self.do_templates
+        if self.tot_temps is not None and self.n_temps >= self.tot_temps:
+            do_templates = False
         if do_too is None:
             do_too = self.do_too
 
@@ -349,6 +358,8 @@ class UCOScheduler(object):
                            idx, focval=focval, bstar=bstar, mode=config['mode'])
         if take_template and bstar is False:
             self._add_template(res, idx, dt, bstars)
+        if res['isTemp']:
+            self.n_temps += 1
 
         res['template_conditions_met'] = self.template_conditions_met
         self.result = res
