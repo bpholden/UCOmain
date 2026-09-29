@@ -524,6 +524,7 @@ bug 4 is fixed.
    `Target` result class? The dict is consumed in `Observe.py` by string key
    (`self.target['NAME']`, `self.target["SCRIPTOBS"]`) and in the sim scripts.
    A result class is nicer but widens the diff. **As built:** still a dict.
+   The plan for replacing it is in `docs/scheduler_target_class.md`.
 
 Settled: the tables class name (`UCOTargetTables`), failed-object tracking
 (the `track_failures` option) and the template budget (on the scheduler).
