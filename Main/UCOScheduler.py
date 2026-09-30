@@ -239,6 +239,9 @@ class UCOScheduler(object):
     tot_temps - the most template observations get_next will return over
     the scheduler's lifetime; None means no limit.
 
+    do_too - whether ToO targets may be selected. get_next turns it off
+    after returning a ToO, so one is taken per time it is turned on.
+
     '''
     def __init__(self, targets, owner='public', outdir=None,
                  do_templates=False, do_too=False, start_time=None,
@@ -360,6 +363,8 @@ class UCOScheduler(object):
             self._add_template(res, idx, dt, bstars)
         if res['isTemp']:
             self.n_temps += 1
+        if res['isTOO']:
+            self.do_too = False
 
         res['template_conditions_met'] = self.template_conditions_met
         self.result = res

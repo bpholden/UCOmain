@@ -129,7 +129,6 @@ def main():
     observing = True
     curtime, endtime, apf_obs = NightSim.sun_times(datestr)
     bstar = options.bstar
-    do_too = True
 
     ucotargets.make_hour_table(obs_datetime=curtime.datetime())
     ucotargets.make_star_table()
@@ -138,18 +137,17 @@ def main():
 
     scheduler = UCOScheduler.UCOScheduler(ucotargets, outfn=options.infile, \
                                           outdir=outdir, start_time=start_time, \
-                                          do_templates=True, tot_temps=2) # two per night
+                                          do_templates=True, tot_temps=2, \
+                                          do_too=True) # two templates, one ToO per night
 
     while observing:
         curtime = ephem.Date(curtime)
 
         result = scheduler.get_next(curtime.datetime(), lastfwhm, lastslow, \
-                                    bstar=bstar, do_too=do_too)
+                                    bstar=bstar)
         if result:
             if result['isBstar']:
                 bstar = False
-            if result['isTOO']:
-                do_too = False # one per night
             curtime += 70./86400 # acquisition time
             (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
             idx = int(idx[0])

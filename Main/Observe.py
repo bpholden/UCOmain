@@ -85,7 +85,6 @@ class Observe(threading.Thread):
             self.debug = opt.test
         else:
             self.debug = False
-        self.do_too = True
         self.focval = 0
 
         self.exit_message = None
@@ -219,7 +218,7 @@ class Observe(threading.Thread):
             The variable OBSBSTAR still overrides
         """
         self.obs_B_star = ktl.read('apftask', 'MASTER_OBSBSTAR', binary=True)
-        self.do_too = ktl.read('apftask', 'MASTER_OBSTOO', binary=True)
+        self.scheduler.do_too = ktl.read('apftask', 'MASTER_OBSTOO', binary=True)
 
         if haveobserved and self.last_obs_success:
             self.obs_B_star = False
@@ -496,8 +495,7 @@ class Observe(threading.Thread):
             self.scheduler.targets.check_files()
 
             self.target = self.scheduler.get_next(time.time(), seeing, slowdown, \
-                                         bstar=self.obs_B_star, focval=self.focval, \
-                                         do_too=self.do_too)
+                                         bstar=self.obs_B_star, focval=self.focval)
 
             if self.target is None:
                 log_str = "No acceptable target was found. "
@@ -553,7 +551,6 @@ class Observe(threading.Thread):
             apflog("get_target(): Counts=%.2f  EXPTime=%.2f  Nexp=%d"\
                     % (self.target["COUNTS"], self.target["EXP_TIME"], self.target["NEXP"]))
             if self.target['isTOO']:
-                self.do_too = False
                 APFLib.write(self.apf.robot["MASTER_OBSTOO"], False, binary=True)
 
         # opens the dome & telescope, if sunset is True calls open at sunset, else open at night
@@ -1109,7 +1106,7 @@ if __name__ == "__main__":
 
     uco_targets = UCOTargetTables.UCOTargetTables(t_opt)
     scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=t_opt.owner, start_time=t_opt.start,
-                                          do_templates=True, tot_temps=4)
+                                          do_templates=True, tot_temps=4, do_too=True)
 
     observe = Observe(t_apf, t_tel, t_opt, scheduler, task=parent)
     APFTask.waitFor(parent, True, timeout=2)
