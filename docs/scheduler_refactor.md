@@ -37,6 +37,7 @@ After it:
 | `do_templates` / `do_too` defaults | `False`, as the old `get_next` had; both can also be overridden per call |
 | Failed-object tracking | The list stays on the scheduler (`last_objs_attempted`). Whether it is used is a constructor option, `track_failures`, default `False`. `Main.sin` passes `track_failures=False`, matching `main`, which had turned tracking off |
 | Template budget | Lives on the scheduler: `tot_temps` (constructor, default `None` = no limit) and the count `n_temps`. `get_next` counts each template it returns and stops offering templates once `n_temps >= tot_temps`. `Main.sin` passes `do_templates=True, tot_temps=4`, the old `Observe` defaults. A template counts when `get_next` returns it, even if `Observe` then fails to write it to scriptobs (previously such a template did not count) |
+| ToO tracking | Lives on the scheduler: `get_next` sets `scheduler.do_too = False` after returning a ToO, so one ToO is taken each time ToOs are turned on. `Observe.check_star` copies the operator keyword `MASTER_OBSTOO` into `scheduler.do_too`, and `Observe` still writes `MASTER_OBSTOO = False` after a ToO, since the scheduler does not touch `ktl`. `Main.sin` passes `do_too=True`. There is no count cap, so an operator can re-enable ToOs after the first one, as before |
 | `utils/` | Port the live scripts; leave the already-dead ones alone |
 
 ## Why composition and not one merged class
@@ -87,7 +88,7 @@ if opt.start:
         apflog("ValueError: %s" % (e), echo=True, level='error')
 scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=opt.owner if opt.owner else 'public',
                                       start_time=start_time, track_failures=False,
-                                      do_templates=True, tot_temps=4)
+                                      do_templates=True, tot_temps=4, do_too=True)
 observe = Observe.Observe(apf, tel, opt, scheduler, task=parent)
 ```
 
@@ -109,7 +110,7 @@ rejected.
 | `Main/UCOTargetTables.py` (renamed from `UCOTargets.py`, 314 lines) | `class UCOTargetTables`: rank/hour/star tables and all disk bookkeeping |
 | `Main/ScriptobsLine.py` (new, 216 lines) | pure string generation for scriptobs lines |
 | `Main/Observability.py` (new, 256 lines) | pure array/astro filters, no scheduler state |
-| `Main/UCOScheduler.py` (rewritten, 565 lines) | the pure selection helpers and `class UCOScheduler` |
+| `Main/UCOScheduler.py` (rewritten, 581 lines) | the pure selection helpers and `class UCOScheduler` |
 | `Main/test_UCOScheduler.py` (new, 154 lines) | the `test_*` functions formerly at the bottom of `UCOScheduler.py` |
 
 `UCOTargets.py` was renamed with `git mv`, so its history carries over.
@@ -237,9 +238,10 @@ night log reads the same.
 Constructor arguments (`owner`, `outdir`, `outfn`, `toofn`, `start_time`,
 `do_templates`, `do_too`) used to be per-call `get_next` keyword arguments.
 They moved to `__init__` because `Observe` passed the same value on every call.
-`do_templates` and `do_too` are also accepted per call as overrides, because
-`Observe` changes `self.do_temp` and `self.do_too` during a night. `outdir` is
-stored but, as before the refactor, not used by `get_next`.
+`do_templates` and `do_too` are also accepted per call as overrides.
+`Observe` no longer uses them, since the template budget and ToO tracking now
+live on the scheduler; `test_UCOScheduler.py` still passes `do_templates` per
+call. `outdir` is stored but, as before the refactor, not used by `get_next`.
 
 **Failed-object tracking.** With `track_failures=True`, `get_next` calls
 `record_last_attempt()`, which asks `last_attempted()` for the last object
@@ -253,6 +255,14 @@ empty.
 if `tot_temps` is set and `n_temps >= tot_temps`, before the "Will attempt
 templates" log line, so the log reflects the cap. When it returns a template
 (`isTemp`), it adds one to `n_temps`. This replaces the counting `Observe` and
+`sim_night.py` each did themselves.
+
+**ToO tracking.** When `get_next` returns a ToO (`isTOO`), it sets
+`self.do_too = False`, so later calls filter ToOs out until something turns
+`do_too` back on. In production that is `Observe.check_star`, which copies the
+operator keyword `MASTER_OBSTOO` into `scheduler.do_too` before each target is
+chosen; `Observe` writes that keyword to `False` after a ToO, so the operator
+sees it go off. This replaces the `do_too` bookkeeping `Observe` and
 `sim_night.py` each did themselves.
 
 Removed from the module: the `last_objs_attempted` global, the module-level
@@ -293,9 +303,9 @@ the default `track_failures=False`.
 | --- | --- | --- |
 | `Observe.py:21-22` | `import UCOScheduler as ds` / `import UCOTargets` | `import UCOScheduler` / `import UCOTargetTables` (both used only by the `__main__` block) |
 | `Observe.py:33` | `def __init__(self, apf, tel, opt, uco_targets, tot_temps=4, task='master')` | `def __init__(self, apf, tel, opt, scheduler, task='master')` |
-| `Observe.py:496` | `self.check_files()` | `self.scheduler.targets.check_files()` |
-| `Observe.py:498` | `ds.get_next(time.time(), seeing, slowdown, self.uco_targets, bstar=..., do_too=..., owner=..., do_templates=..., focval=..., start_time=...)` | `self.scheduler.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, focval=self.focval, do_too=self.do_too)` |
-| `Observe.py:624` | `ds.zero_last_objs_attempted()` | `self.scheduler.zero_last_objs_attempted()` |
+| `Observe.py:495` | `self.check_files()` | `self.scheduler.targets.check_files()` |
+| `Observe.py:497` | `ds.get_next(time.time(), seeing, slowdown, self.uco_targets, bstar=..., do_too=..., owner=..., do_templates=..., focval=..., start_time=...)` | `self.scheduler.get_next(time.time(), seeing, slowdown, bstar=self.obs_B_star, focval=self.focval)` |
+| `Observe.py:621` | `ds.zero_last_objs_attempted()` | `self.scheduler.zero_last_objs_attempted()` |
 
 Also:
 
@@ -305,13 +315,17 @@ Also:
   is now set on the scheduler in `Main.sin`.
 * The `start_time` initialisation from `opt.start` moved to `Main.sin`, and all
   14 uses of `self.start_time` became `self.scheduler.start_time`, including
-  `should_start_list()` (`Observe.py:284`), which clears it an hour after the
+  `should_start_list()` (`Observe.py:283`), which clears it an hour after the
   start time, the `MASTER_WHENSTARTLIST` check and the fixed-list branches.
 * The template budget moved to the scheduler: `self.do_temp`, `self.n_temps`,
   `self.tot_temps`, the `tot_temps` constructor argument and the counting after
   each template were removed.
+* ToO tracking moved to the scheduler: `self.do_too` was removed.
+  `check_star()` (`Observe.py:221`) now copies `MASTER_OBSTOO` into
+  `self.scheduler.do_too`. After a ToO target (`Observe.py:553`), `Observe`
+  still writes `MASTER_OBSTOO = False` but no longer changes any flag itself.
 * The `__main__` test block builds a `UCOScheduler` (with `do_templates=True,
-  tot_temps=4`) and passes it in.
+  tot_temps=4, do_too=True`) and passes it in.
 
 `Observe.py` also has unrelated changes from `main` (the power-cycle limit and
 `do_not_open`), brought in by the merge `afd3357`. They are not part of this
@@ -322,8 +336,9 @@ refactor.
 * `import UCOScheduler as ds` became `import UCOScheduler`; `import UCOTargets`
   became `import UCOTargetTables`.
 * The scheduler is built alongside the tables, with `owner`, the parsed
-  `start_time`, `track_failures=False`, `do_templates=True` and `tot_temps=4`, and passed to `Observe` both at
-  startup and on thread restart (see "Lifetime" above).
+  `start_time`, `track_failures=False`, `do_templates=True`, `tot_temps=4` and
+  `do_too=True`, and passed to `Observe` both at startup and on thread restart
+  (see "Lifetime" above).
 
 ## getUCOTargets.py changes
 
@@ -339,8 +354,9 @@ Live scripts, ported:
   list carries across nights as the old global did) and call
   `scheduler.get_next(...)` inside it. `outfn`, `outdir` and `start_time` go to
   the constructor, along with `do_templates=True`. `sim_night.py` passes
-  `tot_temps=2` (its old "two per night" rule) and no longer counts templates
-  itself; `sim_nights.py` has no cap, as before. Neither passes
+  `tot_temps=2` and `do_too=True` (its old "two templates, one ToO per night"
+  rules) and no longer tracks either itself; `sim_nights.py` has no template
+  cap and does not allow ToOs, as before. Neither passes
   `track_failures`, so tracking is off in the sims; pass `track_failures=True`
   to simulate with it on. They still call
   `ParseUCOSched.gen_stars` directly for their own `stars` list.
@@ -369,7 +385,7 @@ script was already broken by the other two calls.)
 
 These are pre-existing. They are fixed one commit each, outside the move-only
 steps, because each can change which target gets picked. Line numbers are
-current as of `c308960`. Bugs already fixed are listed under "Steps as done".
+current as of the ToO-tracking change (after `984105d`). Bugs already fixed are listed under "Steps as done".
 
 1. **`star_table['too'] is False`** at `SunPos.py:80` (`sun_el_check`). `is` on
    a numpy array is always `False`, so `faint &= False` makes `faint`
@@ -385,8 +401,8 @@ current as of `c308960`. Bugs already fixed are listed under "Steps as done".
    the calling path is disabled.
 
 3. **`config_defaults` result is almost entirely unused**: `get_next` builds
-   `config` at `UCOScheduler.py:288` and reads only `config['mode']`, which is
-   `''`, at `:349`. `config_defaults` stays for
+   `config` at `UCOScheduler.py:300` and reads only `config['mode']`, which is
+   `''`, at `:361`. `config_defaults` stays for
    `ParseUCOSched.parse_UCOSched`'s `config=` parameter, but the `get_next`
    call can drop it.
 
@@ -427,7 +443,8 @@ Each step left the tree runnable, so a bad step can be bisected.
 | 7 | `Observe.py`, `Main.sin`, `sim_night.py`, `sim_nights.py`, `test_UCOScheduler.py` moved to the object API; temporary shim deleted | `8f0f51f` |
 | merge | Parallel line (see below) merged in | `8ac7dc7` |
 | 8 | Fixes lost by the merge reapplied to the class code; `track_failures` option added | `c308960` |
-| 8 | Template budget moved into the scheduler (`tot_temps`, `n_temps`) | uncommitted |
+| 8 | Template budget moved into the scheduler (`tot_temps`, `n_temps`) | `984105d` |
+| 8 | ToO tracking moved into the scheduler (`do_too` turned off after a ToO) | uncommitted |
 | 8 | Remaining bug fixes | outstanding |
 
 **Step 6 shim.** While `Observe` and the sim scripts still called the module
@@ -508,6 +525,13 @@ these first, because the scheduler rewrites `googledex.dat` and creates
   Over 30 calls on one night, `tot_temps=4` returned 4 templates and
   `tot_temps=None` returned 18.
 
+* **ToO tracking:** seeded `sim_night.py` on 2026-09-28 and 2026-10-10 and
+  `test_UCOScheduler.py` identical to `984105d`. Each night took exactly one
+  ToO target (SN2026aaiv, program 2026B_A002i0) and filtered ToOs out on every
+  later call. Setting `do_too = True` again partway through a night, as
+  `Observe.check_star` does when an operator re-enables `MASTER_OBSTOO`,
+  allowed a second ToO, after which `do_too` went off again.
+
 **Not executed:** `Observe.py`, `Main.sin` and `getUCOTargets.py` need `ktl`,
 so they were compiled or parsed, and grepped for leftover references, but never
 run. The first night on the telescope is their real test.
@@ -527,4 +551,5 @@ bug 4 is fixed.
    The plan for replacing it is in `docs/scheduler_target_class.md`.
 
 Settled: the tables class name (`UCOTargetTables`), failed-object tracking
-(the `track_failures` option) and the template budget (on the scheduler).
+(the `track_failures` option), the template budget and ToO tracking (both on
+the scheduler).

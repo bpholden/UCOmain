@@ -17,13 +17,13 @@ without changing which targets are picked or what is written to disk.
 | Where | Role | Keys / operations |
 | --- | --- | --- |
 | `make_result` (`UCOScheduler.py:139-186`) | **builds it** | all 21 keys; values are numpy scalars (`np.float64`, `np.str_`) |
-| `UCOScheduler._add_template` (`:562-574`) | **changes it** | reads `owner`; replaces `SCRIPTOBS`; sets `isTemp`, `DECKER` |
-| `UCOScheduler.get_next` (`:357-366`) | **changes it** | reads `isTemp` (template budget); sets `template_conditions_met`; stores it on `self.result` |
-| `Observe.get_target` (`Observe.py:498-557`) | reads it | `NAME`, `VMAG`, `BV`, `DECKER`, `mode`, `PRI`, `COUNTS`, `EXP_TIME`, `NEXP`, `isTemp`, `isTOO`, `template_conditions_met`; **pops** `SCRIPTOBS` |
-| `Observe` fixed-list path (`:675-689`, `:856-859`) | **builds its own dicts** | `self.fixed_target = {'SCRIPTOBS': [...]}`, then `self.target = {'SCRIPTOBS': ...}`, holding no target data at all |
-| `pop_next`, `empty_queue` (`:389-414`) | treat both as a queue | `'SCRIPTOBS' in self.target.keys()`, then pop |
+| `UCOScheduler._add_template` (`:567-579`) | **changes it** | reads `owner`; replaces `SCRIPTOBS`; sets `isTemp`, `DECKER` |
+| `UCOScheduler.get_next` (`:360-371`) | **changes it** | reads `isTemp` (template budget) and `isTOO` (ToO tracking); sets `template_conditions_met`; stores it on `self.result` |
+| `Observe.get_target` (`Observe.py:497-554`) | reads it | `NAME`, `VMAG`, `BV`, `DECKER`, `mode`, `PRI`, `COUNTS`, `EXP_TIME`, `NEXP`, `isTemp`, `isTOO` (to write `MASTER_OBSTOO`), `template_conditions_met`; **pops** `SCRIPTOBS` |
+| `Observe` fixed-list path (`:672-686`, `:855-856`) | **builds its own dicts** | `self.fixed_target = {'SCRIPTOBS': [...]}`, then `self.target = {'SCRIPTOBS': ...}`, holding no target data at all |
+| `pop_next`, `empty_queue` (`:388-413`) | treat both as a queue | `'SCRIPTOBS' in self.target.keys()`, then pop |
 | `NightSim.compute_simulation` (`utils/NightSim.py:103-133`) | reads it | `VMAG`, `BV`, `DECKER`, `COUNTS`, `EXP_TIME`, `NAME` |
-| `utils/sim_night.py`, `utils/sim_nights.py` | read it | `isBstar`, `isTOO`, `NAME`, `NEXP`, `owner`; pop `SCRIPTOBS` |
+| `utils/sim_night.py`, `utils/sim_nights.py` | read it | `isBstar`, `NAME`, `NEXP`, `owner`; pop `SCRIPTOBS` |
 | `Main/test_UCOScheduler.py` | reads it | pops `SCRIPTOBS`, reads `TOTEXP_TIME`, and **prints the whole dict** at lines 81 and 86 |
 
 Six keys are never read by any caller: `RA`, `DEC`, `PM_RA`, `PM_DEC`, `I2`,
@@ -90,10 +90,10 @@ class Target(object):
 | File | Change |
 | --- | --- |
 | `Main/Target.py` | new |
-| `Main/UCOScheduler.py` | `make_result` returns a `Target`; `_add_template` calls `set_template_lines`; `get_next` uses `is_temp` and sets `template_conditions_met` as attributes |
+| `Main/UCOScheduler.py` | `make_result` returns a `Target`; `_add_template` calls `set_template_lines`; `get_next` uses `is_temp` and `is_too` and sets `template_conditions_met` as attributes |
 | `Main/Observe.py` | `get_target` uses attributes. With decision 1 as recommended: a new `self.pending_lines` list; `pop_next`, `empty_queue` and the two fixed-list sites use it, and the `{'SCRIPTOBS': ...}` dicts go away. This is the only part that is not mechanical |
 | `utils/NightSim.py` | six key reads become attributes |
-| `utils/sim_night.py`, `utils/sim_nights.py` | about five reads each |
+| `utils/sim_night.py`, `utils/sim_nights.py` | about four reads each |
 | `Main/test_UCOScheduler.py` | a few reads; `print(result)` output is unchanged thanks to `__repr__` |
 | `Main/ScriptobsLine.py`, `Main/Observability.py`, `Main/UCOTargetTables.py`, `Main/Main.sin` | no change |
 
