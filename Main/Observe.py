@@ -856,20 +856,6 @@ class Observe(threading.Thread):
                     APFTask.set(self.task, suffix="MESSAGE", value=outstr, wait=False)
                     closing()
 
-            # Check the slowdown factor to close for clouds
-            if self.vmag is not None and self.bmv is not None and False:
-                slow = calc_slowdown()
-                APFTask.set(self.task, suffix="MESSAGE", value="FWHM = %.2f and slowdown %.2f" % (self.apf.avg_fwhm, slow), wait=False)
-                if slow > 16:
-                    # The slowdown is too high, we should close up and wait.
-                    APFTask.set(self.task, suffix="MESSAGE", value="Closing for clouds", wait=False)
-                    apflog("Slowdown factor of %.2f is too high. Waiting 30 min to check again." % slow, echo=True)
-                    closing()
-                    APFTask.waitfor(self.task, True, timeout=60*30)
-                    self.vmag = None
-                    self.bmv = None
-                    self.apf.countrate = 0
-
             # check starlist
             self.check_starlist()
 
@@ -1116,8 +1102,7 @@ class Observe(threading.Thread):
         self.signal = False
         self.apf.kill_robot()
 
-if __name__ == "__main__":
-
+def test_observe():
     class Test:
         def __init__(self):
             self.owner = 'public'
@@ -1160,3 +1145,6 @@ if __name__ == "__main__":
             apflog("%s has been killed by user." % (observe.name), echo=True)
             sys.exit()
     print("Done")
+
+if __name__ == "__main__":
+    test_observe()
