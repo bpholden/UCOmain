@@ -1082,6 +1082,10 @@ class Observe(threading.Thread):
             if self.tel.is_open()[0] and self.tel.dmtimer <= DMLIM:
                 self.tel.dm_reset()
 
+            if self.tel.is_open()[0] is False:
+                self.can_open = APFTask.get(self.task, 
+                                            ["CANOPEN"])
+
             if not self.tel.is_open()[0] and not rising:
                 omsg = "Waiting for sunset"
                 if current_msg['MESSAGE'] != omsg:
