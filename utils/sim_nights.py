@@ -236,19 +236,19 @@ def main():
                     bstar = False
 
                 curtime += 70./86400 # acquisition time
-                (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
+                (idx,) = np.where(ucotargets.star_table['name'] == result.name)
                 idx = idx[0]
 
-                for _ in range(0,int(result['NEXP'])):
+                for _ in range(0,int(result.nexp)):
                     (curtime,lastfwhm,lastslow,outstr) = \
                         NightSim.compute_simulation(result,curtime, stars[idx],\
                                                     apf_obs, slowdowns, fwhms,\
-                                                        result['owner'])
+                                                        result.owner)
                     sim_results(outstr,star_strs,star_dates)
                     simoutfp.write("%s\n" % (outstr))
 
                 ot = open(otfn,"a+", encoding='utf-8')
-                ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
+                ot.write("%s\n" % (result.scriptobs.pop()))
                 ot.close()
             else:
                 curtime += 2100./86400 # close for lack of target

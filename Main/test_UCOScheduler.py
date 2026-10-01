@@ -40,8 +40,8 @@ def test_basic_ops(scheduler):
     starttime = time.time()
     result = scheduler.get_next(starttime, 7.99, 0.4, bstar=True, \
                       do_templates=False)
-    while len(result['SCRIPTOBS']) > 0:
-        ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
+    while len(result.scriptobs) > 0:
+        ot.write("%s\n" % (result.scriptobs.pop()))
     ot.close()
 
     for i in range(5):
@@ -53,12 +53,12 @@ def test_basic_ops(scheduler):
         if result is None:
             print("Get None target")
 
-        while len(result["SCRIPTOBS"]) > 0:
+        while len(result.scriptobs) > 0:
             ot = open(OTFN, "a+")
-            while len(result['SCRIPTOBS']) > 0:
-                ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
+            while len(result.scriptobs) > 0:
+                ot.write("%s\n" % (result.scriptobs.pop()))
             ot.close()
-            starttime += result["TOTEXP_TIME"]
+            starttime += result.totexp_time
 
     print("Done")
     ot.close()

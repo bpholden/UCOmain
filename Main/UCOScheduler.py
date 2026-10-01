@@ -12,6 +12,7 @@ import SchedulerConsts
 import Observability
 import ScriptobsLine
 import SunPos
+import Target
 import Visible
 
 try:
@@ -134,51 +135,30 @@ def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focva
     bstar - boolean, True if target is a B star
     mode - string, mode of observation
 
-    res - dictionary of target information
+    res - Target
     '''
-    res = dict()
-
-    res['RA'] = stars[idx].a_ra
-    res['DEC'] = stars[idx].a_dec
-    res['PM_RA'] = star_table['pmRA'][idx]
-    res['PM_DEC'] = star_table['pmDEC'][idx]
-    res['VMAG'] = star_table['Vmag'][idx]
-    res['BV'] = star_table['B-V'][idx]
-    res['COUNTS'] = star_table['expcount'][idx]
-    res['EXP_TIME'] = star_table['texp'][idx]
-    res['NEXP'] = star_table['nexp'][idx]
-    res['TOTEXP_TIME'] = totexptimes[idx]
-    res['NAME'] = star_table['name'][idx]
-    res['PRI'] = final_priorities[idx]
-    res['DECKER'] = star_table['decker'][idx]
-    res['I2'] = star_table['I2'][idx]
-    res['BINNING'] = star_table['binning'][idx]
-    res['isTemp'] = False
-    res['isBstar'] = bstar
-    res['isTOO'] = star_table['too'][idx]
-    res['mode'] = ''
-    res['owner'] = star_table['sheetn'][idx]
+    res = Target.Target.from_star_table(star_table, idx, stars[idx], totexptimes[idx],
+                                        final_priorities[idx], bstar=bstar)
 
 #    if np.ma.is_masked(star_table[idx]['obsblock']):
 #        res['obsblock'] = ''
 
-    res['SCRIPTOBS'] = []
     if bstar:
-        scriptobs_line = ScriptobsLine.make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], \
-                                         owner=res['owner'], I2='N', \
+        scriptobs_line = ScriptobsLine.make_scriptobs_line(star_table[idx], dt, decker=res.decker, \
+                                         owner=res.owner, I2='N', \
                                             focval=0)
         # we hard code the focval to skip it because 
         # we will focus on the observation created 
         # in the line below
         scriptobs_line = scriptobs_line + " # end"
-        res['SCRIPTOBS'].append(scriptobs_line)
+        res.scriptobs.append(scriptobs_line)
 
-    scriptobs_line = ScriptobsLine.make_scriptobs_line(star_table[idx], dt, decker=res['DECKER'], \
-                                         owner=res['owner'], I2=star_table['I2'][idx], \
+    scriptobs_line = ScriptobsLine.make_scriptobs_line(star_table[idx], dt, decker=res.decker, \
+                                         owner=res.owner, I2=star_table['I2'][idx], \
                                             focval=focval)
 
     scriptobs_line = scriptobs_line + " # end"
-    res['SCRIPTOBS'].append(scriptobs_line)
+    res.scriptobs.append(scriptobs_line)
 #    else:
 #        res['obsblock'] = star_table['obsblock'][idx]
 #        res['SCRIPTOBS'] = make_obs_block(star_table, idx, dt, focval)
@@ -361,12 +341,12 @@ class UCOScheduler(object):
                            idx, focval=focval, bstar=bstar, mode=config['mode'])
         if take_template and bstar is False:
             self._add_template(res, idx, dt, bstars)
-        if res['isTemp']:
+        if res.is_temp:
             self.n_temps += 1
-        if res['isTOO']:
+        if res.is_too:
             self.do_too = False
 
-        res['template_conditions_met'] = self.template_conditions_met
+        res.template_conditions_met = self.template_conditions_met
         self.result = res
         return res
 
@@ -564,18 +544,15 @@ class UCOScheduler(object):
         if Observability.enough_time_templates(star_table,self.stars,idx,self.apf_obs,dt):
             decker= "N"
             line  = ScriptobsLine.make_scriptobs_line(star_table[idx], \
-                                        dt, decker=decker, I2="N", owner=res['owner'], temp=True)
+                                        dt, decker=decker, I2="N", owner=res.owner, temp=True)
             if "decker=W" in line:
                 decker = "W"
             bline = ScriptobsLine.make_scriptobs_line(star_table[bstars][bidx], dt, \
-                                        decker=decker, I2="Y", owner=res['owner'], focval=2)
+                                        decker=decker, I2="Y", owner=res.owner, focval=2)
             bfinline = ScriptobsLine.make_scriptobs_line(star_table[bstars][bfinidx], dt,\
-                                            decker=decker, I2="Y", owner=res['owner'], focval=0)
-            res['SCRIPTOBS'] = []
-            res['SCRIPTOBS'].append(bfinline + " # temp=Y end")
-            res['SCRIPTOBS'].append(line + " # temp=Y")
-            res['SCRIPTOBS'].append(bline + " # temp=Y")
-            res['isTemp'] = True
-            res['DECKER'] = decker
+                                            decker=decker, I2="Y", owner=res.owner, focval=0)
+            res.set_template_lines([bfinline + " # temp=Y end",
+                                    line + " # temp=Y",
+                                    bline + " # temp=Y"], decker)
             apflog("Attempting template observation of %s" % (star_table['name'][idx]), echo=True)
 

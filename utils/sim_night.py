@@ -146,19 +146,19 @@ def main():
         result = scheduler.get_next(curtime.datetime(), lastfwhm, lastslow, \
                                     bstar=bstar)
         if result:
-            if result['isBstar']:
+            if result.is_bstar:
                 bstar = False
             curtime += 70./86400 # acquisition time
-            (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
+            (idx,) = np.where(ucotargets.star_table['name'] == result.name)
             idx = int(idx[0])
-            for _ in range(0,int(result['NEXP'])):
+            for _ in range(0,int(result.nexp)):
                 (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,\
                                                     curtime,stars[idx],apf_obs,slowdowns,fwhms,\
-                                                    result['owner'])
+                                                    result.owner)
                 outfp.write(outstr + "\n")
             ot = open(otfn,"a+", encoding='utf-8')
-            for i in range(0,len(result["SCRIPTOBS"])):
-                ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
+            for i in range(0,len(result.scriptobs)):
+                ot.write("%s\n" % (result.scriptobs.pop()))
             ot.close()
         else:
             curtime += 2100./86400 # close for lack of target
