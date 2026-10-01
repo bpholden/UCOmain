@@ -628,8 +628,8 @@ class Observe(threading.Thread):
                     if not result and self.tel.openOK:
                         apflog("Error: opening has failed twice, likely needs intervention.", level='Alert', echo=True)
                         self.tel.close()
-                        self.can_open = False
-                        self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
+                        #self.can_open = False
+                        #self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
             self.tel.check_FCUs()
             self.tel.dm_reset()
             empty_queue()
