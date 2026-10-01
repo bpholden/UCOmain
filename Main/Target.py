@@ -27,7 +27,6 @@ _KEYS = [
     ('SCRIPTOBS', 'scriptobs'),
     ('template_conditions_met', 'template_conditions_met'),
 ]
-_ATTR = dict(_KEYS)
 
 
 class Target(object):
@@ -109,18 +108,3 @@ class Target(object):
 
     def __repr__(self):
         return repr(self.to_dict())
-
-    # Temporary dict interface, so callers that still use the old keys keep
-    # working while they are moved to attributes
-    # (docs/scheduler_target_class.md, step 1). Remove in step 4.
-    def __getitem__(self, key):
-        return getattr(self, _ATTR[key])
-
-    def __setitem__(self, key, value):
-        setattr(self, _ATTR[key], value)
-
-    def __contains__(self, key):
-        return key in _ATTR
-
-    def keys(self):
-        return [key for key, _ in _KEYS]

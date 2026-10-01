@@ -1,6 +1,7 @@
 # Replacing the scheduler's result dict with a `Target` class
 
-Status: steps 1 and 2 done (uncommitted); steps 3-4 to do. The three decisions are
+Status: all four steps done. Steps 1 and 2 are committed (`057172f`,
+`314cfc1`); steps 3 and 4 are uncommitted. The three decisions are
 made (see "Decisions").
 Branch: `scheduler_object`, after the `UCOScheduler` class refactor
 (see `docs/scheduler_refactor.md`).
@@ -128,8 +129,28 @@ the class refactor (old and new side by side, on fresh copies of the
 3. **Split Observe's queue** (decision 1). This is the
    riskiest step and, like the rest of `Observe`, cannot be run without `ktl`;
    review it by reading, then watch the first night's log.
+   **Done:** `self.fixed_target` became `self.fixed_lines` (a list or
+   `None`), and the old `self.target['SCRIPTOBS']` queue became
+   `self.pending_lines`. `self.target` is now only ever a `Target` or `None`.
+   After `get_next`, `pending_lines` takes a *copy* of `target.scriptobs`, so
+   the `Target` keeps a full record of what was chosen. Every place that used
+   to empty the queue by setting `self.target = None` (an empty starlist, a
+   finished fixed list, `get_next` returning `None`) now also empties
+   `pending_lines`, so the same lines are dropped at the same moments. Running
+   a fixed list now sets `self.target = None` and moves the list into
+   `pending_lines`, instead of building a dict with only `SCRIPTOBS`.
+   Checked by loading `Observe.py` with stand-ins for `ktl`, `APFTask` and the
+   hardware modules (it imports and the class builds), by confirming it uses
+   no undefined names, and that every `self.target.<attr>` it reads exists on
+   `Target`. The logic itself was checked by reading only.
 4. **Remove the temporary dict interface.** Any caller still using a key then
    fails loudly instead of silently working.
+   **Done:** `__getitem__`, `__setitem__`, `__contains__`, `keys()` and the
+   key-to-attribute map they used were removed; `to_dict()` and `__repr__`
+   stay. A search of `Main/` and `utils/` finds no remaining old-key access on
+   a result. `test_UCOScheduler.py`, seeded `sim_night.py` (2026-09-28, and
+   2026-10-10 with every target `Template=N`) and seeded `sim_nights.py`
+   remain identical to `14a3510`, the code from before `Target`.
 
 ## Decisions
 

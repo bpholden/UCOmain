@@ -110,7 +110,8 @@ rejected.
 | `Main/UCOTargetTables.py` (renamed from `UCOTargets.py`, 314 lines) | `class UCOTargetTables`: rank/hour/star tables and all disk bookkeeping |
 | `Main/ScriptobsLine.py` (new, 216 lines) | pure string generation for scriptobs lines |
 | `Main/Observability.py` (new, 256 lines) | pure array/astro filters, no scheduler state |
-| `Main/UCOScheduler.py` (rewritten, 581 lines) | the pure selection helpers and `class UCOScheduler` |
+| `Main/UCOScheduler.py` (rewritten, 558 lines) | the pure selection helpers and `class UCOScheduler` |
+| `Main/Target.py` (new, 110 lines) | `class Target`, what `get_next` returns (see `docs/scheduler_target_class.md`) |
 | `Main/test_UCOScheduler.py` (new, 154 lines) | the `test_*` functions formerly at the bottom of `UCOScheduler.py` |
 
 `UCOTargets.py` was renamed with `git mv`, so its history carries over.
@@ -124,7 +125,7 @@ rejected.
 | `make_scriptobs_line` | unchanged; `utils/make_scriptobsline.py` and `gen_template_entry.sin` call it |
 | `num_template_exp` | unchanged |
 | `config_defaults` | unchanged |
-| `make_obs_block` | **dead**: its only caller is commented out in `make_result` (`UCOScheduler.py:184`). Moved; see outstanding bug 2, "Disabled obsblock path" |
+| `make_obs_block` | **dead**: its only caller is commented out in `make_result` (`UCOScheduler.py:164`). Moved; see outstanding bug 2, "Disabled obsblock path" |
 
 ### `Main/Observability.py`
 
@@ -254,10 +255,10 @@ empty.
 **Template budget.** At the start of each call `get_next` turns templates off
 if `tot_temps` is set and `n_temps >= tot_temps`, before the "Will attempt
 templates" log line, so the log reflects the cap. When it returns a template
-(`isTemp`), it adds one to `n_temps`. This replaces the counting `Observe` and
+(`is_temp`), it adds one to `n_temps`. This replaces the counting `Observe` and
 `sim_night.py` each did themselves.
 
-**ToO tracking.** When `get_next` returns a ToO (`isTOO`), it sets
+**ToO tracking.** When `get_next` returns a ToO (`is_too`), it sets
 `self.do_too = False`, so later calls filter ToOs out until something turns
 `do_too` back on. In production that is `Observe.check_star`, which copies the
 operator keyword `MASTER_OBSTOO` into `scheduler.do_too` before each target is
@@ -385,7 +386,7 @@ script was already broken by the other two calls.)
 
 These are pre-existing. They are fixed one commit each, outside the move-only
 steps, because each can change which target gets picked. Line numbers are
-current as of the ToO-tracking change (after `984105d`). Bugs already fixed are listed under "Steps as done".
+current as of the `Target` change (steps 3-4 of `docs/scheduler_target_class.md`). Bugs already fixed are listed under "Steps as done".
 
 1. **`star_table['too'] is False`** at `SunPos.py:80` (`sun_el_check`). `is` on
    a numpy array is always `False`, so `faint &= False` makes `faint`
@@ -395,14 +396,14 @@ current as of the ToO-tracking change (after `984105d`). Bugs already fixed are 
 
 2. **Disabled obsblock path.** `make_obs_block` (`ScriptobsLine.py:153`) has no
    live callers; the only call is commented out in `make_result` at
-   `UCOScheduler.py:184`, part of the commented-out `obsblock` lines at
-   `:162-163` and `:182-184`. Proposal: keep `make_obs_block`, since
+   `UCOScheduler.py:164`, part of the commented-out `obsblock` lines at
+   `:143-144` and `:162-164`. Proposal: keep `make_obs_block`, since
    re-enabling obsblocks is a plausible future want, and add a comment saying
    the calling path is disabled.
 
 3. **`config_defaults` result is almost entirely unused**: `get_next` builds
-   `config` at `UCOScheduler.py:300` and reads only `config['mode']`, which is
-   `''`, at `:361`. `config_defaults` stays for
+   `config` at `UCOScheduler.py:280` and reads only `config['mode']`, which is
+   `''`, at `:341`. `config_defaults` stays for
    `ParseUCOSched.parse_UCOSched`'s `config=` parameter, but the `get_next`
    call can drop it.
 
@@ -544,12 +545,7 @@ bug 4 is fixed.
 
 ## Open questions
 
-1. Should `get_next` keep returning a plain `dict`, or become a small
-   `Target` result class? The dict is consumed in `Observe.py` by string key
-   (`self.target['NAME']`, `self.target["SCRIPTOBS"]`) and in the sim scripts.
-   A result class is nicer but widens the diff. **As built:** still a dict.
-   The plan for replacing it is in `docs/scheduler_target_class.md`.
-
-Settled: the tables class name (`UCOTargetTables`), failed-object tracking
-(the `track_failures` option), the template budget and ToO tracking (both on
-the scheduler).
+None. Settled: the tables class name (`UCOTargetTables`), failed-object
+tracking (the `track_failures` option), the template budget and ToO tracking
+(both on the scheduler), and the result type: `get_next` returns a `Target`
+object instead of a dict (see `docs/scheduler_target_class.md`).
