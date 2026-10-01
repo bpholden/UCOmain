@@ -979,7 +979,6 @@ class Observe(threading.Thread):
                                     closing()
                                     break
 
-
                     elif not rising or (rising and float(cursunel) < (sunel_lim - 5)) and self.can_open:
                         success = opening(cursunel)
                         omsg = "Opening at %s" % (cursunel)
