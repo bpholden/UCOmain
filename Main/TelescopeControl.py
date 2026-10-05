@@ -1265,13 +1265,13 @@ class TelescopeControl:
             # This state enables or disables windshielding based on the
             # wind speed and the outside temperature
             if self.down > 0:
-                wvel = self.avg_lists['WINDAV']
-            else:
                 wvel = self.avg_lists['M3WIND']
-                wvel /= 2.237 # conv to mps
+                wvel /= 2.237
+            else:
+                wvel = self.avg_lists['WINDAV']
 
-            apflog("Current median wind speed is %.2f with the limit %.2f" % \
-                   (wvel,WINDSHIELD_LIMIT), level='debug')
+            apflog("Current median wind speed is %.2f with the limit %.2f, mode = %s" % \
+                   (wvel,WINDSHIELD_LIMIT, curr_mode), level='info')
             if curr_mode == 'enable' and wvel <= WINDSHIELD_LIMIT and \
                 float(self.avg_lists['AIRTEMP']) > TEMP_LIMIT:
                 apflog("Setting scriptobs_windshield to Disable")
