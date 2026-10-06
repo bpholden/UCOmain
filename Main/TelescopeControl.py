@@ -1014,6 +1014,15 @@ class TelescopeControl:
             apflog("An unusual emergency state is set.", level="alert",echo=True)
             return False
 
+        # we are going to clear the estop first,
+        # even though openatsunset and openatnight both
+        # do this, but we will also set the estop before
+        # clearing it.
+        cmd = os.path.join(SCRIPTDIR,'set_estop')
+        _, _ = apftask_do(cmd)
+        cmd = os.path.join(SCRIPTDIR,'clear_estop')
+        _, _ = apftask_do(cmd)
+
         # Everything seems acceptable, so lets try opening
         if sunset:
             cmd = os.path.join(SCRIPTDIR,'openatsunset')
