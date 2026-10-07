@@ -1260,12 +1260,12 @@ class TelescopeControl:
         rv = curr_mode
         apflog("Input state is %s. Current windshield mode is %s" %\
                 (state, curr_mode), level='info')
-        if state == 'on':
+        if state.strip().lower() == 'on':
             if curr_mode != 'enable':
                 apflog("Setting scriptobs_windshield to Enable")
                 rv = "Enable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
-        elif state == 'off':
+        elif state.strip().lower() == 'off':
             if curr_mode != 'disable':
                 apflog("Setting scriptobs_windshield to Disable")
                 rv = "Disable"
