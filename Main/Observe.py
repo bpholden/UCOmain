@@ -329,7 +329,10 @@ class Observe(threading.Thread):
             self.start_time = None
         return False
 
-
+    def update_windshield(self):
+        rdict = APFTask.get(self.task, suffix=['WINDSHIELD'])
+        self.windshield_mode = rdict['WINDSHIELD']
+        self.tel.update_windshield(self.windshield_mode)
 
     ####
     # run is the main event loop, for historical reasons
@@ -503,8 +506,7 @@ class Observe(threading.Thread):
                 kwnm = 'apfmon7sta'
                 self.tel.mini_mon_mon(self.tel.apfminimon[kwnm])
                 return
-
-            self.tel.update_windshield(self.windshield_mode)
+            self.update_windshield()
             self.focval = self.tel.set_autofoc_val()
 
             # setup a B star observation if needed
@@ -1062,7 +1064,7 @@ class Observe(threading.Thread):
                         ostr += "cannot start up telescope."
                         apflog(ostr, level='timed_alert', echo=True)
                         closing(force=True)
-                self.tel.update_windshield(self.windshield_mode)
+                self.update_windshield()
                 start_scriptobs()
                 expr = "$apftask.SCRIPTOBS_STATUS == 'Running'"
                 if not APFTask.waitFor(self.task, True, expression=expr, timeout=10):

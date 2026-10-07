@@ -400,14 +400,16 @@ def main():
 
     # Set preliminary signal and tripwire conditions
     apflog("Setting APFTask signal and tripwire.")
-    APFTask.set(parent, "SIGNAL", "TERM")
-    APFTask.set(parent, "TRIPWIRE", "TASK_ABORT")
+    APFTask.set(parent, suffix="SIGNAL", value="TERM")
+    APFTask.set(parent, suffix="TRIPWIRE", value="TASK_ABORT")
 
     control = apftask[parent + '_CONTROL']
     control.callback(control_watch)
     control.monitor(wait=False)
 
     apflog("Initiallizing APF monitors.", echo=True)
+
+    APFTask.set(parent, suffix="WINDSHIELD", value=opt.windshield)
 
     # Aquire an instance of the APF class, which holds
     # wrapper functions for controlling the telescope
