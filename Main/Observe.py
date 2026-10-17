@@ -337,13 +337,14 @@ class Observe(threading.Thread):
                         % self.apf.avg_fwhm, echo=True)
                 return SchedulerConsts.SLOWDOWN_MAX
 
+            self.apf.total_seeing_calc()
             slowdown = 1
             apflog("Calculating expected counts")
             apflog("self.vmag [%4.2f] - self.bmv [%4.2f] - self.tel.ael [%4.2f]"\
                     % (self.vmag, self.bmv, self.tel.ael))
-            exp_cnts_sec = ExposureCalculations.getEXPMeter_Rate(self.vmag, \
+            exp_cnts_sec = ExposureCalculations.get_expmeter_rate(self.vmag, \
                                                                  self.bmv, self.tel.ael, \
-                                                                    self.apf.avg_fwhm, \
+                                                                    self.apf.total_seeing, \
                                                                         self.decker)
             try:
                 if self.apf.countrate <= 0:

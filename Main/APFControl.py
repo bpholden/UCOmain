@@ -158,6 +158,9 @@ class APF:
         self.counts     = self.guide['COUNTS']
         self.kcountrate     = self.guide['COUNTRATE']
         self.avg_fwhm   = self.guide['AVG_FWHM']
+        self.rmsaz      = self.guide['RMSOFFSET_AZ']
+        self.rmsel      = self.guide['RMSOFFSET_EL']
+        self.total_seeing = 0
 
         try:
             self.eosgcam['GENABLE'].write(True,binary=True,timeout=2)
@@ -197,6 +200,8 @@ class APF:
         self.avg_fwhm.monitor()
         self.dewarfoc.monitor()
         self.apfteqsta.monitor()
+        self.rmsaz.monitor()
+        self.rmsel.monitor()
 
     def __str__(self):
         # Determine if the sun rising / setting check is working
@@ -279,7 +284,7 @@ class APF:
         except:
             return
 
- 
+
     def apftask_status_mon(self,sta):
         '''
         apftask_status_mon(sta)
@@ -314,6 +319,13 @@ class APF:
     ## these are various methods, there are a LOT of them
     ##
 
+    def total_seeing_calc(self):
+        '''
+        Calculates the total seeing based on RMS in azimuth, RMS in elevation, and average FWHM.
+        The formula used is: sqrt((rmsaz*2.355)^2 + (rmsel*2.355)^2 + (avg_fwhm*2.355)^2)
+        '''
+        ts = (self.rmsaz*2.355)**2 + (self.rmsel*2.355)**2 + (self.avg_fwhm*2.355)**2
+        self.total_seeing = ts**0.5
 
     def init_keyword(self, keyword, value, timeout=None):
         """
