@@ -409,7 +409,7 @@ def main():
 
     apflog("Initiallizing APF monitors.", echo=True)
 
-#ask.set(parent, suffix="WINDSHIELD", value=opt.windshield)
+    APFTask.set(parent, suffix="WINDSHIELD", value=opt.windshield)
 
     # Aquire an instance of the APF class, which holds
     # wrapper functions for controlling the telescope
