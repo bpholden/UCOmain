@@ -192,7 +192,7 @@ def fixed_start_time(opt, apftask):
 
     if opt.start is not None and opt.fixed is not None:
 
-        mtch = re.search("\A(\d+)\:(\d+)",opt.start)
+        mtch = re.search(r"\A(\d+)\:(\d+)",opt.start)
         if mtch:
             hr = int(mtch.group(1))
             mn = int(mtch.group(2))
