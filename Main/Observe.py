@@ -156,8 +156,7 @@ class Observe(threading.Thread):
         appropriate.
         """
         message = self.apf.message.read()
-        mtch = re.search("ERR/UCAM", message)
-        if mtch:
+        if "ERR/UCAM" in message:
             # uh oh
             apflog("scriptobs has failed post UCAM recovery", level="error", echo=True)
             # reboot warsaw
@@ -168,8 +167,7 @@ class Observe(threading.Thread):
             else:
                 return False
 
-        mtch = re.search("ERR/WIND", message)
-        if mtch and self.tel.ok2open is True:
+        if "ERR/WIND" in message and self.tel.ok2open is True:
             # uh oh
             apflog("scriptobs has failed - checking servos", level="error", echo=True)
             rv = self.check_servos()
@@ -202,7 +200,7 @@ class Observe(threading.Thread):
         """
         retval = False
 
-        mtch = re.search("end\Z", self.apf.line.read())
+        mtch = re.search(r"end\Z", self.apf.line.read())
         if self.apf.ldone.read(binary=True) == 0 or mtch:
             retval = True
         return retval

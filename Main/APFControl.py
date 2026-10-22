@@ -765,9 +765,9 @@ class APF:
 
         apflog("Running focusinstr routine.",echo=True)
 
-        execstr = " ".join(['focusinstr',flags])
+        execstr = " ".join(['focusinstr_i2',flags])
         cmd = os.path.join(SCRIPTDIR,execstr)
-        result, code = apftask_do(cmd,cwd=os.getcwd())
+        result, _ = apftask_do(cmd,cwd=os.getcwd())
 
         expression="($apftask.FOCUSINSTR_STATUS != 3)"
         if ktl.waitFor(expression=expression, timeout=.1):
