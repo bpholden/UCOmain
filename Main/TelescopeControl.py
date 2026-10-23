@@ -1014,6 +1014,15 @@ class TelescopeControl:
             apflog("An unusual emergency state is set.", level="alert",echo=True)
             return False
 
+        # we are going to clear the estop first,
+        # even though openatsunset and openatnight both
+        # do this, but we will also set the estop before
+        # clearing it.
+        cmd = os.path.join(SCRIPTDIR,'set_estop')
+        _, _ = apftask_do(cmd)
+        cmd = os.path.join(SCRIPTDIR,'clear_estop')
+        _, _ = apftask_do(cmd)
+
         # Everything seems acceptable, so lets try opening
         if sunset:
             cmd = os.path.join(SCRIPTDIR,'openatsunset')
@@ -1249,12 +1258,14 @@ class TelescopeControl:
         """
         curr_mode = self.robot["SCRIPTOBS_WINDSHIELD"].read().strip().lower()
         rv = curr_mode
-        if state == 'on':
+        apflog("Input state is %s. Current windshield mode is %s" %\
+                (state, curr_mode), level='info')
+        if state.strip().lower() == 'on':
             if curr_mode != 'enable':
                 apflog("Setting scriptobs_windshield to Enable")
                 rv = "Enable"
                 APFLib.write(self.robot["SCRIPTOBS_WINDSHIELD"], rv)
-        elif state == 'off':
+        elif state.strip().lower() == 'off':
             if curr_mode != 'disable':
                 apflog("Setting scriptobs_windshield to Disable")
                 rv = "Disable"
@@ -1265,13 +1276,13 @@ class TelescopeControl:
             # This state enables or disables windshielding based on the
             # wind speed and the outside temperature
             if self.down > 0:
-                wvel = self.avg_lists['WINDAV']
-            else:
                 wvel = self.avg_lists['M3WIND']
-                wvel /= 2.237 # conv to mps
+                wvel /= 2.237
+            else:
+                wvel = self.avg_lists['WINDAV']
 
-            apflog("Current median wind speed is %.2f with the limit %.2f" % \
-                   (wvel,WINDSHIELD_LIMIT), level='debug')
+            apflog("Current median wind speed is %.2f with the limit %.2f, mode = %s" % \
+                   (wvel,WINDSHIELD_LIMIT, curr_mode), level='info')
             if curr_mode == 'enable' and wvel <= WINDSHIELD_LIMIT and \
                 float(self.avg_lists['AIRTEMP']) > TEMP_LIMIT:
                 apflog("Setting scriptobs_windshield to Disable")

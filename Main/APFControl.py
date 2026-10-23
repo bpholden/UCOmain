@@ -51,9 +51,7 @@ def cmd_exec(cmd, debug=False, cwd='./'):
         return False, -1
 
     while p.poll() is None:
-        if debug:
-            l = p.stdout.readline().rstrip('\n')
-            apflog(l, echo=True)
+        time.sleep(1)
 
     out, err = p.communicate()
     if debug: apflog(out, echo=True)
@@ -777,9 +775,9 @@ class APF:
 
         apflog("Running focusinstr routine.",echo=True)
 
-        execstr = " ".join(['focusinstr',flags])
+        execstr = " ".join(['focusinstr_i2',flags])
         cmd = os.path.join(SCRIPTDIR,execstr)
-        result, code = apftask_do(cmd,cwd=os.getcwd())
+        result, _ = apftask_do(cmd,cwd=os.getcwd())
 
         expression="($apftask.FOCUSINSTR_STATUS != 3)"
         if ktl.waitFor(expression=expression, timeout=.1):

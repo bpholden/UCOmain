@@ -143,8 +143,7 @@ class Observe(threading.Thread):
         appropriate.
         """
         message = self.apf.message.read()
-        mtch = re.search("ERR/UCAM", message)
-        if mtch:
+        if "ERR/UCAM" in message:
             # uh oh
             apflog("scriptobs has failed post UCAM recovery", level="error", echo=True)
             # reboot warsaw
@@ -155,8 +154,7 @@ class Observe(threading.Thread):
             else:
                 return False
 
-        mtch = re.search("ERR/WIND", message)
-        if mtch and self.tel.ok2open is True:
+        if "ERR/WIND" in message and self.tel.ok2open is True:
             # uh oh
             apflog("scriptobs has failed - checking servos", level="error", echo=True)
             rv = self.check_servos()
@@ -189,7 +187,7 @@ class Observe(threading.Thread):
         """
         retval = False
 
-        mtch = re.search("end\Z", self.apf.line.read())
+        mtch = re.search(r"end\Z", self.apf.line.read())
         if self.apf.ldone.read(binary=True) == 0 or mtch:
             retval = True
         return retval
@@ -236,11 +234,9 @@ class Observe(threading.Thread):
             if self.star_failures%3 == 0:
                 log_str = "%d failures of observing a star in a row " % (self.star_failures)
                 log_str += "- suggesting homing telescope or closing for the night"
-                apflog(log_str, echo=True, level='timed_alert')
-            if self.star_failures%7 == 0:
-                log_str = "%d failures of observing a star in a row " % (self.star_failures)
-                log_str += "- suggesting homing telescope or closing for the night"
                 apflog(log_str, echo=True, level='alert')
+                self.apf.kill_robot(now=True)
+                self.tel.close(force=True)
 
     def check_servos(self):
         """ Observe.check_servos()
@@ -299,7 +295,10 @@ class Observe(threading.Thread):
             self.scheduler.start_time = None
         return False
 
-
+    def update_windshield(self):
+        rdict = APFTask.get(self.task, suffix=['WINDSHIELD'])
+        self.windshield_mode = rdict['WINDSHIELD']
+        self.tel.update_windshield(self.windshield_mode)
 
     ####
     # run is the main event loop, for historical reasons
@@ -469,8 +468,7 @@ class Observe(threading.Thread):
                 kwnm = 'apfmon7sta'
                 self.tel.mini_mon_mon(self.tel.apfminimon[kwnm])
                 return
-
-            self.tel.update_windshield(self.windshield_mode)
+            self.update_windshield()
             self.focval = self.tel.set_autofoc_val()
 
             # setup a B star observation if needed
@@ -1023,7 +1021,7 @@ class Observe(threading.Thread):
                         ostr += "cannot start up telescope."
                         apflog(ostr, level='timed_alert', echo=True)
                         closing(force=True)
-                self.tel.update_windshield(self.windshield_mode)
+                self.update_windshield()
                 start_scriptobs()
                 expr = "$apftask.SCRIPTOBS_STATUS == 'Running'"
                 if not APFTask.waitFor(self.task, True, expression=expr, timeout=10):
