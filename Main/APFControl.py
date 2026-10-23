@@ -51,9 +51,7 @@ def cmd_exec(cmd, debug=False, cwd='./'):
         return False, -1
 
     while p.poll() is None:
-        if debug:
-            l = p.stdout.readline().rstrip('\n')
-            apflog(l, echo=True)
+        time.sleep(1)
 
     out, err = p.communicate()
     if debug: apflog(out, echo=True)
