@@ -8,7 +8,7 @@ import argparse
 
 import sys
 sys.path.append("../Main")
-import UCOScheduler as ds
+import ScriptobsLine
 import ParseUCOSched
 
 if __name__ == "__main__":
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     for star in desiredstars:
         aidx, = np.where(star_table["name"] == star)
         idx = aidx[0]
-        ret = ds.make_scriptobs_line(star_table[idx],now,decker=star_table['decker'][idx], \
+        ret = ScriptobsLine.make_scriptobs_line(star_table[idx],now,decker=star_table['decker'][idx], \
                                                 owner=star_table['sheetn'][idx], \
                                                 I2=star_table['I2'][idx])
         print(ret)

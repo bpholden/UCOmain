@@ -9,9 +9,10 @@ import sys
 import numpy as np
 
 sys.path.append("../Main")
-import UCOTargets
+import UCOTargetTables
 import ParseUCOSched
-import UCOScheduler as ds
+import Observability
+import ScriptobsLine
 
 
 if __name__ == "__main__":
@@ -58,7 +59,7 @@ if __name__ == "__main__":
         outdir = "."
     fp = open("tonight.lst", "a+")
 
-    uco_targets = UCOTargets.UCOTargets(opt=argparse.Namespace(rank_table=args.rank_table, time_left=None, test=False))
+    uco_targets = UCOTargetTables.UCOTargetTables(opt=argparse.Namespace(rank_table=args.rank_table, time_left=None, test=False))
     #rank_table = astropy.table.Table.read(args.rank_table, format='ascii')
     uco_targets.rank_table_filename = args.rank_table
     uco_targets.make_rank_table()
@@ -74,13 +75,13 @@ if __name__ == "__main__":
             a_idx, = np.where(uco_targets.star_table['name'] == arg)
             idx = a_idx[0]
             owner = uco_targets.star_table['sheetn'][idx]
-            bidx, bfinidx = ds.find_Bstars(uco_targets.star_table, idx, bstars)
+            bidx, bfinidx = Observability.find_Bstars(uco_targets.star_table, idx, bstars)
 
-            bline = ds.make_scriptobs_line(uco_targets.star_table[bstars][bidx], dt,
+            bline = ScriptobsLine.make_scriptobs_line(uco_targets.star_table[bstars][bidx], dt,
                                            decker="N", I2="Y", owner=owner, focval=2)
-            line = ds.make_scriptobs_line(uco_targets.star_table[idx], dt, decker="N",
+            line = ScriptobsLine.make_scriptobs_line(uco_targets.star_table[idx], dt, decker="N",
                                           I2="N", owner=owner, temp=True)
-            bfinline = ds.make_scriptobs_line(uco_targets.star_table[bstars][bfinidx], dt,
+            bfinline = ScriptobsLine.make_scriptobs_line(uco_targets.star_table[bstars][bfinidx], dt,
                                               decker="N", I2="Y", owner=owner, focval=2)
 
             fp.write(bline + " # temp=Y\n")

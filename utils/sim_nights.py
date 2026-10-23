@@ -14,9 +14,9 @@ import astropy
 sys.path.insert(1,"../Main")
 
 import NightSim
-import UCOScheduler as ds
+import UCOScheduler
 import ParseUCOSched
-import UCOTargets
+import UCOTargetTables
 
 
 def read_datefile(datefn):
@@ -202,8 +202,11 @@ def main():
     bstar = options.bstar
     simoutfp, star_strs, star_dates = prep_simout(options.outdir, options.simout)
 
-    ucotargets = UCOTargets.UCOTargets(options)
+    ucotargets = UCOTargetTables.UCOTargetTables(options)
     ucotargets.make_rank_table()
+
+    scheduler = UCOScheduler.UCOScheduler(ucotargets, outfn=options.infile, \
+                                          outdir=options.outdir, do_templates=True)
 
     for datestr in datelist:
 
@@ -219,7 +222,6 @@ def main():
         fwhms = NightSim.gen_seeing()
         slowdowns = NightSim.gen_clouds()
 
-        do_temp = True
         lastslow = 5
         lastfwhm = 15
         otfn = os.path.join(options.outdir,"observed_targets")
@@ -227,27 +229,26 @@ def main():
         ot.close()
         observing = True
         while observing:
-            result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, ucotargets,\
-                                    bstar=bstar, outfn=options.infile,\
-                                    do_templates=do_temp,outdir=options.outdir)
+            result = scheduler.get_next(curtime.datetime(), lastfwhm, lastslow, \
+                                        bstar=bstar)
             if result:
                 if bstar:
                     bstar = False
 
                 curtime += 70./86400 # acquisition time
-                (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
+                (idx,) = np.where(ucotargets.star_table['name'] == result.name)
                 idx = idx[0]
 
-                for _ in range(0,int(result['NEXP'])):
+                for _ in range(0,int(result.nexp)):
                     (curtime,lastfwhm,lastslow,outstr) = \
                         NightSim.compute_simulation(result,curtime, stars[idx],\
                                                     apf_obs, slowdowns, fwhms,\
-                                                        result['owner'])
+                                                        result.owner)
                     sim_results(outstr,star_strs,star_dates)
                     simoutfp.write("%s\n" % (outstr))
 
                 ot = open(otfn,"a+", encoding='utf-8')
-                ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
+                ot.write("%s\n" % (result.scriptobs.pop()))
                 ot.close()
             else:
                 curtime += 2100./86400 # close for lack of target

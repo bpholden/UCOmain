@@ -10,7 +10,7 @@ import APFTask
 
 from apflog import apflog
 import ParseUCOSched
-import UCOTargets
+import UCOTargetTables
 
 
 class getUCOTargets(threading.Thread):
@@ -105,7 +105,7 @@ def main():
     task = 'example'
     APFTask.establish(task, os.getpid())
     opt = Opt()
-    uco_targets = UCOTargets.UCOTargets(opt)
+    uco_targets = UCOTargetTables.UCOTargetTables(opt)
     print(uco_targets)
     gt = getUCOTargets(uco_targets, task=task)
     while gt.signal:

@@ -106,16 +106,16 @@ def compute_simulation(result,curtime,star,apf_obs,slowdowns,fwhms,owner):
     actfwhm = gen_seeing_el(actfwhm,actel)
     lastfwhm = actfwhm
     lastslow = actslow
-    meterrate = ExposureCalculations.getEXPMeter_Rate(result['VMAG'],
-                                                      result['BV'],actel,actfwhm,result['DECKER'])
+    meterrate = ExposureCalculations.getEXPMeter_Rate(result.vmag,
+                                                      result.bv,actel,actfwhm,result.decker)
     meterrate *= 1 + 0.11*np.random.randn(1)[0]
     meterrate /= actslow
-    specrate = ExposureCalculations.getSpec_Rate(result['VMAG'],
-                                                 result['BV'],actel,actfwhm,result['DECKER'])
+    specrate = ExposureCalculations.getSpec_Rate(result.vmag,
+                                                 result.bv,actel,actfwhm,result.decker)
     specrate *= 1 + 0.11*np.random.randn(1)[0]
     specrate /= actslow
-    metertime = result['COUNTS'] / meterrate
-    exp_time = result['EXP_TIME']
+    metertime = result.counts / meterrate
+    exp_time = result.exp_time
     barycentertime = curtime
     if metertime < exp_time:
         fexptime = float(metertime)
@@ -126,11 +126,11 @@ def compute_simulation(result,curtime,star,apf_obs,slowdowns,fwhms,owner):
     barycentertime += fexptime/(2.*86400)
     totcounts = fexptime * specrate
 
-    #precision, true_error = Generate_Errors.compute_real_uncertainty(totcounts,result['BV'])
+    #precision, true_error = Generate_Errors.compute_real_uncertainty(totcounts,result.bv)
     if actaz < 180:
         actel *= -1.
     outstr = "%s %s %.5f %.1f %.1f %.2f %.2f %.2f %.2f %s" % \
-    (result['NAME'] , ephem.Date(curtime), ephem.julian_date(ephem.Date(barycentertime)),\
+    (result.name , ephem.Date(curtime), ephem.julian_date(ephem.Date(barycentertime)),\
       fexptime, totcounts, actel, actaz, actfwhm, actslow, owner)
     print (outstr)
 

@@ -3,7 +3,6 @@ import datetime
 import math
 import os
 import os.path
-import shutil
 import re
 import sys
 import threading
@@ -19,33 +18,29 @@ except:
 import APFControl
 import TelescopeControl
 from apflog import apflog
-import UCOScheduler as ds
-import UCOTargets
+import UCOScheduler
+import UCOTargetTables
 import ExposureCalculations
 import SchedulerConsts
 
 DMLIM = 1140
 
 class Observe(threading.Thread):
-    """ Observe(apf, opt, tot_temps=4, task='master')
+    """ Observe(apf, tel, opt, scheduler, task='master')
         The Observe class is a thread
         that runs the observing process.
     """
-    def __init__(self, apf, tel, opt, uco_targets, tot_temps=4, task='master'):
+    def __init__(self, apf, tel, opt, scheduler, task='master'):
         threading.Thread.__init__(self)
         self.daemon = True
         self.apf = apf
         self.tel = tel
-        self.uco_targets = uco_targets
+        self.scheduler = scheduler
         self.task = task
         if opt.name:
             self.user = opt.name
         else:
             self.user = 'apf'
-        if opt.owner:
-            self.owner = opt.owner
-        else:
-            self.owner = 'public'
 
         if opt.windshield:
             self.windshield_mode = opt.windshield
@@ -82,14 +77,6 @@ class Observe(threading.Thread):
             self.rank_tablen = opt.rank_table
         else:
             self.rank_tablen = None
-        if opt.start:
-            try:
-                self.start_time = float(opt.start)
-            except ValueError as e:
-                apflog("ValueError: %s" % (e), echo=True, level='error')
-                self.start_time = None
-        else:
-            self.start_time = None
         if opt.raster:
             self.raster = opt.raster
         else:
@@ -98,16 +85,16 @@ class Observe(threading.Thread):
             self.debug = opt.test
         else:
             self.debug = False
-        self.do_temp = True
-        self.do_too = True
-        self.n_temps = 0
         self.focval = 0
-        self.tot_temps = tot_temps
 
         self.exit_message = None
 
         self.target = None
-        self.fixed_target = None
+        # scriptobs lines waiting to be sent: the rest of the current
+        # target's lines, or a fixed starlist moved in to run now
+        self.pending_lines = []
+        # a fixed starlist read in, sent once pending_lines is empty
+        self.fixed_lines = None
         self.do_not_open = False
 
         self.apftask = ktl.Service('apftask')
@@ -221,9 +208,9 @@ class Observe(threading.Thread):
             apflog("New starlist %s detected" % (self.fixed_list), echo=True)
 
         if start_time > 0:
-            if start_time != self.start_time:
-                self.start_time = start_time
-                apflog("New start time %s detected" % (str(self.start_time)), echo=True)
+            if start_time != self.scheduler.start_time:
+                self.scheduler.start_time = start_time
+                apflog("New start time %s detected" % (str(self.scheduler.start_time)), echo=True)
 
     def check_star(self, haveobserved):
         """ Observe.obsBstar(haveobserved)
@@ -233,7 +220,7 @@ class Observe(threading.Thread):
             The variable OBSBSTAR still overrides
         """
         self.obs_B_star = ktl.read('apftask', 'MASTER_OBSBSTAR', binary=True)
-        self.do_too = ktl.read('apftask', 'MASTER_OBSTOO', binary=True)
+        self.scheduler.do_too = ktl.read('apftask', 'MASTER_OBSTOO', binary=True)
 
         if haveobserved and self.last_obs_success:
             self.obs_B_star = False
@@ -293,36 +280,19 @@ class Observe(threading.Thread):
             self.tel.close(force=True)
             return False
 
-    def check_files(self, outfn='googledex.dat'):
-        """ Observe.check_files(outfn='googledex.dat')
-            checks for the existence of a file, and if it exists, makes a backup
-        """
-        outdir = os.getcwd()
-        fullpath = os.path.join(outdir, outfn)
-        if os.path.isfile(fullpath):
-            return
-
-        # make it so
-        backup = fullpath + ".1"
-        try:
-            shutil.copyfile(backup, fullpath)
-        except Exception as e:
-            err_str = "Cannot copy %s to %s: %s %s" % (backup, fullpath, type(e), e)
-            apflog(err_str, echo=True, level='error')
-
     def should_start_list(self):
         """ Observe.should_start_list()
             should we start a fixed observing list or not? true if start 
             time is None or if w/in + 1 hour - 3 minutes of start time
         """
-        if self.start_time is None:
+        if self.scheduler.start_time is None:
             return True
         ct = time.time()
-        if self.start_time - ct < 180 and ct - self.start_time < 3600:
+        if self.scheduler.start_time - ct < 180 and ct - self.scheduler.start_time < 3600:
             self.apf.ldone.write(0, binary=True)
             return True
-        if ct - self.start_time > 3600:
-            self.start_time = None
+        if ct - self.scheduler.start_time > 3600:
+            self.scheduler.start_time = None
         return False
 
     def update_windshield(self):
@@ -366,13 +336,14 @@ class Observe(threading.Thread):
                         % self.apf.avg_fwhm, echo=True)
                 return SchedulerConsts.SLOWDOWN_MAX
 
+            self.apf.total_seeing_calc()
             slowdown = 1
             apflog("Calculating expected counts")
             apflog("self.vmag [%4.2f] - self.bmv [%4.2f] - self.tel.ael [%4.2f]"\
                     % (self.vmag, self.bmv, self.tel.ael))
-            exp_cnts_sec = ExposureCalculations.getEXPMeter_Rate(self.vmag, \
+            exp_cnts_sec = ExposureCalculations.get_expmeter_rate(self.vmag, \
                                                                  self.bmv, self.tel.ael, \
-                                                                    self.apf.avg_fwhm, \
+                                                                    self.apf.total_seeing, \
                                                                         self.decker)
             try:
                 if self.apf.countrate <= 0:
@@ -418,22 +389,19 @@ class Observe(threading.Thread):
 
             curstr = None
 
-            if self.target is not None and 'SCRIPTOBS' in list(self.target.keys()):
-                tlist = self.target["SCRIPTOBS"]
-                if len(tlist) > 0:
-                    apflog("get_target(): Going through remaining target queue.", echo=True)
-                    curstr = tlist.pop()
-                    apflog("get_target(): Popped %s from target queue." % (curstr), echo=True)
-                    return curstr
+            if len(self.pending_lines) > 0:
+                apflog("get_target(): Going through remaining target queue.", echo=True)
+                curstr = self.pending_lines.pop()
+                apflog("get_target(): Popped %s from target queue." % (curstr), echo=True)
+                return curstr
 
-            if self.fixed_target is not None and 'SCRIPTOBS' in list(self.fixed_target.keys()):
-                tlist = self.fixed_target["SCRIPTOBS"]
-                if len(tlist) > 0:
+            if self.fixed_lines is not None:
+                if len(self.fixed_lines) > 0:
                     apflog("get_target(): Going through fixed starlist.", echo=True)
-                    curstr = tlist.pop()
+                    curstr = self.fixed_lines.pop()
                 else:
                     apflog("get_target(): Finished fixed starlist.", echo=True)
-                    self.fixed_target = None
+                    self.fixed_lines = None
 
             return curstr
 
@@ -441,9 +409,7 @@ class Observe(threading.Thread):
             '''
             empty_queue() - empties the target queue
             '''
-            if self.target is not None and 'SCRIPTOBS' in list(self.target.keys()):
-                while len(self.target["SCRIPTOBS"]) > 0:
-                    self.target["SCRIPTOBS"].pop()
+            self.pending_lines = []
 
 
         # This is called when an observation finishes, and selects the next target
@@ -524,15 +490,13 @@ class Observe(threading.Thread):
                 if not self.apf.gcam_power.binary:
                     return
 
-            self.check_files()
+            self.scheduler.targets.check_files()
 
-            self.target = ds.get_next(time.time(), seeing, slowdown, self.uco_targets,\
-                                         bstar=self.obs_B_star, \
-                                         do_too=self.do_too, owner=self.owner,  \
-                                         do_templates=self.do_temp, focval=self.focval, \
-                                         start_time=self.start_time)
+            self.target = self.scheduler.get_next(time.time(), seeing, slowdown, \
+                                         bstar=self.obs_B_star, focval=self.focval)
 
             if self.target is None:
+                self.pending_lines = []
                 log_str = "No acceptable target was found. "
                 log_str += "Since there does not seem to be anything to observe, "
                 log_str += "%s will now shut down." % (self.name)
@@ -548,11 +512,12 @@ class Observe(threading.Thread):
                 APFTask.waitfor(self.task, True, timeout=60*30)
                 return
 
-            apflog("Observing target: %s" % self.target['NAME'], echo=True)
+            apflog("Observing target: %s" % self.target.name, echo=True)
             APFTask.set(self.task, suffix="MESSAGE", value="Observing target", wait=False)
             APFTask.set(self.task, suffix="TEMPLATE_COND", 
-                        value=self.target['template_conditions_met'], wait=False)
-            cur_line = self.target["SCRIPTOBS"].pop()
+                        value=self.target.template_conditions_met, wait=False)
+            self.pending_lines = list(self.target.scriptobs)
+            cur_line = self.pending_lines.pop()
             cur_line = cur_line.strip()
             out_line = "%s avgfwhm=%05.2f slowdown=%04.2f" % (cur_line, seeing, slowdown )
             self.append_selected(out_line)
@@ -563,35 +528,29 @@ class Observe(threading.Thread):
                 self.scriptobs.stdin.write(cur_line + '\n')
             except IOError as e:
                 apflog("Cannot observe target %s: IOError: %s"\
-                        % (self.target['NAME'], e), echo=True, level='error')
+                        % (self.target.name, e), echo=True, level='error')
                 return
 
 
             # Set the Vmag and B-V mag of the latest target
-            self.vmag = self.target["VMAG"]
-            self.bmv = self.target["BV"]
-            self.decker = self.target["DECKER"]
-            istemp = str(self.target['isTemp'])
-            if self.target["mode"] == 'B' or self.target["mode"] == 'A':
+            self.vmag = self.target.vmag
+            self.bmv = self.target.bv
+            self.decker = self.target.decker
+            istemp = str(self.target.is_temp)
+            if self.target.mode == 'B' or self.target.mode == 'A':
                 self.blank = True
             else:
                 self.blank = False
 
             apflog("get_target(): V=%.2f  B-V=%.2f Pri=%.2f "\
-                    % (self.vmag, self.bmv, self.target["PRI"]))
+                    % (self.vmag, self.bmv, self.target.pri))
             apflog("get_target(): FWHM=%.2f  Slowdown=%.2f  Countrate=%.2f"\
                     % (self.apf.avg_fwhm, slowdown, self.apf.countrate))
 
-            apflog("get_target(): Target= %s Temp=%s" % (self.target["NAME"], istemp))
+            apflog("get_target(): Target= %s Temp=%s" % (self.target.name, istemp))
             apflog("get_target(): Counts=%.2f  EXPTime=%.2f  Nexp=%d"\
-                    % (self.target["COUNTS"], self.target["EXP_TIME"], self.target["NEXP"]))
-            if self.target['isTemp']:
-                self.n_temps += 1
-                if self.n_temps >= self.tot_temps:
-                    self.do_temp = False
-
-            if self.target['isTOO']:
-                self.do_too = False
+                    % (self.target.counts, self.target.exp_time, self.target.nexp))
+            if self.target.is_too:
                 APFLib.write(self.apf.robot["MASTER_OBSTOO"], False, binary=True)
 
         # opens the dome & telescope, if sunset is True calls open at sunset, else open at night
@@ -659,7 +618,7 @@ class Observe(threading.Thread):
                     apflog("Failure power cycling telescope", echo=True, level="alert")
 
             self.tel.check_FCUs()
-            ds.zero_last_objs_attempted()
+            self.scheduler.zero_last_objs_attempted()
             self.star_failures = 0
             self.can_open = True
             self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
@@ -705,13 +664,12 @@ class Observe(threading.Thread):
             return rv
 
         def read_starlist_file():
-            '''read_starlist_file() - reads the starlist file and appends it to the target queue
+            '''read_starlist_file() - reads the starlist file into self.fixed_lines
             '''
             tot = 0
             if self.fixed_list is None:
                 return 0
-            self.fixed_target = dict()
-            self.fixed_target["SCRIPTOBS"] = []
+            self.fixed_lines = []
             apflog("Reading star list fixed_list %s" % (self.fixed_list), echo=True)
             with open(self.fixed_list, 'r') as f:
                 for line in f:
@@ -722,15 +680,16 @@ class Observe(threading.Thread):
                         continue
                     else:
                         tot += 1
-                        self.fixed_target["SCRIPTOBS"].append(sline)
+                        self.fixed_lines.append(sline)
                         apflog("%d %s" % (tot,sline))
-            self.fixed_target["SCRIPTOBS"].reverse()
+            self.fixed_lines.reverse()
 
             if tot == 0:
                 apflog("Error: starlist %s is empty" % (self.fixed_list), level="error")
                 self.fixed_list = None
-                self.start_time = None
+                self.scheduler.start_time = None
                 self.target = None
+                self.pending_lines = []
             else:
                 apflog("%d total starlist lines and %d lines done." % (tot, self.apf.ldone))
 
@@ -768,11 +727,11 @@ class Observe(threading.Thread):
                 if not os.path.exists(self.fixed_list):
                     apflog("Error: starlist %s does not exist" % (self.fixed_list), level="error")
                     self.fixed_list = None
-                    self.start_time = None
+                    self.scheduler.start_time = None
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
                     APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
 
-                # this reads in the list and appends it to self.target
+                # this reads in the list to self.fixed_lines
 
                 tot = read_starlist_file()
 
@@ -780,8 +739,9 @@ class Observe(threading.Thread):
                     APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
                     APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
                     self.fixed_list = None
-                    self.start_time = None
+                    self.scheduler.start_time = None
                     self.target = None
+                    self.pending_lines = []
                     if not self.apf.test:
                         APFTask.set(self.task, suffix="STARLIST", value="")
                     apflog("Finished fixed list on line %d, will start dynamic scheduler" % int(self.apf.ldone), echo=True)
@@ -876,14 +836,15 @@ class Observe(threading.Thread):
                     if tot == 0:
                         apflog("Error: starlist %s is empty" % (self.fixed_list), level="error")
                         self.fixed_list = None
-                        self.start_time = None
+                        self.scheduler.start_time = None
                         self.target = None
+                        self.pending_lines = []
                     else:
-                        self.target = {}
-                        self.target['SCRIPTOBS'] = self.fixed_target['SCRIPTOBS']
+                        self.target = None
+                        self.pending_lines = self.fixed_lines
                         self.fixed_list = None
-                        self.start_time = None
-                        self.fixed_target = None
+                        self.scheduler.start_time = None
+                        self.fixed_lines = None
                         APFLib.write(self.apf.robot["MASTER_STARLIST"], "")
                         APFLib.write(self.apf.robot["MASTER_WHENSTARTLIST"], 0, binary=True)
 
@@ -1133,9 +1094,11 @@ def test_observe():
     APFTask.waitFor(parent, True, timeout=2)
     print(str(t_tel))
 
-    uco_targets = UCOTargets.UCOTargets(t_opt)
+    uco_targets = UCOTargetTables.UCOTargetTables(t_opt)
+    scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=t_opt.owner, start_time=t_opt.start,
+                                          do_templates=True, tot_temps=4, do_too=True)
 
-    observe = Observe(t_apf, t_tel, t_opt, uco_targets, task=parent)
+    observe = Observe(t_apf, t_tel, t_opt, scheduler, task=parent)
     APFTask.waitFor(parent, True, timeout=2)
     observe.start()
     while observe.signal:

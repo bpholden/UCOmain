@@ -11,11 +11,11 @@ import ephem
 import astropy.io.ascii
 
 sys.path.append("../Main")
-import UCOScheduler as ds
+import UCOScheduler
 
 import NightSim 
 import ParseUCOSched
-import UCOTargets
+import UCOTargetTables
 
 def get_start_time(hr_mn, datestr):
     '''
@@ -107,7 +107,7 @@ def main():
 
     options.fixed = find_fixed(options.fixed)
 
-    ucotargets = UCOTargets.UCOTargets(options)
+    ucotargets = UCOTargetTables.UCOTargetTables(options)
 
     if not NightSim.checkdate(datestr):
         print ("%s is not an acceptable date string" % (datestr))
@@ -129,41 +129,36 @@ def main():
     observing = True
     curtime, endtime, apf_obs = NightSim.sun_times(datestr)
     bstar = options.bstar
-    do_temp = True
-    do_too = True
-    tempcount = 0
 
     ucotargets.make_hour_table(obs_datetime=curtime.datetime())
     ucotargets.make_star_table()
 
     stars = ParseUCOSched.gen_stars(ucotargets.star_table)
 
+    scheduler = UCOScheduler.UCOScheduler(ucotargets, outfn=options.infile, \
+                                          outdir=outdir, start_time=start_time, \
+                                          do_templates=True, tot_temps=2, \
+                                          do_too=True) # two templates, one ToO per night
+
     while observing:
         curtime = ephem.Date(curtime)
 
-        result = ds.get_next(curtime.datetime(), lastfwhm, lastslow, ucotargets,\
-                             bstar=bstar, outfn=options.infile, do_templates=do_temp,\
-                             do_too=do_too, outdir=outdir, start_time=start_time)
+        result = scheduler.get_next(curtime.datetime(), lastfwhm, lastslow, \
+                                    bstar=bstar)
         if result:
-            if result['isBstar']:
+            if result.is_bstar:
                 bstar = False
-            if result['isTemp']:
-                tempcount = tempcount + 1
-            if tempcount == 2:
-                do_temp=False # two per night
-            if result['isTOO']:
-                do_too = False # one per night
             curtime += 70./86400 # acquisition time
-            (idx,) = np.where(ucotargets.star_table['name'] == result['NAME'])
+            (idx,) = np.where(ucotargets.star_table['name'] == result.name)
             idx = int(idx[0])
-            for _ in range(0,int(result['NEXP'])):
+            for _ in range(0,int(result.nexp)):
                 (curtime,lastfwhm,lastslow,outstr) = NightSim.compute_simulation(result,\
                                                     curtime,stars[idx],apf_obs,slowdowns,fwhms,\
-                                                    result['owner'])
+                                                    result.owner)
                 outfp.write(outstr + "\n")
             ot = open(otfn,"a+", encoding='utf-8')
-            for i in range(0,len(result["SCRIPTOBS"])):
-                ot.write("%s\n" % (result["SCRIPTOBS"].pop()))
+            for i in range(0,len(result.scriptobs)):
+                ot.write("%s\n" % (result.scriptobs.pop()))
             ot.close()
         else:
             curtime += 2100./86400 # close for lack of target

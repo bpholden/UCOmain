@@ -9,7 +9,7 @@ sys.path.append("../Main")
 
 import ParseUCOSched
 import UCOScheduler as ds
-import UCOTargets
+import UCOTargetTables
 
 if __name__ == "__main__":
 
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if os.path.exists(os.path.join(outdir,outfn)):
         os.unlink(os.path.join(outdir,outfn))
 
-    uco_targets = UCOTargets.UCOTargets(opt)
+    uco_targets = UCOTargetTables.UCOTargetTables(opt)
 
     sheet_list = None
 
