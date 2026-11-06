@@ -120,6 +120,496 @@ def compute_priorities(star_table, cur_dt, observed=None, hour_table=None, rank_
 
     return new_pri
 
+def update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None):
+    '''
+    update_hour_table(hour_table, observed, dt, outfn='hour_table', outdir=None)
+
+    Updates hour_table with history of observations.
+    observed is the observed log
+    dt is the current datetime
+    outfn is the output filename, defaults to hour_table
+    outdir is the output directory, defaults to current working directory
+
+    '''
+
+    if not outdir :
+        outdir = os.getcwd()
+
+    outfn = os.path.join(outdir, outfn)
+
+    hours = dict()
+
+    # observed objects have lists as attributes
+    # reverse time order, so most recent target observed is first.
+
+    observed.reverse()
+
+    nobj = len(observed.names)
+    for i in range(0,nobj):
+        own = observed.owners[i]
+        if own not in list(hours):
+            hours[own] = 0.0
+
+    cur = dt
+    for i in range(0,nobj):
+        hr, mn = observed.times[i]
+        prev = datetime.datetime(dt.year, dt.month, dt.day, hr, mn)
+        diff = cur - prev
+        hourdiff = diff.days * 24 + diff.seconds / 3600.
+        if hourdiff > 0:
+            hours[observed.owners[i]] += hourdiff
+            cur = prev
+
+    for ky in list(hours.keys()):
+        if ky == 'public':
+            hour_table['cur'][hour_table['sheetn'] == 'RECUR_A100'] = hours[ky]
+        else:
+            hour_table['cur'][hour_table['sheetn'] == ky] = hours[ky]
+
+    try:
+        hour_table.write(outfn,format='ascii',overwrite=True)
+    except Exception as e:
+        apflog("Cannot write table %s: %s %s" % (outfn, type(e), e), level='error', echo=True)
+
+    observed.reverse()
+
+    return hour_table
+
+
+def tot_exp_times(star_table, targ_num):
+    '''
+    totexptimes = tot_exp_times(star_table, targ_num)
+    star_table - astropy table of targets
+    targ_num - number of targets
+
+    totexptimes - numpy array of total exposure times
+    '''
+    totexptimes = np.zeros(targ_num, dtype=float)
+
+    nobs = np.ones(targ_num)
+    multiples = (star_table['night_cad'] > 0)  & (star_table['night_obs'] == 0)
+    nobs[multiples] = star_table['night_nexp'][multiples]
+
+    totexptimes = nobs*(star_table['texp'] * star_table['nexp'] + 40 * (star_table['nexp']-1))
+    totexptimes += (nobs-1)*star_table['night_cad']*86400
+
+    return totexptimes
+
+def time_check(star_table, totexptimes, dt, start_time=None):
+    """ time_check = time_check(star_table, totexptimes, dt, hour_table)
+    star_table - astropy table of targets
+    totexptimes - numpy array of total exposure times
+    dt - datetime object
+    time_check - numpy array of booleans
+    values are determined by whether or not the target can be observed in the time left
+    """
+    maxexptime = SunPos.compute_sunrise(dt,horizon='-9')
+    maxfaintexptime = SunPos.compute_sunrise(dt,horizon='-18')
+    if maxfaintexptime > maxexptime:
+        maxfaintexptime = 0
+
+    if start_time is not None:
+        # dt is a UT datetime object, start_time is a UT time stamp
+        # however strftime assumes that the dt is in local time
+        # JFC, this is a mess
+        utc_offset = datetime.datetime.utcnow() - datetime.datetime.now()
+        curr_time = float(dt.strftime('%s')) - utc_offset.total_seconds()
+        if curr_time < start_time:
+            maxexptime = start_time - curr_time
+            maxfaintexptime = start_time - curr_time
+
+    if maxexptime < SchedulerConsts.TARGET_EXPOSURE_TIME_MIN:
+        maxexptime = SchedulerConsts.TARGET_EXPOSURE_TIME_MIN
+        # this will try a target in case we get lucky
+        # bright stars often have longer than
+        # necessary exposure times, relying on the
+        # exposure meter, we will not make this modification for faint stars
+        # we need to handle cases where night_cad > 0
+
+    started_multiples = (star_table['night_cad'] > 0) & (star_table['night_obs'] == 1)
+    if np.any(started_multiples):
+        cadence_check = ephem.julian_date(dt) - star_table['lastobs']
+        waiting = cadence_check < (star_table['night_cad'] - BUFFER )
+        if np.any(waiting):
+            maxexptimes = (star_table['night_cad'] - cadence_check) * 86400
+            maxfaintexptimes = (star_table['night_cad'] - cadence_check) * 86400
+            try:
+                maxexptime = np.min(maxexptimes[waiting & started_multiples]) + BUFFERSEC - 180
+            except ValueError:
+                # this means we have double observations we are waiting for
+                # but they are in the selection window
+                # they will be selected in the priorities method
+                # so we should use the usual maximum exposure time
+                pass
+            try:
+                maxfaintexptime = np.min(maxfaintexptimes[waiting & started_multiples])
+                maxfaintexptime += BUFFERSEC - 180
+            except ValueError:
+                pass
+
+    faint = star_table['Vmag'] > SchedulerConsts.SLOWDOWN_VMAG_LIM
+    faint &= star_table['too'] == False
+    time_good = totexptimes <= maxexptime
+    time_good_faint = totexptimes <= maxfaintexptime
+
+    time_good[faint] = time_good_faint[faint]
+
+    return time_good
+
+def make_scriptobs_line(star_table_row, t, decker="W", I2="Y", owner='public', focval=0, coverid='', temp=False):
+    """ given a name, a row in a star table and a do_flag, will generate
+    a scriptobs line as a string:
+    line = make_scriptobs_line(star_table_row, t, decker="W",I2="Y")
+
+    star_table_row -contains all of the data needed for the line except
+    t - a datetime object, this is used to fill in the uth and utm fields
+    decker - one character field for the decker, defaults to "W"
+    I2 - one character field for whether or not the Iodine cell is in, must be "Y" or "N"
+    temp - a boolean for whether or not this is a template observation
+    """
+
+    # Add the RA as three elements, HR, MIN, SEC
+    rastr = "%s %s %s " % (star_table_row['RA hr'],
+                           star_table_row['RA min'],
+                           star_table_row['RA sec'])
+
+    # Add the DEC as three elements, DEG, MIN, SEC
+    decstr = "%s %s %s " % (star_table_row['Dec deg'],
+                            star_table_row['Dec min'],
+                            star_table_row['Dec sec'])
+    # Start with the target name
+    ret = "%s %s %s 2000 " % (str(star_table_row['name']),rastr, decstr)
+
+    # Proper motion RA and DEC
+    ret += 'pmra=%.4f ' % (star_table_row['pmRA'])
+    ret += 'pmdec=%.4f ' % (star_table_row['pmDEC'])
+    # V Mag
+    ret += 'vmag=%.2f ' % (star_table_row['Vmag'])
+
+    # T Exp
+    if temp:
+        ret += 'texp=1200 '
+    else:
+        ret += 'texp=%d ' % int(star_table_row['texp'])
+
+    # I2
+    if temp:
+        I2 = 'N'
+    ret += 'I2=%s ' % (I2)
+    # lamp
+    ret += 'lamp=none '
+    # start time
+    ret += 'uth=%02d utm=%02d ' % (int(t.hour),int(t.minute))
+
+    # Exp Count
+    if star_table_row['expcount'] > SchedulerConsts.EXP_LIM:
+        ret += 'expcount=%.3g ' % (SchedulerConsts.EXP_LIM)
+    elif temp:
+        ret += 'expcount=%.3g ' % (1e9)
+    else:
+        ret += 'expcount=%.3g ' % (star_table_row['expcount'])
+    # Decker
+    if temp and star_table_row['Vmag'] > 9:
+        decker = 'W'
+    elif temp and star_table_row['Vmag'] <= 9:
+        decker = 'N'
+    ret += 'decker=%s ' % (decker)
+    # do flag
+    if star_table_row['do']:
+        ret += 'do=Y '
+    else:
+        ret += 'do= '
+    # Count
+    if temp:
+        count = num_template_exp(star_table_row['Vmag'])
+    else:
+        count = int(star_table_row['nexp'])
+
+    ret += 'count=%d ' % (count)
+
+    ret += 'foc=%d ' % (int(focval))
+
+    if owner != '':
+        if owner == 'RECUR_A100':
+            owner = 'public'
+        ret += 'owner=%s ' % str(owner)
+
+    if coverid != '':
+        ret += 'coverid=%s ' % str(coverid)
+
+    ret += 'binning=%s ' % str(star_table_row['binning'])
+
+#    if star_table_row['mode'] != None:
+#        if star_table_row['mode'] == BLANK:
+#            ret += ' blank=Y'
+#        elif star_table_row['mode'] == ACQUIRE:
+#            ret += ' guide=Y'
+#    else:
+#        ret += ''
+
+#    raoff  = star_table_row['raoff']
+#    decoff = star_table_row['decoff']
+#    if raoff == 'None':
+#        raoff = ''
+#    if decoff == 'None':
+#        decoff = ''
+#    if raoff is not '' and decoff is not '':
+#        ret += ' raoff=' + str(raoff) + ' decoff=' + str(decoff)
+
+    return str(ret)
+
+
+def compute_preferred_el(star_table, targ_num):
+    '''
+    pref_el = compute_preferred_el(star_table, targ_num)
+    star_table - astropy table of targets
+    targ_num - number of targets
+    pref_el - numpy array of preferred elevations
+    '''
+    pref_el = np.zeros(targ_num, dtype=float)
+    for i in range(0,targ_num):
+        if star_table['Vmag'][i] > SchedulerConsts.SLOWDOWN_VMAG_LIM:
+            pref_el[i] = SchedulerConsts.TARGET_ELEVATION_HIGH_MIN
+        else:
+            pref_el[i] = SchedulerConsts.TARGET_ELEVATION_MIN
+
+    return pref_el
+
+   # pref_el_min = [ SchedulerConsts.TARGET_ELEVATION_HIGH_MIN ] * targ_num
+
+
+
+def compute_datetime(ctime):
+    '''
+    dt = compute_datetime(ctime)
+    ctime - can be a float, datetime, or ephem.Date, else UT now is used
+    dt - datetime object appropriate for ctime.
+    '''
+    if isinstance(ctime, float):
+        dt = datetime.datetime.utcfromtimestamp(int(ctime))
+    elif isinstance(ctime, datetime.datetime):
+        dt = ctime
+    elif isinstance(ctime, ephem.Date):
+        dt = ctime.datetime()
+    else:
+        #punt and use current UT
+        dt = datetime.datetime.utcnow()
+    return dt
+
+
+
+
+def condition_cuts(moon, seeing, slowdown, star_table):
+    """ available = condition_cuts(moon, seeing, slowdown, star_table)
+
+    Checks if columns are in the star_table, then cuts on those, returns a boolean numpy array
+
+    available - Boolean numpy array of available targets
+
+    moon - phase value from pyephem, ranges from 0 to 100 (a percentage)
+    seeing - size in pixels
+    transparency - magnitudes of extinction
+
+    """
+
+    available = np.ones(len(star_table['ra']), dtype=bool)
+
+    if 'seeing' in star_table.colnames:
+        available = (star_table['seeing']/0.109 > seeing) & available
+
+    if 'moon' in star_table.colnames and float(moon.alt) > 0:
+        available = (star_table['moon'] > moon.moon_phase) & available
+
+    if 'transparency' in star_table.colnames:
+        ext = 2.5 * np.log10(slowdown)
+        available = (star_table['transparency'] > ext) & available
+
+
+    return available
+
+
+def template_conditions(moon, seeing, slowdown):
+    """ istrue = template_condition(moon, seeing, slowdown)
+
+    Checks to see if moon, seeing and slowdown factor are within template conditions
+
+    istrue - a simple Boolean
+
+    moon - phase value from pyephem, ranges from 0 to 100 (a percentage)
+    seeing - size in pixels
+    slowdown - relative to clear
+
+    """
+
+    if seeing < SchedulerConsts.SEEING_TEMP and slowdown < SchedulerConsts.SLOWDOWN_TEMP:
+        apflog("moon.phase=%.2f moon.alt=%.2f" % (moon.phase,moon.alt),echo=True,level='info')
+        if moon.phase < 50 and float(moon.alt) < 0:
+            return True
+        if moon.phase < 25 and float(moon.alt) < 0.7:
+            return True
+
+    return False
+
+def find_closest(ras, decs, ra, dec):
+    '''
+    find_closest(ras, decs, ra, dec)
+
+    ras - numpy array of right ascensions in radians
+    decs - numpy array of declinations in radians
+    ra - right ascension in radians
+    dec - declination in radians
+
+    min_ind - index of the closest target
+
+    searches for the closest target in ras, decs to ra, dec
+    '''
+
+    distances = np.sqrt((ra - ras)**2 + (dec - decs)**2)
+
+    min_ind = distances.argmin()
+
+    return min_ind
+
+def num_template_exp(vmag):
+    '''
+    num_template_exp(vmag)
+
+    vmag - V magnitude of target
+    count - number of exposures for a template observation
+
+    '''
+    count = 7
+
+    if vmag > 10:
+        count = 9
+
+    elif vmag  < 8:
+        count = 5
+
+    return count
+
+def enough_time_templates(star_table, stars, idx, apf_obs, dt):
+    '''
+    enough_time_templates(star_table, stars, idx, apf_obs, dt)
+    star_table - astropy table of targets
+    stars - list of ephem.FixedBody objects
+    idx - index of target in star_table
+    apf_obs - ephem.Observer object
+    dt - datetime object
+
+    enough_time_templates - boolean
+
+    Computes the time needed for a template observation
+    and checks if there is enough time left before sunrise.
+    '''
+
+    count = num_template_exp(star_table['Vmag'][idx])
+
+    tot_time = count * 1200
+
+    tot_time += 210 + (2*40 + 40*(star_table['nexp'][idx]-1)) + 2400 
+    # two B star exposures + three 70 second acquisitions and the actual observation readout times
+    vis, _, _ = Visible.visible(apf_obs, [stars[idx]], [tot_time])
+    time_left_before_sunrise = SunPos.compute_sunrise(dt, horizon='-18')
+
+    try:
+        apflog("enough_time_templates(): time for obs= %.1f  time until sunrise= %.1f " % (tot_time, time_left_before_sunrise),echo=True)
+    except:
+        apflog("enough_time_templates(): cannot log times!?!",echo=True)
+
+    if tot_time < time_left_before_sunrise  and vis and time_left_before_sunrise < 14*3600.:
+        return True
+    else:
+        return False
+
+
+def find_Bstars(star_table,idx, bstars):
+    '''
+    find_Bstars(star_table,idx,bstars)
+
+    star_table - astropy table of targets
+    idx - index of target in star_table
+    bstars - numpy array of booleans
+
+    near_idx - index of the closest B star to template start time
+    end_idx - index of the closest B star to template end time
+    '''
+
+    near_idx = find_closest(star_table['ra'][bstars], star_table['dec'][bstars],\
+                            star_table['ra'][idx], star_table['dec'][idx])
+
+    end_idx = find_closest(star_table['ra'][bstars], star_table['dec'][bstars],\
+                            (star_table['ra'][idx]+15*np.pi/180.), star_table['dec'][idx])
+
+
+    return near_idx,end_idx
+
+
+def make_obs_block(star_table, idx, dt, focval):
+    '''
+
+    make_obs_block(star_table, idx, dt, focval)
+
+    star_table - astropy table of targets
+    idx - index of target in star_table
+    dt - datetime object
+    focval - focus value
+
+    rv - list of scriptobs lines for an obsblock
+    '''
+
+    rv = []
+
+    cur_obsblock = star_table['obsblock'][idx]
+
+    allinblock = star_table['obsblock'] == cur_obsblock
+    allinblock = allinblock & (star_table['sheetn'] == star_table['sheetn'][idx])
+
+    if np.any(star_table['mode'][allinblock] == FIRST):
+        first = star_table['mode'][allinblock] == FIRST
+    elif np.any(star_table['mode'][allinblock] == ACQUIRE):
+        first = star_table['mode'][allinblock] == ACQUIRE
+    else:
+        first = None
+
+    if np.any(star_table['mode'][allinblock] == LAST):
+        last = star_table['mode'][allinblock] == LAST
+    else:
+        last = None
+
+    rest = star_table['mode'][allinblock] != FIRST
+    rest = rest & (star_table['mode'][allinblock] != ACQUIRE)
+    rest = rest & (star_table['mode'][allinblock] != LAST)
+    rest_idxs, = np.where(rest)
+
+
+    if np.any(first):
+        first_idxs, = np.where(first)
+        for idx in first_idxs:
+            scriptobs_line = make_scriptobs_line(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
+                                                owner=star_table['sheetn'][allinblock][idx], \
+                                                I2=star_table['I2'][allinblock][idx], focval=focval)
+            rv.append(scriptobs_line)
+
+    for idx in rest_idxs:
+        scriptobs_line = make_scriptobs_line(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
+                                               owner=star_table['sheetn'][allinblock][idx], \
+                                               I2=star_table['I2'][allinblock][idx], focval=focval)
+        rv.append(scriptobs_line)
+
+    if np.any(last):
+        last_idxs, = np.where(last)
+        for idx in last_idxs:
+            scriptobs_line = make_scriptobs_line(star_table[allinblock][idx], dt, decker=star_table['decker'][allinblock][idx], \
+                                                owner=star_table['sheetn'][allinblock][idx], \
+                                                I2=star_table['I2'][allinblock][idx], focval=focval)
+            rv.append(scriptobs_line)
+
+
+    rv.reverse()
+    rv[0] += ' # obsblock=%s end' % (cur_obsblock)
+    return rv
+
 def make_result(stars, star_table, totexptimes, final_priorities, dt, idx, focval=0, bstar=False, mode=''):
     '''
 
@@ -287,84 +777,15 @@ class UCOScheduler(object):
             apflog(log_str , echo=True)
             return None
 
-        ptime = self._previous_obs_time(dt)
-        self._refresh_tables(ptime)
-        star_table = self.targets.star_table
-        stars = self.stars
-        targ_num = len(stars)
-
-        if self.track_failures:
-            self.record_last_attempt()
-
-        self._sky_state(dt)
-
-        self.template_conditions_met = Observability.template_conditions(self.moon, seeing, slowdown)
-        do_templates = do_templates and self.template_conditions_met
-
-        apflog("get_next(): Will attempt templates = %s" % str(do_templates) ,echo=True)
-        # Note which of these are B-Stars for later.
-        bstars = (star_table['Bstar'] == 'Y')|(star_table['Bstar'] == 'y')
-
-        if bstar and not np.any(bstars):
-            apflog("get_next(): No B stars listed in target sheets!", level='error', echo=True)
-            return None
-
-        apflog("get_next(): Computing exposure times", echo=True)
-        totexptimes = Observability.tot_exp_times(star_table, targ_num)
-
-        found = self._available(dt, seeing, slowdown, bstar, bstars, totexptimes,
-                                do_too, do_templates)
-        if found is None:
-            return None
-        available, cur_elevations, scaled_elevations = found
-
-        final_priorities = compute_priorities(star_table, dt,
-                                                 rank_table=self.targets.rank_table,
-                                                 hour_table=self.targets.hour_table,
-                                                 do_templates=do_templates,
-                                                 observed=self.observed)
-
-        idx = self._select(available, final_priorities, bstar, cur_elevations, scaled_elevations)
-        if idx is None:
-            return None
-        if bstar:
-            focval = 2
-
-        stars[idx].compute(self.apf_obs)
-
-        take_template = do_templates and star_table['Template'][idx] == 'N' \
-            and star_table['I2'][idx] == 'Y'
-        if star_table['only_template'][idx] == 'Y' and do_templates:
-            take_template = True
-
-        res =  make_result(stars, star_table, totexptimes, final_priorities, dt, \
-                           idx, focval=focval, bstar=bstar, mode=config['mode'])
-        if take_template and bstar is False:
-            self._add_template(res, idx, dt, bstars)
-        if res.is_temp:
-            self.n_temps += 1
-        if res.is_too:
-            self.do_too = False
-
-        res.template_conditions_met = self.template_conditions_met
-        self.result = res
-        return res
-
-    def _previous_obs_time(self, dt):
-        '''
-        Time of the previous observation, from the guider, falling back to dt.
-
-        '''
-        try:
-            apfguide = ktl.Service('apfguide')
-            stamp = apfguide['midptfin'].read(binary=True)
-            ptime = datetime.datetime.utcfromtimestamp(stamp)
-        except:
-            if type(dt) == datetime.datetime:
-                ptime = dt
-            else:
-                ptime = datetime.datetime.utcfromtimestamp(int(time.time()))
-        return ptime
+    try:
+        apfguide = ktl.Service('apfguide')
+        stamp = apfguide['midptfin'].read(binary=True)
+        ptime = datetime.datetime.utcfromtimestamp(stamp)
+    except:
+        if type(dt) == datetime.datetime:
+            ptime = dt
+        else:
+            ptime = datetime.datetime.utcfromtimestamp(int(time.time()))
 
     def _refresh_tables(self, ptime):
         '''
