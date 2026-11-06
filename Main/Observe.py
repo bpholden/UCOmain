@@ -480,7 +480,9 @@ class Observe(threading.Thread):
                 seeing = 15
             else:
                 seeing = float(self.apf.avg_fwhm)
+                fiducial_seeing = seeing * np.cos(np.radians(90-el))**0.6
                 apflog("get_target(): Current AVG_FWHM = %5.2f" % seeing)
+                apflog("get_target(): Fiducial seeing = %5.2f" % fiducial_seeing)
 
             if self.apf.hatch_correct() is False:
                 apflog("get_target(): Error setting hatch position.", level='Alert')
@@ -526,7 +528,7 @@ class Observe(threading.Thread):
 
             self.check_files()
 
-            self.target = ds.get_next(time.time(), seeing, slowdown, self.uco_targets,\
+            self.target = ds.get_next(time.time(), fiducial_seeing, slowdown, self.uco_targets,\
                                          bstar=self.obs_B_star, \
                                          do_too=self.do_too, owner=self.owner,  \
                                          do_templates=self.do_temp, focval=self.focval, \
