@@ -92,7 +92,7 @@ def test_templates(ucotargets):
     ucotargets - UCOTargetTables object
     """
     print("Testing templates")
-    t_dt = datetime.datetime.now()
+    t_dt = datetime.datetime.now(datetime.timezone.utc)
     tstar_table, _ = ParseUCOSched.parse_UCOSched(ucotargets.rank_table, \
                                                      outfn='googledex.dat', outdir=".", \
                                                         config=ScriptobsLine.config_defaults('public'))
