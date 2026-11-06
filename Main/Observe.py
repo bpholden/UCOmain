@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 
+import numpy as np
 try:
     import ktl
     import APF as APFLib
@@ -444,8 +445,10 @@ class Observe(threading.Thread):
                 ostr += " A default value of 15 will be used in its place."
                 apflog(ostr, echo=True)
                 seeing = 15
+                fiducial_seeing = seeing
             else:
                 seeing = float(self.apf.avg_fwhm)
+                el = float(self.tel.ael)
                 fiducial_seeing = seeing * np.cos(np.radians(90-el))**0.6
                 apflog("get_target(): Current AVG_FWHM = %5.2f" % seeing)
                 apflog("get_target(): Fiducial seeing = %5.2f" % fiducial_seeing)
@@ -494,11 +497,8 @@ class Observe(threading.Thread):
 
             self.scheduler.targets.check_files()
 
-            self.target = ds.get_next(time.time(), fiducial_seeing, slowdown, self.uco_targets,\
-                                         bstar=self.obs_B_star, \
-                                         do_too=self.do_too, owner=self.owner,  \
-                                         do_templates=self.do_temp, focval=self.focval, \
-                                         start_time=self.start_time)
+            self.target = self.scheduler.get_next(time.time(), fiducial_seeing, slowdown, \
+                                         bstar=self.obs_B_star, focval=self.focval)
 
             if self.target is None:
                 self.pending_lines = []
