@@ -104,7 +104,7 @@ class UCOTargetTables(object):
         
         '''
 
-        req_datetime = obs_datetime if obs_datetime is not None else datetime.datetime.utcnow()
+        req_datetime = obs_datetime if obs_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
 
         self.make_hour_constraints()
 
@@ -274,7 +274,7 @@ class UCOTargetTables(object):
         cur = dt
         for i in range(0,nobj):
             hr, mn = observed.times[i]
-            prev = datetime.datetime(dt.year, dt.month, dt.day, hr, mn)
+            prev = datetime.datetime(dt.year, dt.month, dt.day, hr, mn, tzinfo=dt.tzinfo)
             diff = cur - prev
             hourdiff = diff.days * 24 + diff.seconds / 3600.
             if hourdiff > 0:

@@ -912,12 +912,12 @@ def update_local_starlist(intime, observed_file="observed_targets", outfn='parse
                 owner = 'RECUR_A100'
 
             if isinstance(obstime,float):
-                t = datetime.datetime.utcfromtimestamp(obstime)
+                t = datetime.datetime.fromtimestamp(obstime, datetime.timezone.utc)
             else:
                 hr, mn = obstime
                 if type(intime) != datetime.datetime:
-                    intime = datetime.datetime.utcnow()
-                t = datetime.datetime(intime.year, intime.month, intime.day, hr, mn)
+                    intime = datetime.datetime.now(datetime.timezone.utc)
+                t = datetime.datetime(intime.year, intime.month, intime.day, hr, mn, tzinfo=intime.tzinfo)
 
             jd = round(float(ephem.julian_date(t)), 4)
 
@@ -969,10 +969,10 @@ def observed_JD(star_table_row,otime,ctime):
     # value to calculate the full JD
     if jd is None:
         if isinstance(otime,float):
-            t = datetime.datetime.utcfromtimestamp(otime)
+            t = datetime.datetime.fromtimestamp(otime, datetime.timezone.utc)
         else:
             hr, mn = otime
-            t = datetime.datetime(ctime.year, ctime.month, ctime.day, hr, mn)
+            t = datetime.datetime(ctime.year, ctime.month, ctime.day, hr, mn, tzinfo=ctime.tzinfo)
             jd = float(ephem.julian_date(t))
 
     return jd
@@ -1014,7 +1014,7 @@ def update_a_sheet(sheetn, obslog, star_table, ctime):
     '''
 
     if ctime is None:
-        ctime = datetime.datetime.utcfromtimestamp(int(time.time()))
+        ctime = datetime.datetime.fromtimestamp(int(time.time()), datetime.timezone.utc)
 
     worksheet, worksheet_vals = get_spreadsheet(sheetn=sheetn, certificate=DEFAULT_CERT)
     if worksheet is None:

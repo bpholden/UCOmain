@@ -26,14 +26,18 @@ def compute_datetime(ctime):
     dt - datetime object appropriate for ctime.
     '''
     if isinstance(ctime, float):
-        dt = datetime.datetime.utcfromtimestamp(int(ctime))
+        dt = datetime.datetime.fromtimestamp(int(ctime), datetime.timezone.utc)
     elif isinstance(ctime, datetime.datetime):
-        dt = ctime
+        # naive datetimes are assumed to be UT
+        if ctime.tzinfo is None:
+            dt = ctime.replace(tzinfo=datetime.timezone.utc)
+        else:
+            dt = ctime.astimezone(datetime.timezone.utc)
     elif isinstance(ctime, ephem.Date):
-        dt = ctime.datetime()
+        dt = ctime.datetime().replace(tzinfo=datetime.timezone.utc)
     else:
         #punt and use current UT
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(datetime.timezone.utc)
     return dt
 
 def tot_exp_times(star_table, targ_num):
