@@ -973,7 +973,7 @@ def observed_JD(star_table_row,otime,ctime):
         else:
             hr, mn = otime
             t = datetime.datetime(ctime.year, ctime.month, ctime.day, hr, mn, tzinfo=ctime.tzinfo)
-            jd = float(ephem.julian_date(t))
+        jd = float(ephem.julian_date(t))
 
     return jd
 
