@@ -407,14 +407,14 @@ def compute_datetime(ctime):
     dt - datetime object appropriate for ctime.
     '''
     if isinstance(ctime, float):
-        dt = datetime.datetime.utcfromtimestamp(int(ctime))
+        dt = datetime.datetime.fromtimestamp(int(ctime), datetime.timezone.utc)
     elif isinstance(ctime, datetime.datetime):
         dt = ctime
     elif isinstance(ctime, ephem.Date):
         dt = ctime.datetime()
     else:
         #punt and use current UT
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(datetime.timezone.utc)
     return dt
 
 
@@ -812,7 +812,7 @@ def get_next(ctime, seeing, slowdown, ucotargets, \
         if type(dt) == datetime.datetime:
             ptime = dt
         else:
-            ptime = datetime.datetime.utcfromtimestamp(int(time.time()))
+            ptime = datetime.datetime.fromtimestamp(int(time.time()), datetime.timezone.utc)
 
     apflog("get_next(): Updating star list with previous observations", echo=True)
     observed, ucotargets.star_table = ParseUCOSched.update_local_starlist(ptime,\
