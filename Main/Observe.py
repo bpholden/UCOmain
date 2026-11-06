@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 
-import numpy as np
+import 
 try:
     import ktl
     import APF as APFLib
@@ -1100,7 +1100,7 @@ def test_observe():
     print(str(t_tel))
 
     uco_targets = UCOTargetTables.UCOTargetTables(t_opt)
-    scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=t_opt.owner, start_time=t_opt.start,
+    scheduler = UCOScheduler.UCOScheduler(uco_targets, owner=t_opt.owner, 
                                           do_templates=True, tot_temps=4, do_too=True)
 
     observe = Observe(t_apf, t_tel, t_opt, scheduler, task=parent)
