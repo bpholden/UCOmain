@@ -25,7 +25,10 @@ def compute_datetime(ctime):
     ctime - can be a float, datetime, or ephem.Date, else UT now is used
     dt - datetime object appropriate for ctime.
     '''
-    if isinstance(ctime, float):
+    # ephem.Date is a subclass of float, so it must be checked first
+    if isinstance(ctime, ephem.Date):
+        dt = ctime.datetime().replace(tzinfo=datetime.timezone.utc)
+    elif isinstance(ctime, float):
         dt = datetime.datetime.fromtimestamp(int(ctime), datetime.timezone.utc)
     elif isinstance(ctime, datetime.datetime):
         # naive datetimes are assumed to be UT
@@ -33,8 +36,6 @@ def compute_datetime(ctime):
             dt = ctime.replace(tzinfo=datetime.timezone.utc)
         else:
             dt = ctime.astimezone(datetime.timezone.utc)
-    elif isinstance(ctime, ephem.Date):
-        dt = ctime.datetime().replace(tzinfo=datetime.timezone.utc)
     else:
         #punt and use current UT
         dt = datetime.datetime.now(datetime.timezone.utc)
