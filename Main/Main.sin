@@ -100,7 +100,7 @@ def get_start_time(hr, mn):
     Returns a UNIX time stamp for the start time
     '''
     lt = datetime.datetime.now()
-    ct = datetime.datetime.utcnow()
+    ct = datetime.datetime.now(tz=datetime.timezone.utc)
 
     td_utc = ct - lt
     td_utc_off = int(10*math.floor(td_utc.seconds/10))
@@ -136,7 +136,7 @@ def calc_focus_start_time():
 
     '''
     # computes time before sunset
-    udt = datetime.datetime.utcnow()
+    udt = datetime.datetime.now(tz=datetime.timezone.utc)
     dt = datetime.datetime.now()
     time_to_sunset = SunPos.compute_sunset(udt)
     if time_to_sunset > 36000:
