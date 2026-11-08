@@ -8,7 +8,6 @@ import sys
 import threading
 import time
 
-import 
 try:
     import ktl
     import APF as APFLib
