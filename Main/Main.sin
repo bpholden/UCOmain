@@ -580,10 +580,24 @@ def main():
         apflog("Note: Cannot stop monitoring ok2open. %s" % (e), level="warn", echo=True)
 
     # 5) Take morning calibrations if needed
-    phase_index = 5
-    if 'Cal-Pre' not in calibrate.completed_phases:
+    # Cal-Pre counts as done if calibrate exited successfully (status 3)
+    # after the most recent local noon, i.e. the previous afternoon.
+    # The calibrate object cannot be used, it is None if the evening phases were skipped.
+    phase_index = 4
+    try:
+        cal_status = ktl.read("apftask", "calibrate_status", binary=True)
+        cal_last_success = ktl.read("apftask", "calibrate_last_success", binary=True)
+    except Exception as e:
+        apflog("Cannot read calibrate status keywords: %s" % (e), level='warn', echo=True)
+    else:
+        now = datetime.datetime.now()
+        noon = now.replace(hour=12, minute=0, second=0, microsecond=0)
+        if noon > now:
+            noon -= datetime.timedelta(days=1)
+        if cal_status == 3 and cal_last_success > noon.timestamp():
+            phase_index = 5
+    if phase_index == 4:
         apflog("Pre-calibrations were not completed, running cal-post.", level='info', echo=True)
-        phase_index = 4
 
     if not debug:
         APFTask.set(parent, suffix="LAST_OBS", value=apf.ucam["OBSNUM"].read())
