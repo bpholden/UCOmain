@@ -19,7 +19,7 @@ SUNEL_ENDLIM = -11.0
 SUNEL_STARTLIM = -9.0
 SUNEL_HOR = -3.2
 
-FOCUS_START = 2 # in hours
+FOCUS_START = 2.75 # in hours
 
 # A few constants to make accessing the star table more readable
 SEEING_TEMP = 15
