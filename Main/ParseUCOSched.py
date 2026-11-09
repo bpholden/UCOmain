@@ -266,7 +266,9 @@ def find_time_left():
         while p.poll() is None:
             time.sleep(1)
         out, err = p.communicate()
-        if len(err):
+        out = out.decode('utf-8') if isinstance(out, bytes) else out
+        err = err.decode('utf-8') if isinstance(err, bytes) else err
+        if len(err) > 0:
             return None
 
         sheetns = []

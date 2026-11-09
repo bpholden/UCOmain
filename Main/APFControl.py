@@ -54,8 +54,10 @@ def cmd_exec(cmd, debug=False, cwd='./'):
         time.sleep(1)
 
     out, err = p.communicate()
+    out = out.decode('utf-8') if isinstance(out, bytes) else out
+    err = err.decode('utf-8') if isinstance(err, bytes) else err
     if debug: apflog(out, echo=True)
-    if len(err): apflog(err, echo=True)
+    if len(err) > 0: apflog(err, echo=True)
     ret_code = p.returncode
     if ret_code == 0:
         return True, ret_code
@@ -1207,6 +1209,8 @@ class APF:
         cmd_str = ['du','-s',outdir]
         try:
             dir_size = subprocess.check_output(cmd_str)
+            dir_size = dir_size.decode('utf-8') if isinstance(dir_size, bytes) else dir_size
+            dir_size = int(dir_size.split()[0])
         except Exception as e:
             apflog("Cannot compute size of %s: %s %s" % (outdir, type(e), e))
             return False
