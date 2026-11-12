@@ -82,12 +82,12 @@ def restart(name, host):
 
 
 class APF:
-    """ Class which creates a monitored state object to track the condition of the APF telescope. """
-
- 
+    """ Class which creates a monitored state object to track 
+    the condition of the APF instrument. """
 
     def __init__(self, task="example", test=False):
-        """ Initilize the current state of APF. Setup the callbacks and monitors necessary for automated telescope operation."""
+        """ Initilize the current state of APF. Setup the callbacks and 
+        monitors necessary for automated telescope operation."""
         # Set up the calling task that set up the monitor and if this is a test instance
         self.test = test
         self.task = task
@@ -136,6 +136,8 @@ class APF:
         self.apfschedule= ktl.Service('apfschedule')
         self.apfmon     = ktl.Service('apfmon')
         self.ucamd0sta  = self.apfmon['UCAMDSTA0STA']
+        self.gcamcanary = self.apfmon['CSCS_GCAMSTA']
+        self.guidersta  = self.apfmon['GUIDERSTA']
 
         self.motor      = ktl.Service('apfmot')
         self.decker     = self.motor['DECKERNAM']
@@ -165,7 +167,8 @@ class APF:
         try:
             self.eosgcam['GENABLE'].write(True,binary=True,timeout=2)
         except ktl.TimeoutException:
-            apflog("Cannot write True to eosgcam.GENABLE, issue with guider and/or dresden",level='error',echo=True)
+            apflog("Cannot write True to eosgcam.GENABLE, issue with guider and/or dresden",
+                   level='error',echo=True)
 
         # Set the callbacks and monitors
 
@@ -504,6 +507,42 @@ class APF:
                 apflog("Cannot turn off lamp %s" % (lamp),echo=True,level="alert")
         return rv
 
+    def restart_camera_server(self):
+        """
+        restart_camera_server()
+
+        Restarts the camera server.
+        """
+        try:
+            cmd = "/usr/local/lick/bin/telleos "
+            cmd += " -s eossysm DeviceServer.Commands.StopServer "
+            cmd += '"" '
+            cmd += "'name \"CameraServer\"   location \"Telescope\"  force false '"
+            cmd_exec(cmd)
+            time.sleep(2)
+            cmd = "/usr/local/lick/bin/telleos "
+            cmd += " -s eossysm DeviceServer.Commands.StartServer "
+            cmd += '"" '
+            cmd += "'name \"CameraServer\"   location \"Telescope\" '"
+            cmd_exec(cmd)
+            time.sleep(2)
+        except Exception as e:
+            apflog("Cannot restart camera server: %s" % (e), echo=True, level='alert')
+
+    def guider_status(self):
+        """
+        guider_status()
+
+        Returns the current status of the guider.
+        """
+        self.guidersta.read(binary=True, timeout=2)
+        self.gcamcanary.read(binary=True, timeout=2)
+        if self.gcamcanary > 2:
+            self.restart_camera_server()
+            restart('eosgcam','dresden')
+        if self.guidersta > 2:
+            restart('apfguide','dresden')
+
 
     def write_stages(self,stagelist,component,state):
         """
@@ -636,7 +675,8 @@ class APF:
                 ip = self.checkapf['INSTR_PERM'].read(timeout=2)
             except:
                 ip = 'Unknown'
-            apflog("Cannot enable instrument to move stages but instr_perm is %s" % (ip), level='alert',echo=True)
+            apflog("Cannot enable instrument to move stages but instr_perm is %s" % (ip),
+                   level='alert',echo=True)
             return rv
         try:
             owner = self.apfschedule('OWNRHINT').read(timeout=10)
@@ -659,7 +699,8 @@ class APF:
             apflog(msg,echo=True)
         else:
             if not self.instr_perm.read(binary=True):
-                msg += "Focusinstr has failed because of loss of instrument permission, waiting for return"
+                msg += "Focusinstr has failed because of loss of instrument"
+                msg += "permission, waiting for return"
                 wait = True
             else:
                 wait = False
@@ -726,11 +767,15 @@ class APF:
             return rv
 
         try:
-            APFLib.write("apfmot.DEWARFOCRAW",ktl.read("apftask","FOCUSINSTR_LASTFOCUS",binary=True))
+            APFLib.write("apfmot.DEWARFOCRAW",ktl.read("apftask","FOCUSINSTR_LASTFOCUS",
+                                                       binary=True))
         except:
-            apflog("Cannot read the last best fitting focus value or write the dewar focus value", level='error')
+            apflog("Cannot read the last best fitting focus value or write the dewar focus value",
+                    level='error')
         if self.dewarfoc > DEWARMAX or self.dewarfoc < DEWARMIN:
-            apflog("Warning: The dewar focus is currently %d. This is outside the typical range of acceptable values." % (self.dewarfoc), level = "error", echo=True)
+            log_msg = "Warning: The dewar focus is currently %d." % (self.dewarfoc)
+            log_msg += " This is outside the typical range of acceptable values." 
+            apflog(log_msg, level = "error", echo=True)
             return False
         apflog("Running calibrate %s %s" % (script, time), level = 'info')
 
