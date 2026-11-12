@@ -1,6 +1,6 @@
 import subprocess
 
-MACHINELST = ["dresden","mainz","hamburg","warsaw"]
+MACHINELST = ["dresden","mainz","hamburg","warsaw","bremen","frankfurt"]
 
 
 def generic(machine,services,command):
