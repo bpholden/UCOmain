@@ -468,7 +468,8 @@ class Observe(threading.Thread):
                     # until a slew is finished, so this will ignore that
                     self.tel.run_prepobs()
             except ktl.TimeoutException:
-                apflog("get_target(): Timeout waiting for apfmon.READYSTA (apfmon7). ", level='Alert', echo=True)
+                apflog("get_target(): Timeout waiting for apfmon.READYSTA (apfmon7). ",
+                        level='Alert', echo=True)
                 kwnm = 'apfmon7sta'
                 self.tel.mini_mon_mon(self.tel.apfminimon[kwnm])
                 return
