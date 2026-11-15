@@ -8,6 +8,8 @@ import sys
 import threading
 import time
 
+import numpy
+
 try:
     import ktl
     import APF as APFLib
@@ -201,7 +203,7 @@ class Observe(threading.Thread):
             start_time = self.apftask['MASTER_WHENSTARTLIST'].read(binary=True, timeout=2)
         except Exception as e:
             apflog("Error reading starlist or start time: %s" % (e), level="warn", echo=True)
-            return  
+            return
 
         if starlist != "" and starlist != self.fixed_list:
             self.fixed_list = starlist
@@ -448,7 +450,7 @@ class Observe(threading.Thread):
             else:
                 seeing = float(self.apf.avg_fwhm)
                 el = float(self.tel.ael)
-                fiducial_seeing = seeing * np.cos(np.radians(90-el))**0.6
+                fiducial_seeing = seeing * numpy.cos(numpy.radians(90-el))**0.6
                 apflog("get_target(): Current AVG_FWHM = %5.2f" % seeing)
                 apflog("get_target(): Fiducial seeing = %5.2f" % fiducial_seeing)
 
@@ -511,7 +513,7 @@ class Observe(threading.Thread):
                 self.scriptobs.stdin.close()
                 self.tel.close()
                 if self.fixed_list is None:
-                    APFLib.write(self.tel.ldone, 0)
+                    APFLib.write(self.apf.ldone, 0)
                 self.apf.countrate = -1.0
                 # sleep for a half hour to see if the clouds blow by
                 APFTask.waitfor(self.task, True, timeout=60*30)
@@ -519,7 +521,7 @@ class Observe(threading.Thread):
 
             apflog("Observing target: %s" % self.target.name, echo=True)
             APFTask.set(self.task, suffix="MESSAGE", value="Observing target", wait=False)
-            APFTask.set(self.task, suffix="TEMPLATE_COND", 
+            APFTask.set(self.task, suffix="TEMPLATE_COND",
                         value=self.target.template_conditions_met, wait=False)
             self.pending_lines = list(self.target.scriptobs)
             cur_line = self.pending_lines.pop()
@@ -584,11 +586,13 @@ class Observe(threading.Thread):
             result = self.tel.openat(sunset=sunset)
             apflog("opening completed with result %s" % (result), echo=True)
             if result is False:
-                apflog("opening hasn't successfully opened. Current sunel = %4.2f" % (float(sunel)), level='warn', echo=True)
+                apflog("opening hasn't successfully opened. Current sunel = %4.2f" % (float(sunel)),\
+                        level='warn', echo=True)
                 if float(sunel) < SchedulerConsts.SUNEL_ENDLIM:
                     result = self.tel.openat(sunset=sunset)
                     if not result and self.tel.openOK:
-                        apflog("Error: opening has failed twice, likely needs intervention.", level='Alert', echo=True)
+                        apflog("Error: opening has failed twice, likely needs intervention.",\
+                             level='Alert', echo=True)
                         self.tel.close()
                         self.can_open = False
                         self.apftask['MASTER_CANOPEN'].write(self.can_open, binary=True)
@@ -715,7 +719,8 @@ class Observe(threading.Thread):
 
             _, running = self.apf.find_robot()
             if running:
-                apflog("Scriptobs is already running yet start_scriptobs was called", level="warn", echo=True)
+                apflog("Scriptobs is already running yet start_scriptobs was called",\
+                        level="warn", echo=True)
                 return
             rv = self.check_scriptobs_messages()
             if rv is False:
@@ -724,7 +729,8 @@ class Observe(threading.Thread):
             expr = "$checkapf.MOVE_PERM = True and $checkapf.INSTR_PERM = True"
             perms = APFTask.waitFor(self.task, True, expression=expr,timeout=1200)
             if perms is False:
-                apflog("Cannot start an instance of scriptobs because do not have permission", echo=True, level='error')
+                apflog("Cannot start an instance of scriptobs because do not have permission",\
+                        echo=True, level='error')
                 return
 
             if self.fixed_list is not None and self.should_start_list():
@@ -749,7 +755,8 @@ class Observe(threading.Thread):
                     self.pending_lines = []
                     if not self.apf.test:
                         APFTask.set(self.task, suffix="STARLIST", value="")
-                    apflog("Finished fixed list on line %d, will start dynamic scheduler" % int(self.apf.ldone), echo=True)
+                    apflog("Finished fixed list on line %d, will start dynamic scheduler" %\
+                            int(self.apf.ldone), echo=True)
                 else:
                     apflog("Found Fixed list %s" % self.fixed_list, echo=True)
                     apflog("Starting fixed list on line %d" % int(self.apf.ldone), echo=True)
@@ -823,7 +830,8 @@ class Observe(threading.Thread):
             self.check_starlist()
 
             # If scriptobs is running and waiting for input, give it a target
-            if running and (float(cursunel) < sunel_lim) and (self.apf.sop.read().strip() == "Input"):
+            if running and (float(cursunel) < sunel_lim) and \
+                (self.apf.sop.read().strip() == "Input"):
                 apflog("Entering target section", echo=True)
                 if self.fixed_list is None or not self.should_start_list():
                     self.last_obs_success = self.check_obs_success()
@@ -929,7 +937,8 @@ class Observe(threading.Thread):
                                     closing()
                                     break
 
-                    elif not rising or (rising and float(cursunel) < (sunel_lim - 5)) and self.can_open:
+                    elif not rising or (rising and float(cursunel) < (sunel_lim - 5)) \
+                        and self.can_open:
                         success = opening(cursunel)
                         omsg = "Opening at %s" % (cursunel)
                         APFTask.set(self.task, suffix="MESSAGE", value=omsg, wait=False)
@@ -994,13 +1003,15 @@ class Observe(threading.Thread):
             # If we are open and scriptobs isn't running, start it up
             if self.tel.is_ready_observing()[0] and not running \
                 and float(cursunel) <= sunel_lim and self.tel.openOK:
-                done_focusing = APFTask.waitFor(self.task, True, timeout=60, expression="$apftask.FOCUSINSTR_STATUS >= 3")
+                done_focusing = APFTask.waitFor(self.task, True, timeout=60, \
+                                                expression="$apftask.FOCUSINSTR_STATUS >= 3")
                 if not done_focusing:
                     apflog("Focusing in progress, waiting for it to finish", echo=True)
                     continue
-                done_calibrating = APFTask.waitFor(self.task, True, timeout=60, expression="$apftask.CALIBRATE_STATUS >= 3")
+                done_calibrating = APFTask.waitFor(self.task, True, timeout=60, \
+                                                   expression="$apftask.CALIBRATE_STATUS >= 3")
                 if not done_calibrating:
-                    apflog("Calibrating in progress, waiting for it to finish", echo=True)  
+                    apflog("Calibrating in progress, waiting for it to finish", echo=True)
                     continue
 
                 APFTask.set(self.task, suffix="MESSAGE", value="Starting scriptobs", wait=False)
@@ -1022,7 +1033,7 @@ class Observe(threading.Thread):
                     rv = start_telescope()
                     # if needed, will power up the Az drive and clear the estop state
                     if rv is False:
-                        ostr = "Error: Telescope is not tracking or slewing," 
+                        ostr = "Error: Telescope is not tracking or slewing,"
                         ostr += "cannot start up telescope."
                         apflog(ostr, level='timed_alert', echo=True)
                         closing(force=True)
@@ -1047,7 +1058,7 @@ class Observe(threading.Thread):
                 self.tel.dm_reset()
 
             if self.tel.is_open()[0] is False:
-                self.can_open = APFTask.get(self.task, 
+                self.can_open = APFTask.get(self.task,
                                             ["CANOPEN"])
 
             if not self.tel.is_open()[0] and not rising:
