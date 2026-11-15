@@ -831,12 +831,15 @@ class APF:
             try:
                 resultd = APFTask.get('FOCUSINSTR',('LASTFOCUS','PHASE'))
                 if resultd['PHASE'] == 'Cleanup':
-                    msg += 'focusinstr failed in or after cleanup, proceeding with value %s ' % (str(resultd['LASTFOCUS']))
+                    msg += 'focusinstr failed in or after cleanup, proceeding with value %s ' %\
+                          (str(resultd['LASTFOCUS']))
                     result = True
                 else:
-                    msg += 'focusinstr failed in %s, focusinstr needs to be rerun ' % (resultd['PHASE'])
+                    msg += 'focusinstr failed in %s, focusinstr needs to be rerun ' %\
+                          (resultd['PHASE'])
             except Exception as e:
-                msg += "focusinstr failed, exited with %s: %s %s" % (self.robot['focusinstr_status'].read(),type(e),e)
+                msg += "focusinstr failed, exited with %s: %s %s" % \
+                    (self.robot['focusinstr_status'].read(),type(e),e)
                 result = False
 
         expression="($apftask.FOCUSINSTR_MEASURED == 1)"
@@ -1065,7 +1068,8 @@ class APF:
                     if self.disp0sta.read(binary=True,timeout=2) == 0:
                         self.ucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
                 except ktl.TimeoutException:
-                    apflog("Cannot read or write apfucam keywords DISP0STA or DISP0DWIM", level='warn', echo=True)
+                    apflog("Cannot read or write apfucam keywords DISP0STA or DISP0DWIM",\
+                            level='warn', echo=True)
         except ktl.TimeoutException:
             return
 
@@ -1217,7 +1221,8 @@ class APF:
             ucamsta0 = self.ucam['DISP0STA'].read(binary=True)
             ucamsta1 = self.ucam['DISP1STA'].read(binary=True)
         except Exception as e:
-            apflog('apfucam.DISPSTA failure, apfucam likely not running: %s' % (e),echo=True,level='Alert')
+            apflog('apfucam.DISPSTA failure, apfucam likely not running: %s' % (e),\
+                   echo=True,level='Alert')
             rv = self.ucam_restart(fake=fake)
             return rv
         else:
@@ -1228,7 +1233,9 @@ class APF:
                     rv = self.ucam_restart(fake=fake)
                     return rv
 
-                rv = APFTask.waitfor(self.task, True, expression="$apfucam.DISP0STA = 0 & $apfucam.DISP1STA = 0", timeout=600)
+                rv = APFTask.waitfor(self.task, True, \
+                                     expression="$apfucam.DISP0STA = 0 & $apfucam.DISP1STA = 0",\
+                                          timeout=600)
                 return rv
 
         ucamlaunch_sta = self.robot['UCAMLAUNCHER_UCAM_STATUS'].read(binary=True)
@@ -1236,7 +1243,8 @@ class APF:
             try:
                 self.robot['UCAMLAUNCHER_UCAM_COMMAND'].write('Run')
             except Exception as e:
-                apflog('Failed when writing apftask.UCAMLAUNCHER_UCAM_COMMAND to Run: %s' % (e),echo=True,level='Crit')
+                apflog('Failed when writing apftask.UCAMLAUNCHER_UCAM_COMMAND to Run: %s'\
+                        % (e),echo=True,level='Crit')
                 return False
 
         return True
