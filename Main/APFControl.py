@@ -42,12 +42,12 @@ def cmd_exec(cmd, debug=False, cwd='./'):
     args = cmd.split()
 
     try:
-        p = subprocess.Popen(args, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=cwd)
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
     except OSError as e:
         apflog("command %s does not exist: %s" % (cmd,e),echo=True)
         return False, -1
     except Exception as e:
-        apflog("command %s failed: %s" % (cmd,e),echo=True)
+        apflog("command %s failed" % cmd,echo=True)
         return False, -1
 
     while p.poll() is None:
