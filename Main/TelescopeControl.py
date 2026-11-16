@@ -1124,7 +1124,7 @@ class TelescopeControl:
         On failures retries, and also sends alerts. Good for waking people up.
         """
 
-        if self.test: 
+        if self.test:
             return True
         cmd = os.path.join(SCRIPTDIR,"closeup")
         if force:
