@@ -121,7 +121,7 @@ class Calibrate(threading.Thread):
         '''
         eostele = ktl.Service('eostele')
         sunel = float(eostele["sunel"].read())
-        if sunel < 3:
+        if sunel < 3 and phase.lower() == 'cal-pre':
             apflog("Not Starting calibrate %s script, sun too low."\
                     % (phase), level='Info', echo=True)
             return True
