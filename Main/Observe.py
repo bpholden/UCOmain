@@ -131,7 +131,7 @@ class Observe(threading.Thread):
         except:
             self.selected = None
         else:
-            out_line = "%s %s\n" % (str(datetime.datetime.utcnow()), curstr)
+            out_line = "%s %s\n" % (str(datetime.datetime.now(tz=datetime.timezone.utc)), curstr)
             self.selected.write(out_line)
             self.selected.close()
 
