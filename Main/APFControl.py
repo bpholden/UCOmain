@@ -50,9 +50,6 @@ def cmd_exec(cmd, debug=False, cwd='./'):
         apflog("command %s failed" % cmd,echo=True)
         return False, -1
 
-    while p.poll() is None:
-        time.sleep(1)
-
     out, err = p.communicate()
     out = out.decode('utf-8') if isinstance(out, bytes) else out
     err = err.decode('utf-8') if isinstance(err, bytes) else err
