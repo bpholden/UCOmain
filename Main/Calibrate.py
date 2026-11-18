@@ -79,7 +79,7 @@ class Calibrate(threading.Thread):
 
             apflog("Setting default keyword values for focusinstr", echo=True)
             ktl.write('apftask', 'focusinstr_step_size', 100)
-            ktl.write('apftask', 'focusinstr_nominal', 8500)
+            ktl.write('apftask', 'focusinstr_nominal', 8450)
             ktl.write('apftask', 'focusinstr_step_count', 13)
 
 
@@ -89,7 +89,8 @@ class Calibrate(threading.Thread):
         '''
         focus_instr() - Run the focusinstr script
         '''
-        self.set_focus_defaults()
+        if setup:
+            self.set_focus_defaults()
 
         if self.test:
             apflog("Would have set observing info with %s %s and %s"\
@@ -182,12 +183,14 @@ class Calibrate(threading.Thread):
                 result = self.test_bias()
                 if result is False:
                     return
-            elif pi == 1 or pi == 5:
+            elif pi == 1:
                 result = self.focus_instr()
                 if result is False:
                     result = self.focus_instr(setup=False)
             elif pi == 2 or pi == 4:
                 result = self.calibrate(cur_phase)
+            elif pi == 5:
+                result = self.focus_instr(setup=False)
 
             if result:
                 apflog("Phase %s is complete" % cur_phase,echo=True)
