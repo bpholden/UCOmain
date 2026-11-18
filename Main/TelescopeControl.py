@@ -674,6 +674,8 @@ class TelescopeControl:
         p = subprocess.Popen(cmdargs, stdin=starcat, stdout=subprocess.PIPE,\
                              stderr=subprocess.PIPE,cwd=os.path.curdir)
         out, err = p.communicate()
+        out = out.decode('utf-8') if isinstance(out, bytes) else out
+        err = err.decode('utf-8') if isinstance(err, bytes) else err
         ret_code = p.returncode
         if ret_code != 0:
             apflog(out,echo=True)
@@ -1122,7 +1124,7 @@ class TelescopeControl:
         On failures retries, and also sends alerts. Good for waking people up.
         """
 
-        if self.test: 
+        if self.test:
             return True
         cmd = os.path.join(SCRIPTDIR,"closeup")
         if force:

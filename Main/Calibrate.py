@@ -15,6 +15,9 @@ from apflog import apflog
 AVERAGE_INSTRFOC = 8522
 
 class Calibrate(threading.Thread):
+    """ Calibrate class to handle calibration procedures for the APF telescope.
+        Inherits from threading.Thread to allow asynchronous operation.
+    """
     def __init__(self, apf, name, wait_time, calfile, outfile, obsnum, phase_index=0,\
                   end_phase = None, task='master', test=False, \
                     possible_phases=['Init','Focus','Cal-Pre','Watching','Cal-Post','Focus-Post']):
@@ -119,7 +122,7 @@ class Calibrate(threading.Thread):
         '''
         eostele = ktl.Service('eostele')
         sunel = float(eostele["sunel"].read())
-        if sunel < 3:
+        if sunel < -3 and phase.lower() == 'cal-pre':
             apflog("Not Starting calibrate %s script, sun too low."\
                     % (phase), level='Info', echo=True)
             return True
@@ -163,7 +166,8 @@ class Calibrate(threading.Thread):
         run() - Run the calibration thread
         '''
 
-        apflog("Will start with phase %d %s after %.1f seconds" % (self.phase_index,self.possible_phases[self.phase_index],self.wait_time), echo=True)
+        apflog("Will start with phase %d %s after %.1f seconds" % 
+               (self.phase_index,self.possible_phases[self.phase_index],self.wait_time), echo=True)
 
         if self.wait_time > 0:
             APFTask.wait(self.task, True, timeout=self.wait_time)
@@ -198,8 +202,8 @@ class Calibrate(threading.Thread):
             else:
                 apflog("Phase %s failed" % cur_phase,echo=True)
                 return
-
-        APFTask.phase(self.task, self.possible_phases[end])
+        if len(self.possible_phases) > end:
+            APFTask.phase(self.task, self.possible_phases[end])
 
         return
 

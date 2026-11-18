@@ -42,20 +42,19 @@ def cmd_exec(cmd, debug=False, cwd='./'):
     args = cmd.split()
 
     try:
-        p = subprocess.Popen(args, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=cwd)
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
     except OSError as e:
         apflog("command %s does not exist: %s" % (cmd,e),echo=True)
         return False, -1
     except Exception as e:
-        apflog("command %s failed: %s" % (cmd,e),echo=True)
+        apflog("command %s failed" % cmd,echo=True)
         return False, -1
 
-    while p.poll() is None:
-        time.sleep(1)
-
     out, err = p.communicate()
+    out = out.decode('utf-8') if isinstance(out, bytes) else out
+    err = err.decode('utf-8') if isinstance(err, bytes) else err
     if debug: apflog(out, echo=True)
-    if len(err): apflog(err, echo=True)
+    if len(err) > 0: apflog(err, echo=True)
     ret_code = p.returncode
     if ret_code == 0:
         return True, ret_code
@@ -80,12 +79,12 @@ def restart(name, host):
 
 
 class APF:
-    """ Class which creates a monitored state object to track the condition of the APF telescope. """
-
- 
+    """ Class which creates a monitored state object to track 
+    the condition of the APF instrument. """
 
     def __init__(self, task="example", test=False):
-        """ Initilize the current state of APF. Setup the callbacks and monitors necessary for automated telescope operation."""
+        """ Initilize the current state of APF. Setup the callbacks and 
+        monitors necessary for automated telescope operation."""
         # Set up the calling task that set up the monitor and if this is a test instance
         self.test = test
         self.task = task
@@ -134,6 +133,8 @@ class APF:
         self.apfschedule= ktl.Service('apfschedule')
         self.apfmon     = ktl.Service('apfmon')
         self.ucamd0sta  = self.apfmon['UCAMDSTA0STA']
+        self.gcamcanary = self.apfmon['CSCS_GCAMSTA']
+        self.guidersta  = self.apfmon['GUIDERSTA']
 
         self.motor      = ktl.Service('apfmot')
         self.decker     = self.motor['DECKERNAM']
@@ -163,7 +164,8 @@ class APF:
         try:
             self.eosgcam['GENABLE'].write(True,binary=True,timeout=2)
         except ktl.TimeoutException:
-            apflog("Cannot write True to eosgcam.GENABLE, issue with guider and/or dresden",level='error',echo=True)
+            apflog("Cannot write True to eosgcam.GENABLE, issue with guider and/or dresden",
+                   level='error',echo=True)
 
         # Set the callbacks and monitors
 
@@ -502,6 +504,42 @@ class APF:
                 apflog("Cannot turn off lamp %s" % (lamp),echo=True,level="alert")
         return rv
 
+    def restart_camera_server(self):
+        """
+        restart_camera_server()
+
+        Restarts the camera server.
+        """
+        try:
+            cmd = "/usr/local/lick/bin/telleos "
+            cmd += " -s eossysm DeviceServer.Commands.StopServer "
+            cmd += '"" '
+            cmd += "'name \"CameraServer\"   location \"Telescope\"  force false '"
+            cmd_exec(cmd)
+            time.sleep(2)
+            cmd = "/usr/local/lick/bin/telleos "
+            cmd += " -s eossysm DeviceServer.Commands.StartServer "
+            cmd += '"" '
+            cmd += "'name \"CameraServer\"   location \"Telescope\" '"
+            cmd_exec(cmd)
+            time.sleep(2)
+        except Exception as e:
+            apflog("Cannot restart camera server: %s" % (e), echo=True, level='alert')
+
+    def guider_status(self):
+        """
+        guider_status()
+
+        Returns the current status of the guider.
+        """
+        self.guidersta.read(binary=True, timeout=2)
+        self.gcamcanary.read(binary=True, timeout=2)
+        if self.gcamcanary > 2:
+            self.restart_camera_server()
+            restart('eosgcam','dresden')
+        if self.guidersta > 2:
+            restart('apfguide','dresden')
+
 
     def write_stages(self,stagelist,component,state):
         """
@@ -634,7 +672,8 @@ class APF:
                 ip = self.checkapf['INSTR_PERM'].read(timeout=2)
             except:
                 ip = 'Unknown'
-            apflog("Cannot enable instrument to move stages but instr_perm is %s" % (ip), level='alert',echo=True)
+            apflog("Cannot enable instrument to move stages but instr_perm is %s" % (ip),
+                   level='alert',echo=True)
             return rv
         try:
             owner = self.apfschedule('OWNRHINT').read(timeout=10)
@@ -657,7 +696,8 @@ class APF:
             apflog(msg,echo=True)
         else:
             if not self.instr_perm.read(binary=True):
-                msg += "Focusinstr has failed because of loss of instrument permission, waiting for return"
+                msg += "Focusinstr has failed because of loss of instrument"
+                msg += "permission, waiting for return"
                 wait = True
             else:
                 wait = False
@@ -724,11 +764,15 @@ class APF:
             return rv
 
         try:
-            APFLib.write("apfmot.DEWARFOCRAW",ktl.read("apftask","FOCUSINSTR_LASTFOCUS",binary=True))
+            APFLib.write("apfmot.DEWARFOCRAW",ktl.read("apftask","FOCUSINSTR_LASTFOCUS",
+                                                       binary=True))
         except:
-            apflog("Cannot read the last best fitting focus value or write the dewar focus value", level='error')
+            apflog("Cannot read the last best fitting focus value or write the dewar focus value",
+                    level='error')
         if self.dewarfoc > DEWARMAX or self.dewarfoc < DEWARMIN:
-            apflog("Warning: The dewar focus is currently %d. This is outside the typical range of acceptable values." % (self.dewarfoc), level = "error", echo=True)
+            log_msg = "Warning: The dewar focus is currently %d." % (self.dewarfoc)
+            log_msg += " This is outside the typical range of acceptable values." 
+            apflog(log_msg, level = "error", echo=True)
             return False
         apflog("Running calibrate %s %s" % (script, time), level = 'info')
 
@@ -784,12 +828,15 @@ class APF:
             try:
                 resultd = APFTask.get('FOCUSINSTR',('LASTFOCUS','PHASE'))
                 if resultd['PHASE'] == 'Cleanup':
-                    msg += 'focusinstr failed in or after cleanup, proceeding with value %s ' % (str(resultd['LASTFOCUS']))
+                    msg += 'focusinstr failed in or after cleanup, proceeding with value %s ' %\
+                          (str(resultd['LASTFOCUS']))
                     result = True
                 else:
-                    msg += 'focusinstr failed in %s, focusinstr needs to be rerun ' % (resultd['PHASE'])
+                    msg += 'focusinstr failed in %s, focusinstr needs to be rerun ' %\
+                          (resultd['PHASE'])
             except Exception as e:
-                msg += "focusinstr failed, exited with %s: %s %s" % (self.robot['focusinstr_status'].read(),type(e),e)
+                msg += "focusinstr failed, exited with %s: %s %s" % \
+                    (self.robot['focusinstr_status'].read(),type(e),e)
                 result = False
 
         expression="($apftask.FOCUSINSTR_MEASURED == 1)"
@@ -1018,7 +1065,8 @@ class APF:
                     if self.disp0sta.read(binary=True,timeout=2) == 0:
                         self.ucam['DISP0DWIM'].write("ksetMacval DISP0STA READY")
                 except ktl.TimeoutException:
-                    apflog("Cannot read or write apfucam keywords DISP0STA or DISP0DWIM", level='warn', echo=True)
+                    apflog("Cannot read or write apfucam keywords DISP0STA or DISP0DWIM",\
+                            level='warn', echo=True)
         except ktl.TimeoutException:
             return
 
@@ -1170,7 +1218,8 @@ class APF:
             ucamsta0 = self.ucam['DISP0STA'].read(binary=True)
             ucamsta1 = self.ucam['DISP1STA'].read(binary=True)
         except Exception as e:
-            apflog('apfucam.DISPSTA failure, apfucam likely not running: %s' % (e),echo=True,level='Alert')
+            apflog('apfucam.DISPSTA failure, apfucam likely not running: %s' % (e),\
+                   echo=True,level='Alert')
             rv = self.ucam_restart(fake=fake)
             return rv
         else:
@@ -1181,7 +1230,9 @@ class APF:
                     rv = self.ucam_restart(fake=fake)
                     return rv
 
-                rv = APFTask.waitfor(self.task, True, expression="$apfucam.DISP0STA = 0 & $apfucam.DISP1STA = 0", timeout=600)
+                rv = APFTask.waitfor(self.task, True, \
+                                     expression="$apfucam.DISP0STA = 0 & $apfucam.DISP1STA = 0",\
+                                          timeout=600)
                 return rv
 
         ucamlaunch_sta = self.robot['UCAMLAUNCHER_UCAM_STATUS'].read(binary=True)
@@ -1189,7 +1240,8 @@ class APF:
             try:
                 self.robot['UCAMLAUNCHER_UCAM_COMMAND'].write('Run')
             except Exception as e:
-                apflog('Failed when writing apftask.UCAMLAUNCHER_UCAM_COMMAND to Run: %s' % (e),echo=True,level='Crit')
+                apflog('Failed when writing apftask.UCAMLAUNCHER_UCAM_COMMAND to Run: %s'\
+                        % (e),echo=True,level='Crit')
                 return False
 
         return True
@@ -1207,6 +1259,8 @@ class APF:
         cmd_str = ['du','-s',outdir]
         try:
             dir_size = subprocess.check_output(cmd_str)
+            dir_size = dir_size.decode('utf-8') if isinstance(dir_size, bytes) else dir_size
+            dir_size = int(dir_size.split()[0])
         except Exception as e:
             apflog("Cannot compute size of %s: %s %s" % (outdir, type(e), e))
             return False
