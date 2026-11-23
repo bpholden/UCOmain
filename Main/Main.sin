@@ -11,7 +11,6 @@ import signal
 import sys
 import datetime
 
-import astropy.io.ascii
 import astropy.time
 
 # Script for the task that runs everything
@@ -32,7 +31,6 @@ import ParseUCOSched
 import UCOScheduler
 from apflog import apflog, logpush
 import Calibrate
-import getUCOTargets
 import UCOTargetTables
 import Observe
 import SunPos
