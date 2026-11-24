@@ -298,7 +298,7 @@ class Observe(threading.Thread):
         return False
 
     def update_windshield(self):
-        rdict = APFTask.get(self.task, suffix=['WINDSHIELD'])
+        rdict = APFTask.get(self.task, ['WINDSHIELD'])
         self.windshield_mode = rdict['WINDSHIELD']
         self.tel.update_windshield(self.windshield_mode)
 
