@@ -490,6 +490,7 @@ class Observe(threading.Thread):
                     self.append_selected("%s avgfwhm=%05.2f slowdown=%04.2f" % \
                                          (curstr, seeing, slowdown))
                     self.scriptobs.stdin.write(bytes(curstr + '\n', 'ascii'))
+                    self.scriptobs.stdin.flush()
                     return
 
             if self.apf.init_guide_cam() is False:
@@ -533,6 +534,7 @@ class Observe(threading.Thread):
 
             try:
                 self.scriptobs.stdin.write(bytes(cur_line + '\n', 'ascii'))
+                self.scriptobs.stdin.flush()
             except IOError as e:
                 apflog("Cannot observe target %s: IOError: %s"\
                         % (self.target.name, e), echo=True, level='error')
