@@ -901,7 +901,7 @@ class APF:
                 args = [os.path.join(SCRIPTDIR,'scriptobs'), '-dir', os.getcwd()]
 
 
-        p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=outfile, stderr=outfile)
+        p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=outfile, stderr=outfile, text=True)
 
         return p
 

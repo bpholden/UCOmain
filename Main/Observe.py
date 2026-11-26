@@ -489,7 +489,7 @@ class Observe(threading.Thread):
                 if curstr:
                     self.append_selected("%s avgfwhm=%05.2f slowdown=%04.2f" % \
                                          (curstr, seeing, slowdown))
-                    self.scriptobs.stdin.write(bytes(curstr + '\n', 'ascii'))
+                    self.scriptobs.stdin.write(curstr + '\n')
                     self.scriptobs.stdin.flush()
                     return
 
@@ -533,7 +533,7 @@ class Observe(threading.Thread):
             apflog("Binning = %s" % self.apf.ucam['BINNING'].read(),echo=True)
 
             try:
-                self.scriptobs.stdin.write(bytes(cur_line + '\n', 'ascii'))
+                self.scriptobs.stdin.write(cur_line + '\n')
                 self.scriptobs.stdin.flush()
             except IOError as e:
                 apflog("Cannot observe target %s: IOError: %s"\
