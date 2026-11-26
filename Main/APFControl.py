@@ -42,7 +42,7 @@ def cmd_exec(cmd, debug=False, cwd='./'):
     args = cmd.split()
 
     try:
-        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, text=True)
     except OSError as e:
         apflog("command %s does not exist: %s" % (cmd,e),echo=True)
         return False, -1
@@ -51,8 +51,6 @@ def cmd_exec(cmd, debug=False, cwd='./'):
         return False, -1
 
     out, err = p.communicate()
-    out = out.decode('utf-8') if isinstance(out, bytes) else out
-    err = err.decode('utf-8') if isinstance(err, bytes) else err
     if debug: apflog(out, echo=True)
     if len(err) > 0: apflog(err, echo=True)
     ret_code = p.returncode
@@ -1258,8 +1256,7 @@ class APF:
         outdir = self.ucam['OUTDIR'].read()
         cmd_str = ['du','-s',outdir]
         try:
-            dir_size = subprocess.check_output(cmd_str)
-            dir_size = dir_size.decode('utf-8') if isinstance(dir_size, bytes) else dir_size
+            dir_size = subprocess.check_output(cmd_str, text=True)
             dir_size = int(dir_size.split()[0])
         except Exception as e:
             apflog("Cannot compute size of %s: %s %s" % (outdir, type(e), e))

@@ -262,12 +262,8 @@ def find_time_left():
 
     cmd = "/usr/local/lick/bin/timereport/time_left"
     if os.path.exists(cmd):
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        while p.poll() is None:
-            time.sleep(1)
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         out, err = p.communicate()
-        out = out.decode('utf-8') if isinstance(out, bytes) else out
-        err = err.decode('utf-8') if isinstance(err, bytes) else err
         if len(err) > 0:
             return None
 

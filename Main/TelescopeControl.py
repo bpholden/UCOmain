@@ -419,7 +419,7 @@ class TelescopeControl:
                 cmdlist = ["ssh", "-f", runhost, restart]
 
             try:
-                p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT)
+                p = subprocess.check_output(cmdlist,stderr=subprocess.STDOUT,text=True)
             except Exception as e:
                 apflog("Cannot restart %s on %s: %s" % (taskname,runhost,e),level='error',echo=True)
                 return
@@ -476,7 +476,7 @@ class TelescopeControl:
         if self.telstate['ascii'] == 'Disabled':
             apflog("Enabling the telescope", echo=True)
             try:
-                subprocess.check_output(['slew','-o'],stderr=subprocess.STDOUT)
+                p = subprocess.check_output(['slew','-o'],stderr=subprocess.STDOUT,text=True)
             except subprocess.CalledProcessError as e:
                 apflog("Failed to enable telescope: %s" % (e), level='error', echo=True)
                 return False
@@ -672,10 +672,8 @@ class TelescopeControl:
         # example line
         #$line[3] $line[4] $line[5] $line[6] $line[7] 5 1 "8"] < /usr/local/lick/data/apf/StarCatalog.dat"
         p = subprocess.Popen(cmdargs, stdin=starcat, stdout=subprocess.PIPE,\
-                             stderr=subprocess.PIPE,cwd=os.path.curdir)
+                             stderr=subprocess.PIPE,cwd=os.path.curdir,text=True)
         out, err = p.communicate()
-        out = out.decode('utf-8') if isinstance(out, bytes) else out
-        err = err.decode('utf-8') if isinstance(err, bytes) else err
         ret_code = p.returncode
         if ret_code != 0:
             apflog(out,echo=True)

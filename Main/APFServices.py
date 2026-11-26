@@ -9,7 +9,7 @@ def generic(machine,services,command):
         servicestr += " ".join(services)
         cmdlst = ["ssh","-f",machine, servicestr]
         try:
-            p = subprocess.check_output(cmdlst)
+            p = subprocess.check_output(cmdlst, text=True)
             return(True,p)
         except Exception as e:
             return(False,e)
